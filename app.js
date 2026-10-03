@@ -4,7 +4,7 @@ const state = {
     isEditMode: false,
     absentTeachers: new Set(),
     schedule: {},
-    lastAction: null, // For Undo functionality
+    lastAction: null,
 };
 
 const teachers = [
@@ -15,13 +15,13 @@ const periods = ['GOLDEN HOUR', '1st Pd.', 'BREAKFAST', '2nd Pd.', '3rd Pd.', '4
 
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
-    generateSimulatedData(); // We will replace this with Google Sheets fetch later
+    generateSimulatedData(); 
     bindEvents();
     renderAll();
 });
 
 function bindEvents() {
-    // Bottom Nav Tabs
+    // Bottom Nav
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -43,41 +43,33 @@ function bindEvents() {
         });
     });
 
-    // Edit / Save Toggle
+    // Edit Toggle
     const editBtn = document.getElementById('edit-toggle-btn');
     editBtn.addEventListener('click', () => {
         state.isEditMode = !state.isEditMode;
         editBtn.textContent = state.isEditMode ? 'Save Schedule' : 'Edit Schedule';
         editBtn.classList.toggle('save-mode', state.isEditMode);
-        renderMasterRoutine(); // Refresh to show interactive states
+        renderAll(); 
     });
 
-    // Hide Absent Toggle
-    document.getElementById('hide-absent-toggle').addEventListener('change', renderMasterRoutine);
-
-    // Bottom Sheet Overlay click to close
+    // Buttons & Toggles
+    document.getElementById('hide-absent-toggle').addEventListener('change', renderAll);
     document.getElementById('sheet-overlay').addEventListener('click', closeBottomSheet);
-    
-    // Undo Button
     document.getElementById('undo-btn').addEventListener('click', undoLastAction);
 
-    // Intercept Back Button
+    // Back Button Intercept
     window.addEventListener('popstate', (event) => {
         const sheet = document.getElementById('bottom-sheet');
-        
-        // 1. If the bottom sheet is open, close it
         if (sheet.classList.contains('open')) {
             sheet.classList.remove('open');
             document.getElementById('sheet-overlay').classList.remove('active');
             return;
         }
-
-        // 2. If on the Resolver tab, go back to the Dashboard
-        const resolverTab = document.getElementById('tab-resolver');
-        if (resolverTab.classList.contains('active')) {
+        
+        const activeTab = document.querySelector('.tab-section.active').id;
+        if (activeTab !== 'tab-dashboard') {
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-section').forEach(t => t.classList.remove('active'));
-            
             document.querySelector('[data-target="tab-dashboard"]').classList.add('active');
             document.getElementById('tab-dashboard').classList.add('active');
             return;
@@ -88,7 +80,8 @@ function bindEvents() {
 // --- RENDER FUNCTIONS ---
 function renderAll() {
     renderAbsentTray();
-    renderMasterRoutine();
+    renderTableRoutine(); // New Grid View
+    renderCardRoutine();  // Old Card View
     renderResolver();
 }
 
@@ -113,13 +106,58 @@ function renderAbsentTray() {
     });
 }
 
-function renderMasterRoutine() {
+function renderTableRoutine() {
+    const table = document.getElementById('routine-table');
+    const hideAbsent = document.getElementById('hide-absent-toggle').checked;
+    
+    let html = '<thead><tr><th>Teacher Name</th>';
+    periods.forEach(p => html += `<th>${p}</th>`);
+    html += '</tr></thead><tbody>';
+    
+    teachers.forEach(teacher => {
+        const isAbsent = state.absentTeachers.has(teacher);
+        if (isAbsent && hideAbsent) return;
+        
+        html += `<tr class="${isAbsent ? 'row-absent' : ''}">`;
+        html += `<td>${teacher}</td>`;
+        
+        periods.forEach(period => {
+            if (period === 'BREAKFAST' || period === 'PLAY TIME') {
+                html += `<td style="background:#f9f9f9; text-align:center;">-</td>`;
+                return;
+            }
+            
+            const task = state.schedule[state.day]?.[period]?.[teacher] || 'Free';
+            const isMissingSub = isAbsent && task !== 'Free' && task !== '';
+            
+            let cellClass = '';
+            let cellText = task === 'Free' ? '' : task;
+            
+            if (isMissingSub) {
+                cellClass = 'cell-missing';
+                cellText = '⚠ ' + task;
+            } else if (task !== 'Free') {
+                cellClass = 'cell-assigned';
+            }
+            
+            let clickHandler = state.isEditMode ? `onclick="openBottomSheet('${period}', '${teacher}')" style="cursor:pointer;"` : '';
+            
+            html += `<td class="${cellClass}" ${clickHandler}>${cellText}</td>`;
+        });
+        
+        html += '</tr>';
+    });
+    
+    html += '</tbody>';
+    table.innerHTML = html;
+}
+
+function renderCardRoutine() {
     const grid = document.getElementById('timeline-grid');
     grid.innerHTML = '';
     const hideAbsent = document.getElementById('hide-absent-toggle').checked;
 
     periods.forEach(period => {
-        // Skip rendering breaks as assignment blocks
         if (period === 'BREAKFAST' || period === 'PLAY TIME') {
             grid.innerHTML += `<div style="text-align:center; padding:10px; color:#8e8e93; font-size:12px; letter-spacing:1px;">--- ${period} ---</div>`;
             return;
@@ -127,16 +165,14 @@ function renderMasterRoutine() {
 
         const card = document.createElement('div');
         card.className = 'period-card';
-        
         let assignmentsHtml = `<h4 style="margin-bottom:10px; color:var(--accent-blue);">${period}</h4>`;
         
         teachers.forEach(teacher => {
             const isAbsent = state.absentTeachers.has(teacher);
-            if (isAbsent && hideAbsent) return; // Skip if hidden
+            if (isAbsent && hideAbsent) return; 
             
             const task = state.schedule[state.day][period][teacher] || 'Free';
             const isMissingSub = isAbsent && task !== 'Free';
-            
             if (isMissingSub) card.classList.add('needs-action');
 
             assignmentsHtml += `
@@ -147,7 +183,6 @@ function renderMasterRoutine() {
                 </div>
             `;
         });
-        
         card.innerHTML = assignmentsHtml;
         grid.appendChild(card);
     });
@@ -181,14 +216,12 @@ function renderResolver() {
 
     badge.textContent = conflicts;
     badge.className = `badge ${conflicts > 0 ? 'visible' : 'hidden'}`;
-    
-    // Add simple CSS inline for the badge if needed
     badge.style.cssText = conflicts > 0 ? "background:var(--accent-red); color:white; padding:2px 6px; border-radius:10px; font-size:10px; position:absolute; top:-5px; right:15px;" : "display:none;";
 }
 
 // --- INTERACTION MECHANICS ---
 function openBottomSheet(period, targetTeacher) {
-    if (!state.isEditMode && document.getElementById('tab-dashboard').classList.contains('active')) return;
+    if (!state.isEditMode && document.querySelector('.tab-section.active').id !== 'tab-resolver') return;
     
     const sheet = document.getElementById('bottom-sheet');
     const overlay = document.getElementById('sheet-overlay');
@@ -196,7 +229,6 @@ function openBottomSheet(period, targetTeacher) {
     
     list.innerHTML = `<p style="margin-bottom:15px; font-size:13px; color:gray;">Assigning substitute for ${period}</p>`;
     
-    // Sort teachers: Available first, Busy later
     const available = [];
     const busy = [];
     
@@ -219,8 +251,6 @@ function openBottomSheet(period, targetTeacher) {
 
     sheet.classList.add('open');
     overlay.classList.add('active');
-
-    // Push fake state to history so back button closes the sheet
     history.pushState({ modal: 'bottom-sheet' }, '');
 }
 
@@ -228,7 +258,6 @@ function closeBottomSheet() {
     document.getElementById('bottom-sheet').classList.remove('open');
     document.getElementById('sheet-overlay').classList.remove('active');
     
-    // Clean up the browser history if closed manually
     if (history.state && history.state.modal === 'bottom-sheet') {
         history.back();
     }
@@ -240,19 +269,9 @@ function assignSubstitute(period, absentTeacher, subTeacher) {
     const previousTaskForSub = state.schedule[state.day][period][subTeacher];
     const taskToCover = state.schedule[state.day][period][absentTeacher];
     
-    // Save state for undo
-    state.lastAction = {
-        period,
-        absentTeacher,
-        subTeacher,
-        previousTaskForSub,
-        taskToCover,
-        day: state.day
-    };
-
-    // Execute Cascading Swap
+    state.lastAction = { period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day: state.day };
     state.schedule[state.day][period][subTeacher] = taskToCover;
-    state.schedule[state.day][period][absentTeacher] = 'Free'; // Mark original slot as handled
+    state.schedule[state.day][period][absentTeacher] = 'Free'; 
     
     showToast(`Assigned ${subTeacher} to ${period}`);
     renderAll();
@@ -274,13 +293,10 @@ function showToast(message) {
     const toast = document.getElementById('undo-toast');
     document.getElementById('toast-message').textContent = message;
     toast.classList.remove('hidden');
-    
-    setTimeout(() => {
-        toast.classList.add('hidden');
-    }, 5000);
+    setTimeout(() => { toast.classList.add('hidden'); }, 5000);
 }
 
-// --- MOCK DATA GENERATOR (Temporary) ---
+// --- MOCK DATA GENERATOR ---
 function generateSimulatedData() {
     const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
     const subjects = ['MATH KGA', 'ENG KGB', 'EVS PREPA', 'SING KGA', 'GAMES PREP'];
@@ -290,7 +306,6 @@ function generateSimulatedData() {
         periods.forEach(p => {
             state.schedule[d][p] = {};
             teachers.forEach(t => {
-                // 70% chance a teacher has a class, otherwise Free
                 if (p !== 'BREAKFAST' && p !== 'PLAY TIME' && Math.random() > 0.3) {
                     state.schedule[d][p][t] = subjects[Math.floor(Math.random() * subjects.length)];
                 } else {

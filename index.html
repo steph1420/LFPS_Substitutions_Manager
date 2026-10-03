@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- Optimizes the app for mobile screens and enables PWA behavior -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,15 +10,12 @@
 </head>
 <body>
 
-    <!-- App Header & Global Controls -->
     <header class="app-header">
         <div class="header-top">
             <h1>Front Desk</h1>
-            <!-- The Live/Freeze replacement: Edit / Save Mode -->
             <button id="edit-toggle-btn" class="btn-primary">Edit Schedule</button>
         </div>
         
-        <!-- iOS-Style Segmented Control for Days -->
         <div class="day-selector">
             <button class="day-btn active" data-day="MON">MON</button>
             <button class="day-btn" data-day="TUE">TUE</button>
@@ -30,21 +26,15 @@
         </div>
     </header>
 
-    <!-- Main Application Canvas -->
     <main class="app-content">
         
-        <!-- TAB 1: DASHBOARD (Master Routine & Absent Marker) -->
+        <!-- TAB 1: DASHBOARD (Grid Matrix Layout) -->
         <section id="tab-dashboard" class="tab-section active">
-            
-            <!-- Absent Tray: Horizontally scrolling profile circles -->
             <div class="absent-tray-container">
                 <h3>Mark Absences</h3>
-                <div class="absent-tray" id="teacher-roster">
-                    <!-- JavaScript will populate the 9 teachers here -->
-                </div>
+                <div class="absent-tray" id="teacher-roster"></div>
             </div>
 
-            <!-- Master Routine Timeline -->
             <div class="master-routine-container">
                 <div class="routine-header">
                     <h2>Master Routine</h2>
@@ -55,58 +45,63 @@
                     </label>
                 </div>
                 
-                <div class="timeline-grid" id="timeline-grid">
-                    <!-- JavaScript will generate the periods and teacher cards here -->
+                <div class="table-scroll-container">
+                    <table id="routine-table" class="routine-table">
+                        <!-- JS will populate the spreadsheet here -->
+                    </table>
                 </div>
             </div>
         </section>
 
-        <!-- TAB 2: THE RESOLVER (Possibilities & Cascading Swaps) -->
+        <!-- TAB 2: RESOLVER -->
         <section id="tab-resolver" class="tab-section">
             <div class="resolver-header">
                 <h2>Action Required</h2>
                 <p>Assign substitutes for flagged periods.</p>
                 <button id="auto-resolve-btn" class="btn-magic hidden">✨ Auto-Resolve</button>
             </div>
-            
-            <div class="conflict-list" id="conflict-list">
-                <!-- JavaScript will populate pink cards needing assignments here -->
+            <div class="conflict-list" id="conflict-list"></div>
+        </section>
+
+        <!-- TAB 3: CARDS (Old Layout) -->
+        <section id="tab-cards" class="tab-section">
+            <div class="routine-header" style="margin-bottom:15px;">
+                <h2>Routine (Card View)</h2>
             </div>
+            <div class="timeline-grid" id="timeline-grid"></div>
         </section>
 
     </main>
 
-    <!-- Floating Undo Toast Notification -->
     <div id="undo-toast" class="toast hidden">
         <span id="toast-message">Action completed.</span>
         <button id="undo-btn">↩ Undo</button>
     </div>
 
-    <!-- Bottom Navigation Bar (Mobile Native Feel) -->
+    <!-- Bottom Navigation Bar -->
     <nav class="bottom-nav">
         <button class="nav-btn active" data-target="tab-dashboard">
-            <span class="icon">📅</span>
-            <span>Dashboard</span>
+            <span class="icon">📊</span>
+            <span>Grid</span>
         </button>
         <button class="nav-btn" data-target="tab-resolver">
             <span class="icon">⚠️</span>
             <span>Resolver</span>
-            <!-- Notification badge for empty slots -->
             <span class="badge hidden" id="resolver-badge">0</span> 
+        </button>
+        <button class="nav-btn" data-target="tab-cards">
+            <span class="icon">📅</span>
+            <span>Cards</span>
         </button>
     </nav>
 
-    <!-- The Slide-Up Bottom Sheet for Teacher Selection -->
     <div id="bottom-sheet" class="bottom-sheet hidden">
         <div class="sheet-handle"></div>
         <h3>Select Substitute</h3>
-        <div class="sheet-content" id="sheet-teacher-list">
-            <!-- JS populates Available (Bright) and Busy (Dimmed) teachers here -->
-        </div>
+        <div class="sheet-content" id="sheet-teacher-list"></div>
     </div>
     <div id="sheet-overlay" class="overlay hidden"></div>
 
-    <!-- Core Logic Engine -->
     <script src="app.js"></script>
 </body>
 </html>
