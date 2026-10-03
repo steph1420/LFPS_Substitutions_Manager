@@ -60,6 +60,29 @@ function bindEvents() {
     
     // Undo Button
     document.getElementById('undo-btn').addEventListener('click', undoLastAction);
+
+    // Intercept Back Button
+    window.addEventListener('popstate', (event) => {
+        const sheet = document.getElementById('bottom-sheet');
+        
+        // 1. If the bottom sheet is open, close it
+        if (sheet.classList.contains('open')) {
+            sheet.classList.remove('open');
+            document.getElementById('sheet-overlay').classList.remove('active');
+            return;
+        }
+
+        // 2. If on the Resolver tab, go back to the Dashboard
+        const resolverTab = document.getElementById('tab-resolver');
+        if (resolverTab.classList.contains('active')) {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-section').forEach(t => t.classList.remove('active'));
+            
+            document.querySelector('[data-target="tab-dashboard"]').classList.add('active');
+            document.getElementById('tab-dashboard').classList.add('active');
+            return;
+        }
+    });
 }
 
 // --- RENDER FUNCTIONS ---
@@ -120,7 +143,7 @@ function renderMasterRoutine() {
                 <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #f0f0f0; ${isAbsent ? 'opacity:0.5; color:var(--accent-red);' : ''} ${isMissingSub ? 'background:#fff0f5;' : ''}"
                      ${state.isEditMode ? `onclick="openBottomSheet('${period}', '${teacher}')" style="cursor:pointer;"` : ''}>
                     <span>${teacher}</span>
-                    <span style="font-weight:600;">${isMissingSub ? '⚠️️ Needs Sub' : task}</span>
+                    <span style="font-weight:600;">${isMissingSub ? '⚠ Needs Sub' : task}</span>
                 </div>
             `;
         });
@@ -196,11 +219,19 @@ function openBottomSheet(period, targetTeacher) {
 
     sheet.classList.add('open');
     overlay.classList.add('active');
+
+    // Push fake state to history so back button closes the sheet
+    history.pushState({ modal: 'bottom-sheet' }, '');
 }
 
 function closeBottomSheet() {
     document.getElementById('bottom-sheet').classList.remove('open');
     document.getElementById('sheet-overlay').classList.remove('active');
+    
+    // Clean up the browser history if closed manually
+    if (history.state && history.state.modal === 'bottom-sheet') {
+        history.back();
+    }
 }
 
 function assignSubstitute(period, absentTeacher, subTeacher) {
