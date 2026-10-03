@@ -7,6 +7,9 @@ const state = {
     lastAction: null,
 };
 
+let selectedCell = null; // Used for Tap-to-Swap logic on mobile
+let draggedCell = null; // Used for HTML5 Drag-and-Drop on desktop
+
 const teachers = [
     'Mr. Stephen', 'Mrs. Midha', 'Mrs. Pahwa', 'Mrs. Bage', 'Mr. Adams', 
     'Mrs. Baker', 'Ms. Clark', 'Mr. Davis', 'Mrs. Evans'
@@ -39,6 +42,7 @@ function bindEvents() {
             document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
             e.currentTarget.classList.add('active');
             state.day = e.currentTarget.dataset.day;
+            selectedCell = null; // Clear selection on day change
             renderAll();
         });
     });
@@ -49,6 +53,7 @@ function bindEvents() {
         state.isEditMode = !state.isEditMode;
         editBtn.textContent = state.isEditMode ? 'Save Schedule' : 'Edit Schedule';
         editBtn.classList.toggle('save-mode', state.isEditMode);
+        selectedCell = null; // Clear selections when exiting edit mode
         renderAll(); 
     });
 
@@ -56,6 +61,47 @@ function bindEvents() {
     document.getElementById('hide-absent-toggle').addEventListener('change', renderAll);
     document.getElementById('sheet-overlay').addEventListener('click', closeBottomSheet);
     document.getElementById('undo-btn').addEventListener('click', undoLastAction);
+
+    // Desktop HTML5 Drag & Drop Listeners for the Grid
+    const table = document.getElementById('routine-table');
+    
+    table.addEventListener('dragstart', (e) => {
+        if (!state.isEditMode) return e.preventDefault();
+        draggedCell = e.target.closest('td');
+        if (!draggedCell || !draggedCell.dataset.period) return e.preventDefault();
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', ''); 
+    });
+
+    table.addEventListener('dragover', (e) => {
+        if (!state.isEditMode) return;
+        e.preventDefault(); 
+        const targetCell = e.target.closest('td');
+        if (targetCell && targetCell !== draggedCell && targetCell.dataset.period) {
+            targetCell.classList.add('drag-over');
+        }
+    });
+
+    table.addEventListener('dragleave', (e) => {
+        const targetCell = e.target.closest('td');
+        if (targetCell) targetCell.classList.remove('drag-over');
+    });
+
+    table.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (!state.isEditMode || !draggedCell) return;
+        const targetCell = e.target.closest('td');
+        
+        document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        
+        if (targetCell && targetCell !== draggedCell && targetCell.dataset.period) {
+            executeSwap(
+                { period: draggedCell.dataset.period, teacher: draggedCell.dataset.teacher },
+                { period: targetCell.dataset.period, teacher: targetCell.dataset.teacher }
+            );
+        }
+        draggedCell = null;
+    });
 
     // Back Button Intercept
     window.addEventListener('popstate', (event) => {
@@ -80,8 +126,8 @@ function bindEvents() {
 // --- RENDER FUNCTIONS ---
 function renderAll() {
     renderAbsentTray();
-    renderTableRoutine(); // New Grid View
-    renderCardRoutine();  // Old Card View
+    renderTableRoutine(); 
+    renderCardRoutine();  
     renderResolver();
 }
 
@@ -130,19 +176,25 @@ function renderTableRoutine() {
             const task = state.schedule[state.day]?.[period]?.[teacher] || 'Free';
             const isMissingSub = isAbsent && task !== 'Free' && task !== '';
             
-            let cellClass = '';
+            let cellClasses = [];
             let cellText = task === 'Free' ? '' : task;
             
             if (isMissingSub) {
-                cellClass = 'cell-missing';
+                cellClasses.push('cell-missing');
                 cellText = '⚠ ' + task;
             } else if (task !== 'Free') {
-                cellClass = 'cell-assigned';
+                cellClasses.push('cell-assigned');
+            }
+
+            // Highlight selected cell for Tap-to-Swap
+            if (selectedCell && selectedCell.period === period && selectedCell.teacher === teacher) {
+                cellClasses.push('cell-selected');
             }
             
-            let clickHandler = state.isEditMode ? `onclick="openBottomSheet('${period}', '${teacher}')" style="cursor:pointer;"` : '';
+            let clickHandler = state.isEditMode ? `onclick="handleCellInteraction('${period}', '${teacher}')"` : '';
+            let dragAttrs = state.isEditMode ? `draggable="true" data-period="${period}" data-teacher="${teacher}"` : '';
             
-            html += `<td class="${cellClass}" ${clickHandler}>${cellText}</td>`;
+            html += `<td class="${cellClasses.join(' ')}" style="cursor:pointer;" ${clickHandler} ${dragAttrs}>${cellText}</td>`;
         });
         
         html += '</tr>';
@@ -220,6 +272,45 @@ function renderResolver() {
 }
 
 // --- INTERACTION MECHANICS ---
+
+// Mobile Tap-to-Swap Logic for Grid
+function handleCellInteraction(period, teacher) {
+    if (!state.isEditMode) return;
+
+    if (!selectedCell) {
+        // Select first cell
+        selectedCell = { period, teacher };
+        renderAll();
+    } else if (selectedCell.period === period && selectedCell.teacher === teacher) {
+        // Deselect if same cell tapped twice
+        selectedCell = null;
+        renderAll();
+    } else {
+        // Swap with second tapped cell
+        executeSwap(selectedCell, { period, teacher });
+        selectedCell = null;
+    }
+}
+
+// Universal Swap Execution
+function executeSwap(source, target) {
+    const sTask = state.schedule[state.day][source.period][source.teacher];
+    const tTask = state.schedule[state.day][target.period][target.teacher];
+
+    state.lastAction = {
+        type: 'swap',
+        day: state.day,
+        source, target, sTask, tTask
+    };
+
+    state.schedule[state.day][source.period][source.teacher] = tTask;
+    state.schedule[state.day][target.period][target.teacher] = sTask;
+
+    showToast(`Swapped assignments.`);
+    renderAll();
+}
+
+// Bottom Sheet Picker (Used in Tabs 2 and 3)
 function openBottomSheet(period, targetTeacher) {
     if (!state.isEditMode && document.querySelector('.tab-section.active').id !== 'tab-resolver') return;
     
@@ -269,7 +360,11 @@ function assignSubstitute(period, absentTeacher, subTeacher) {
     const previousTaskForSub = state.schedule[state.day][period][subTeacher];
     const taskToCover = state.schedule[state.day][period][absentTeacher];
     
-    state.lastAction = { period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day: state.day };
+    state.lastAction = { 
+        type: 'sub',
+        period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day: state.day 
+    };
+    
     state.schedule[state.day][period][subTeacher] = taskToCover;
     state.schedule[state.day][period][absentTeacher] = 'Free'; 
     
@@ -277,12 +372,19 @@ function assignSubstitute(period, absentTeacher, subTeacher) {
     renderAll();
 }
 
+// Unified Undo Engine
 function undoLastAction() {
     if (!state.lastAction) return;
-    const { period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day } = state.lastAction;
-    
-    state.schedule[day][period][subTeacher] = previousTaskForSub || 'Free';
-    state.schedule[day][period][absentTeacher] = taskToCover;
+
+    if (state.lastAction.type === 'swap') {
+        const { day, source, target, sTask, tTask } = state.lastAction;
+        state.schedule[day][source.period][source.teacher] = sTask;
+        state.schedule[day][target.period][target.teacher] = tTask;
+    } else if (state.lastAction.type === 'sub') {
+        const { period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day } = state.lastAction;
+        state.schedule[day][period][subTeacher] = previousTaskForSub || 'Free';
+        state.schedule[day][period][absentTeacher] = taskToCover;
+    }
     
     state.lastAction = null;
     document.getElementById('undo-toast').classList.add('hidden');

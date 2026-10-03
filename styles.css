@@ -371,10 +371,12 @@ input:checked + .slider:before {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- Spreadsheet Grid Styles (Tab 1) --- */
+/* --- Spreadsheet Grid Styles (Mobile Fixed) --- */
 .table-scroll-container {
     width: 100%;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* Fixes mobile momentum scrolling */
+    display: block; /* Fixes mobile flexbox vanishing bug */
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-soft);
     background: var(--surface-color);
@@ -430,4 +432,19 @@ input:checked + .slider:before {
 
 .row-absent td.cell-assigned {
     background-color: #fce4e4; 
+}
+
+/* Drag & Drop Highlight Styles */
+.cell-selected {
+    outline: 3px solid var(--accent-blue) !important;
+    outline-offset: -3px;
+    background-color: #e5f0ff !important;
+    transform: scale(0.98);
+    transition: all 0.1s;
+}
+
+.drag-over {
+    background-color: #d1ffd6 !important;
+    outline: 2px dashed #28a745 !important;
+    outline-offset: -2px;
 }
