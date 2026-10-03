@@ -1,0 +1,320 @@
+/* Core Variables & Apple-Inspired Aesthetics */
+:root {
+    --bg-color: #f2f2f7;
+    --surface-color: #ffffff;
+    --text-primary: #1c1c1e;
+    --text-secondary: #8e8e93;
+    --accent-blue: #007aff;
+    --accent-red: #ff3b30;
+    --accent-pink: #ff2d55;
+    --border-color: #e5e5ea;
+    --shadow-soft: 0 4px 14px rgba(0,0,0,0.05);
+    --radius-lg: 16px;
+    --radius-md: 10px;
+    --radius-sm: 6px;
+    --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: var(--font-stack);
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    padding-bottom: 80px; /* Space for bottom nav */
+    overflow-x: hidden;
+}
+
+/* Header & Controls */
+.app-header {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 15px 20px 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.header-top h1 {
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.btn-primary {
+    background-color: var(--surface-color);
+    color: var(--accent-blue);
+    border: 1px solid var(--accent-blue);
+    padding: 6px 14px;
+    border-radius: var(--radius-lg);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary.save-mode {
+    background-color: var(--accent-blue);
+    color: #fff;
+}
+
+/* iOS Segmented Control */
+.day-selector {
+    display: flex;
+    background-color: #e3e3e8;
+    border-radius: var(--radius-md);
+    padding: 2px;
+}
+
+.day-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 6px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.day-btn.active {
+    background-color: var(--surface-color);
+    color: var(--text-primary);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Tab Management */
+.tab-section {
+    display: none;
+    padding: 20px;
+}
+
+.tab-section.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Absent Tray */
+.absent-tray-container {
+    margin-bottom: 25px;
+}
+
+.absent-tray-container h3 {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.absent-tray {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    gap: 15px;
+    scrollbar-width: none; /* Hide scrollbar Firefox */
+}
+
+.absent-tray::-webkit-scrollbar {
+    display: none; /* Hide scrollbar Chrome/Safari */
+}
+
+.teacher-avatar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    opacity: 1;
+    transition: opacity 0.2s;
+}
+
+.avatar-circle {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: var(--surface-color);
+    border: 2px solid var(--accent-blue);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--accent-blue);
+    box-shadow: var(--shadow-soft);
+    position: relative;
+}
+
+.teacher-avatar.absent .avatar-circle {
+    border-color: var(--accent-red);
+    color: var(--accent-red);
+    background-color: #ffeef0;
+}
+
+.teacher-avatar.absent span.name {
+    color: var(--text-secondary);
+}
+
+/* Master Routine Grid */
+.routine-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.routine-header h2 {
+    font-size: 18px;
+}
+
+.timeline-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.period-card {
+    background-color: var(--surface-color);
+    border-radius: var(--radius-lg);
+    padding: 15px;
+    box-shadow: var(--shadow-soft);
+}
+
+.period-card.needs-action {
+    border-left: 4px solid var(--accent-pink);
+    background-color: #fff0f5;
+}
+
+/* Bottom Navigation */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0 25px;
+    border-top: 1px solid var(--border-color);
+    z-index: 100;
+}
+
+.nav-btn {
+    background: transparent;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--text-secondary);
+    font-size: 11px;
+    gap: 4px;
+    cursor: pointer;
+    position: relative;
+}
+
+.nav-btn .icon {
+    font-size: 24px;
+}
+
+.nav-btn.active {
+    color: var(--accent-blue);
+}
+
+/* Bottom Sheet */
+.bottom-sheet {
+    position: fixed;
+    bottom: -100%;
+    left: 0;
+    width: 100%;
+    background-color: var(--bg-color);
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+    z-index: 1000;
+    transition: bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+}
+
+.bottom-sheet.open {
+    bottom: 0;
+}
+
+.sheet-handle {
+    width: 40px;
+    height: 5px;
+    background-color: #d1d1d6;
+    border-radius: 3px;
+    margin: 0 auto 15px;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Toast */
+.toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333333;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    z-index: 2000;
+    font-size: 14px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    opacity: 1;
+    transition: opacity 0.3s, bottom 0.3s;
+}
+
+.toast.hidden {
+    opacity: 0;
+    pointer-events: none;
+    bottom: 80px;
+}
+
+#undo-btn {
+    background: transparent;
+    border: none;
+    color: #ff9f0a;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
