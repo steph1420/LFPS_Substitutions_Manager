@@ -1,15 +1,16 @@
 // ==========================================
-// LFPS FRONT DESK - APPLICATION ENGINE v2.0
+// LFPS FRONT DESK - APPLICATION ENGINE v2.1
 // ==========================================
 
-const APP_VERSION = 'v2.0';
+const APP_VERSION = 'v2.1';
 
 // --- STATE MANAGEMENT ---
 const state = {
     day: 'MON',
     isEditMode: false,
     absentTeachers: new Set(),
-    schedule: {},
+    baseSchedule: {}, // Pristine baseline reference schedule
+    schedule: {},     // Working grid schedule
     actionHistory: {
         grid: [], 
         subs: []  
@@ -46,6 +47,7 @@ function saveStateToStorage() {
     const data = {
         version: APP_VERSION,
         day: state.day,
+        baseSchedule: state.baseSchedule,
         schedule: state.schedule,
         absentTeachers: Array.from(state.absentTeachers), 
         actionHistory: state.actionHistory
@@ -63,6 +65,7 @@ function loadStateFromStorage() {
             }
             state.day = parsed.day || 'MON';
             state.schedule = parsed.schedule;
+            state.baseSchedule = parsed.baseSchedule || JSON.parse(JSON.stringify(parsed.schedule));
             state.absentTeachers = new Set(parsed.absentTeachers || []);
             
             if (Array.isArray(parsed.actionHistory)) {
@@ -356,39 +359,48 @@ function renderSubstitutions() {
     let pendingConflicts = 0;
     let totalItems = 0;
 
-    // DIRECT GRID REFERENCE: Scan live grid state for current day
-    periods.forEach(period => {
-        if (period === 'BREAKFAST' || period === 'PLAY TIME') return;
+    // REFERENCE BASELINE: Look ONLY at classes belonging to absent teachers
+    state.absentTeachers.forEach(absentTeacher => {
+        periods.forEach(period => {
+            if (period === 'BREAKFAST' || period === 'PLAY TIME') return;
 
-        teachers.forEach(teacher => {
-            const isAbsent = state.absentTeachers.has(teacher);
-            const task = state.schedule[state.day]?.[period]?.[teacher];
-            
-            // 1. Unassigned absence (Pending coverage)
-            if (isAbsent && task && task !== 'Free') {
+            const originalSubject = state.baseSchedule[state.day]?.[period]?.[absentTeacher];
+            if (!originalSubject || originalSubject === 'Free') return;
+
+            totalItems++;
+            const liveTaskForAbsent = state.schedule[state.day]?.[period]?.[absentTeacher];
+
+            if (liveTaskForAbsent === originalSubject) {
+                // Unassigned Absence
                 pendingConflicts++;
-                totalItems++;
                 container.innerHTML += `
-                    <div class="sub-card pending" onclick="openBottomSheet('${period}', '${teacher}')" style="cursor:pointer;">
+                    <div class="sub-card pending" onclick="openBottomSheet('${period}', '${absentTeacher}')" style="cursor:pointer;">
                         <div>
                             <div style="font-size:12px; color:var(--accent-pink); font-weight:700; text-transform:uppercase; margin-bottom:2px;">${period} • ⚠ Unassigned Absence</div>
-                            <div style="font-size:16px; font-weight:600;">${teacher} (${task})</div>
+                            <div style="font-size:16px; font-weight:600;">${absentTeacher} (${originalSubject})</div>
                         </div>
                         <div style="font-size:13px; color:var(--accent-blue); font-weight:600;">Assign Sub →</div>
                     </div>
                 `;
-            } 
-            // 2. Active assignments and resolved coverage directly from the grid
-            else if (task && task !== 'Free') {
-                totalItems++;
-                const absentLabel = isAbsent ? '<span style="color:var(--accent-red); font-size:11px;">(Absent - Covered)</span>' : '';
+            } else {
+                // Covered! Find which teacher currently holds this subject on the live grid
+                let subTeacher = 'Assigned Teacher';
+                teachers.forEach(t => {
+                    if (!state.absentTeachers.has(t)) {
+                        const tTask = state.schedule[state.day]?.[period]?.[t];
+                        if (tTask === originalSubject) {
+                            subTeacher = t;
+                        }
+                    }
+                });
+
                 container.innerHTML += `
-                    <div class="sub-card active-class" onclick="openBottomSheet('${period}', '${teacher}')" style="cursor:pointer;">
+                    <div class="sub-card resolved" onclick="openBottomSheet('${period}', '${absentTeacher}')" style="cursor:pointer;">
                         <div>
-                            <div style="font-size:12px; color:var(--text-secondary); font-weight:600; text-transform:uppercase; margin-bottom:2px;">${period} • Active Assignment</div>
-                            <div style="font-size:15px; font-weight:600;">${teacher} → ${task} ${absentLabel}</div>
+                            <div style="font-size:12px; color:var(--accent-green); font-weight:700; text-transform:uppercase; margin-bottom:2px;">${period} • ✓ Covered</div>
+                            <div style="font-size:16px; font-weight:600;"><span style="color:var(--accent-red);">${absentTeacher}'s ${originalSubject}</span> covered by <span style="color:var(--accent-blue);">${subTeacher}</span></div>
                         </div>
-                        <div style="font-size:13px; color:var(--accent-blue); font-weight:600;">Reassign →</div>
+                        <div style="font-size:13px; color:var(--text-secondary); font-weight:600;">Reassign →</div>
                     </div>
                 `;
             }
@@ -398,9 +410,9 @@ function renderSubstitutions() {
     if (totalItems === 0) {
         container.innerHTML = `
             <div style="text-align:center; padding:40px 20px; color:var(--text-secondary);">
-                <div style="font-size:32px; margin-bottom:10px;">📅</div>
-                <h3 style="font-size:16px; font-weight:600; margin-bottom:5px;">No Schedule Data</h3>
-                <p style="font-size:13px;">No classes are currently scheduled for ${state.day}.</p>
+                <div style="font-size:32px; margin-bottom:10px;">🎉</div>
+                <h3 style="font-size:16px; font-weight:600; margin-bottom:5px;">All Clear!</h3>
+                <p style="font-size:13px;">No absences logged for ${state.day}. Mark absences on the Grid tab to view substitutions.</p>
             </div>
         `;
     }
@@ -621,7 +633,7 @@ function undoLastAction() {
         const { period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day } = action;
         state.schedule[day][period][subTeacher] = previousTaskForSub || 'Free';
         state.schedule[day][period][absentTeacher] = taskToCover;
-    } else if (action.type === 'batch-sub') {
+    } else if (action.type:: 'batch-sub') {
         [...action.actions].reverse().forEach(sub => {
             state.schedule[sub.day][sub.period][sub.subTeacher] = sub.previousTaskForSub || 'Free';
             state.schedule[sub.day][sub.period][sub.absentTeacher] = sub.taskToCover;
@@ -663,4 +675,6 @@ function generateSimulatedData() {
             });
         });
     });
+    // Clone live schedule into baseSchedule as baseline reference
+    state.baseSchedule = JSON.parse(JSON.stringify(state.schedule));
 }

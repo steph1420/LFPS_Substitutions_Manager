@@ -1,5 +1,5 @@
 /* ==========================================
-   LFPS FRONT DESK - STYLESHEET v2.0
+   LFPS FRONT DESK - STYLESHEET v2.1
    ========================================== */
 
 /* Core Variables & Apple-Inspired Aesthetics */
@@ -334,8 +334,9 @@ input:checked + .slider:before {
     background-color: #fff0f5;
 }
 
-.sub-card.active-class {
-    border-left: 4px solid var(--accent-blue);
+.sub-card.resolved {
+    border-left: 4px solid var(--accent-green);
+    background-color: #f2fbf4;
 }
 
 /* Bottom Navigation */
