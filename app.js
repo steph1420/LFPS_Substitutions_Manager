@@ -1,8 +1,8 @@
 // ==========================================
-// LFPS FRONT DESK - APPLICATION ENGINE v1.8
+// LFPS FRONT DESK - APPLICATION ENGINE v1.9
 // ==========================================
 
-const APP_VERSION = 'v1.8';
+const APP_VERSION = 'v1.9';
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -10,6 +10,7 @@ const state = {
     isEditMode: false,
     absentTeachers: new Set(),
     schedule: {},
+    substitutions: {}, // Persistent day-specific substitution records
     actionHistory: {
         grid: [], 
         subs: []  
@@ -48,6 +49,7 @@ function saveStateToStorage() {
         day: state.day,
         schedule: state.schedule,
         absentTeachers: Array.from(state.absentTeachers), 
+        substitutions: state.substitutions,
         actionHistory: state.actionHistory
     };
     localStorage.setItem('lfps_frontdesk_state', JSON.stringify(data));
@@ -64,6 +66,7 @@ function loadStateFromStorage() {
             state.day = parsed.day || 'MON';
             state.schedule = parsed.schedule;
             state.absentTeachers = new Set(parsed.absentTeachers || []);
+            state.substitutions = parsed.substitutions || {};
             
             if (Array.isArray(parsed.actionHistory)) {
                 state.actionHistory = { grid: [], subs: [] };
@@ -356,43 +359,22 @@ function renderSubstitutions() {
     let pendingConflicts = 0;
     let totalItems = 0;
 
-    // We scan history / action log OR look for substitutes currently covering an absent teacher's class
-    // To ensure resolved substitutions stay permanently visible as a quick-view list, 
-    // we display every substitution action recorded in state.actionHistory.subs for the current day,
-    // plus any active unassigned absences!
-
-    const currentDaySubs = state.actionHistory.subs.filter(a => a.day === state.day && (a.type === 'sub' || a.type === 'batch-sub'));
-    
-    // Render all resolved/assigned substitutions from history
-    currentDaySubs.forEach(action => {
-        if (action.type === 'sub') {
-            totalItems++;
-            container.innerHTML += `
-                <div class="sub-card resolved">
-                    <div>
-                        <div style="font-size:12px; color:var(--accent-green); font-weight:700; text-transform:uppercase; margin-bottom:2px;">${action.period} • ✓ Covered</div>
-                        <div style="font-size:16px; font-weight:600;"><span style="color:var(--accent-red);">${action.absentTeacher}</span> covered by <span style="color:var(--accent-blue);">${action.subTeacher}</span> (${action.taskToCover})</div>
-                    </div>
-                    <div style="font-size:13px; color:var(--text-secondary); font-weight:600;">Assigned</div>
+    // 1. Render permanent assigned/covered substitution records for today
+    const daySubs = state.substitutions[state.day] || [];
+    daySubs.forEach(sub => {
+        totalItems++;
+        container.innerHTML += `
+            <div class="sub-card resolved">
+                <div>
+                    <div style="font-size:12px; color:var(--accent-green); font-weight:700; text-transform:uppercase; margin-bottom:2px;">${sub.period} • ✓ Covered</div>
+                    <div style="font-size:16px; font-weight:600;"><span style="color:var(--accent-red);">${sub.absentTeacher}</span> covered by <span style="color:var(--accent-blue);">${sub.subTeacher}</span> (${sub.task})</div>
                 </div>
-            `;
-        } else if (action.type === 'batch-sub') {
-            action.actions.forEach(sub => {
-                totalItems++;
-                container.innerHTML += `
-                    <div class="sub-card resolved">
-                        <div>
-                            <div style="font-size:12px; color:var(--accent-green); font-weight:700; text-transform:uppercase; margin-bottom:2px;">${sub.period} • ✓ Auto-Covered</div>
-                            <div style="font-size:16px; font-weight:600;"><span style="color:var(--accent-red);">${sub.absentTeacher}</span> covered by <span style="color:var(--accent-blue);">${sub.subTeacher}</span> (${sub.taskToCover})</div>
-                        </div>
-                        <div style="font-size:13px; color:var(--text-secondary); font-weight:600;">Auto-Resolved</div>
-                    </div>
-                `;
-            });
-        }
+                <button onclick="unassignSubstitution('${sub.id}')" style="background:transparent; border:none; color:var(--accent-red); font-size:13px; font-weight:600; cursor:pointer;">Unassign ✕</button>
+            </div>
+        `;
     });
 
-    // Also scan for any remaining unassigned absences that still need attention
+    // 2. Scan for any remaining unassigned absences that still need attention
     periods.forEach(period => {
         if (period === 'BREAKFAST' || period === 'PLAY TIME') return;
 
@@ -521,9 +503,22 @@ function assignSubstitute(period, absentTeacher, subTeacher) {
     const previousTaskForSub = state.schedule[state.day][period][subTeacher];
     const taskToCover = state.schedule[state.day][period][absentTeacher];
     
+    if (!state.substitutions[state.day]) state.substitutions[state.day] = [];
+    
+    const subRecord = {
+        id: 'sub_' + Date.now() + '_' + Math.random().toString(36.2),
+        period,
+        absentTeacher,
+        subTeacher,
+        task: taskToCover,
+        previousTaskForSub
+    };
+    
+    state.substitutions[state.day].push(subRecord);
+    
     state.actionHistory.subs.push({ 
         type: 'sub',
-        period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day: state.day 
+        period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day: state.day, subRecordId: subRecord.id
     });
     
     state.schedule[state.day][period][subTeacher] = taskToCover;
@@ -535,9 +530,27 @@ function assignSubstitute(period, absentTeacher, subTeacher) {
     renderAll();
 }
 
+function unassignSubstitution(subId) {
+    const daySubs = state.substitutions[state.day] || [];
+    const index = daySubs.findIndex(s => s.id === subId);
+    if (index === -1) return;
+    const sub = daySubs[index];
+    
+    state.schedule[state.day][sub.period][sub.absentTeacher] = sub.task;
+    state.schedule[state.day][sub.period][sub.subTeacher] = sub.previousTaskForSub || 'Free';
+    
+    state.substitutions[state.day].splice(index, 1);
+    
+    saveStateToStorage();
+    updateUndoUI();
+    showToast(`Unassigned ${sub.subTeacher} from ${sub.period}`);
+    renderAll();
+}
+
 // --- AUTO-RESOLVE ENGINE ---
 function performAutoResolve() {
     const batchActions = [];
+    const batchSubRecords = [];
     let conflictsResolved = 0;
     let conflictsRemaining = 0;
     
@@ -568,13 +581,28 @@ function performAutoResolve() {
                 const subTeacher = available.shift();
                 const previousTaskForSub = state.schedule[state.day][period][subTeacher];
                 
+                if (!state.substitutions[state.day]) state.substitutions[state.day] = [];
+                
+                const subRecord = {
+                    id: 'auto_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                    period,
+                    absentTeacher: need.absentTeacher,
+                    subTeacher,
+                    task: need.task,
+                    previousTaskForSub
+                };
+                
+                state.substitutions[state.day].push(subRecord);
+                batchSubRecords.push(subRecord);
+                
                 batchActions.push({
                     period,
                     absentTeacher: need.absentTeacher,
                     subTeacher,
                     previousTaskForSub,
                     taskToCover: need.task,
-                    day: state.day
+                    day: state.day,
+                    subRecordId: subRecord.id
                 });
                 
                 state.schedule[state.day][period][subTeacher] = need.task;
@@ -589,7 +617,8 @@ function performAutoResolve() {
     if (batchActions.length > 0) {
         state.actionHistory.subs.push({
             type: 'batch-sub',
-            actions: batchActions
+            actions: batchActions,
+            subRecordIds: batchSubRecords.map(r => r.id)
         });
         saveStateToStorage();
         updateUndoUI();
@@ -639,13 +668,22 @@ function undoLastAction() {
         state.schedule[day][target.period][target.teacher] = tTask;
         state.schedule[day][source.period][source.teacher] = sTask;
     } else if (action.type === 'sub') {
-        const { period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day } = action;
+        const { period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day, subRecordId } = action;
         state.schedule[day][period][subTeacher] = previousTaskForSub || 'Free';
         state.schedule[day][period][absentTeacher] = taskToCover;
+        
+        // Remove from persistent substitutions registry
+        if (state.substitutions[day]) {
+            state.substitutions[day] = state.substitutions[day].filter(s => s.id !== subRecordId);
+        }
     } else if (action.type === 'batch-sub') {
         [...action.actions].reverse().forEach(sub => {
             state.schedule[sub.day][sub.period][sub.subTeacher] = sub.previousTaskForSub || 'Free';
             state.schedule[sub.day][sub.period][sub.absentTeacher] = sub.taskToCover;
+            
+            if (state.substitutions[sub.day]) {
+                state.substitutions[sub.day] = state.substitutions[sub.day].filter(s => s.id !== sub.subRecordId);
+            }
         });
     }
     

@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
     <!-- Cache-busting tags force mobile to load the newest files -->
-    <link rel="stylesheet" href="styles.css?v=1.4">
+    <link rel="stylesheet" href="styles.css?v=1.9">
 </head>
 <body>
 
@@ -15,7 +15,7 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge">v1.4</span>
+                <span class="version-badge" id="app-version-badge">v1.9</span>
             </div>
             <div class="header-controls">
                 <button id="header-undo-btn" class="btn-undo">↩ Undo</button>
@@ -64,12 +64,15 @@
         <section id="tab-substitutions" class="tab-section">
             <div class="resolver-header">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 5px;">
-                    <h2>Action Required</h2>
+                    <h2>Substitution Overview</h2>
                     <button id="auto-resolve-btn" class="btn-magic hidden">✨ Auto-Resolve</button>
                 </div>
-                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">Assign substitutes for flagged periods.</p>
+                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">Real-time coverage tracking and assignment hub.</p>
             </div>
-            <div class="conflict-list" id="conflict-list"></div>
+            
+            <div class="substitutions-dashboard" id="substitutions-dashboard-content">
+                <!-- JS will populate all substitution statuses here -->
+            </div>
         </section>
 
         <!-- TAB 3: CARDS (Old Layout) -->
@@ -111,6 +114,6 @@
     </div>
     <div id="sheet-overlay" class="overlay hidden"></div>
 
-    <script src="app.js?v=1.4"></script>
+    <script src="app.js?v=1.9"></script>
 </body>
 </html>
