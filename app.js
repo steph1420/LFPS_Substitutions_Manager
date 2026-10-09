@@ -10,6 +10,10 @@ const state = {
 let selectedCell = null; 
 let draggedCell = null; 
 
+// Auto-scroll variables for dragging
+let scrollSpeed = 0;
+let isScrolling = false;
+
 const teachers = [
     'Mr. Stephen', 'Mrs. Midha', 'Mrs. Pahwa', 'Mrs. Bage', 'Mr. Adams', 
     'Mrs. Baker', 'Ms. Clark', 'Mr. Davis', 'Mrs. Evans'
@@ -42,7 +46,6 @@ function loadStateFromStorage() {
     if (saved) {
         try {
             const parsed = JSON.parse(saved);
-            // Validation check to ensure corrupted storage doesn't load a blank grid
             if (!parsed || !parsed.schedule || Object.keys(parsed.schedule).length === 0) {
                 return false;
             }
@@ -62,10 +65,20 @@ function loadStateFromStorage() {
     return false;
 }
 
-// Safely bind events so missing elements don't crash the app
 function safeBind(id, eventType, handler) {
     const element = document.getElementById(id);
     if (element) element.addEventListener(eventType, handler);
+}
+
+// Native Smooth Scrolling Engine
+function scrollTick() {
+    const container = document.querySelector('.table-scroll-container');
+    if (scrollSpeed !== 0 && container) {
+        container.scrollLeft += scrollSpeed;
+        requestAnimationFrame(scrollTick);
+    } else {
+        isScrolling = false;
+    }
 }
 
 function bindEvents() {
@@ -106,33 +119,61 @@ function bindEvents() {
     safeBind('toast-undo-btn', 'click', undoLastAction);
     safeBind('header-undo-btn', 'click', undoLastAction);
 
-    // Desktop Drag & Drop
+    // Desktop Drag & Drop with Edge Scrolling
+    const tableContainer = document.querySelector('.table-scroll-container');
     const table = document.getElementById('routine-table');
-    if (table) {
+    
+    if (table && tableContainer) {
         table.addEventListener('dragstart', (e) => {
             if (!state.isEditMode) return e.preventDefault();
             draggedCell = e.target.closest('td');
             if (!draggedCell || !draggedCell.dataset.period) return e.preventDefault();
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', ''); 
+            scrollSpeed = 0;
         });
 
-        table.addEventListener('dragover', (e) => {
+        tableContainer.addEventListener('dragover', (e) => {
             if (!state.isEditMode) return;
             e.preventDefault(); 
+            
+            // Apple-style proximity edge scrolling
+            const rect = tableContainer.getBoundingClientRect();
+            const threshold = 70; // Detect edge 70px away
+            const mouseX = e.clientX - rect.left;
+            
+            if (mouseX < threshold) {
+                // Scroll Left: Speed scales based on how close to the edge
+                scrollSpeed = -((threshold - mouseX) / 4);
+                if (!isScrolling) { isScrolling = true; requestAnimationFrame(scrollTick); }
+            } else if (mouseX > rect.width - threshold) {
+                // Scroll Right
+                scrollSpeed = ((mouseX - (rect.width - threshold)) / 4);
+                if (!isScrolling) { isScrolling = true; requestAnimationFrame(scrollTick); }
+            } else {
+                scrollSpeed = 0;
+            }
+
             const targetCell = e.target.closest('td');
             if (targetCell && targetCell !== draggedCell && targetCell.dataset.period) {
                 targetCell.classList.add('drag-over');
             }
         });
 
-        table.addEventListener('dragleave', (e) => {
+        tableContainer.addEventListener('dragleave', (e) => {
             const targetCell = e.target.closest('td');
             if (targetCell) targetCell.classList.remove('drag-over');
+            
+            // If mouse leaves container entirely, stop scrolling
+            const rect = tableContainer.getBoundingClientRect();
+            if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
+                scrollSpeed = 0;
+            }
         });
 
-        table.addEventListener('drop', (e) => {
+        tableContainer.addEventListener('drop', (e) => {
             e.preventDefault();
+            scrollSpeed = 0; // Halt scrolling immediately
             if (!state.isEditMode || !draggedCell) return;
             const targetCell = e.target.closest('td');
             document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
@@ -144,6 +185,12 @@ function bindEvents() {
                 );
             }
             draggedCell = null;
+        });
+
+        table.addEventListener('dragend', () => {
+            scrollSpeed = 0;
+            draggedCell = null;
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
         });
     }
 
