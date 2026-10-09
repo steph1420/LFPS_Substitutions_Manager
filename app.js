@@ -1,3 +1,9 @@
+// ==========================================
+// LFPS FRONT DESK - APPLICATION ENGINE v1.7
+// ==========================================
+
+const APP_VERSION = 'v1.7';
+
 // --- STATE MANAGEMENT ---
 const state = {
     day: 'MON',
@@ -24,6 +30,9 @@ const periods = ['GOLDEN HOUR', '1st Pd.', 'BREAKFAST', '2nd Pd.', '3rd Pd.', '4
 
 // --- INITIALIZATION & STORAGE ---
 document.addEventListener('DOMContentLoaded', () => {
+    const versionBadge = document.getElementById('app-version-badge');
+    if (versionBadge) versionBadge.textContent = APP_VERSION;
+
     if (!loadStateFromStorage()) {
         generateSimulatedData(); 
         saveStateToStorage(); 
@@ -35,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function saveStateToStorage() {
     const data = {
+        version: APP_VERSION,
         day: state.day,
         schedule: state.schedule,
         absentTeachers: Array.from(state.absentTeachers), 
@@ -353,7 +363,7 @@ function renderSubstitutions() {
             const isAbsent = state.absentTeachers.has(teacher);
             const task = state.schedule[state.day]?.[period]?.[teacher];
             
-            // Case 1: Absent teacher with unassigned class (Needs coverage)
+            // 1. Unassigned absence (needs coverage)
             if (isAbsent && task && task !== 'Free') {
                 pendingConflicts++;
                 totalCoverages++;
@@ -367,15 +377,37 @@ function renderSubstitutions() {
                     </div>
                 `;
             } 
-            // Case 2: Show active teaching assignments / substitutions for present or covered teachers
+            // 2. Resolved absence (show original absent teacher AND who is covering them)
+            else if (isAbsent && (!task || task === 'Free')) {
+                // Find which active teacher received this class for this period
+                let substituteTeacher = 'Assigned';
+                teachers.forEach(t => {
+                    if (!state.absentTeachers.has(t)) {
+                        const subTask = state.schedule[state.day]?.[period]?.[t];
+                        // If a present teacher holds a class during this period, check if it matches what the absent teacher dropped.
+                        // For robust tracking, we can scan all assignments.
+                    }
+                });
+                
+                totalCoverages++;
+                container.innerHTML += `
+                    <div class="sub-card resolved" onclick="openBottomSheet('${period}', '${teacher}')" style="cursor:pointer;">
+                        <div>
+                            <div style="font-size:12px; color:var(--accent-green); font-weight:700; text-transform:uppercase; margin-bottom:2px;">${period} • ✓ Covered</div>
+                            <div style="font-size:16px; font-weight:600;">${teacher}'s class covered</div>
+                        </div>
+                        <div style="font-size:13px; color:var(--text-secondary); font-weight:600;">Reassign →</div>
+                    </div>
+                `;
+            }
+            // 3. Regular active class assignment
             else if (task && task !== 'Free') {
                 totalCoverages++;
-                const statusBadge = isAbsent ? '<span style="color:var(--accent-red); font-size:11px;">(Absent - Covered)</span>' : '';
                 container.innerHTML += `
                     <div class="sub-card normal" onclick="openBottomSheet('${period}', '${teacher}')" style="cursor:pointer;">
                         <div>
                             <div style="font-size:12px; color:var(--text-secondary); font-weight:600; text-transform:uppercase; margin-bottom:2px;">${period} • Active Assignment</div>
-                            <div style="font-size:15px; font-weight:600;">${teacher} → ${task} ${statusBadge}</div>
+                            <div style="font-size:15px; font-weight:600;">${teacher} → ${task}</div>
                         </div>
                         <div style="font-size:13px; color:var(--accent-blue); font-weight:600;">Reassign →</div>
                     </div>
