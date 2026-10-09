@@ -4,7 +4,7 @@ const state = {
     isEditMode: false,
     absentTeachers: new Set(),
     schedule: {},
-    actionHistory: [], // Infinite stack for tracking all changes
+    actionHistory: [], 
 };
 
 let selectedCell = null; 
@@ -20,46 +20,52 @@ const periods = ['GOLDEN HOUR', '1st Pd.', 'BREAKFAST', '2nd Pd.', '3rd Pd.', '4
 document.addEventListener('DOMContentLoaded', () => {
     if (!loadStateFromStorage()) {
         generateSimulatedData(); 
-        saveStateToStorage(); // Save initial generated state
+        saveStateToStorage(); 
     }
     bindEvents();
     updateUndoUI();
     renderAll();
 });
 
-// Protect against reloads by writing everything to localStorage
 function saveStateToStorage() {
     const data = {
         day: state.day,
         schedule: state.schedule,
-        absentTeachers: Array.from(state.absentTeachers), // Convert Set to Array for JSON
+        absentTeachers: Array.from(state.absentTeachers), 
         actionHistory: state.actionHistory
     };
     localStorage.setItem('lfps_frontdesk_state', JSON.stringify(data));
 }
 
-// Recover data if a user reloads or closes the app
 function loadStateFromStorage() {
     const saved = localStorage.getItem('lfps_frontdesk_state');
     if (saved) {
         try {
             const parsed = JSON.parse(saved);
+            // Validation check to ensure corrupted storage doesn't load a blank grid
+            if (!parsed || !parsed.schedule || Object.keys(parsed.schedule).length === 0) {
+                return false;
+            }
             state.day = parsed.day || 'MON';
             state.schedule = parsed.schedule;
             state.absentTeachers = new Set(parsed.absentTeachers || []);
             state.actionHistory = parsed.actionHistory || [];
             
-            // Re-sync UI day toggle
             document.querySelectorAll('.day-btn').forEach(b => {
                 b.classList.toggle('active', b.dataset.day === state.day);
             });
             return true;
         } catch (e) {
-            console.error("Storage load failed, reverting to fresh data.");
             return false;
         }
     }
     return false;
+}
+
+// Safely bind events so missing elements don't crash the app
+function safeBind(id, eventType, handler) {
+    const element = document.getElementById(id);
+    if (element) element.addEventListener(eventType, handler);
 }
 
 function bindEvents() {
@@ -85,69 +91,71 @@ function bindEvents() {
     });
 
     const editBtn = document.getElementById('edit-toggle-btn');
-    editBtn.addEventListener('click', () => {
-        state.isEditMode = !state.isEditMode;
-        editBtn.textContent = state.isEditMode ? 'Save Schedule' : 'Edit Schedule';
-        editBtn.classList.toggle('save-mode', state.isEditMode);
-        selectedCell = null; 
-        renderAll(); 
-    });
+    if (editBtn) {
+        editBtn.addEventListener('click', () => {
+            state.isEditMode = !state.isEditMode;
+            editBtn.textContent = state.isEditMode ? 'Save Schedule' : 'Edit Schedule';
+            editBtn.classList.toggle('save-mode', state.isEditMode);
+            selectedCell = null; 
+            renderAll(); 
+        });
+    }
 
-    document.getElementById('hide-absent-toggle').addEventListener('change', renderAll);
-    document.getElementById('sheet-overlay').addEventListener('click', closeBottomSheet);
-    
-    // Bind both Undo buttons (Header & Toast)
-    document.getElementById('toast-undo-btn').addEventListener('click', undoLastAction);
-    document.getElementById('header-undo-btn').addEventListener('click', undoLastAction);
+    safeBind('hide-absent-toggle', 'change', renderAll);
+    safeBind('sheet-overlay', 'click', closeBottomSheet);
+    safeBind('toast-undo-btn', 'click', undoLastAction);
+    safeBind('header-undo-btn', 'click', undoLastAction);
 
     // Desktop Drag & Drop
     const table = document.getElementById('routine-table');
-    table.addEventListener('dragstart', (e) => {
-        if (!state.isEditMode) return e.preventDefault();
-        draggedCell = e.target.closest('td');
-        if (!draggedCell || !draggedCell.dataset.period) return e.preventDefault();
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', ''); 
-    });
+    if (table) {
+        table.addEventListener('dragstart', (e) => {
+            if (!state.isEditMode) return e.preventDefault();
+            draggedCell = e.target.closest('td');
+            if (!draggedCell || !draggedCell.dataset.period) return e.preventDefault();
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', ''); 
+        });
 
-    table.addEventListener('dragover', (e) => {
-        if (!state.isEditMode) return;
-        e.preventDefault(); 
-        const targetCell = e.target.closest('td');
-        if (targetCell && targetCell !== draggedCell && targetCell.dataset.period) {
-            targetCell.classList.add('drag-over');
-        }
-    });
+        table.addEventListener('dragover', (e) => {
+            if (!state.isEditMode) return;
+            e.preventDefault(); 
+            const targetCell = e.target.closest('td');
+            if (targetCell && targetCell !== draggedCell && targetCell.dataset.period) {
+                targetCell.classList.add('drag-over');
+            }
+        });
 
-    table.addEventListener('dragleave', (e) => {
-        const targetCell = e.target.closest('td');
-        if (targetCell) targetCell.classList.remove('drag-over');
-    });
+        table.addEventListener('dragleave', (e) => {
+            const targetCell = e.target.closest('td');
+            if (targetCell) targetCell.classList.remove('drag-over');
+        });
 
-    table.addEventListener('drop', (e) => {
-        e.preventDefault();
-        if (!state.isEditMode || !draggedCell) return;
-        const targetCell = e.target.closest('td');
-        document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-        
-        if (targetCell && targetCell !== draggedCell && targetCell.dataset.period) {
-            executeMove(
-                { period: draggedCell.dataset.period, teacher: draggedCell.dataset.teacher },
-                { period: targetCell.dataset.period, teacher: targetCell.dataset.teacher }
-            );
-        }
-        draggedCell = null;
-    });
+        table.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (!state.isEditMode || !draggedCell) return;
+            const targetCell = e.target.closest('td');
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            
+            if (targetCell && targetCell !== draggedCell && targetCell.dataset.period) {
+                executeMove(
+                    { period: draggedCell.dataset.period, teacher: draggedCell.dataset.teacher },
+                    { period: targetCell.dataset.period, teacher: targetCell.dataset.teacher }
+                );
+            }
+            draggedCell = null;
+        });
+    }
 
     window.addEventListener('popstate', (event) => {
         const sheet = document.getElementById('bottom-sheet');
-        if (sheet.classList.contains('open')) {
+        if (sheet && sheet.classList.contains('open')) {
             sheet.classList.remove('open');
             document.getElementById('sheet-overlay').classList.remove('active');
             return;
         }
-        const activeTab = document.querySelector('.tab-section.active').id;
-        if (activeTab !== 'tab-dashboard') {
+        const activeTab = document.querySelector('.tab-section.active');
+        if (activeTab && activeTab.id !== 'tab-dashboard') {
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-section').forEach(t => t.classList.remove('active'));
             document.querySelector('[data-target="tab-dashboard"]').classList.add('active');
@@ -167,6 +175,7 @@ function renderAll() {
 
 function renderAbsentTray() {
     const tray = document.getElementById('teacher-roster');
+    if(!tray) return;
     tray.innerHTML = '';
     
     teachers.forEach(teacher => {
@@ -189,7 +198,10 @@ function renderAbsentTray() {
 
 function renderTableRoutine() {
     const table = document.getElementById('routine-table');
-    const hideAbsent = document.getElementById('hide-absent-toggle').checked;
+    const hideToggle = document.getElementById('hide-absent-toggle');
+    if(!table || !hideToggle) return;
+    
+    const hideAbsent = hideToggle.checked;
     
     let html = '<thead><tr><th>Teacher Name</th>';
     periods.forEach(p => html += `<th>${p}</th>`);
@@ -237,8 +249,11 @@ function renderTableRoutine() {
 
 function renderCardRoutine() {
     const grid = document.getElementById('timeline-grid');
+    const hideToggle = document.getElementById('hide-absent-toggle');
+    if(!grid || !hideToggle) return;
+    
     grid.innerHTML = '';
-    const hideAbsent = document.getElementById('hide-absent-toggle').checked;
+    const hideAbsent = hideToggle.checked;
 
     periods.forEach(period => {
         if (period === 'BREAKFAST' || period === 'PLAY TIME') {
@@ -272,6 +287,8 @@ function renderCardRoutine() {
 function renderResolver() {
     const conflictList = document.getElementById('conflict-list');
     const badge = document.getElementById('resolver-badge');
+    if(!conflictList || !badge) return;
+    
     conflictList.innerHTML = '';
     let conflicts = 0;
 
@@ -301,7 +318,6 @@ function renderResolver() {
 }
 
 // --- INTERACTION MECHANICS ---
-
 function handleCellInteraction(period, teacher) {
     if (!state.isEditMode) return;
     if (!selectedCell) {
@@ -400,6 +416,8 @@ function assignSubstitute(period, absentTeacher, subTeacher) {
 // --- HISTORY & UNDO ENGINE ---
 function updateUndoUI() {
     const headerBtn = document.getElementById('header-undo-btn');
+    if(!headerBtn) return;
+    
     if (state.actionHistory.length > 0) {
         headerBtn.classList.add('visible');
         headerBtn.textContent = `↩ Undo (${state.actionHistory.length})`;
@@ -411,7 +429,6 @@ function updateUndoUI() {
 function undoLastAction() {
     if (state.actionHistory.length === 0) return;
 
-    // Pop the latest action off the stack
     const action = state.actionHistory.pop();
 
     if (action.type === 'move') {
@@ -426,13 +443,17 @@ function undoLastAction() {
     
     saveStateToStorage();
     updateUndoUI();
-    document.getElementById('undo-toast').classList.add('hidden');
+    const toast = document.getElementById('undo-toast');
+    if(toast) toast.classList.add('hidden');
     renderAll();
 }
 
 function showToast(message) {
     const toast = document.getElementById('undo-toast');
-    document.getElementById('toast-message').textContent = message;
+    const msgElement = document.getElementById('toast-message');
+    if(!toast || !msgElement) return;
+    
+    msgElement.textContent = message;
     toast.classList.remove('hidden');
     setTimeout(() => { toast.classList.add('hidden'); }, 5000);
 }
