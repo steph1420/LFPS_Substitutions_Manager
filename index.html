@@ -14,9 +14,12 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge">v1.1</span>
+                <span class="version-badge">v1.2</span>
             </div>
-            <button id="edit-toggle-btn" class="btn-primary">Edit Schedule</button>
+            <div class="header-controls">
+                <button id="header-undo-btn" class="btn-undo">↩ Undo</button>
+                <button id="edit-toggle-btn" class="btn-primary">Edit Schedule</button>
+            </div>
         </div>
         
         <div class="day-selector">
@@ -78,7 +81,7 @@
 
     <div id="undo-toast" class="toast hidden">
         <span id="toast-message">Action completed.</span>
-        <button id="undo-btn">↩ Undo</button>
+        <button id="toast-undo-btn">↩ Undo</button>
     </div>
 
     <!-- Bottom Navigation Bar -->

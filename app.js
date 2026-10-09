@@ -4,11 +4,11 @@ const state = {
     isEditMode: false,
     absentTeachers: new Set(),
     schedule: {},
-    lastAction: null,
+    actionHistory: [], // Infinite stack for tracking all changes
 };
 
-let selectedCell = null; // Used for Tap-to-Move logic on mobile
-let draggedCell = null; // Used for HTML5 Drag-and-Drop on desktop
+let selectedCell = null; 
+let draggedCell = null; 
 
 const teachers = [
     'Mr. Stephen', 'Mrs. Midha', 'Mrs. Pahwa', 'Mrs. Bage', 'Mr. Adams', 
@@ -16,55 +16,92 @@ const teachers = [
 ];
 const periods = ['GOLDEN HOUR', '1st Pd.', 'BREAKFAST', '2nd Pd.', '3rd Pd.', '4th Pd.', '5th Pd.', 'PLAY TIME', '6th Pd.', '7th Pd.'];
 
-// --- INITIALIZATION ---
+// --- INITIALIZATION & STORAGE ---
 document.addEventListener('DOMContentLoaded', () => {
-    generateSimulatedData(); 
+    if (!loadStateFromStorage()) {
+        generateSimulatedData(); 
+        saveStateToStorage(); // Save initial generated state
+    }
     bindEvents();
+    updateUndoUI();
     renderAll();
 });
 
+// Protect against reloads by writing everything to localStorage
+function saveStateToStorage() {
+    const data = {
+        day: state.day,
+        schedule: state.schedule,
+        absentTeachers: Array.from(state.absentTeachers), // Convert Set to Array for JSON
+        actionHistory: state.actionHistory
+    };
+    localStorage.setItem('lfps_frontdesk_state', JSON.stringify(data));
+}
+
+// Recover data if a user reloads or closes the app
+function loadStateFromStorage() {
+    const saved = localStorage.getItem('lfps_frontdesk_state');
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            state.day = parsed.day || 'MON';
+            state.schedule = parsed.schedule;
+            state.absentTeachers = new Set(parsed.absentTeachers || []);
+            state.actionHistory = parsed.actionHistory || [];
+            
+            // Re-sync UI day toggle
+            document.querySelectorAll('.day-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.day === state.day);
+            });
+            return true;
+        } catch (e) {
+            console.error("Storage load failed, reverting to fresh data.");
+            return false;
+        }
+    }
+    return false;
+}
+
 function bindEvents() {
-    // Bottom Nav
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-section').forEach(t => t.classList.remove('active'));
-            
             const target = e.currentTarget;
             target.classList.add('active');
             document.getElementById(target.dataset.target).classList.add('active');
         });
     });
 
-    // Day Selector
     document.querySelectorAll('.day-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
             e.currentTarget.classList.add('active');
             state.day = e.currentTarget.dataset.day;
-            selectedCell = null; // Clear selection on day change
+            selectedCell = null; 
+            saveStateToStorage();
             renderAll();
         });
     });
 
-    // Edit Toggle
     const editBtn = document.getElementById('edit-toggle-btn');
     editBtn.addEventListener('click', () => {
         state.isEditMode = !state.isEditMode;
         editBtn.textContent = state.isEditMode ? 'Save Schedule' : 'Edit Schedule';
         editBtn.classList.toggle('save-mode', state.isEditMode);
-        selectedCell = null; // Clear selections when exiting edit mode
+        selectedCell = null; 
         renderAll(); 
     });
 
-    // Buttons & Toggles
     document.getElementById('hide-absent-toggle').addEventListener('change', renderAll);
     document.getElementById('sheet-overlay').addEventListener('click', closeBottomSheet);
-    document.getElementById('undo-btn').addEventListener('click', undoLastAction);
-
-    // Desktop HTML5 Drag & Drop Listeners for the Grid
-    const table = document.getElementById('routine-table');
     
+    // Bind both Undo buttons (Header & Toast)
+    document.getElementById('toast-undo-btn').addEventListener('click', undoLastAction);
+    document.getElementById('header-undo-btn').addEventListener('click', undoLastAction);
+
+    // Desktop Drag & Drop
+    const table = document.getElementById('routine-table');
     table.addEventListener('dragstart', (e) => {
         if (!state.isEditMode) return e.preventDefault();
         draggedCell = e.target.closest('td');
@@ -91,7 +128,6 @@ function bindEvents() {
         e.preventDefault();
         if (!state.isEditMode || !draggedCell) return;
         const targetCell = e.target.closest('td');
-        
         document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
         
         if (targetCell && targetCell !== draggedCell && targetCell.dataset.period) {
@@ -103,7 +139,6 @@ function bindEvents() {
         draggedCell = null;
     });
 
-    // Back Button Intercept
     window.addEventListener('popstate', (event) => {
         const sheet = document.getElementById('bottom-sheet');
         if (sheet.classList.contains('open')) {
@@ -111,7 +146,6 @@ function bindEvents() {
             document.getElementById('sheet-overlay').classList.remove('active');
             return;
         }
-        
         const activeTab = document.querySelector('.tab-section.active').id;
         if (activeTab !== 'tab-dashboard') {
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -146,6 +180,7 @@ function renderAbsentTray() {
         el.addEventListener('click', () => {
             if (isAbsent) state.absentTeachers.delete(teacher);
             else state.absentTeachers.add(teacher);
+            saveStateToStorage();
             renderAll();
         });
         tray.appendChild(el);
@@ -172,7 +207,6 @@ function renderTableRoutine() {
                 html += `<td style="background:#f9f9f9; text-align:center;">-</td>`;
                 return;
             }
-            
             const task = state.schedule[state.day]?.[period]?.[teacher] || 'Free';
             const isMissingSub = isAbsent && task !== 'Free' && task !== '';
             
@@ -186,7 +220,6 @@ function renderTableRoutine() {
                 cellClasses.push('cell-assigned');
             }
 
-            // Highlight selected cell for Tap-to-Move
             if (selectedCell && selectedCell.period === period && selectedCell.teacher === teacher) {
                 cellClasses.push('cell-selected');
             }
@@ -196,10 +229,8 @@ function renderTableRoutine() {
             
             html += `<td class="${cellClasses.join(' ')}" style="cursor:pointer;" ${clickHandler} ${dragAttrs}>${cellText}</td>`;
         });
-        
         html += '</tr>';
     });
-    
     html += '</tbody>';
     table.innerHTML = html;
 }
@@ -214,7 +245,6 @@ function renderCardRoutine() {
             grid.innerHTML += `<div style="text-align:center; padding:10px; color:#8e8e93; font-size:12px; letter-spacing:1px;">--- ${period} ---</div>`;
             return;
         }
-
         const card = document.createElement('div');
         card.className = 'period-card';
         let assignmentsHtml = `<h4 style="margin-bottom:10px; color:var(--accent-blue);">${period}</h4>`;
@@ -222,7 +252,6 @@ function renderCardRoutine() {
         teachers.forEach(teacher => {
             const isAbsent = state.absentTeachers.has(teacher);
             if (isAbsent && hideAbsent) return; 
-            
             const task = state.schedule[state.day][period][teacher] || 'Free';
             const isMissingSub = isAbsent && task !== 'Free';
             if (isMissingSub) card.classList.add('needs-action');
@@ -273,45 +302,39 @@ function renderResolver() {
 
 // --- INTERACTION MECHANICS ---
 
-// Mobile Tap-to-Move Logic for Grid
 function handleCellInteraction(period, teacher) {
     if (!state.isEditMode) return;
-
     if (!selectedCell) {
-        // Select first cell
         selectedCell = { period, teacher };
         renderAll();
     } else if (selectedCell.period === period && selectedCell.teacher === teacher) {
-        // Deselect if same cell tapped twice
         selectedCell = null;
         renderAll();
     } else {
-        // Move to second tapped cell (Copy & Overwrite)
         executeMove(selectedCell, { period, teacher });
         selectedCell = null;
     }
 }
 
-// Universal Copy & Overwrite Execution
 function executeMove(source, target) {
     const sTask = state.schedule[state.day][source.period][source.teacher];
-    const tTask = state.schedule[state.day][target.period][target.teacher]; // Keep for undo logic
+    const tTask = state.schedule[state.day][target.period][target.teacher]; 
 
-    state.lastAction = {
+    state.actionHistory.push({
         type: 'move',
         day: state.day,
         source, target, sTask, tTask
-    };
+    });
 
-    // Apply the overwrite logic
-    state.schedule[state.day][target.period][target.teacher] = sTask; // Overwrite target
-    state.schedule[state.day][source.period][source.teacher] = 'Free'; // Clear source
+    state.schedule[state.day][target.period][target.teacher] = sTask; 
+    state.schedule[state.day][source.period][source.teacher] = 'Free'; 
 
+    saveStateToStorage();
+    updateUndoUI();
     showToast(`Moved assignment.`);
     renderAll();
 }
 
-// Bottom Sheet Picker (Used in Tabs 2 and 3)
 function openBottomSheet(period, targetTeacher) {
     if (!state.isEditMode && document.querySelector('.tab-section.active').id !== 'tab-resolver') return;
     
@@ -349,7 +372,6 @@ function openBottomSheet(period, targetTeacher) {
 function closeBottomSheet() {
     document.getElementById('bottom-sheet').classList.remove('open');
     document.getElementById('sheet-overlay').classList.remove('active');
-    
     if (history.state && history.state.modal === 'bottom-sheet') {
         history.back();
     }
@@ -361,35 +383,49 @@ function assignSubstitute(period, absentTeacher, subTeacher) {
     const previousTaskForSub = state.schedule[state.day][period][subTeacher];
     const taskToCover = state.schedule[state.day][period][absentTeacher];
     
-    state.lastAction = { 
+    state.actionHistory.push({ 
         type: 'sub',
         period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day: state.day 
-    };
+    });
     
     state.schedule[state.day][period][subTeacher] = taskToCover;
     state.schedule[state.day][period][absentTeacher] = 'Free'; 
     
+    saveStateToStorage();
+    updateUndoUI();
     showToast(`Assigned ${subTeacher} to ${period}`);
     renderAll();
 }
 
-// Unified Undo Engine
-function undoLastAction() {
-    if (!state.lastAction) return;
+// --- HISTORY & UNDO ENGINE ---
+function updateUndoUI() {
+    const headerBtn = document.getElementById('header-undo-btn');
+    if (state.actionHistory.length > 0) {
+        headerBtn.classList.add('visible');
+        headerBtn.textContent = `↩ Undo (${state.actionHistory.length})`;
+    } else {
+        headerBtn.classList.remove('visible');
+    }
+}
 
-    if (state.lastAction.type === 'move') {
-        const { day, source, target, sTask, tTask } = state.lastAction;
-        // Restore target's original overwritten task
+function undoLastAction() {
+    if (state.actionHistory.length === 0) return;
+
+    // Pop the latest action off the stack
+    const action = state.actionHistory.pop();
+
+    if (action.type === 'move') {
+        const { day, source, target, sTask, tTask } = action;
         state.schedule[day][target.period][target.teacher] = tTask;
-        // Restore source's moved task
         state.schedule[day][source.period][source.teacher] = sTask;
-    } else if (state.lastAction.type === 'sub') {
-        const { period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day } = state.lastAction;
+    } else if (action.type === 'sub') {
+        const { period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day } = action;
         state.schedule[day][period][subTeacher] = previousTaskForSub || 'Free';
         state.schedule[day][period][absentTeacher] = taskToCover;
     }
     
-    state.lastAction = null;
+    saveStateToStorage();
+    updateUndoUI();
     document.getElementById('undo-toast').classList.add('hidden');
     renderAll();
 }

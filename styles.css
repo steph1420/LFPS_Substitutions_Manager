@@ -70,6 +70,12 @@ body {
     letter-spacing: 0.5px;
 }
 
+.header-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
 .btn-primary {
     background-color: var(--surface-color);
     color: var(--accent-blue);
@@ -85,6 +91,23 @@ body {
 .btn-primary.save-mode {
     background-color: var(--accent-blue);
     color: #fff;
+}
+
+.btn-undo {
+    background-color: #fff0f5;
+    color: var(--accent-red);
+    border: 1px solid var(--accent-red);
+    padding: 6px 14px;
+    border-radius: var(--radius-lg);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: none; 
+}
+
+.btn-undo.visible {
+    display: inline-block;
 }
 
 /* iOS Segmented Control */
@@ -373,7 +396,7 @@ input:checked + .slider:before {
     bottom: 80px;
 }
 
-#undo-btn {
+#toast-undo-btn {
     background: transparent;
     border: none;
     color: #ff9f0a;
