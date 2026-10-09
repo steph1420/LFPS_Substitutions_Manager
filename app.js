@@ -1,16 +1,16 @@
 // ==========================================
-// LFPS FRONT DESK - APPLICATION ENGINE v2.1
+// LFPS FRONT DESK - APPLICATION ENGINE v2.2
 // ==========================================
 
-const APP_VERSION = 'v2.1';
+const APP_VERSION = 'v2.2';
 
 // --- STATE MANAGEMENT ---
 const state = {
     day: 'MON',
     isEditMode: false,
     absentTeachers: new Set(),
-    baseSchedule: {}, // Pristine baseline reference schedule
-    schedule: {},     // Working grid schedule
+    baseSchedule: {}, 
+    schedule: {},     
     actionHistory: {
         grid: [], 
         subs: []  
@@ -633,7 +633,7 @@ function undoLastAction() {
         const { period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day } = action;
         state.schedule[day][period][subTeacher] = previousTaskForSub || 'Free';
         state.schedule[day][period][absentTeacher] = taskToCover;
-    } else if (action.type:: 'batch-sub') {
+    } else if (action.type === 'batch-sub') {
         [...action.actions].reverse().forEach(sub => {
             state.schedule[sub.day][sub.period][sub.subTeacher] = sub.previousTaskForSub || 'Free';
             state.schedule[sub.day][sub.period][sub.absentTeacher] = sub.taskToCover;
@@ -675,6 +675,5 @@ function generateSimulatedData() {
             });
         });
     });
-    // Clone live schedule into baseSchedule as baseline reference
     state.baseSchedule = JSON.parse(JSON.stringify(state.schedule));
 }
