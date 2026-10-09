@@ -4,7 +4,10 @@ const state = {
     isEditMode: false,
     absentTeachers: new Set(),
     schedule: {},
-    actionHistory: [], 
+    actionHistory: {
+        grid: [], // Tracks drag/drop operations on Master Routine
+        subs: []  // Tracks manual/auto substitutions
+    }
 };
 
 let selectedCell = null; 
@@ -52,7 +55,13 @@ function loadStateFromStorage() {
             state.day = parsed.day || 'MON';
             state.schedule = parsed.schedule;
             state.absentTeachers = new Set(parsed.absentTeachers || []);
-            state.actionHistory = parsed.actionHistory || [];
+            
+            // Format check for dual-stack upgrade compatibility
+            if (Array.isArray(parsed.actionHistory)) {
+                state.actionHistory = { grid: [], subs: [] };
+            } else {
+                state.actionHistory = parsed.actionHistory || { grid: [], subs: [] };
+            }
             
             document.querySelectorAll('.day-btn').forEach(b => {
                 b.classList.toggle('active', b.dataset.day === state.day);
@@ -89,6 +98,8 @@ function bindEvents() {
             const target = e.currentTarget;
             target.classList.add('active');
             document.getElementById(target.dataset.target).classList.add('active');
+            
+            updateUndoUI(); // Update contextual undo button
         });
     });
 
@@ -118,6 +129,7 @@ function bindEvents() {
     safeBind('sheet-overlay', 'click', closeBottomSheet);
     safeBind('toast-undo-btn', 'click', undoLastAction);
     safeBind('header-undo-btn', 'click', undoLastAction);
+    safeBind('auto-resolve-btn', 'click', performAutoResolve);
 
     // Desktop Drag & Drop with Edge Scrolling
     const tableContainer = document.querySelector('.table-scroll-container');
@@ -137,17 +149,14 @@ function bindEvents() {
             if (!state.isEditMode) return;
             e.preventDefault(); 
             
-            // Apple-style proximity edge scrolling
             const rect = tableContainer.getBoundingClientRect();
-            const threshold = 70; // Detect edge 70px away
+            const threshold = 70; 
             const mouseX = e.clientX - rect.left;
             
             if (mouseX < threshold) {
-                // Scroll Left: Speed scales based on how close to the edge
                 scrollSpeed = -((threshold - mouseX) / 4);
                 if (!isScrolling) { isScrolling = true; requestAnimationFrame(scrollTick); }
             } else if (mouseX > rect.width - threshold) {
-                // Scroll Right
                 scrollSpeed = ((mouseX - (rect.width - threshold)) / 4);
                 if (!isScrolling) { isScrolling = true; requestAnimationFrame(scrollTick); }
             } else {
@@ -164,7 +173,6 @@ function bindEvents() {
             const targetCell = e.target.closest('td');
             if (targetCell) targetCell.classList.remove('drag-over');
             
-            // If mouse leaves container entirely, stop scrolling
             const rect = tableContainer.getBoundingClientRect();
             if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
                 scrollSpeed = 0;
@@ -173,7 +181,7 @@ function bindEvents() {
 
         tableContainer.addEventListener('drop', (e) => {
             e.preventDefault();
-            scrollSpeed = 0; // Halt scrolling immediately
+            scrollSpeed = 0; 
             if (!state.isEditMode || !draggedCell) return;
             const targetCell = e.target.closest('td');
             document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
@@ -207,6 +215,7 @@ function bindEvents() {
             document.querySelectorAll('.tab-section').forEach(t => t.classList.remove('active'));
             document.querySelector('[data-target="tab-dashboard"]').classList.add('active');
             document.getElementById('tab-dashboard').classList.add('active');
+            updateUndoUI();
             return;
         }
     });
@@ -217,7 +226,7 @@ function renderAll() {
     renderAbsentTray();
     renderTableRoutine(); 
     renderCardRoutine();  
-    renderResolver();
+    renderSubstitutions();
 }
 
 function renderAbsentTray() {
@@ -331,9 +340,10 @@ function renderCardRoutine() {
     });
 }
 
-function renderResolver() {
+function renderSubstitutions() {
     const conflictList = document.getElementById('conflict-list');
-    const badge = document.getElementById('resolver-badge');
+    const badge = document.getElementById('substitutions-badge');
+    const autoBtn = document.getElementById('auto-resolve-btn');
     if(!conflictList || !badge) return;
     
     conflictList.innerHTML = '';
@@ -362,6 +372,14 @@ function renderResolver() {
     badge.textContent = conflicts;
     badge.className = `badge ${conflicts > 0 ? 'visible' : 'hidden'}`;
     badge.style.cssText = conflicts > 0 ? "background:var(--accent-red); color:white; padding:2px 6px; border-radius:10px; font-size:10px; position:absolute; top:-5px; right:15px;" : "display:none;";
+    
+    if (autoBtn) {
+        if (conflicts > 0) {
+            autoBtn.classList.remove('hidden');
+        } else {
+            autoBtn.classList.add('hidden');
+        }
+    }
 }
 
 // --- INTERACTION MECHANICS ---
@@ -383,7 +401,7 @@ function executeMove(source, target) {
     const sTask = state.schedule[state.day][source.period][source.teacher];
     const tTask = state.schedule[state.day][target.period][target.teacher]; 
 
-    state.actionHistory.push({
+    state.actionHistory.grid.push({
         type: 'move',
         day: state.day,
         source, target, sTask, tTask
@@ -399,7 +417,7 @@ function executeMove(source, target) {
 }
 
 function openBottomSheet(period, targetTeacher) {
-    if (!state.isEditMode && document.querySelector('.tab-section.active').id !== 'tab-resolver') return;
+    if (!state.isEditMode && document.querySelector('.tab-section.active').id !== 'tab-substitutions') return;
     
     const sheet = document.getElementById('bottom-sheet');
     const overlay = document.getElementById('sheet-overlay');
@@ -446,7 +464,7 @@ function assignSubstitute(period, absentTeacher, subTeacher) {
     const previousTaskForSub = state.schedule[state.day][period][subTeacher];
     const taskToCover = state.schedule[state.day][period][absentTeacher];
     
-    state.actionHistory.push({ 
+    state.actionHistory.subs.push({ 
         type: 'sub',
         period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day: state.day 
     });
@@ -460,23 +478,104 @@ function assignSubstitute(period, absentTeacher, subTeacher) {
     renderAll();
 }
 
-// --- HISTORY & UNDO ENGINE ---
+// --- AUTO-RESOLVE ENGINE ---
+function performAutoResolve() {
+    const batchActions = [];
+    let conflictsResolved = 0;
+    let conflictsRemaining = 0;
+    
+    periods.forEach(period => {
+        const needsSub = [];
+        teachers.forEach(t => {
+            const isAbsent = state.absentTeachers.has(t);
+            const task = state.schedule[state.day]?.[period]?.[t];
+            if (isAbsent && task && task !== 'Free') {
+                needsSub.push({ absentTeacher: t, task });
+            }
+        });
+        
+        if (needsSub.length === 0) return;
+        
+        const available = [];
+        teachers.forEach(t => {
+            if (!state.absentTeachers.has(t)) {
+                const task = state.schedule[state.day]?.[period]?.[t];
+                if (!task || task === 'Free') {
+                    available.push(t);
+                }
+            }
+        });
+        
+        needsSub.forEach(need => {
+            if (available.length > 0) {
+                const subTeacher = available.shift();
+                const previousTaskForSub = state.schedule[state.day][period][subTeacher];
+                
+                batchActions.push({
+                    period,
+                    absentTeacher: need.absentTeacher,
+                    subTeacher,
+                    previousTaskForSub,
+                    taskToCover: need.task,
+                    day: state.day
+                });
+                
+                state.schedule[state.day][period][subTeacher] = need.task;
+                state.schedule[state.day][period][need.absentTeacher] = 'Free';
+                conflictsResolved++;
+            } else {
+                conflictsRemaining++;
+            }
+        });
+    });
+    
+    if (batchActions.length > 0) {
+        state.actionHistory.subs.push({
+            type: 'batch-sub',
+            actions: batchActions
+        });
+        saveStateToStorage();
+        updateUndoUI();
+        
+        if (conflictsRemaining > 0) {
+            showToast(`Auto-resolved ${conflictsResolved}. ${conflictsRemaining} remaining.`);
+        } else {
+            showToast(`Auto-resolved all ${conflictsResolved} conflicts.`);
+        }
+        renderAll();
+    } else {
+        showToast("No free teachers available to resolve conflicts.");
+    }
+}
+
+// --- DUAL-STACK HISTORY ENGINE ---
+function getActiveHistoryStack() {
+    const activeTab = document.querySelector('.tab-section.active');
+    if (activeTab && activeTab.id === 'tab-substitutions') {
+        return state.actionHistory.subs;
+    }
+    return state.actionHistory.grid;
+}
+
 function updateUndoUI() {
     const headerBtn = document.getElementById('header-undo-btn');
     if(!headerBtn) return;
     
-    if (state.actionHistory.length > 0) {
+    const activeStack = getActiveHistoryStack();
+    
+    if (activeStack.length > 0) {
         headerBtn.classList.add('visible');
-        headerBtn.textContent = `↩ Undo (${state.actionHistory.length})`;
+        headerBtn.textContent = `↩ Undo (${activeStack.length})`;
     } else {
         headerBtn.classList.remove('visible');
     }
 }
 
 function undoLastAction() {
-    if (state.actionHistory.length === 0) return;
+    const activeStack = getActiveHistoryStack();
+    if (activeStack.length === 0) return;
 
-    const action = state.actionHistory.pop();
+    const action = activeStack.pop();
 
     if (action.type === 'move') {
         const { day, source, target, sTask, tTask } = action;
@@ -486,6 +585,12 @@ function undoLastAction() {
         const { period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day } = action;
         state.schedule[day][period][subTeacher] = previousTaskForSub || 'Free';
         state.schedule[day][period][absentTeacher] = taskToCover;
+    } else if (action.type === 'batch-sub') {
+        // Reverse array to undo in exact reverse order
+        [...action.actions].reverse().forEach(sub => {
+            state.schedule[sub.day][sub.period][sub.subTeacher] = sub.previousTaskForSub || 'Free';
+            state.schedule[sub.day][sub.period][sub.absentTeacher] = sub.taskToCover;
+        });
     }
     
     saveStateToStorage();

@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
     <!-- Cache-busting tags force mobile to load the newest files -->
-    <link rel="stylesheet" href="styles.css?v=1.3">
+    <link rel="stylesheet" href="styles.css?v=1.4">
 </head>
 <body>
 
@@ -15,7 +15,7 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge">v1.3</span>
+                <span class="version-badge">v1.4</span>
             </div>
             <div class="header-controls">
                 <button id="header-undo-btn" class="btn-undo">↩ Undo</button>
@@ -60,12 +60,14 @@
             </div>
         </section>
 
-        <!-- TAB 2: RESOLVER -->
-        <section id="tab-resolver" class="tab-section">
+        <!-- TAB 2: SUBSTITUTIONS -->
+        <section id="tab-substitutions" class="tab-section">
             <div class="resolver-header">
-                <h2>Action Required</h2>
-                <p>Assign substitutes for flagged periods.</p>
-                <button id="auto-resolve-btn" class="btn-magic hidden">✨ Auto-Resolve</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 5px;">
+                    <h2>Action Required</h2>
+                    <button id="auto-resolve-btn" class="btn-magic hidden">✨ Auto-Resolve</button>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">Assign substitutes for flagged periods.</p>
             </div>
             <div class="conflict-list" id="conflict-list"></div>
         </section>
@@ -91,10 +93,10 @@
             <span class="icon">📊</span>
             <span>Grid</span>
         </button>
-        <button class="nav-btn" data-target="tab-resolver">
+        <button class="nav-btn" data-target="tab-substitutions">
             <span class="icon">⚠️</span>
-            <span>Resolver</span>
-            <span class="badge hidden" id="resolver-badge">0</span> 
+            <span>Substitutions</span>
+            <span class="badge hidden" id="substitutions-badge">0</span> 
         </button>
         <button class="nav-btn" data-target="tab-cards">
             <span class="icon">📅</span>
@@ -109,6 +111,6 @@
     </div>
     <div id="sheet-overlay" class="overlay hidden"></div>
 
-    <script src="app.js?v=1.3"></script>
+    <script src="app.js?v=1.4"></script>
 </body>
 </html>
