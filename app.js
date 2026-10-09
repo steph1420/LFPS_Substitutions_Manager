@@ -7,7 +7,7 @@ const state = {
     lastAction: null,
 };
 
-let selectedCell = null; // Used for Tap-to-Swap logic on mobile
+let selectedCell = null; // Used for Tap-to-Move logic on mobile
 let draggedCell = null; // Used for HTML5 Drag-and-Drop on desktop
 
 const teachers = [
@@ -95,7 +95,7 @@ function bindEvents() {
         document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
         
         if (targetCell && targetCell !== draggedCell && targetCell.dataset.period) {
-            executeSwap(
+            executeMove(
                 { period: draggedCell.dataset.period, teacher: draggedCell.dataset.teacher },
                 { period: targetCell.dataset.period, teacher: targetCell.dataset.teacher }
             );
@@ -186,7 +186,7 @@ function renderTableRoutine() {
                 cellClasses.push('cell-assigned');
             }
 
-            // Highlight selected cell for Tap-to-Swap
+            // Highlight selected cell for Tap-to-Move
             if (selectedCell && selectedCell.period === period && selectedCell.teacher === teacher) {
                 cellClasses.push('cell-selected');
             }
@@ -273,7 +273,7 @@ function renderResolver() {
 
 // --- INTERACTION MECHANICS ---
 
-// Mobile Tap-to-Swap Logic for Grid
+// Mobile Tap-to-Move Logic for Grid
 function handleCellInteraction(period, teacher) {
     if (!state.isEditMode) return;
 
@@ -286,27 +286,28 @@ function handleCellInteraction(period, teacher) {
         selectedCell = null;
         renderAll();
     } else {
-        // Swap with second tapped cell
-        executeSwap(selectedCell, { period, teacher });
+        // Move to second tapped cell (Copy & Overwrite)
+        executeMove(selectedCell, { period, teacher });
         selectedCell = null;
     }
 }
 
-// Universal Swap Execution
-function executeSwap(source, target) {
+// Universal Copy & Overwrite Execution
+function executeMove(source, target) {
     const sTask = state.schedule[state.day][source.period][source.teacher];
-    const tTask = state.schedule[state.day][target.period][target.teacher];
+    const tTask = state.schedule[state.day][target.period][target.teacher]; // Keep for undo logic
 
     state.lastAction = {
-        type: 'swap',
+        type: 'move',
         day: state.day,
         source, target, sTask, tTask
     };
 
-    state.schedule[state.day][source.period][source.teacher] = tTask;
-    state.schedule[state.day][target.period][target.teacher] = sTask;
+    // Apply the overwrite logic
+    state.schedule[state.day][target.period][target.teacher] = sTask; // Overwrite target
+    state.schedule[state.day][source.period][source.teacher] = 'Free'; // Clear source
 
-    showToast(`Swapped assignments.`);
+    showToast(`Moved assignment.`);
     renderAll();
 }
 
@@ -376,10 +377,12 @@ function assignSubstitute(period, absentTeacher, subTeacher) {
 function undoLastAction() {
     if (!state.lastAction) return;
 
-    if (state.lastAction.type === 'swap') {
+    if (state.lastAction.type === 'move') {
         const { day, source, target, sTask, tTask } = state.lastAction;
-        state.schedule[day][source.period][source.teacher] = sTask;
+        // Restore target's original overwritten task
         state.schedule[day][target.period][target.teacher] = tTask;
+        // Restore source's moved task
+        state.schedule[day][source.period][source.teacher] = sTask;
     } else if (state.lastAction.type === 'sub') {
         const { period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day } = state.lastAction;
         state.schedule[day][period][subTeacher] = previousTaskForSub || 'Free';
