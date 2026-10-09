@@ -5,15 +5,14 @@ const state = {
     absentTeachers: new Set(),
     schedule: {},
     actionHistory: {
-        grid: [], // Tracks drag/drop operations on Master Routine
-        subs: []  // Tracks manual/auto substitutions
+        grid: [], 
+        subs: []  
     }
 };
 
 let selectedCell = null; 
 let draggedCell = null; 
 
-// Auto-scroll variables for dragging
 let scrollSpeed = 0;
 let isScrolling = false;
 
@@ -56,7 +55,6 @@ function loadStateFromStorage() {
             state.schedule = parsed.schedule;
             state.absentTeachers = new Set(parsed.absentTeachers || []);
             
-            // Format check for dual-stack upgrade compatibility
             if (Array.isArray(parsed.actionHistory)) {
                 state.actionHistory = { grid: [], subs: [] };
             } else {
@@ -79,7 +77,6 @@ function safeBind(id, eventType, handler) {
     if (element) element.addEventListener(eventType, handler);
 }
 
-// Native Smooth Scrolling Engine
 function scrollTick() {
     const container = document.querySelector('.table-scroll-container');
     if (scrollSpeed !== 0 && container) {
@@ -99,7 +96,7 @@ function bindEvents() {
             target.classList.add('active');
             document.getElementById(target.dataset.target).classList.add('active');
             
-            updateUndoUI(); // Update contextual undo button
+            updateUndoUI(); 
         });
     });
 
@@ -131,7 +128,6 @@ function bindEvents() {
     safeBind('header-undo-btn', 'click', undoLastAction);
     safeBind('auto-resolve-btn', 'click', performAutoResolve);
 
-    // Desktop Drag & Drop with Edge Scrolling
     const tableContainer = document.querySelector('.table-scroll-container');
     const table = document.getElementById('routine-table');
     
@@ -341,40 +337,69 @@ function renderCardRoutine() {
 }
 
 function renderSubstitutions() {
-    const conflictList = document.getElementById('conflict-list');
+    const container = document.getElementById('substitutions-dashboard-content');
     const badge = document.getElementById('substitutions-badge');
     const autoBtn = document.getElementById('auto-resolve-btn');
-    if(!conflictList || !badge) return;
+    if(!container || !badge) return;
     
-    conflictList.innerHTML = '';
-    let conflicts = 0;
+    container.innerHTML = '';
+    let pendingConflicts = 0;
+    let totalCoverages = 0;
 
     periods.forEach(period => {
+        if (period === 'BREAKFAST' || period === 'PLAY TIME') return;
+
         teachers.forEach(teacher => {
             const isAbsent = state.absentTeachers.has(teacher);
             const task = state.schedule[state.day]?.[period]?.[teacher];
             
+            // Case 1: Absent teacher with unassigned class (Needs coverage)
             if (isAbsent && task && task !== 'Free') {
-                conflicts++;
-                conflictList.innerHTML += `
-                    <div class="period-card needs-action" style="margin-bottom:15px; cursor:pointer;" onclick="openBottomSheet('${period}', '${teacher}')">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                            <strong style="color:var(--accent-pink);">${period} - ${task}</strong>
-                            <span>${teacher}</span>
+                pendingConflicts++;
+                totalCoverages++;
+                container.innerHTML += `
+                    <div class="sub-card pending" onclick="openBottomSheet('${period}', '${teacher}')" style="cursor:pointer;">
+                        <div>
+                            <div style="font-size:12px; color:var(--accent-pink); font-weight:700; text-transform:uppercase; margin-bottom:2px;">${period} • ⚠ Unassigned Absence</div>
+                            <div style="font-size:16px; font-weight:600;">${teacher} (${task})</div>
                         </div>
-                        <div style="font-size:13px; color:var(--accent-blue);">Tap to assign substitute →</div>
+                        <div style="font-size:13px; color:var(--accent-blue); font-weight:600;">Assign Sub →</div>
+                    </div>
+                `;
+            } 
+            // Case 2: Show active teaching assignments / substitutions for present or covered teachers
+            else if (task && task !== 'Free') {
+                totalCoverages++;
+                const statusBadge = isAbsent ? '<span style="color:var(--accent-red); font-size:11px;">(Absent - Covered)</span>' : '';
+                container.innerHTML += `
+                    <div class="sub-card normal" onclick="openBottomSheet('${period}', '${teacher}')" style="cursor:pointer;">
+                        <div>
+                            <div style="font-size:12px; color:var(--text-secondary); font-weight:600; text-transform:uppercase; margin-bottom:2px;">${period} • Active Assignment</div>
+                            <div style="font-size:15px; font-weight:600;">${teacher} → ${task} ${statusBadge}</div>
+                        </div>
+                        <div style="font-size:13px; color:var(--accent-blue); font-weight:600;">Reassign →</div>
                     </div>
                 `;
             }
         });
     });
 
-    badge.textContent = conflicts;
-    badge.className = `badge ${conflicts > 0 ? 'visible' : 'hidden'}`;
-    badge.style.cssText = conflicts > 0 ? "background:var(--accent-red); color:white; padding:2px 6px; border-radius:10px; font-size:10px; position:absolute; top:-5px; right:15px;" : "display:none;";
+    if (totalCoverages === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; padding:40px 20px; color:var(--text-secondary);">
+                <div style="font-size:32px; margin-bottom:10px;">📅</div>
+                <h3 style="font-size:16px; font-weight:600; margin-bottom:5px;">No Schedule Data</h3>
+                <p style="font-size:13px;">No classes are currently scheduled for ${state.day}.</p>
+            </div>
+        `;
+    }
+
+    badge.textContent = pendingConflicts;
+    badge.className = `badge ${pendingConflicts > 0 ? 'visible' : 'hidden'}`;
+    badge.style.cssText = pendingConflicts > 0 ? "background:var(--accent-red); color:white; padding:2px 6px; border-radius:10px; font-size:10px; position:absolute; top:-5px; right:15px;" : "display:none;";
     
     if (autoBtn) {
-        if (conflicts > 0) {
+        if (pendingConflicts > 0) {
             autoBtn.classList.remove('hidden');
         } else {
             autoBtn.classList.add('hidden');
@@ -586,7 +611,6 @@ function undoLastAction() {
         state.schedule[day][period][subTeacher] = previousTaskForSub || 'Free';
         state.schedule[day][period][absentTeacher] = taskToCover;
     } else if (action.type === 'batch-sub') {
-        // Reverse array to undo in exact reverse order
         [...action.actions].reverse().forEach(sub => {
             state.schedule[sub.day][sub.period][sub.subTeacher] = sub.previousTaskForSub || 'Free';
             state.schedule[sub.day][sub.period][sub.absentTeacher] = sub.taskToCover;
