@@ -1,8 +1,8 @@
 // ==========================================
-// LFPS FRONT DESK - APPLICATION ENGINE v1.7
+// LFPS FRONT DESK - APPLICATION ENGINE v1.8
 // ==========================================
 
-const APP_VERSION = 'v1.7';
+const APP_VERSION = 'v1.8';
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -354,8 +354,45 @@ function renderSubstitutions() {
     
     container.innerHTML = '';
     let pendingConflicts = 0;
-    let totalCoverages = 0;
+    let totalItems = 0;
 
+    // We scan history / action log OR look for substitutes currently covering an absent teacher's class
+    // To ensure resolved substitutions stay permanently visible as a quick-view list, 
+    // we display every substitution action recorded in state.actionHistory.subs for the current day,
+    // plus any active unassigned absences!
+
+    const currentDaySubs = state.actionHistory.subs.filter(a => a.day === state.day && (a.type === 'sub' || a.type === 'batch-sub'));
+    
+    // Render all resolved/assigned substitutions from history
+    currentDaySubs.forEach(action => {
+        if (action.type === 'sub') {
+            totalItems++;
+            container.innerHTML += `
+                <div class="sub-card resolved">
+                    <div>
+                        <div style="font-size:12px; color:var(--accent-green); font-weight:700; text-transform:uppercase; margin-bottom:2px;">${action.period} • ✓ Covered</div>
+                        <div style="font-size:16px; font-weight:600;"><span style="color:var(--accent-red);">${action.absentTeacher}</span> covered by <span style="color:var(--accent-blue);">${action.subTeacher}</span> (${action.taskToCover})</div>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); font-weight:600;">Assigned</div>
+                </div>
+            `;
+        } else if (action.type === 'batch-sub') {
+            action.actions.forEach(sub => {
+                totalItems++;
+                container.innerHTML += `
+                    <div class="sub-card resolved">
+                        <div>
+                            <div style="font-size:12px; color:var(--accent-green); font-weight:700; text-transform:uppercase; margin-bottom:2px;">${sub.period} • ✓ Auto-Covered</div>
+                            <div style="font-size:16px; font-weight:600;"><span style="color:var(--accent-red);">${sub.absentTeacher}</span> covered by <span style="color:var(--accent-blue);">${sub.subTeacher}</span> (${sub.taskToCover})</div>
+                        </div>
+                        <div style="font-size:13px; color:var(--text-secondary); font-weight:600;">Auto-Resolved</div>
+                    </div>
+                `;
+            });
+        }
+    });
+
+    // Also scan for any remaining unassigned absences that still need attention
     periods.forEach(period => {
         if (period === 'BREAKFAST' || period === 'PLAY TIME') return;
 
@@ -363,10 +400,9 @@ function renderSubstitutions() {
             const isAbsent = state.absentTeachers.has(teacher);
             const task = state.schedule[state.day]?.[period]?.[teacher];
             
-            // 1. Unassigned absence (needs coverage)
             if (isAbsent && task && task !== 'Free') {
                 pendingConflicts++;
-                totalCoverages++;
+                totalItems++;
                 container.innerHTML += `
                     <div class="sub-card pending" onclick="openBottomSheet('${period}', '${teacher}')" style="cursor:pointer;">
                         <div>
@@ -376,52 +412,16 @@ function renderSubstitutions() {
                         <div style="font-size:13px; color:var(--accent-blue); font-weight:600;">Assign Sub →</div>
                     </div>
                 `;
-            } 
-            // 2. Resolved absence (show original absent teacher AND who is covering them)
-            else if (isAbsent && (!task || task === 'Free')) {
-                // Find which active teacher received this class for this period
-                let substituteTeacher = 'Assigned';
-                teachers.forEach(t => {
-                    if (!state.absentTeachers.has(t)) {
-                        const subTask = state.schedule[state.day]?.[period]?.[t];
-                        // If a present teacher holds a class during this period, check if it matches what the absent teacher dropped.
-                        // For robust tracking, we can scan all assignments.
-                    }
-                });
-                
-                totalCoverages++;
-                container.innerHTML += `
-                    <div class="sub-card resolved" onclick="openBottomSheet('${period}', '${teacher}')" style="cursor:pointer;">
-                        <div>
-                            <div style="font-size:12px; color:var(--accent-green); font-weight:700; text-transform:uppercase; margin-bottom:2px;">${period} • ✓ Covered</div>
-                            <div style="font-size:16px; font-weight:600;">${teacher}'s class covered</div>
-                        </div>
-                        <div style="font-size:13px; color:var(--text-secondary); font-weight:600;">Reassign →</div>
-                    </div>
-                `;
-            }
-            // 3. Regular active class assignment
-            else if (task && task !== 'Free') {
-                totalCoverages++;
-                container.innerHTML += `
-                    <div class="sub-card normal" onclick="openBottomSheet('${period}', '${teacher}')" style="cursor:pointer;">
-                        <div>
-                            <div style="font-size:12px; color:var(--text-secondary); font-weight:600; text-transform:uppercase; margin-bottom:2px;">${period} • Active Assignment</div>
-                            <div style="font-size:15px; font-weight:600;">${teacher} → ${task}</div>
-                        </div>
-                        <div style="font-size:13px; color:var(--accent-blue); font-weight:600;">Reassign →</div>
-                    </div>
-                `;
             }
         });
     });
 
-    if (totalCoverages === 0) {
+    if (totalItems === 0) {
         container.innerHTML = `
             <div style="text-align:center; padding:40px 20px; color:var(--text-secondary);">
-                <div style="font-size:32px; margin-bottom:10px;">📅</div>
-                <h3 style="font-size:16px; font-weight:600; margin-bottom:5px;">No Schedule Data</h3>
-                <p style="font-size:13px;">No classes are currently scheduled for ${state.day}.</p>
+                <div style="font-size:32px; margin-bottom:10px;">🎉</div>
+                <h3 style="font-size:16px; font-weight:600; margin-bottom:5px;">All Clear!</h3>
+                <p style="font-size:13px;">No substitutions or absences logged for ${state.day}.</p>
             </div>
         `;
     }
