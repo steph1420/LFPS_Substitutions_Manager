@@ -96,6 +96,7 @@ function initTheme() {
     const savedTheme = localStorage.getItem('lfps_frontdesk_theme');
     if (savedTheme) {
         document.documentElement.setAttribute('data-theme', savedTheme);
+        document.body.setAttribute('data-theme', savedTheme);
     }
     updateThemeToggleUI();
 
@@ -109,18 +110,17 @@ function initTheme() {
     }
 }
 
-function toggleTheme() {
+function toggleTheme(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
+
     const current = document.documentElement.getAttribute('data-theme');
     const systemIsDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    let nextTheme;
-    if (!current) {
-        nextTheme = systemIsDark ? 'light' : 'dark';
-    } else if (current === 'dark') {
-        nextTheme = 'light';
-    } else {
-        nextTheme = 'dark';
-    }
+    const isDark = current ? (current === 'dark') : systemIsDark;
+    const nextTheme = isDark ? 'light' : 'dark';
+
     document.documentElement.setAttribute('data-theme', nextTheme);
+    document.body.setAttribute('data-theme', nextTheme);
     localStorage.setItem('lfps_frontdesk_theme', nextTheme);
     updateThemeToggleUI();
 }
@@ -131,7 +131,7 @@ function updateThemeToggleUI() {
     if (!btn) return;
     const current = document.documentElement.getAttribute('data-theme');
     const systemIsDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = current === 'dark' || (!current && systemIsDark);
+    const isDark = current ? (current === 'dark') : systemIsDark;
     btn.innerHTML = isDark ? THEME_ICONS.sun : THEME_ICONS.moon;
     btn.title = isDark ? 'Switch to Light Mode' : 'Switch to Night Mode';
     btn.setAttribute('aria-label', btn.title);

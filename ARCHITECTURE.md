@@ -1,11 +1,11 @@
 # Front Desk PWA - Architecture & Developer Guide
-**Current Version:** v1.18
+**Current Version:** v1.19
 **Project Type:** Vanilla JS/HTML/CSS Offline-First PWA
 **Purpose:** School substitution management and daily timetable resolution.
 
 ## 1. Core Philosophy & AI Directives
 *   **Zero Dependencies:** Strict Vanilla JS and CSS. Do NOT introduce React, Vue, Tailwind, jQuery, or any external libraries.
-*   **Surgical Edits Only:** Never replace entire files. Edits must always be targeted, surgical line diffs to conserve AI token quota and eliminate code regressions.
+*   **Natural Function & Context Rewrites:** Rewrite complete functions and logical units naturally with full contextual reasoning so code logic is robust and cohesive, allowing the editor extension to generate clean inline diffs.
 *   **Crash-Proof Memory:** The `state` object is the single source of truth. Every mutation must synchronously write to `localStorage` (`'lfps_frontdesk_state'`). If the browser crashes, zero progress is lost.
 *   **Tactile, Apple-Inspired UI:** The UX prioritizes "juicy" physics. We use CSS Grid for layout transitions (no UI jumping), glass-morphism (`backdrop-filter: blur`), and soft variables (`--accent-pink`, `--shadow-soft`).
 
@@ -68,6 +68,7 @@ const state = {
 *   **Documentation Baseline**: Initialized and updated `ARCHITECTURE.md` with strict surgical editing rule, state engine mapping, dual-stack routing explanation, and project file guide.
 *   **Technical Specifications Integrated**: Appended technical blueprints for RFC 4180 CSV parser, priority preference matrix heuristics, cloud vs local sync workflow, and Apple HIG dark mode tokens.
 *   **v1.18 Release (Native Dark Mode & Apple Theme Switcher)**: Implemented full Apple HIG dark mode token system with automatic `@media (prefers-color-scheme: dark)` detection, manual toggle override via `data-theme` attribute and `localStorage` persistence. Added tactile, circular Apple-style theme toggle button with dynamic SVG Sun/Moon vector icon switching. Updated script and style assets to v1.18 cache-busting queries.
+*   **v1.19 Release (Theme Toggle Event Fix & Robust Selector Binding)**: Eliminated double-invocation race condition caused by duplicate inline onclick and addEventListener handlers. Simplified boolean state toggling, bound `data-theme` to both `html` and `body`, updated CSS theme selectors from `:root[data-theme]` to `[data-theme]`, and bumped cache-busting tags.
 
 ## 10. Appendix: Technical Specifications
 
