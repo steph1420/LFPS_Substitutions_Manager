@@ -6,8 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <!-- Cache-busting tags force mobile to load the newest files -->
-    <link rel="stylesheet" href="styles.css?v=2.2">
+    <link rel="stylesheet" href="styles.css?v=1.7">
 </head>
 <body>
 
@@ -15,7 +14,7 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge" id="app-version-badge">v2.2</span>
+                <span class="version-badge">v1.7</span>
             </div>
             <div class="header-controls">
                 <button id="header-undo-btn" class="btn-undo">↩ Undo</button>
@@ -57,6 +56,14 @@
                         <!-- JS will populate the spreadsheet here -->
                     </table>
                 </div>
+
+                <!-- Displaced Classes (Limbo Tray) -->
+                <div id="displaced-warning" class="displaced-warning hidden">
+                    ⚠️ Displaced Classes: Drag or tap them back onto the grid.
+                </div>
+                <div id="displaced-tray" class="displaced-tray hidden">
+                    <!-- Populated by JS -->
+                </div>
             </div>
         </section>
 
@@ -64,14 +71,13 @@
         <section id="tab-substitutions" class="tab-section">
             <div class="resolver-header">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 5px;">
-                    <h2>Substitution Overview</h2>
+                    <h2>Substitutions</h2>
                     <button id="auto-resolve-btn" class="btn-magic hidden">✨ Auto-Resolve</button>
                 </div>
-                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">Tracking absent teachers' subjects and live coverage status.</p>
+                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">Review and assign substitute coverage.</p>
             </div>
-            
-            <div class="substitutions-dashboard" id="substitutions-dashboard-content">
-                <!-- JS will populate all substitution statuses here -->
+            <div class="conflict-list" id="conflict-list">
+                <!-- Pink & Green Cards populated by JS -->
             </div>
         </section>
 
@@ -114,6 +120,6 @@
     </div>
     <div id="sheet-overlay" class="overlay hidden"></div>
 
-    <script src="app.js?v=2.2"></script>
+    <script src="app.js?v=1.7"></script>
 </body>
 </html>
