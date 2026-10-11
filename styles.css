@@ -681,6 +681,60 @@ input:checked + .slider:before {
     font-weight: 600;
     text-transform: uppercase;
     font-size: 11px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    user-select: none;
+}
+
+.routine-table th:first-child {
+    cursor: default;
+}
+
+/* Hover indicators & Row/Column Highlighting */
+.routine-table th.col-header-hover {
+    color: var(--accent-blue) !important;
+    background-color: var(--segment-bg) !important;
+    box-shadow: inset 0 -3px 0 var(--accent-blue);
+}
+
+.routine-table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.routine-table tbody tr.row-hover td,
+.routine-table tbody tr:hover td {
+    background-image: linear-gradient(rgba(0, 122, 255, 0.04), rgba(0, 122, 255, 0.04));
+}
+
+.routine-table tbody tr.row-hover td:first-child,
+.routine-table tbody tr:hover td:first-child {
+    color: var(--accent-blue);
+    border-left: 3px solid var(--accent-blue);
+    background-color: var(--surface-color);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+}
+
+.routine-table td.col-hover {
+    background-image: linear-gradient(rgba(0, 122, 255, 0.05), rgba(0, 122, 255, 0.05));
+    box-shadow: inset 0 0 0 1px rgba(0, 122, 255, 0.25);
+}
+
+[data-theme="dark"] .routine-table tbody tr.row-hover td,
+[data-theme="dark"] .routine-table tbody tr:hover td {
+    background-image: linear-gradient(rgba(10, 132, 255, 0.08), rgba(10, 132, 255, 0.08));
+}
+
+[data-theme="dark"] .routine-table tbody tr.row-hover td:first-child,
+[data-theme="dark"] .routine-table tbody tr:hover td:first-child {
+    color: var(--accent-blue);
+    border-left: 3px solid var(--accent-blue);
+    background-color: var(--surface-color);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .routine-table td.col-hover {
+    background-image: linear-gradient(rgba(10, 132, 255, 0.1), rgba(10, 132, 255, 0.1));
+    box-shadow: inset 0 0 0 1px rgba(10, 132, 255, 0.35);
 }
 
 .cell-assigned {

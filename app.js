@@ -27,7 +27,7 @@ const teachers = [
     'Mr. Stephen', 'Mrs. Midha', 'Mrs. Pahwa', 'Mrs. Bage', 'Mr. Adams', 
     'Mrs. Baker', 'Ms. Clark', 'Mr. Davis', 'Mrs. Evans'
 ];
-const periods = ['GOLDEN HOUR', '1st Pd.', 'BREAKFAST', '2nd Pd.', '3rd Pd.', '4th Pd.', '5th Pd.', 'PLAY TIME', '6th Pd.', '7th Pd.'];
+const periods = ['GOLDEN HOUR', '1st Pd.', 'BREAKFAST BREAK', '2nd Pd.', '3rd Pd.', '4th Pd.', '5th Pd.', '2nd GOLDEN HOUR', '6th Pd.', '7th Pd.'];
 
 // --- INITIALIZATION & STORAGE ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -54,6 +54,22 @@ function saveStateToStorage() {
     localStorage.setItem('lfps_frontdesk_state', JSON.stringify(data));
 }
 
+function migratePeriodNames(scheduleObj) {
+    if (!scheduleObj) return;
+    Object.keys(scheduleObj).forEach(day => {
+        const daySched = scheduleObj[day];
+        if (!daySched) return;
+        if (daySched['BREAKFAST'] && !daySched['BREAKFAST BREAK']) {
+            daySched['BREAKFAST BREAK'] = daySched['BREAKFAST'];
+            delete daySched['BREAKFAST'];
+        }
+        if (daySched['PLAY TIME'] && !daySched['2nd GOLDEN HOUR']) {
+            daySched['2nd GOLDEN HOUR'] = daySched['PLAY TIME'];
+            delete daySched['PLAY TIME'];
+        }
+    });
+}
+
 function loadStateFromStorage() {
     const saved = localStorage.getItem('lfps_frontdesk_state');
     if (saved) {
@@ -68,6 +84,33 @@ function loadStateFromStorage() {
             state.substitutions = parsed.substitutions || {};
             state.displaced = parsed.displaced || { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] };
             state.absentTeachers = new Set(parsed.absentTeachers || []);
+            
+            // Automatic migration of periods
+            migratePeriodNames(state.schedule);
+            migratePeriodNames(state.baseSchedule);
+
+            Object.keys(state.displaced).forEach(day => {
+                if (Array.isArray(state.displaced[day])) {
+                    state.displaced[day].forEach(item => {
+                        if (item.period === 'PLAY TIME') item.period = '2nd GOLDEN HOUR';
+                        if (item.period === 'BREAKFAST') item.period = 'BREAKFAST BREAK';
+                    });
+                }
+            });
+
+            Object.keys(state.substitutions).forEach(day => {
+                const daySubs = state.substitutions[day];
+                if (daySubs) {
+                    if (daySubs['PLAY TIME'] && !daySubs['2nd GOLDEN HOUR']) {
+                        daySubs['2nd GOLDEN HOUR'] = daySubs['PLAY TIME'];
+                        delete daySubs['PLAY TIME'];
+                    }
+                    if (daySubs['BREAKFAST'] && !daySubs['BREAKFAST BREAK']) {
+                        daySubs['BREAKFAST BREAK'] = daySubs['BREAKFAST'];
+                        delete daySubs['BREAKFAST'];
+                    }
+                }
+            });
             
             if (parsed.actionHistory && Array.isArray(parsed.actionHistory.grid)) {
                 state.actionHistory = parsed.actionHistory;
@@ -316,6 +359,36 @@ function bindEvents() {
             document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
             document.querySelectorAll('.cell-dragging').forEach(el => el.classList.remove('cell-dragging'));
         });
+
+        table.addEventListener('mouseover', (e) => {
+            const th = e.target.closest('th');
+            if (th && th.cellIndex > 0) {
+                th.classList.add('col-header-hover');
+                const colIdx = th.cellIndex + 1;
+                table.querySelectorAll(`tbody td:nth-child(${colIdx})`).forEach(td => td.classList.add('col-hover'));
+            }
+            
+            const teacherTd = e.target.closest('tbody td:first-child');
+            if (teacherTd) {
+                const tr = teacherTd.closest('tr');
+                if (tr) tr.classList.add('row-hover');
+            }
+        });
+
+        table.addEventListener('mouseout', (e) => {
+            const th = e.target.closest('th');
+            if (th && th.cellIndex > 0) {
+                th.classList.remove('col-header-hover');
+                const colIdx = th.cellIndex + 1;
+                table.querySelectorAll(`tbody td:nth-child(${colIdx})`).forEach(td => td.classList.remove('col-hover'));
+            }
+            
+            const teacherTd = e.target.closest('tbody td:first-child');
+            if (teacherTd) {
+                const tr = teacherTd.closest('tr');
+                if (tr) tr.classList.remove('row-hover');
+            }
+        });
     }
 }
 
@@ -358,8 +431,8 @@ function renderTableRoutine() {
     
     const hideAbsent = hideToggle.checked;
     
-    let html = '<thead><tr><th>Teacher Name</th>';
-    periods.forEach(p => html += `<th>${p}</th>`);
+    let html = '<thead><tr><th class="teacher-header-cell">Teacher Name</th>';
+    periods.forEach((p, idx) => html += `<th data-period="${p}" data-col="${idx + 1}">${p}</th>`);
     html += '</tr></thead><tbody>';
     
     teachers.forEach(teacher => {
@@ -367,10 +440,10 @@ function renderTableRoutine() {
         if (isAbsent && hideAbsent) return;
         
         html += `<tr class="${isAbsent ? 'row-absent' : ''}">`;
-        html += `<td>${teacher}</td>`;
+        html += `<td class="teacher-cell" data-teacher="${teacher}">${teacher}</td>`;
         
         periods.forEach(period => {
-            if (period === 'BREAKFAST' || period === 'PLAY TIME') {
+            if (period === 'BREAKFAST BREAK' || period === 'BREAKFAST') {
                 html += `<td style="background:var(--static-cell-bg); text-align:center; color:var(--text-secondary);">-</td>`;
                 return;
             }
@@ -918,7 +991,7 @@ function generateSimulatedData() {
         periods.forEach(p => {
             state.schedule[d][p] = {};
             teachers.forEach(t => {
-                if (p !== 'BREAKFAST' && p !== 'PLAY TIME' && Math.random() > 0.3) {
+                if (p !== 'BREAKFAST BREAK' && p !== 'BREAKFAST' && Math.random() > 0.3) {
                     state.schedule[d][p][t] = subjects[Math.floor(Math.random() * subjects.length)];
                 } else {
                     state.schedule[d][p][t] = 'Free';
