@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.6">
+    <link rel="stylesheet" href="styles.css?v=1.7">
 </head>
 <body>
 
@@ -14,7 +14,7 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge">v1.6</span>
+                <span class="version-badge">v1.7</span>
             </div>
             <div class="header-controls">
                 <button id="header-undo-btn" class="btn-undo">↩ Undo</button>
@@ -55,6 +55,14 @@
                     <table id="routine-table" class="routine-table">
                         <!-- JS will populate the spreadsheet here -->
                     </table>
+                </div>
+
+                <!-- Displaced Classes (Limbo Tray) -->
+                <div id="displaced-warning" class="displaced-warning hidden">
+                    ⚠️ Displaced Classes: Drag or tap them back onto the grid.
+                </div>
+                <div id="displaced-tray" class="displaced-tray hidden">
+                    <!-- Populated by JS -->
                 </div>
             </div>
         </section>
@@ -112,6 +120,6 @@
     </div>
     <div id="sheet-overlay" class="overlay hidden"></div>
 
-    <script src="app.js?v=1.6"></script>
+    <script src="app.js?v=1.7"></script>
 </body>
 </html>

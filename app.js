@@ -5,15 +5,16 @@ const state = {
     absentTeachers: new Set(),
     baseSchedule: {}, 
     schedule: {},     
-    substitutions: {}, // Tracks mapped substitutions explicitly for the Pink/Green cards
+    substitutions: {}, 
+    displaced: { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] }, // Limbo Tray
     actionHistory: {
         grid: [], 
         subs: []  
     }
 };
 
-let selectedCell = null; 
-let draggedCell = null; 
+let selectedCell = null; // Can now be { type: 'grid', period, teacher } OR { type: 'displaced', item }
+let draggedData = null;  // Replaces draggedCell to hold structured data
 let scrollSpeed = 0;
 let isScrolling = false;
 
@@ -40,6 +41,7 @@ function saveStateToStorage() {
         baseSchedule: state.baseSchedule,
         schedule: state.schedule,
         substitutions: state.substitutions,
+        displaced: state.displaced,
         absentTeachers: Array.from(state.absentTeachers), 
         actionHistory: state.actionHistory
     };
@@ -58,6 +60,7 @@ function loadStateFromStorage() {
             state.baseSchedule = parsed.baseSchedule || JSON.parse(JSON.stringify(parsed.schedule)); 
             state.schedule = parsed.schedule;
             state.substitutions = parsed.substitutions || {};
+            state.displaced = parsed.displaced || { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] };
             state.absentTeachers = new Set(parsed.absentTeachers || []);
             
             if (parsed.actionHistory && Array.isArray(parsed.actionHistory.grid)) {
@@ -100,7 +103,6 @@ function bindEvents() {
             const target = e.currentTarget;
             target.classList.add('active');
             document.getElementById(target.dataset.target).classList.add('active');
-            
             updateUndoUI(); 
         });
     });
@@ -133,14 +135,17 @@ function bindEvents() {
     safeBind('header-undo-btn', 'click', undoLastAction);
     safeBind('auto-resolve-btn', 'click', performAutoResolve);
 
+    // Desktop Drag & Drop logic for Grid
     const tableContainer = document.querySelector('.table-scroll-container');
     const table = document.getElementById('routine-table');
     
     if (table && tableContainer) {
         table.addEventListener('dragstart', (e) => {
             if (!state.isEditMode) return e.preventDefault();
-            draggedCell = e.target.closest('td');
-            if (!draggedCell || !draggedCell.dataset.period) return e.preventDefault();
+            const td = e.target.closest('td');
+            if (!td || !td.dataset.period) return e.preventDefault();
+            
+            draggedData = { type: 'grid', period: td.dataset.period, teacher: td.dataset.teacher };
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', ''); 
             scrollSpeed = 0;
@@ -165,7 +170,7 @@ function bindEvents() {
             }
 
             const targetCell = e.target.closest('td');
-            if (targetCell && targetCell !== draggedCell && targetCell.dataset.period) {
+            if (targetCell && targetCell.dataset.period) {
                 targetCell.classList.add('drag-over');
             }
         });
@@ -183,22 +188,25 @@ function bindEvents() {
         tableContainer.addEventListener('drop', (e) => {
             e.preventDefault();
             scrollSpeed = 0; 
-            if (!state.isEditMode || !draggedCell) return;
+            if (!state.isEditMode || !draggedData) return;
+            
             const targetCell = e.target.closest('td');
             document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
             
-            if (targetCell && targetCell !== draggedCell && targetCell.dataset.period) {
-                executeMove(
-                    { period: draggedCell.dataset.period, teacher: draggedCell.dataset.teacher },
-                    { period: targetCell.dataset.period, teacher: targetCell.dataset.teacher }
-                );
+            if (targetCell && targetCell.dataset.period) {
+                // Prevent dropping onto itself from grid
+                if (draggedData.type === 'grid' && draggedData.period === targetCell.dataset.period && draggedData.teacher === targetCell.dataset.teacher) {
+                    draggedData = null;
+                    return;
+                }
+                executeMove(draggedData, { period: targetCell.dataset.period, teacher: targetCell.dataset.teacher });
             }
-            draggedCell = null;
+            draggedData = null;
         });
 
         table.addEventListener('dragend', () => {
             scrollSpeed = 0;
-            draggedCell = null;
+            draggedData = null;
             document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
         });
     }
@@ -208,6 +216,7 @@ function bindEvents() {
 function renderAll() {
     renderAbsentTray();
     renderTableRoutine(); 
+    renderDisplacedTray();
     renderCardRoutine();  
     renderSubstitutions();
 }
@@ -260,7 +269,6 @@ function renderTableRoutine() {
             }
             
             const task = state.schedule[state.day]?.[period]?.[teacher] || 'Free';
-            // Determine missing state by verifying if base schedule had a task that is unassigned/still theirs
             const baseTask = state.baseSchedule[state.day]?.[period]?.[teacher];
             const isMissingSub = isAbsent && baseTask && baseTask !== 'Free' && !state.substitutions[state.day]?.[period]?.[teacher];
             
@@ -274,11 +282,11 @@ function renderTableRoutine() {
                 cellClasses.push('cell-assigned');
             }
 
-            if (selectedCell && selectedCell.period === period && selectedCell.teacher === teacher) {
+            if (selectedCell && selectedCell.type === 'grid' && selectedCell.period === period && selectedCell.teacher === teacher) {
                 cellClasses.push('cell-selected');
             }
             
-            let clickHandler = state.isEditMode ? `onclick="handleCellInteraction('${period}', '${teacher}')"` : '';
+            let clickHandler = state.isEditMode ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
             let dragAttrs = state.isEditMode ? `draggable="true" data-period="${period}" data-teacher="${teacher}"` : '';
             
             html += `<td class="${cellClasses.join(' ')}" style="cursor:pointer;" ${clickHandler} ${dragAttrs}>${cellText}</td>`;
@@ -287,6 +295,47 @@ function renderTableRoutine() {
     });
     html += '</tbody>';
     table.innerHTML = html;
+}
+
+function renderDisplacedTray() {
+    const warning = document.getElementById('displaced-warning');
+    const tray = document.getElementById('displaced-tray');
+    if(!warning || !tray) return;
+
+    const items = state.displaced[state.day] || [];
+    
+    if (items.length > 0) {
+        warning.classList.remove('hidden');
+        tray.classList.remove('hidden');
+        tray.innerHTML = '';
+        
+        items.forEach(item => {
+            const isSelected = selectedCell && selectedCell.type === 'displaced' && selectedCell.item.id === item.id;
+            const div = document.createElement('div');
+            div.className = `displaced-item ${isSelected ? 'selected' : ''}`;
+            div.draggable = state.isEditMode;
+            div.dataset.id = item.id;
+            div.innerHTML = `
+                <span>${item.task}</span>
+                <span class="og-teacher">From: ${item.ogTeacher} (${item.period})</span>
+            `;
+            
+            if (state.isEditMode) {
+                div.onclick = () => handleDisplacedInteraction(item);
+                div.ondragstart = (e) => {
+                    draggedData = { type: 'displaced', item: item };
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', '');
+                    scrollSpeed = 0;
+                };
+                div.ondragend = () => { draggedData = null; scrollSpeed = 0; };
+            }
+            tray.appendChild(div);
+        });
+    } else {
+        warning.classList.add('hidden');
+        tray.classList.add('hidden');
+    }
 }
 
 function renderCardRoutine() {
@@ -311,7 +360,6 @@ function renderSubstitutions() {
             const isAbsent = state.absentTeachers.has(teacher);
             if (!isAbsent) return;
 
-            // Anchor logic to baseline
             const baseTask = state.baseSchedule[state.day]?.[period]?.[teacher];
             if (!baseTask || baseTask === 'Free' || baseTask === '') return;
 
@@ -319,7 +367,6 @@ function renderSubstitutions() {
             const subTeacher = state.substitutions[state.day]?.[period]?.[teacher];
             
             if (subTeacher) {
-                // Resolved (Green Card)
                 resolvedCount++;
                 conflictList.innerHTML += `
                     <div class="period-card resolved" style="margin-bottom:15px;">
@@ -334,7 +381,6 @@ function renderSubstitutions() {
                     </div>
                 `;
             } else {
-                // Pending (Pink Card)
                 conflicts++;
                 conflictList.innerHTML += `
                     <div class="period-card needs-action" style="margin-bottom:15px; cursor:pointer;" onclick="openBottomSheet('${period}', '${teacher}')">
@@ -361,7 +407,6 @@ function renderSubstitutions() {
         }
     }
 
-    // Empty States
     if (totalAbsences === 0) {
         conflictList.innerHTML = `
             <div style="text-align:center; padding: 40px 20px;">
@@ -381,36 +426,88 @@ function renderSubstitutions() {
 }
 
 // --- INTERACTION MECHANICS ---
-function handleCellInteraction(period, teacher) {
+
+function handleGridInteraction(period, teacher) {
     if (!state.isEditMode) return;
+    
     if (!selectedCell) {
-        selectedCell = { period, teacher };
+        selectedCell = { type: 'grid', period, teacher };
         renderAll();
-    } else if (selectedCell.period === period && selectedCell.teacher === teacher) {
-        selectedCell = null;
+    } else if (selectedCell.type === 'grid' && selectedCell.period === period && selectedCell.teacher === teacher) {
+        selectedCell = null; // deselect self
         renderAll();
     } else {
+        // Move from selected (Grid or Displaced) to this grid slot
         executeMove(selectedCell, { period, teacher });
         selectedCell = null;
     }
 }
 
-function executeMove(source, target) {
-    const sTask = state.schedule[state.day][source.period][source.teacher];
-    const tTask = state.schedule[state.day][target.period][target.teacher]; 
+function handleDisplacedInteraction(item) {
+    if (!state.isEditMode) return;
+    
+    if (!selectedCell) {
+        selectedCell = { type: 'displaced', item: item };
+        renderAll();
+    } else if (selectedCell.type === 'displaced' && selectedCell.item.id === item.id) {
+        selectedCell = null; // deselect self
+        renderAll();
+    } else if (selectedCell.type === 'grid') {
+        // Cannot manually tap a grid cell and drop it into displaced. Just select the new item.
+        selectedCell = { type: 'displaced', item: item };
+        renderAll();
+    }
+}
 
+function executeMove(source, target) {
+    // 1. Identify moving task
+    let sTask = '';
+    if (source.type === 'grid') {
+        sTask = state.schedule[state.day][source.period][source.teacher];
+    } else if (source.type === 'displaced') {
+        sTask = source.item.task;
+    }
+
+    // 2. Identify target task (before overwrite)
+    const tTask = state.schedule[state.day][target.period][target.teacher]; 
+    let newlyDisplaced = null;
+
+    // 3. If target has a class, generate a displaced item
+    if (tTask !== 'Free') {
+        newlyDisplaced = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+            task: tTask,
+            ogTeacher: target.teacher,
+            period: target.period
+        };
+        state.displaced[state.day].push(newlyDisplaced);
+    }
+
+    // 4. Record History
     state.actionHistory.grid.push({
         type: 'move',
         day: state.day,
-        source, target, sTask, tTask
+        source, 
+        target, 
+        sTask, 
+        tTask,
+        newlyDisplaced
     });
 
+    // 5. Apply the overwrite to the Grid
     state.schedule[state.day][target.period][target.teacher] = sTask; 
-    state.schedule[state.day][source.period][source.teacher] = 'Free'; 
+    
+    // 6. Clear original location
+    if (source.type === 'grid') {
+        state.schedule[state.day][source.period][source.teacher] = 'Free'; 
+    } else if (source.type === 'displaced') {
+        // Remove item from limbo tray
+        state.displaced[state.day] = state.displaced[state.day].filter(d => d.id !== source.item.id);
+    }
 
     saveStateToStorage();
     updateUndoUI();
-    showToast(`Moved assignment.`);
+    showToast(`Assignment Moved.`);
     renderAll();
 }
 
@@ -591,9 +688,23 @@ function undoLastAction() {
     const action = activeStack.pop();
 
     if (action.type === 'move') {
-        const { day, source, target, sTask, tTask } = action;
+        const { day, source, target, sTask, tTask, newlyDisplaced } = action;
+        
+        // 1. Revert the target grid slot back to what it was
         state.schedule[day][target.period][target.teacher] = tTask;
-        state.schedule[day][source.period][source.teacher] = sTask;
+
+        // 2. Revert the source
+        if (source.type === 'grid') {
+            state.schedule[day][source.period][source.teacher] = sTask;
+        } else if (source.type === 'displaced') {
+            state.displaced[day].push(source.item);
+        }
+
+        // 3. Clean up the item that got generated by this move
+        if (newlyDisplaced) {
+            state.displaced[day] = state.displaced[day].filter(d => d.id !== newlyDisplaced.id);
+        }
+
     } else if (action.type === 'sub') {
         const { period, absentTeacher, subTeacher, previousSub, previousTaskForSub, taskToCover, day } = action;
         state.schedule[day][period][subTeacher] = previousTaskForSub || 'Free';
@@ -606,7 +717,6 @@ function undoLastAction() {
             state.schedule[day][period][absentTeacher] = taskToCover;
         }
     } else if (action.type === 'batch-sub') {
-        // Reverse array so we undo from the last sub to the first sub exactly
         [...action.actions].reverse().forEach(sub => {
             state.schedule[sub.day][sub.period][sub.subTeacher] = sub.previousTaskForSub || 'Free';
             state.schedule[sub.day][sub.period][sub.absentTeacher] = sub.taskToCover;
@@ -654,4 +764,5 @@ function generateSimulatedData() {
 
     state.baseSchedule = JSON.parse(JSON.stringify(state.schedule));
     state.substitutions = {};
+    state.displaced = { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] };
 }

@@ -111,7 +111,6 @@ body {
     display: inline-block;
 }
 
-/* Magic Button (Auto Resolve) */
 .btn-magic {
     background: linear-gradient(135deg, #af52de, #5856d6);
     color: white;
@@ -438,7 +437,7 @@ input:checked + .slider:before {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- Spreadsheet Grid Styles (Mobile Fixed) --- */
+/* --- Spreadsheet Grid Styles --- */
 .table-scroll-container {
     width: 100%;
     overflow-x: auto;
@@ -447,7 +446,7 @@ input:checked + .slider:before {
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-soft);
     background: var(--surface-color);
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .routine-table {
@@ -514,4 +513,70 @@ input:checked + .slider:before {
     background-color: #d1ffd6 !important;
     outline: 2px dashed #28a745 !important;
     outline-offset: -2px;
+}
+
+/* --- Displaced Tray Styles --- */
+.displaced-warning {
+    background-color: #fff0f5;
+    color: var(--accent-red);
+    padding: 10px 15px;
+    border-radius: var(--radius-md);
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--accent-pink);
+}
+
+.displaced-tray {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: var(--radius-md);
+    border: 2px dashed #d1d1d6;
+    margin-bottom: 20px;
+    min-height: 70px;
+}
+
+.displaced-item {
+    background: var(--surface-color);
+    border: 2px solid var(--accent-blue);
+    color: var(--accent-blue);
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: grab;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.displaced-item:active {
+    cursor: grabbing;
+}
+
+.displaced-item .og-teacher {
+    font-size: 10px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+.displaced-item.selected {
+    background: var(--accent-blue);
+    color: white;
+}
+
+.displaced-item.selected .og-teacher {
+    color: #e3e3e8;
+}
+
+.hidden {
+    display: none !important;
 }
