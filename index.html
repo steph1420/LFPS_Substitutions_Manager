@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.14">
+    <link rel="stylesheet" href="styles.css?v=1.15">
 </head>
 <body>
 
@@ -14,7 +14,7 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge">v1.14</span>
+                <span class="version-badge">v1.15</span>
             </div>
             <div class="header-controls">
                 <button id="header-undo-btn" class="btn-undo">↩ Undo</button>
@@ -62,14 +62,6 @@
                         <!-- JS will populate the spreadsheet here -->
                     </table>
                 </div>
-
-                <div id="limbo-wrapper" class="limbo-wrapper">
-                    <div class="limbo-inner">
-                        <div id="displaced-tray" class="displaced-tray">
-                            <!-- Populated by JS -->
-                        </div>
-                    </div>
-                </div>
             </div>
         </section>
 
@@ -97,6 +89,15 @@
 
     </main>
 
+    <!-- FLOATING LIMBO DOCK -->
+    <div id="limbo-wrapper" class="limbo-wrapper">
+        <div class="limbo-inner">
+            <div id="displaced-tray" class="displaced-tray">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
     <div id="undo-toast" class="toast hidden">
         <span id="toast-message">Action completed.</span>
         <button id="toast-undo-btn">↩ Undo</button>
@@ -120,12 +121,12 @@
     </nav>
 
     <div id="bottom-sheet" class="bottom-sheet hidden">
-        <div class="sheet-handle"></div>
+        <div class="sheet-handle" id="sheet-handle"></div>
         <h3>Select Substitute</h3>
         <div class="sheet-content" id="sheet-teacher-list"></div>
     </div>
     <div id="sheet-overlay" class="overlay hidden"></div>
 
-    <script src="app.js?v=1.14"></script>
+    <script src="app.js?v=1.15"></script>
 </body>
 </html>

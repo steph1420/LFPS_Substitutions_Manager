@@ -85,9 +85,9 @@ function loadStateFromStorage() {
     return false;
 }
 
-function safeBind(id, eventType, handler) {
+function safeBind(id, eventType, handler, options = false) {
     const element = document.getElementById(id);
-    if (element) element.addEventListener(eventType, handler);
+    if (element) element.addEventListener(eventType, handler, options);
 }
 
 function scrollTick() {
@@ -135,10 +135,58 @@ function bindEvents() {
     }
 
     safeBind('hide-absent-toggle', 'change', renderAll);
-    safeBind('sheet-overlay', 'click', closeBottomSheet);
+    
+    // Ghost-Click Prevention for Overlay
+    safeBind('sheet-overlay', 'click', (e) => {
+        e.preventDefault(); e.stopPropagation(); closeBottomSheet();
+    });
+    safeBind('sheet-overlay', 'touchstart', (e) => {
+        e.preventDefault(); e.stopPropagation(); closeBottomSheet();
+    }, {passive: false});
+
     safeBind('toast-undo-btn', 'click', undoLastAction);
     safeBind('header-undo-btn', 'click', undoLastAction);
     safeBind('auto-resolve-btn', 'click', performAutoResolve);
+
+    // --- Touch Drag-to-Close for Bottom Sheet ---
+    const sheet = document.getElementById('bottom-sheet');
+    const handle = document.getElementById('sheet-handle');
+    let startY = 0;
+    let currentY = 0;
+    let isDraggingSheet = false;
+
+    if (sheet) {
+        sheet.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+            isDraggingSheet = true;
+            sheet.style.transition = 'none'; 
+        }, {passive: true});
+
+        sheet.addEventListener('touchmove', (e) => {
+            if (!isDraggingSheet) return;
+            currentY = e.touches[0].clientY;
+            const deltaY = currentY - startY;
+            if (deltaY > 0) { 
+                sheet.style.transform = `translateY(${deltaY}px)`;
+            }
+        }, {passive: true});
+
+        sheet.addEventListener('touchend', (e) => {
+            if (!isDraggingSheet) return;
+            isDraggingSheet = false;
+            sheet.style.transition = 'bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)';
+            const deltaY = currentY - startY;
+            if (deltaY > 80) {
+                closeBottomSheet();
+                setTimeout(() => { sheet.style.transform = ''; }, 300); 
+            } else {
+                sheet.style.transform = 'translateY(0)'; 
+            }
+        });
+
+        // Click on handle to close as well
+        if(handle) handle.addEventListener('click', closeBottomSheet);
+    }
 
     const tableContainer = document.querySelector('.table-scroll-container');
     const table = document.getElementById('routine-table');
@@ -153,6 +201,9 @@ function bindEvents() {
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', ''); 
             scrollSpeed = 0;
+
+            // Visual indicator that it's being dragged out
+            setTimeout(() => td.classList.add('cell-dragging'), 0);
         });
 
         tableContainer.addEventListener('dragover', (e) => {
@@ -200,17 +251,20 @@ function bindEvents() {
             if (targetCell && targetCell.dataset.period) {
                 if (draggedData.type === 'grid' && draggedData.period === targetCell.dataset.period && draggedData.teacher === targetCell.dataset.teacher) {
                     draggedData = null;
+                    document.querySelectorAll('.cell-dragging').forEach(el => el.classList.remove('cell-dragging'));
                     return;
                 }
                 executeMove(draggedData, { period: targetCell.dataset.period, teacher: targetCell.dataset.teacher });
             }
             draggedData = null;
+            document.querySelectorAll('.cell-dragging').forEach(el => el.classList.remove('cell-dragging'));
         });
 
         table.addEventListener('dragend', () => {
             scrollSpeed = 0;
             draggedData = null;
             document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            document.querySelectorAll('.cell-dragging').forEach(el => el.classList.remove('cell-dragging'));
         });
     }
 }
@@ -289,12 +343,11 @@ function renderTableRoutine() {
                 cellClasses.push('cell-selected');
             }
 
-            // Apply contextual drop animations and structural changes
+            // Apply contextual drop animations and ghost slide
             if (lastDisplacedDrop && lastDisplacedDrop.period === period && lastDisplacedDrop.teacher === teacher) {
                 cellClasses.push('cell-displaced-flash');
-                // Inject the sliding ghost text and pop-in new text
                 cellText = `
-                    <div style="position:relative; z-index:2; animation: popIn 0.4s ease-out forwards;">${cellText}</div>
+                    <div style="position:relative; z-index:2; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;">${cellText}</div>
                     <div class="ghost-displaced">${lastDisplacedDrop.oldTask}</div>
                 `;
             } else if (lastDroppedCell && lastDroppedCell.period === period && lastDroppedCell.teacher === teacher) {
@@ -330,7 +383,7 @@ function renderDisplacedTray() {
             const isNew = item.id === newlyDisplacedItemId;
             
             const div = document.createElement('div');
-            // Only apply popup animation class to the newest item
+            // PopIn applies ONLY to newly displaced item. Rest just lay flat.
             div.className = `displaced-item ${isSelected ? 'selected' : ''} ${isNew ? 'item-newly-displaced' : ''}`;
             div.draggable = state.isEditMode;
             div.dataset.id = item.id;
@@ -346,8 +399,13 @@ function renderDisplacedTray() {
                     e.dataTransfer.effectAllowed = 'move';
                     e.dataTransfer.setData('text/plain', '');
                     scrollSpeed = 0;
+                    setTimeout(() => div.classList.add('cell-dragging'), 0);
                 };
-                div.ondragend = () => { draggedData = null; scrollSpeed = 0; };
+                div.ondragend = () => { 
+                    draggedData = null; 
+                    scrollSpeed = 0; 
+                    div.classList.remove('cell-dragging');
+                };
             }
             tray.appendChild(div);
         });
@@ -395,7 +453,7 @@ function renderSubstitutions() {
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <span style="font-weight:600; color:var(--text-primary);">Covered by: ${subTeacher}</span>
-                            <button onclick="openBottomSheet('${period}', '${teacher}')" style="background:transparent; border:1px solid var(--accent-green); color:var(--accent-green); padding:4px 10px; border-radius:12px; font-size:12px; cursor:pointer;">Reassign</button>
+                            <button onclick="event.stopPropagation(); openBottomSheet('${period}', '${teacher}')" style="background:transparent; border:1px solid var(--accent-green); color:var(--accent-green); padding:4px 10px; border-radius:12px; font-size:12px; cursor:pointer;">Reassign</button>
                         </div>
                     </div>
                 `;
@@ -518,15 +576,12 @@ function executeMove(source, target) {
         state.displaced[state.day] = state.displaced[state.day].filter(d => d.id !== source.item.id);
     }
 
-    // Set contextual animation markers
     if (wasDisplaced) {
-        // Save the old task so we can render the ghost text sliding down
         lastDisplacedDrop = { period: target.period, teacher: target.teacher, oldTask: tTask };
     } else {
         lastDroppedCell = { period: target.period, teacher: target.teacher };
     }
 
-    // Clear animations after they finish playing
     setTimeout(() => {
         lastDroppedCell = null; 
         lastDisplacedDrop = null;
@@ -561,16 +616,17 @@ function openBottomSheet(period, targetTeacher) {
     
     available.forEach(t => {
         list.innerHTML += `<div style="padding:15px; margin-bottom:8px; background:var(--surface-color); border-radius:8px; border:1px solid var(--accent-blue); font-weight:bold; cursor:pointer;" 
-                            onclick="assignSubstitute('${period}', '${targetTeacher}', '${t}')">🟢 ${t} (Free)</div>`;
+                            onclick="event.stopPropagation(); assignSubstitute('${period}', '${targetTeacher}', '${t}')">🟢 ${t} (Free)</div>`;
     });
     
     busy.forEach(t => {
         list.innerHTML += `<div style="padding:15px; margin-bottom:8px; background:#f2f2f7; border-radius:8px; color:gray; cursor:pointer;" 
-                            onclick="assignSubstitute('${period}', '${targetTeacher}', '${t.name}')">🟡 ${t.name} (Currently in ${t.task})</div>`;
+                            onclick="event.stopPropagation(); assignSubstitute('${period}', '${targetTeacher}', '${t.name}')">🟡 ${t.name} (Currently in ${t.task})</div>`;
     });
 
     sheet.classList.add('open');
     overlay.classList.add('active');
+    sheet.style.transform = 'translateY(0)'; 
 }
 
 function closeBottomSheet() {
