@@ -1,19 +1,96 @@
 /* Core Variables & Apple-Inspired Aesthetics */
 :root {
-    --bg-color: #f2f2f7;
-    --surface-color: #ffffff;
+    --bg-color: #f2f2f7;          /* SystemGray6 */
+    --surface-color: #ffffff;     /* Pure White */
+    --surface-elevated: #ffffff;  /* Modals/Popups */
     --text-primary: #1c1c1e;
     --text-secondary: #8e8e93;
+    --border-color: #e5e5ea;      /* SystemGray5 */
+    
+    /* Contrast-Safe Accents */
     --accent-blue: #007aff;
     --accent-red: #ff3b30;
     --accent-pink: #ff2d55;
     --accent-green: #34c759;
-    --border-color: #e5e5ea;
+    
+    /* Status & Surface Backgrounds */
+    --bg-assigned: #e5f0ff;
+    --bg-missing: #fff0f5;
+    --bg-resolved: #f0fff4;
+    --bg-absent-assigned: #fce4e4;
+    --nav-bg: rgba(255, 255, 255, 0.85);
+    --segment-bg: #e3e3e8;
+    --tray-bg: #f9f9f9;
+    --static-cell-bg: #f9f9f9;
+    --handle-color: #c7c7cc;
+    --toast-bg: #333333;
+    --drag-over-bg: #d1ffd6;
+    
     --shadow-soft: 0 4px 14px rgba(0,0,0,0.05);
     --radius-lg: 16px;
     --radius-md: 10px;
     --radius-sm: 6px;
     --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* DARK MODE OVERRIDES (System Preference) */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --bg-color: #000000;          /* Pure Black */
+        --surface-color: #1c1c1e;     /* SystemGray6 (Dark) */
+        --surface-elevated: #2c2c2e;  /* SystemGray5 (Dark) */
+        --text-primary: #f2f2f7;
+        --text-secondary: #aeaeb2;
+        --border-color: #38383a;      /* SystemGray4 (Dark) */
+        
+        /* Desaturated Accents for Dark Mode Legibility */
+        --accent-blue: #0a84ff;
+        --accent-red: #ff453a;
+        --accent-pink: #ff375f;
+        --accent-green: #30d158;
+        
+        /* Status Backgrounds (Opacity adjusted for dark surfaces) */
+        --bg-assigned: rgba(10, 132, 255, 0.2);
+        --bg-missing: rgba(255, 55, 95, 0.2);
+        --bg-resolved: rgba(48, 209, 88, 0.2);
+        --bg-absent-assigned: rgba(255, 69, 58, 0.25);
+        --nav-bg: rgba(28, 28, 30, 0.85);
+        --segment-bg: #2c2c2e;
+        --tray-bg: #151516;
+        --static-cell-bg: #1c1c1e;
+        --handle-color: #48484a;
+        --toast-bg: #2c2c2e;
+        --drag-over-bg: rgba(48, 209, 88, 0.25);
+        --shadow-soft: 0 4px 14px rgba(0,0,0,0.4);
+    }
+}
+
+/* MANUAL DARK MODE OVERRIDE */
+:root[data-theme="dark"] {
+    --bg-color: #000000;
+    --surface-color: #1c1c1e;
+    --surface-elevated: #2c2c2e;
+    --text-primary: #f2f2f7;
+    --text-secondary: #aeaeb2;
+    --border-color: #38383a;
+    
+    --accent-blue: #0a84ff;
+    --accent-red: #ff453a;
+    --accent-pink: #ff375f;
+    --accent-green: #30d158;
+    
+    --bg-assigned: rgba(10, 132, 255, 0.2);
+    --bg-missing: rgba(255, 55, 95, 0.2);
+    --bg-resolved: rgba(48, 209, 88, 0.2);
+    --bg-absent-assigned: rgba(255, 69, 58, 0.25);
+    --nav-bg: rgba(28, 28, 30, 0.85);
+    --segment-bg: #2c2c2e;
+    --tray-bg: #151516;
+    --static-cell-bg: #1c1c1e;
+    --handle-color: #48484a;
+    --toast-bg: #2c2c2e;
+    --drag-over-bg: rgba(48, 209, 88, 0.25);
+    --shadow-soft: 0 4px 14px rgba(0,0,0,0.4);
 }
 
 * {
@@ -33,7 +110,7 @@ body {
 
 /* Header & Controls */
 .app-header {
-    background: rgba(255, 255, 255, 0.85);
+    background: var(--nav-bg);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     position: sticky;
@@ -65,7 +142,7 @@ body {
     font-size: 10px;
     font-weight: 700;
     color: var(--text-secondary);
-    background-color: #e3e3e8;
+    background-color: var(--segment-bg);
     padding: 3px 6px;
     border-radius: 8px;
     letter-spacing: 0.5px;
@@ -75,6 +152,24 @@ body {
     display: flex;
     gap: 6px;
     align-items: center;
+}
+
+.btn-icon {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 6px 10px;
+    border-radius: var(--radius-lg);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover {
+    background-color: var(--border-color);
 }
 
 .btn-primary {
@@ -112,7 +207,7 @@ body {
 }
 
 .btn-undo {
-    background-color: #fff0f5;
+    background-color: var(--bg-missing);
     color: var(--accent-red);
     border: 1px solid var(--accent-red);
     padding: 6px 14px;
@@ -152,7 +247,7 @@ body {
 /* iOS Segmented Control */
 .day-selector {
     display: flex;
-    background-color: #e3e3e8;
+    background-color: var(--segment-bg);
     border-radius: var(--radius-md);
     padding: 2px;
 }
@@ -240,7 +335,7 @@ body {
 .teacher-avatar.absent .avatar-circle {
     border-color: var(--accent-red);
     color: var(--accent-red);
-    background-color: #ffeef0;
+    background-color: var(--bg-missing);
 }
 
 .teacher-avatar.absent span.name {
@@ -326,12 +421,12 @@ input:checked + .slider:before {
 
 .period-card.needs-action {
     border-left: 4px solid var(--accent-pink);
-    background-color: #fff0f5;
+    background-color: var(--bg-missing);
 }
 
 .period-card.resolved {
     border-left: 4px solid var(--accent-green);
-    background-color: #f0fff4;
+    background-color: var(--bg-resolved);
 }
 
 /* Bottom Navigation */
@@ -339,7 +434,7 @@ input:checked + .slider:before {
     position: fixed;
     bottom: 0;
     width: 100%;
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--nav-bg);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     display: flex;
@@ -376,7 +471,7 @@ input:checked + .slider:before {
     bottom: -100%;
     left: 0;
     width: 100%;
-    background-color: var(--bg-color);
+    background-color: var(--surface-elevated);
     border-radius: 20px 20px 0 0;
     padding: 20px;
     z-index: 1000;
@@ -391,7 +486,7 @@ input:checked + .slider:before {
 .sheet-handle {
     width: 50px;
     height: 6px;
-    background-color: #c7c7cc;
+    background-color: var(--handle-color);
     border-radius: 3px;
     margin: 0 auto 15px;
     cursor: grab;
@@ -425,7 +520,7 @@ input:checked + .slider:before {
     bottom: 90px;
     left: 50%;
     transform: translateX(-50%);
-    background: #333333;
+    background: var(--toast-bg);
     color: #fff;
     padding: 12px 20px;
     border-radius: 30px;
@@ -537,7 +632,7 @@ input:checked + .slider:before {
 }
 
 .routine-table th {
-    background: #f2f2f7;
+    background: var(--bg-color);
     color: var(--text-secondary);
     font-weight: 600;
     text-transform: uppercase;
@@ -545,11 +640,12 @@ input:checked + .slider:before {
 }
 
 .cell-assigned {
-    background-color: #cce0ff; 
+    background-color: var(--bg-assigned);
+    color: var(--text-primary);
 }
 
 .cell-missing {
-    background-color: #fff0f5;
+    background-color: var(--bg-missing);
     border: 2px solid var(--accent-pink);
     color: var(--accent-pink);
     font-weight: bold;
@@ -561,14 +657,14 @@ input:checked + .slider:before {
 }
 
 .row-absent td.cell-assigned {
-    background-color: #fce4e4; 
+    background-color: var(--bg-absent-assigned); 
 }
 
 /* Drag & Drop Visuals */
 .cell-selected {
     outline: 3px solid var(--accent-blue) !important;
     outline-offset: -3px;
-    background-color: #e5f0ff !important;
+    background-color: var(--bg-assigned) !important;
     transform: scale(0.98);
     transition: all 0.1s;
 }
@@ -581,8 +677,8 @@ input:checked + .slider:before {
 }
 
 .drag-over {
-    background-color: #d1ffd6 !important;
-    outline: 2px dashed #28a745 !important;
+    background-color: var(--drag-over-bg) !important;
+    outline: 2px dashed var(--accent-green) !important;
     outline-offset: -2px;
 }
 
@@ -604,7 +700,7 @@ input:checked + .slider:before {
     display: flex;
     align-items: center;
     gap: 6px;
-    background: #fff0f5;
+    background: var(--bg-missing);
     padding: 4px 10px;
     border-radius: 12px;
     border: 1px solid var(--accent-pink);
@@ -654,9 +750,9 @@ input:checked + .slider:before {
     flex-wrap: wrap;
     gap: 10px;
     padding: 15px;
-    background: #f9f9f9;
+    background: var(--tray-bg);
     border-radius: var(--radius-md);
-    border: 2px dashed #d1d1d6;
+    border: 2px dashed var(--border-color);
     min-height: 70px;
     margin-bottom: 20px;
 }

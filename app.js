@@ -31,6 +31,7 @@ const periods = ['GOLDEN HOUR', '1st Pd.', 'BREAKFAST', '2nd Pd.', '3rd Pd.', '4
 
 // --- INITIALIZATION & STORAGE ---
 document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
     if (!loadStateFromStorage()) {
         generateSimulatedData(); 
         saveStateToStorage(); 
@@ -83,6 +84,50 @@ function loadStateFromStorage() {
         }
     }
     return false;
+}
+
+// --- THEME MANAGEMENT ---
+function initTheme() {
+    const savedTheme = localStorage.getItem('lfps_frontdesk_theme');
+    if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+    updateThemeToggleUI();
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mediaQuery.addEventListener) {
+        mediaQuery.addEventListener('change', () => {
+            if (!localStorage.getItem('lfps_frontdesk_theme')) {
+                updateThemeToggleUI();
+            }
+        });
+    }
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    let nextTheme;
+    if (!current) {
+        nextTheme = systemIsDark ? 'light' : 'dark';
+    } else if (current === 'dark') {
+        nextTheme = 'light';
+    } else {
+        nextTheme = 'dark';
+    }
+    document.documentElement.setAttribute('data-theme', nextTheme);
+    localStorage.setItem('lfps_frontdesk_theme', nextTheme);
+    updateThemeToggleUI();
+}
+
+function updateThemeToggleUI() {
+    const btn = document.getElementById('theme-toggle-btn');
+    if (!btn) return;
+    const current = document.documentElement.getAttribute('data-theme');
+    const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = current === 'dark' || (!current && systemIsDark);
+    btn.textContent = isDark ? '☀️' : '🌙';
+    btn.title = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
 }
 
 function safeBind(id, eventType, handler, options = false) {
@@ -143,6 +188,7 @@ function bindEvents() {
         e.preventDefault(); e.stopPropagation(); closeBottomSheet();
     }, {passive: false});
 
+    safeBind('theme-toggle-btn', 'click', toggleTheme);
     safeBind('toast-undo-btn', 'click', undoLastAction);
     safeBind('header-undo-btn', 'click', undoLastAction);
     safeBind('reset-schedule-btn', 'click', handleResetSchedule);
@@ -318,7 +364,7 @@ function renderTableRoutine() {
         
         periods.forEach(period => {
             if (period === 'BREAKFAST' || period === 'PLAY TIME') {
-                html += `<td style="background:#f9f9f9; text-align:center;">-</td>`;
+                html += `<td style="background:var(--static-cell-bg); text-align:center; color:var(--text-secondary);">-</td>`;
                 return;
             }
             
@@ -491,7 +537,7 @@ function renderSubstitutions() {
         `;
     } else if (conflicts === 0 && resolvedCount > 0) {
         conflictList.innerHTML = `
-            <div style="text-align:center; padding: 20px; background:#f0fff4; border-radius:var(--radius-lg); margin-bottom:20px; border:1px solid #34c759;">
+            <div style="text-align:center; padding: 20px; background:var(--bg-resolved); border-radius:var(--radius-lg); margin-bottom:20px; border:1px solid var(--accent-green);">
                 <h3 style="color:var(--accent-green); margin-bottom:5px;">Fully Covered</h3>
                 <p style="color:var(--text-secondary); font-size:13px;">All absences have been assigned substitutes.</p>
             </div>
@@ -645,7 +691,7 @@ function openBottomSheet(period, targetTeacher) {
     });
     
     busy.forEach(t => {
-        list.innerHTML += `<div style="padding:15px; margin-bottom:8px; background:#f2f2f7; border-radius:8px; color:gray; cursor:pointer;" 
+        list.innerHTML += `<div style="padding:15px; margin-bottom:8px; background:var(--bg-color); border:1px solid var(--border-color); border-radius:8px; color:var(--text-secondary); cursor:pointer;" 
                             onclick="event.stopPropagation(); assignSubstitute('${period}', '${targetTeacher}', '${t.name}')">🟡 ${t.name} (Currently in ${t.task})</div>`;
     });
 

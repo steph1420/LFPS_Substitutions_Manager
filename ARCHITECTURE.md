@@ -66,3 +66,119 @@ const state = {
 ## 9. Session Log & Incremental Changelog
 *   **v1.17 Baseline**: Completed review of `app.js`, `styles.css`, and `index.html`. Confirmed dual-state architecture (`baseSchedule` vs `schedule`), drag-and-overwrite mechanics, and iOS touch physics.
 *   **Documentation Baseline**: Initialized and updated `ARCHITECTURE.md` with strict surgical editing rule, state engine mapping, dual-stack routing explanation, and project file guide.
+*   **Technical Specifications Integrated**: Appended technical blueprints for RFC 4180 CSV parser, priority preference matrix heuristics, cloud vs local sync workflow, and Apple HIG dark mode tokens.
+*   **Native Dark Mode Implemented**: Implemented full Apple HIG dark mode token system with automatic `@media (prefers-color-scheme: dark)` detection, manual toggle override via `data-theme` attribute and `localStorage` persistence, and surgical theme variable migration across `styles.css`, `index.html`, and `app.js`.
+
+## 10. Appendix: Technical Specifications
+
+### 10.1 Google Sheets CSV Pipeline & RFC 4180 Parser
+Custom lightweight state-machine parser to handle Google Sheets edge cases without external dependencies:
+
+```javascript
+function parseCSV(text) {
+    let result = [];
+    let row = [];
+    let cell = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < text.length; i++) {
+        let char = text[i];
+        if (char === '"' && text[i+1] === '"') { 
+            cell += '"'; i++; // Handle escaped quotes
+        } else if (char === '"') { 
+            inQuotes = !inQuotes; // Toggle quote state
+        } else if (char === ',' && !inQuotes) { 
+            row.push(cell.trim()); cell = ''; // End of cell
+        } else if (char === '\n' && !inQuotes) { 
+            row.push(cell.trim()); result.push(row); row = []; cell = ''; // End of row
+        } else if (char !== '\r') { 
+            cell += char; 
+        }
+    }
+    if (cell) row.push(cell.trim());
+    if (row.length > 0) result.push(row);
+    return result;
+}
+```
+
+**State Mapping Schema:**
+* **Row 0 (Headers):** `['Teacher', 'GOLDEN HOUR', '1st Pd.', 'BREAKFAST', ...]`
+* **Row 1+ (Data):** Loop through rows. `col[0]` is teacher name. Loop through `col[1]` to `col[N]`.
+* **Mapping:** `state.schedule[day][ headers[i] ][ teacher ] = col[i] || 'Free'`
+
+---
+
+### 10.2 Priority Preference Matrix Specification
+Secondary Google Sheets tab guiding `performAutoResolve()`:
+
+**Data Dictionary:**
+1. **Teacher Name:** (e.g., `Mr. Stephen`)
+2. **Priority Tier:** `1` (Primary Sub), `2` (Secondary Sub), `3` (Emergency Only)
+3. **Max Subs/Day:** Integer limit (e.g., `2`)
+4. **Preferred Subjects:** Comma-separated (e.g., `MATH KGA, ENG KGB`)
+
+**Constraint-Satisfaction Heuristic:**
+1. **Filter 1 (Availability):** Teachers marked `'Free'` for that period.
+2. **Filter 2 (Fatigue):** Exclude teachers reaching `Max Subs/Day` threshold in `state.substitutions`.
+3. **Sort 1 (Preference Match):** Prioritize teachers whose `Preferred Subjects` includes target class.
+4. **Sort 2 (Tier):** Sort remaining candidates by `Priority Tier` (1 -> 3).
+5. **Assign:** Select candidate at `index[0]`.
+
+---
+
+### 10.3 Cloud vs. Local Version Conflict Resolution UX
+* Checks dedicated `Timestamp` cell (e.g., cell A1) against `state.lastSyncTimestamp`.
+* If `cloud_timestamp > local_timestamp`, triggers Apple-style centered glassmorphic alert:
+  * **Title:** "Schedule Updated"
+  * **Body:** "The master routine was updated at [Time]. You have unsaved local changes on your grid."
+  * **Action 1 (Destructive):** "Overwrite Local Grid" (Erases local edits, applies new CSV, resets limbo tray).
+  * **Action 2 (Primary):** "Keep My Edits" (Updates `baseSchedule` silently in background, preserves active working grid, updates sync timestamp).
+
+---
+
+### 10.4 Complete Apple HIG Dark Mode Token Palette
+```css
+/* LIGHT MODE (Default) */
+:root {
+    --bg-color: #f2f2f7;          /* SystemGray6 */
+    --surface-color: #ffffff;     /* Pure White */
+    --surface-elevated: #ffffff;  /* Modals/Popups */
+    --text-primary: #1c1c1e;
+    --text-secondary: #8e8e93;
+    --border-color: #e5e5ea;      /* SystemGray5 */
+    
+    /* Contrast-Safe Accents */
+    --accent-blue: #007aff;
+    --accent-red: #ff3b30;
+    --accent-pink: #ff2d55;
+    --accent-green: #34c759;
+    
+    /* Status Backgrounds */
+    --bg-assigned: #e5f0ff;
+    --bg-missing: #fff0f5;
+    --bg-resolved: #f0fff4;
+}
+
+/* DARK MODE OVERRIDES */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color: #000000;          /* Pure Black */
+        --surface-color: #1c1c1e;     /* SystemGray6 (Dark) */
+        --surface-elevated: #2c2c2e;  /* SystemGray5 (Dark) */
+        --text-primary: #f2f2f7;
+        --text-secondary: #aeaeb2;
+        --border-color: #38383a;      /* SystemGray4 (Dark) */
+        
+        /* Desaturated Accents for Dark Mode Legibility */
+        --accent-blue: #0a84ff;
+        --accent-red: #ff453a;
+        --accent-pink: #ff375f;
+        --accent-green: #30d158;
+        
+        /* Status Backgrounds (Opacity adjusted for dark surfaces) */
+        --bg-assigned: rgba(10, 132, 255, 0.15);
+        --bg-missing: rgba(255, 55, 95, 0.15);
+        --bg-resolved: rgba(48, 209, 88, 0.15);
+    }
+}
+```
