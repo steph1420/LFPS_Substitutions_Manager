@@ -17,6 +17,7 @@ let selectedCell = null;
 let draggedData = null;  
 let scrollSpeed = 0;
 let isScrolling = false;
+let lastDroppedCell = null; // Transient state to trigger the pop-in animation
 
 const teachers = [
     'Mr. Stephen', 'Mrs. Midha', 'Mrs. Pahwa', 'Mrs. Bage', 'Mr. Adams', 
@@ -283,6 +284,11 @@ function renderTableRoutine() {
             if (selectedCell && selectedCell.type === 'grid' && selectedCell.period === period && selectedCell.teacher === teacher) {
                 cellClasses.push('cell-selected');
             }
+
+            // Apply animation class if this cell was just dropped onto
+            if (lastDroppedCell && lastDroppedCell.period === period && lastDroppedCell.teacher === teacher) {
+                cellClasses.push('cell-just-dropped');
+            }
             
             let clickHandler = state.isEditMode ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
             let dragAttrs = state.isEditMode ? `draggable="true" data-period="${period}" data-teacher="${teacher}"` : '';
@@ -493,6 +499,12 @@ function executeMove(source, target) {
     } else if (source.type === 'displaced') {
         state.displaced[state.day] = state.displaced[state.day].filter(d => d.id !== source.item.id);
     }
+
+    // Trigger animation for the dropped cell
+    lastDroppedCell = { period: target.period, teacher: target.teacher };
+    setTimeout(() => {
+        lastDroppedCell = null; // Clear it so it doesn't replay on random renders
+    }, 500);
 
     saveStateToStorage();
     updateUndoUI();
