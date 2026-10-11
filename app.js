@@ -3,11 +3,12 @@ const state = {
     day: 'MON',
     isEditMode: false,
     absentTeachers: new Set(),
-    baseSchedule: {}, // The uncorrupted Master Reference
-    schedule: {},     // The active working Grid
+    baseSchedule: {}, 
+    schedule: {},     
+    substitutions: {}, // Tracks mapped substitutions explicitly for the Pink/Green cards
     actionHistory: {
-        grid: [], // Drag/Drop overwrites on the Master Routine
-        subs: []  // Manual/Auto substitutions on the Substitutions tab
+        grid: [], 
+        subs: []  
     }
 };
 
@@ -38,6 +39,7 @@ function saveStateToStorage() {
         day: state.day,
         baseSchedule: state.baseSchedule,
         schedule: state.schedule,
+        substitutions: state.substitutions,
         absentTeachers: Array.from(state.absentTeachers), 
         actionHistory: state.actionHistory
     };
@@ -53,8 +55,9 @@ function loadStateFromStorage() {
                 return false;
             }
             state.day = parsed.day || 'MON';
-            state.baseSchedule = parsed.baseSchedule || JSON.parse(JSON.stringify(parsed.schedule)); // Fallback if missing
+            state.baseSchedule = parsed.baseSchedule || JSON.parse(JSON.stringify(parsed.schedule)); 
             state.schedule = parsed.schedule;
+            state.substitutions = parsed.substitutions || {};
             state.absentTeachers = new Set(parsed.absentTeachers || []);
             
             if (parsed.actionHistory && Array.isArray(parsed.actionHistory.grid)) {
@@ -79,7 +82,6 @@ function safeBind(id, eventType, handler) {
     if (element) element.addEventListener(eventType, handler);
 }
 
-// Native Smooth Scrolling Engine for Desktop Dragging
 function scrollTick() {
     const container = document.querySelector('.table-scroll-container');
     if (scrollSpeed !== 0 && container) {
@@ -99,7 +101,7 @@ function bindEvents() {
             target.classList.add('active');
             document.getElementById(target.dataset.target).classList.add('active');
             
-            updateUndoUI(); // Switch undo stack context instantly
+            updateUndoUI(); 
         });
     });
 
@@ -129,8 +131,8 @@ function bindEvents() {
     safeBind('sheet-overlay', 'click', closeBottomSheet);
     safeBind('toast-undo-btn', 'click', undoLastAction);
     safeBind('header-undo-btn', 'click', undoLastAction);
+    safeBind('auto-resolve-btn', 'click', performAutoResolve);
 
-    // Grid Drag & Drop
     const tableContainer = document.querySelector('.table-scroll-container');
     const table = document.getElementById('routine-table');
     
@@ -257,16 +259,17 @@ function renderTableRoutine() {
                 return;
             }
             
-            // Render from active working schedule
             const task = state.schedule[state.day]?.[period]?.[teacher] || 'Free';
-            const isMissingSub = isAbsent && task !== 'Free' && task !== '';
+            // Determine missing state by verifying if base schedule had a task that is unassigned/still theirs
+            const baseTask = state.baseSchedule[state.day]?.[period]?.[teacher];
+            const isMissingSub = isAbsent && baseTask && baseTask !== 'Free' && !state.substitutions[state.day]?.[period]?.[teacher];
             
             let cellClasses = [];
             let cellText = task === 'Free' ? '' : task;
             
             if (isMissingSub) {
                 cellClasses.push('cell-missing');
-                cellText = '⚠ ' + task;
+                cellText = '⚠ ' + baseTask; 
             } else if (task !== 'Free') {
                 cellClasses.push('cell-assigned');
             }
@@ -295,24 +298,48 @@ function renderCardRoutine() {
 function renderSubstitutions() {
     const conflictList = document.getElementById('conflict-list');
     const badge = document.getElementById('substitutions-badge');
+    const autoBtn = document.getElementById('auto-resolve-btn');
     if(!conflictList || !badge) return;
     
-    // For now, retaining basic render logic until we build the full Persistent Pink/Green Dashboard
     conflictList.innerHTML = '';
     let conflicts = 0;
+    let resolvedCount = 0;
+    let totalAbsences = 0;
 
     periods.forEach(period => {
         teachers.forEach(teacher => {
             const isAbsent = state.absentTeachers.has(teacher);
-            // Referencing active grid to see if it's missing (Next update will map to baseSchedule)
-            const task = state.schedule[state.day]?.[period]?.[teacher];
+            if (!isAbsent) return;
+
+            // Anchor logic to baseline
+            const baseTask = state.baseSchedule[state.day]?.[period]?.[teacher];
+            if (!baseTask || baseTask === 'Free' || baseTask === '') return;
+
+            totalAbsences++;
+            const subTeacher = state.substitutions[state.day]?.[period]?.[teacher];
             
-            if (isAbsent && task && task !== 'Free') {
+            if (subTeacher) {
+                // Resolved (Green Card)
+                resolvedCount++;
+                conflictList.innerHTML += `
+                    <div class="period-card resolved" style="margin-bottom:15px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <strong style="color:var(--accent-green);">${period} - ${baseTask}</strong>
+                            <span style="text-decoration: line-through; color:var(--text-secondary);">${teacher}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-weight:600; color:var(--text-primary);">Covered by: ${subTeacher}</span>
+                            <button onclick="openBottomSheet('${period}', '${teacher}')" style="background:transparent; border:1px solid var(--accent-green); color:var(--accent-green); padding:4px 10px; border-radius:12px; font-size:12px; cursor:pointer;">Reassign</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Pending (Pink Card)
                 conflicts++;
                 conflictList.innerHTML += `
                     <div class="period-card needs-action" style="margin-bottom:15px; cursor:pointer;" onclick="openBottomSheet('${period}', '${teacher}')">
                         <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                            <strong style="color:var(--accent-pink);">${period} - ${task}</strong>
+                            <strong style="color:var(--accent-pink);">${period} - ${baseTask}</strong>
                             <span>${teacher}</span>
                         </div>
                         <div style="font-size:13px; color:var(--accent-blue);">Tap to assign substitute →</div>
@@ -325,6 +352,32 @@ function renderSubstitutions() {
     badge.textContent = conflicts;
     badge.className = `badge ${conflicts > 0 ? 'visible' : 'hidden'}`;
     badge.style.cssText = conflicts > 0 ? "background:var(--accent-red); color:white; padding:2px 6px; border-radius:10px; font-size:10px; position:absolute; top:-5px; right:15px;" : "display:none;";
+    
+    if (autoBtn) {
+        if (conflicts > 0) {
+            autoBtn.classList.remove('hidden');
+        } else {
+            autoBtn.classList.add('hidden');
+        }
+    }
+
+    // Empty States
+    if (totalAbsences === 0) {
+        conflictList.innerHTML = `
+            <div style="text-align:center; padding: 40px 20px;">
+                <div style="font-size:48px; margin-bottom:10px;">🎉</div>
+                <h3 style="color:var(--text-primary); margin-bottom:5px;">All Clear!</h3>
+                <p style="color:var(--text-secondary); font-size:14px;">No absences marked for today.</p>
+            </div>
+        `;
+    } else if (conflicts === 0 && resolvedCount > 0) {
+        conflictList.innerHTML = `
+            <div style="text-align:center; padding: 20px; background:#f0fff4; border-radius:var(--radius-lg); margin-bottom:20px; border:1px solid #34c759;">
+                <h3 style="color:var(--accent-green); margin-bottom:5px;">Fully Covered</h3>
+                <p style="color:var(--text-secondary); font-size:13px;">All absences have been assigned substitutes.</p>
+            </div>
+        ` + conflictList.innerHTML;
+    }
 }
 
 // --- INTERACTION MECHANICS ---
@@ -342,7 +395,6 @@ function handleCellInteraction(period, teacher) {
     }
 }
 
-// STRICT COPY & OVERWRITE
 function executeMove(source, target) {
     const sTask = state.schedule[state.day][source.period][source.teacher];
     const tTask = state.schedule[state.day][target.period][target.teacher]; 
@@ -353,9 +405,7 @@ function executeMove(source, target) {
         source, target, sTask, tTask
     });
 
-    // Overwrite the target slot with the moving class
     state.schedule[state.day][target.period][target.teacher] = sTask; 
-    // Leave the original slot completely free
     state.schedule[state.day][source.period][source.teacher] = 'Free'; 
 
     saveStateToStorage();
@@ -366,9 +416,34 @@ function executeMove(source, target) {
 
 function openBottomSheet(period, targetTeacher) {
     if (!state.isEditMode && document.querySelector('.tab-section.active').id !== 'tab-substitutions') return;
+    
     const sheet = document.getElementById('bottom-sheet');
     const overlay = document.getElementById('sheet-overlay');
-    if(!sheet || !overlay) return;
+    const list = document.getElementById('sheet-teacher-list');
+    if(!sheet || !overlay || !list) return;
+
+    list.innerHTML = `<p style="margin-bottom:15px; font-size:13px; color:gray;">Assigning substitute for ${period}</p>`;
+    
+    const available = [];
+    const busy = [];
+    
+    teachers.forEach(t => {
+        if (state.absentTeachers.has(t)) return;
+        const currentTask = state.schedule[state.day][period][t];
+        if (!currentTask || currentTask === 'Free') available.push(t);
+        else busy.push({ name: t, task: currentTask });
+    });
+    
+    available.forEach(t => {
+        list.innerHTML += `<div style="padding:15px; margin-bottom:8px; background:var(--surface-color); border-radius:8px; border:1px solid var(--accent-blue); font-weight:bold; cursor:pointer;" 
+                            onclick="assignSubstitute('${period}', '${targetTeacher}', '${t}')">🟢 ${t} (Free)</div>`;
+    });
+    
+    busy.forEach(t => {
+        list.innerHTML += `<div style="padding:15px; margin-bottom:8px; background:#f2f2f7; border-radius:8px; color:gray; cursor:pointer;" 
+                            onclick="assignSubstitute('${period}', '${targetTeacher}', '${t.name}')">🟡 ${t.name} (Currently in ${t.task})</div>`;
+    });
+
     sheet.classList.add('open');
     overlay.classList.add('active');
 }
@@ -380,13 +455,119 @@ function closeBottomSheet() {
     if(overlay) overlay.classList.remove('active');
 }
 
+function assignSubstitute(period, absentTeacher, subTeacher) {
+    closeBottomSheet();
+    
+    if (!state.substitutions[state.day]) state.substitutions[state.day] = {};
+    if (!state.substitutions[state.day][period]) state.substitutions[state.day][period] = {};
+    
+    const previousSub = state.substitutions[state.day][period][absentTeacher];
+    const previousTaskForSub = state.schedule[state.day][period][subTeacher];
+    const taskToCover = state.baseSchedule[state.day][period][absentTeacher];
+    
+    state.actionHistory.subs.push({ 
+        type: 'sub',
+        period, absentTeacher, subTeacher, previousSub, previousTaskForSub, taskToCover, day: state.day 
+    });
+    
+    if (previousSub && previousSub !== subTeacher) {
+        state.schedule[state.day][period][previousSub] = 'Free'; 
+    }
+
+    state.schedule[state.day][period][subTeacher] = taskToCover;
+    state.schedule[state.day][period][absentTeacher] = 'Free'; 
+    state.substitutions[state.day][period][absentTeacher] = subTeacher;
+    
+    saveStateToStorage();
+    updateUndoUI();
+    showToast(`Assigned ${subTeacher} to ${period}`);
+    renderAll();
+}
+
+// --- AUTO-RESOLVE ENGINE ---
+function performAutoResolve() {
+    const batchActions = [];
+    let conflictsResolved = 0;
+    let conflictsRemaining = 0;
+    
+    periods.forEach(period => {
+        const needsSub = [];
+        teachers.forEach(t => {
+            const isAbsent = state.absentTeachers.has(t);
+            const baseTask = state.baseSchedule[state.day]?.[period]?.[t];
+            const currentSub = state.substitutions[state.day]?.[period]?.[t];
+            
+            if (isAbsent && baseTask && baseTask !== 'Free' && !currentSub) {
+                needsSub.push({ absentTeacher: t, task: baseTask });
+            }
+        });
+        
+        if (needsSub.length === 0) return;
+        
+        const available = [];
+        teachers.forEach(t => {
+            if (!state.absentTeachers.has(t)) {
+                const task = state.schedule[state.day]?.[period]?.[t];
+                if (!task || task === 'Free') {
+                    available.push(t);
+                }
+            }
+        });
+        
+        needsSub.forEach(need => {
+            if (available.length > 0) {
+                const subTeacher = available.shift();
+                const previousTaskForSub = state.schedule[state.day][period][subTeacher];
+                
+                batchActions.push({
+                    period,
+                    absentTeacher: need.absentTeacher,
+                    subTeacher,
+                    previousTaskForSub,
+                    taskToCover: need.task,
+                    day: state.day
+                });
+                
+                state.schedule[state.day][period][subTeacher] = need.task;
+                state.schedule[state.day][period][need.absentTeacher] = 'Free';
+                
+                if (!state.substitutions[state.day]) state.substitutions[state.day] = {};
+                if (!state.substitutions[state.day][period]) state.substitutions[state.day][period] = {};
+                state.substitutions[state.day][period][need.absentTeacher] = subTeacher;
+                
+                conflictsResolved++;
+            } else {
+                conflictsRemaining++;
+            }
+        });
+    });
+    
+    if (batchActions.length > 0) {
+        state.actionHistory.subs.push({
+            type: 'batch-sub',
+            actions: batchActions
+        });
+        saveStateToStorage();
+        updateUndoUI();
+        
+        if (conflictsRemaining > 0) {
+            showToast(`Auto-resolved ${conflictsResolved}. ${conflictsRemaining} remaining.`);
+        } else {
+            showToast(`Auto-resolved all ${conflictsResolved} conflicts.`);
+        }
+        renderAll();
+    } else {
+        showToast("No free teachers available to resolve conflicts.");
+    }
+}
+
 // --- DUAL-STACK UNDO ENGINE ---
 function getActiveHistoryStack() {
     const activeTab = document.querySelector('.tab-section.active');
     if (activeTab && activeTab.id === 'tab-substitutions') {
-        return state.actionHistory.subs; // Return Substitutions memory
+        return state.actionHistory.subs; 
     }
-    return state.actionHistory.grid; // Default to Grid memory
+    return state.actionHistory.grid; 
 }
 
 function updateUndoUI() {
@@ -413,8 +594,27 @@ function undoLastAction() {
         const { day, source, target, sTask, tTask } = action;
         state.schedule[day][target.period][target.teacher] = tTask;
         state.schedule[day][source.period][source.teacher] = sTask;
-    } 
-    // (Sub/Batch-sub reversal logic will go here when we build phase 2)
+    } else if (action.type === 'sub') {
+        const { period, absentTeacher, subTeacher, previousSub, previousTaskForSub, taskToCover, day } = action;
+        state.schedule[day][period][subTeacher] = previousTaskForSub || 'Free';
+        
+        if (previousSub) {
+            state.substitutions[day][period][absentTeacher] = previousSub;
+            state.schedule[day][period][previousSub] = taskToCover;
+        } else {
+            delete state.substitutions[day][period][absentTeacher];
+            state.schedule[day][period][absentTeacher] = taskToCover;
+        }
+    } else if (action.type === 'batch-sub') {
+        // Reverse array so we undo from the last sub to the first sub exactly
+        [...action.actions].reverse().forEach(sub => {
+            state.schedule[sub.day][sub.period][sub.subTeacher] = sub.previousTaskForSub || 'Free';
+            state.schedule[sub.day][sub.period][sub.absentTeacher] = sub.taskToCover;
+            if(state.substitutions[sub.day] && state.substitutions[sub.day][sub.period]) {
+                delete state.substitutions[sub.day][sub.period][sub.absentTeacher];
+            }
+        });
+    }
     
     saveStateToStorage();
     updateUndoUI();
@@ -452,6 +652,6 @@ function generateSimulatedData() {
         });
     });
 
-    // Deep clone the schedule into the Base Reference so we always know original owners
     state.baseSchedule = JSON.parse(JSON.stringify(state.schedule));
+    state.substitutions = {};
 }

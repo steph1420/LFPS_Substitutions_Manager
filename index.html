@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.5">
+    <link rel="stylesheet" href="styles.css?v=1.6">
 </head>
 <body>
 
@@ -14,7 +14,7 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge">v1.5</span>
+                <span class="version-badge">v1.6</span>
             </div>
             <div class="header-controls">
                 <button id="header-undo-btn" class="btn-undo">↩ Undo</button>
@@ -59,7 +59,7 @@
             </div>
         </section>
 
-        <!-- TAB 2: SUBSTITUTIONS (Rebranded from Resolver) -->
+        <!-- TAB 2: SUBSTITUTIONS -->
         <section id="tab-substitutions" class="tab-section">
             <div class="resolver-header">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 5px;">
@@ -68,7 +68,9 @@
                 </div>
                 <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">Review and assign substitute coverage.</p>
             </div>
-            <div class="conflict-list" id="conflict-list"></div>
+            <div class="conflict-list" id="conflict-list">
+                <!-- Pink & Green Cards populated by JS -->
+            </div>
         </section>
 
         <!-- TAB 3: CARDS (Old Layout) -->
@@ -110,6 +112,6 @@
     </div>
     <div id="sheet-overlay" class="overlay hidden"></div>
 
-    <script src="app.js?v=1.5"></script>
+    <script src="app.js?v=1.6"></script>
 </body>
 </html>
