@@ -136,7 +136,6 @@ function bindEvents() {
 
     safeBind('hide-absent-toggle', 'change', renderAll);
     
-    // Ghost-Click Prevention for Overlay
     safeBind('sheet-overlay', 'click', (e) => {
         e.preventDefault(); e.stopPropagation(); closeBottomSheet();
     });
@@ -148,7 +147,6 @@ function bindEvents() {
     safeBind('header-undo-btn', 'click', undoLastAction);
     safeBind('auto-resolve-btn', 'click', performAutoResolve);
 
-    // --- Touch Drag-to-Close for Bottom Sheet ---
     const sheet = document.getElementById('bottom-sheet');
     const handle = document.getElementById('sheet-handle');
     let startY = 0;
@@ -184,7 +182,6 @@ function bindEvents() {
             }
         });
 
-        // Click on handle to close as well
         if(handle) handle.addEventListener('click', closeBottomSheet);
     }
 
@@ -202,7 +199,6 @@ function bindEvents() {
             e.dataTransfer.setData('text/plain', ''); 
             scrollSpeed = 0;
 
-            // Visual indicator that it's being dragged out
             setTimeout(() => td.classList.add('cell-dragging'), 0);
         });
 
@@ -343,7 +339,6 @@ function renderTableRoutine() {
                 cellClasses.push('cell-selected');
             }
 
-            // Apply contextual drop animations and ghost slide
             if (lastDisplacedDrop && lastDisplacedDrop.period === period && lastDisplacedDrop.teacher === teacher) {
                 cellClasses.push('cell-displaced-flash');
                 cellText = `
@@ -383,7 +378,6 @@ function renderDisplacedTray() {
             const isNew = item.id === newlyDisplacedItemId;
             
             const div = document.createElement('div');
-            // PopIn applies ONLY to newly displaced item. Rest just lay flat.
             div.className = `displaced-item ${isSelected ? 'selected' : ''} ${isNew ? 'item-newly-displaced' : ''}`;
             div.draggable = state.isEditMode;
             div.dataset.id = item.id;
