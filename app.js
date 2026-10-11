@@ -289,9 +289,14 @@ function renderTableRoutine() {
                 cellClasses.push('cell-selected');
             }
 
-            // Apply contextual drop animations
+            // Apply contextual drop animations and structural changes
             if (lastDisplacedDrop && lastDisplacedDrop.period === period && lastDisplacedDrop.teacher === teacher) {
                 cellClasses.push('cell-displaced-flash');
+                // Inject the sliding ghost text and pop-in new text
+                cellText = `
+                    <div style="position:relative; z-index:2; animation: popIn 0.4s ease-out forwards;">${cellText}</div>
+                    <div class="ghost-displaced">${lastDisplacedDrop.oldTask}</div>
+                `;
             } else if (lastDroppedCell && lastDroppedCell.period === period && lastDroppedCell.teacher === teacher) {
                 cellClasses.push('cell-just-dropped');
             }
@@ -515,7 +520,8 @@ function executeMove(source, target) {
 
     // Set contextual animation markers
     if (wasDisplaced) {
-        lastDisplacedDrop = { period: target.period, teacher: target.teacher };
+        // Save the old task so we can render the ghost text sliding down
+        lastDisplacedDrop = { period: target.period, teacher: target.teacher, oldTask: tTask };
     } else {
         lastDroppedCell = { period: target.period, teacher: target.teacher };
     }
@@ -525,7 +531,7 @@ function executeMove(source, target) {
         lastDroppedCell = null; 
         lastDisplacedDrop = null;
         newlyDisplacedItemId = null;
-    }, 500);
+    }, 600);
 
     saveStateToStorage();
     updateUndoUI();
