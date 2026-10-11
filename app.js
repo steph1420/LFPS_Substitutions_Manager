@@ -615,13 +615,6 @@ function renderSubstitutions() {
                 <p style="color:var(--text-secondary); font-size:14px;">No absences marked for today.</p>
             </div>
         `;
-    } else if (conflicts === 0 && resolvedCount > 0) {
-        conflictList.innerHTML = `
-            <div style="text-align:center; padding: 20px; background:var(--bg-resolved); border-radius:var(--radius-lg); margin-bottom:20px; border:1px solid var(--accent-green);">
-                <h3 style="color:var(--accent-green); margin-bottom:5px;">Fully Covered</h3>
-                <p style="color:var(--text-secondary); font-size:13px;">All absences have been assigned substitutes.</p>
-            </div>
-        ` + conflictList.innerHTML;
     }
 }
 
@@ -746,21 +739,19 @@ function handleResetSchedule() {
 }
 
 function openBottomSheet(period, targetTeacher) {
-    if (!state.isEditMode && document.querySelector('.tab-section.active').id !== 'tab-substitutions') return;
-    
     const sheet = document.getElementById('bottom-sheet');
     const overlay = document.getElementById('sheet-overlay');
     const list = document.getElementById('sheet-teacher-list');
     if(!sheet || !overlay || !list) return;
 
-    list.innerHTML = `<p style="margin-bottom:15px; font-size:13px; color:gray;">Assigning substitute for ${period}</p>`;
+    list.innerHTML = `<p style="margin-bottom:15px; font-size:13px; color:var(--text-secondary);">Assigning substitute for ${period}</p>`;
     
     const available = [];
     const busy = [];
     
     teachers.forEach(t => {
         if (state.absentTeachers.has(t)) return;
-        const currentTask = state.schedule[state.day][period][t];
+        const currentTask = state.schedule[state.day]?.[period]?.[t];
         if (!currentTask || currentTask === 'Free') available.push(t);
         else busy.push({ name: t, task: currentTask });
     });
@@ -775,6 +766,8 @@ function openBottomSheet(period, targetTeacher) {
                             onclick="event.stopPropagation(); assignSubstitute('${period}', '${targetTeacher}', '${t.name}')">🟡 ${t.name} (Currently in ${t.task})</div>`;
     });
 
+    sheet.classList.remove('hidden');
+    overlay.classList.remove('hidden');
     sheet.classList.add('open');
     overlay.classList.add('active');
     sheet.style.transform = 'translateY(0)'; 
@@ -783,9 +776,16 @@ function openBottomSheet(period, targetTeacher) {
 function closeBottomSheet() {
     const sheet = document.getElementById('bottom-sheet');
     const overlay = document.getElementById('sheet-overlay');
-    if(sheet) sheet.classList.remove('open');
-    if(overlay) overlay.classList.remove('active');
+    if(sheet) {
+        sheet.classList.remove('open');
+        sheet.style.transform = '';
+    }
+    if(overlay) {
+        overlay.classList.remove('active');
+    }
 }
+window.openBottomSheet = openBottomSheet;
+window.closeBottomSheet = closeBottomSheet;
 
 function assignSubstitute(period, absentTeacher, subTeacher) {
     closeBottomSheet();
@@ -815,6 +815,7 @@ function assignSubstitute(period, absentTeacher, subTeacher) {
     showToast(`Assigned ${subTeacher} to ${period}`);
     renderAll();
 }
+window.assignSubstitute = assignSubstitute;
 
 // --- AUTO-RESOLVE ENGINE ---
 function performAutoResolve() {

@@ -1,5 +1,5 @@
 # Front Desk PWA - Architecture & Developer Guide
-**Current Version:** v1.20
+**Current Version:** v1.21
 **Project Type:** Vanilla JS/HTML/CSS Offline-First PWA
 **Purpose:** School substitution management and daily timetable resolution.
 
@@ -70,6 +70,7 @@ const state = {
 *   **v1.18 Release (Native Dark Mode & Apple Theme Switcher)**: Implemented full Apple HIG dark mode token system with automatic `@media (prefers-color-scheme: dark)` detection, manual toggle override via `data-theme` attribute and `localStorage` persistence. Added tactile, circular Apple-style theme toggle button with dynamic SVG Sun/Moon vector icon switching. Updated script and style assets to v1.18 cache-busting queries.
 *   **v1.19 Release (Theme Toggle Event Fix & Robust Selector Binding)**: Eliminated double-invocation race condition caused by duplicate inline onclick and addEventListener handlers. Simplified boolean state toggling, bound `data-theme` to both `html` and `body`, updated CSS theme selectors from `:root[data-theme]` to `[data-theme]`, and bumped cache-busting tags.
 *   **v1.20 Release (Interactive Grid Hovers & Period Refactoring)**: Implemented interactive hover indicators and synchronized row/column highlights for teacher names and period headers. Renamed 'BREAKFAST' to 'BREAKFAST BREAK'. Replaced non-editable 'PLAY TIME' with fully assignable '2nd GOLDEN HOUR' (both Golden Hours now fully editable, draggable, and substitute-eligible). Added automatic backward-compatible storage migration for period names.
+*   **v1.21 Release (Banner Removal & Bottom Sheet Fix)**: Removed the intrusive 'Fully Covered' notification banner from the Substitutions tab. Fixed bottom sheet teacher selection popup by removing blocking `.hidden` class from markup, ensuring smooth transition open/close, and globally exporting handlers to `window`.
 
 ## 10. Appendix: Technical Specifications
 
