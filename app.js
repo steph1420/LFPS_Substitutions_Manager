@@ -301,13 +301,15 @@ function renderTableRoutine() {
 }
 
 function renderDisplacedTray() {
+    const indicator = document.getElementById('displaced-indicator');
     const wrapper = document.getElementById('limbo-wrapper');
     const tray = document.getElementById('displaced-tray');
-    if(!wrapper || !tray) return;
+    if(!indicator || !wrapper || !tray) return;
 
     const items = state.displaced[state.day] || [];
     
     if (items.length > 0) {
+        indicator.classList.remove('hidden');
         wrapper.classList.add('active');
         tray.innerHTML = '';
         
@@ -335,6 +337,7 @@ function renderDisplacedTray() {
             tray.appendChild(div);
         });
     } else {
+        indicator.classList.add('hidden');
         wrapper.classList.remove('active');
     }
 }
