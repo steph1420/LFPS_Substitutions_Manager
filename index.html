@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.9">
+    <link rel="stylesheet" href="styles.css?v=1.10">
 </head>
 <body>
 
@@ -14,7 +14,7 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge">v1.9</span>
+                <span class="version-badge">v1.10</span>
             </div>
             <div class="header-controls">
                 <button id="header-undo-btn" class="btn-undo">↩ Undo</button>
@@ -51,19 +51,22 @@
                     </label>
                 </div>
 
-                <div id="displaced-warning" class="displaced-warning hidden">
-                    <span class="pulse-dot"></span> Displaced Classes: Drag or tap to reassign.
+                <!-- Smooth Expansion Wrapper for Limbo Tray -->
+                <div id="limbo-wrapper" class="limbo-wrapper">
+                    <div class="limbo-inner">
+                        <div id="displaced-warning" class="displaced-warning">
+                            <span class="pulse-dot"></span> Displaced Classes: Drag or tap to reassign.
+                        </div>
+                        <div id="displaced-tray" class="displaced-tray">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="table-scroll-container">
                     <table id="routine-table" class="routine-table">
                         <!-- JS will populate the spreadsheet here -->
                     </table>
-                </div>
-
-                <!-- Displaced Classes (Limbo Tray) -->
-                <div id="displaced-tray" class="displaced-tray hidden">
-                    <!-- Populated by JS -->
                 </div>
             </div>
         </section>
@@ -121,6 +124,6 @@
     </div>
     <div id="sheet-overlay" class="overlay hidden"></div>
 
-    <script src="app.js?v=1.9"></script>
+    <script src="app.js?v=1.10"></script>
 </body>
 </html>

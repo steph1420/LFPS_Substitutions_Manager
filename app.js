@@ -17,7 +17,7 @@ let selectedCell = null;
 let draggedData = null;  
 let scrollSpeed = 0;
 let isScrolling = false;
-let lastDroppedCell = null; // Transient state to trigger the pop-in animation
+let lastDroppedCell = null; 
 
 const teachers = [
     'Mr. Stephen', 'Mrs. Midha', 'Mrs. Pahwa', 'Mrs. Bage', 'Mr. Adams', 
@@ -285,7 +285,6 @@ function renderTableRoutine() {
                 cellClasses.push('cell-selected');
             }
 
-            // Apply animation class if this cell was just dropped onto
             if (lastDroppedCell && lastDroppedCell.period === period && lastDroppedCell.teacher === teacher) {
                 cellClasses.push('cell-just-dropped');
             }
@@ -302,15 +301,14 @@ function renderTableRoutine() {
 }
 
 function renderDisplacedTray() {
-    const warning = document.getElementById('displaced-warning');
+    const wrapper = document.getElementById('limbo-wrapper');
     const tray = document.getElementById('displaced-tray');
-    if(!warning || !tray) return;
+    if(!wrapper || !tray) return;
 
     const items = state.displaced[state.day] || [];
     
     if (items.length > 0) {
-        warning.classList.remove('hidden');
-        tray.classList.remove('hidden');
+        wrapper.classList.add('active');
         tray.innerHTML = '';
         
         items.forEach(item => {
@@ -337,8 +335,7 @@ function renderDisplacedTray() {
             tray.appendChild(div);
         });
     } else {
-        warning.classList.add('hidden');
-        tray.classList.add('hidden');
+        wrapper.classList.remove('active');
     }
 }
 
@@ -500,10 +497,9 @@ function executeMove(source, target) {
         state.displaced[state.day] = state.displaced[state.day].filter(d => d.id !== source.item.id);
     }
 
-    // Trigger animation for the dropped cell
     lastDroppedCell = { period: target.period, teacher: target.teacher };
     setTimeout(() => {
-        lastDroppedCell = null; // Clear it so it doesn't replay on random renders
+        lastDroppedCell = null; 
     }, 500);
 
     saveStateToStorage();

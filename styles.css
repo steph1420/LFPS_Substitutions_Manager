@@ -527,13 +527,29 @@ input:checked + .slider:before {
     z-index: 5;
 }
 
-/* --- Displaced Tray Styles & Animations --- */
+/* --- Limbo Tray Smooth Expansion --- */
+.limbo-wrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    margin-bottom: 0;
+}
+
+.limbo-wrapper.active {
+    grid-template-rows: 1fr;
+    margin-bottom: 15px;
+}
+
+.limbo-inner {
+    overflow: hidden;
+}
+
 .displaced-warning {
     background-color: #fff0f5;
     color: var(--accent-red);
     padding: 10px 15px;
     border-radius: var(--radius-md);
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     font-size: 13px;
     font-weight: 600;
     display: flex;
@@ -566,7 +582,6 @@ input:checked + .slider:before {
     background: #f9f9f9;
     border-radius: var(--radius-md);
     border: 2px dashed #d1d1d6;
-    margin-bottom: 20px;
     min-height: 70px;
 }
 
