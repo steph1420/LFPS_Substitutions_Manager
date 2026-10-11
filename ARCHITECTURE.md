@@ -54,8 +54,10 @@ const state = {
 ## 7. Upcoming Roadmap (Next Tasks)
 1.  **Live Google Sheets Pipeline:** Replace `generateSimulatedData()` with a `fetch()` engine to parse a live published CSV.
 2.  **Version Conflict Resolution:** Add timestamps to `localStorage` savestates. If the live CSV updates, prompt the user to resolve Cloud vs. Local states on boot.
-3.  **Priority Preference Matrix:** Implement a secondary CSV tab to map teacher subject preferences. Upgrade the `performAutoResolve()` algorithm to a constraint-satisfaction engine based on these priorities.
-4.  **Native Dark Mode:** Implement a robust CSS variable system using `prefers-color-scheme` with a manual toggle override.
+3.  **Priority Preference Matrix & Smart Solver:** Implement a secondary CSV tab to map teacher subject preferences. Upgrade the `performAutoResolve()` algorithm to a constraint-satisfaction engine based on these priorities.
+4.  **Auto-Resolve Multi-Option Proposals (Max 3 Solutions):** Generate up to 3 distinct substitution schedule possibilities when auto-resolving. Display them as compact tabs/segmented controls with preview details and an explicit "Apply Solution" action.
+5.  **Substitutions View Redesign (Register / Ledger):** Transition from bulky cards to a compact, high-density Daily Substitution Register tailored for at-a-glance administrative overview.
+6.  **Expanded Fit-Grid View (Mobile Landscape):** Provide an expanded view mode that, on mobile in landscape orientation, dynamically scales/fits the master timetable grid to the screen width while maintaining smooth scrollability. In this fitted mode, display a sticky top bar with a "Back to Normal" toggle button.
 
 ## 8. File Map & Project Directory
 *   `index.html`: Core markup, header controls, day segmented controller, grid view, substitutions conflict list, and iOS bottom sheet modal.
