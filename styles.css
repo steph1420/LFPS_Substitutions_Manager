@@ -73,7 +73,7 @@ body {
 
 .header-controls {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
 }
 
@@ -92,6 +92,23 @@ body {
 .btn-primary.save-mode {
     background-color: var(--accent-blue);
     color: #fff;
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: var(--radius-lg);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:active {
+    background-color: var(--border-color);
+    color: var(--text-primary);
 }
 
 .btn-undo {
@@ -448,7 +465,7 @@ input:checked + .slider:before {
     100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 
-/* --- The Juicy Overwrite Animation (Dark Mode Safe) --- */
+/* --- The Juicy Overwrite Animation --- */
 @keyframes flashRedOverwrite {
     0% { 
         box-shadow: inset 0 0 0 4px rgba(255, 45, 85, 0.7); 
@@ -467,9 +484,10 @@ input:checked + .slider:before {
     }
 }
 
+/* Increased drop distance and added slight shrink to ghost text */
 @keyframes ghostSlideOut {
-    0% { transform: translateY(0); opacity: 0.8; }
-    100% { transform: translateY(18px); opacity: 0; }
+    0% { transform: translateY(0) scale(1); opacity: 0.8; }
+    100% { transform: translateY(45px) scale(0.85); opacity: 0; }
 }
 
 .ghost-displaced {
@@ -478,9 +496,9 @@ input:checked + .slider:before {
     left: 10px;
     color: var(--accent-pink);
     font-weight: 700;
-    z-index: 1;
+    z-index: 10;
     pointer-events: none;
-    animation: ghostSlideOut 0.6s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+    animation: ghostSlideOut 0.7s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
 }
 
 /* --- Spreadsheet Grid Styles --- */
@@ -578,7 +596,7 @@ input:checked + .slider:before {
     animation: flashRedOverwrite 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     position: relative;
     z-index: 6;
-    overflow: hidden; 
+    /* overflow: hidden removed to allow ghost text to drop down completely */
 }
 
 /* --- Inline Limbo Tray Below Grid --- */

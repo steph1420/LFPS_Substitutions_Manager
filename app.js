@@ -145,6 +145,7 @@ function bindEvents() {
 
     safeBind('toast-undo-btn', 'click', undoLastAction);
     safeBind('header-undo-btn', 'click', undoLastAction);
+    safeBind('reset-schedule-btn', 'click', handleResetSchedule);
     safeBind('auto-resolve-btn', 'click', performAutoResolve);
 
     const sheet = document.getElementById('bottom-sheet');
@@ -339,6 +340,7 @@ function renderTableRoutine() {
                 cellClasses.push('cell-selected');
             }
 
+            // Apply contextual drop animations and ghost slide
             if (lastDisplacedDrop && lastDisplacedDrop.period === period && lastDisplacedDrop.teacher === teacher) {
                 cellClasses.push('cell-displaced-flash');
                 cellText = `
@@ -378,6 +380,7 @@ function renderDisplacedTray() {
             const isNew = item.id === newlyDisplacedItemId;
             
             const div = document.createElement('div');
+            // PopIn applies ONLY to newly displaced item. Rest just lay flat.
             div.className = `displaced-item ${isSelected ? 'selected' : ''} ${isNew ? 'item-newly-displaced' : ''}`;
             div.draggable = state.isEditMode;
             div.dataset.id = item.id;
@@ -588,6 +591,34 @@ function executeMove(source, target) {
     renderAll();
 }
 
+function handleResetSchedule() {
+    const day = state.day;
+    
+    // Save current state for perfect undo tracking
+    const prevSchedule = JSON.parse(JSON.stringify(state.schedule[day]));
+    const prevDisplaced = JSON.parse(JSON.stringify(state.displaced[day] || []));
+    const prevSubs = state.substitutions[day] ? JSON.parse(JSON.stringify(state.substitutions[day])) : {};
+
+    const activeStack = getActiveHistoryStack();
+    activeStack.push({
+        type: 'reset',
+        day: day,
+        prevSchedule,
+        prevDisplaced,
+        prevSubs
+    });
+
+    // Enact the reset
+    state.schedule[day] = JSON.parse(JSON.stringify(state.baseSchedule[day]));
+    state.displaced[day] = [];
+    state.substitutions[day] = {};
+
+    saveStateToStorage();
+    updateUndoUI();
+    showToast(`Schedule reset to baseline.`);
+    renderAll();
+}
+
 function openBottomSheet(period, targetTeacher) {
     if (!state.isEditMode && document.querySelector('.tab-section.active').id !== 'tab-substitutions') return;
     
@@ -779,6 +810,12 @@ function undoLastAction() {
         if (newlyDisplaced) {
             state.displaced[day] = state.displaced[day].filter(d => d.id !== newlyDisplaced.id);
         }
+
+    } else if (action.type === 'reset') {
+        state.schedule[action.day] = action.prevSchedule;
+        state.displaced[action.day] = action.prevDisplaced;
+        if (!state.substitutions[action.day]) state.substitutions[action.day] = {};
+        state.substitutions[action.day] = action.prevSubs;
 
     } else if (action.type === 'sub') {
         const { period, absentTeacher, subTeacher, previousSub, previousTaskForSub, taskToCover, day } = action;
