@@ -443,6 +443,12 @@ input:checked + .slider:before {
     100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 
+@keyframes flashRedOverwrite {
+    0% { box-shadow: inset 0 0 0 3px var(--accent-red); transform: scale(0.95); background-color: #ffeef0; }
+    50% { box-shadow: inset 0 0 0 3px var(--accent-red); transform: scale(1.02); background-color: #ffeef0; }
+    100% { box-shadow: inset 0 0 0 0 transparent; transform: scale(1); background-color: inherit; }
+}
+
 /* --- Spreadsheet Grid Styles --- */
 .table-scroll-container {
     width: 100%;
@@ -527,6 +533,12 @@ input:checked + .slider:before {
     z-index: 5;
 }
 
+.cell-displaced-flash {
+    animation: flashRedOverwrite 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+    position: relative;
+    z-index: 6;
+}
+
 /* --- Limbo Tray & Inline Indicator --- */
 .displaced-indicator {
     display: flex;
@@ -600,11 +612,15 @@ input:checked + .slider:before {
     flex-direction: column;
     align-items: center;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    transition: all 0.2s ease;
 }
 
 .displaced-item:active {
     cursor: grabbing;
+}
+
+.item-newly-displaced {
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 .displaced-item .og-teacher {

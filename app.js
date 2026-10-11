@@ -17,7 +17,11 @@ let selectedCell = null;
 let draggedData = null;  
 let scrollSpeed = 0;
 let isScrolling = false;
+
+// Transient states for specific drop animations
 let lastDroppedCell = null; 
+let lastDisplacedDrop = null;
+let newlyDisplacedItemId = null;
 
 const teachers = [
     'Mr. Stephen', 'Mrs. Midha', 'Mrs. Pahwa', 'Mrs. Bage', 'Mr. Adams', 
@@ -285,7 +289,10 @@ function renderTableRoutine() {
                 cellClasses.push('cell-selected');
             }
 
-            if (lastDroppedCell && lastDroppedCell.period === period && lastDroppedCell.teacher === teacher) {
+            // Apply contextual drop animations
+            if (lastDisplacedDrop && lastDisplacedDrop.period === period && lastDisplacedDrop.teacher === teacher) {
+                cellClasses.push('cell-displaced-flash');
+            } else if (lastDroppedCell && lastDroppedCell.period === period && lastDroppedCell.teacher === teacher) {
                 cellClasses.push('cell-just-dropped');
             }
             
@@ -315,8 +322,11 @@ function renderDisplacedTray() {
         
         items.forEach(item => {
             const isSelected = selectedCell && selectedCell.type === 'displaced' && selectedCell.item.id === item.id;
+            const isNew = item.id === newlyDisplacedItemId;
+            
             const div = document.createElement('div');
-            div.className = `displaced-item ${isSelected ? 'selected' : ''}`;
+            // Only apply popup animation class to the newest item
+            div.className = `displaced-item ${isSelected ? 'selected' : ''} ${isNew ? 'item-newly-displaced' : ''}`;
             div.draggable = state.isEditMode;
             div.dataset.id = item.id;
             div.innerHTML = `
@@ -471,8 +481,10 @@ function executeMove(source, target) {
 
     const tTask = state.schedule[state.day][target.period][target.teacher]; 
     let newlyDisplaced = null;
+    let wasDisplaced = false;
 
     if (tTask !== 'Free') {
+        wasDisplaced = true;
         newlyDisplaced = {
             id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
             task: tTask,
@@ -480,6 +492,7 @@ function executeMove(source, target) {
             period: target.period
         };
         state.displaced[state.day].push(newlyDisplaced);
+        newlyDisplacedItemId = newlyDisplaced.id;
     }
 
     state.actionHistory.grid.push({
@@ -500,9 +513,18 @@ function executeMove(source, target) {
         state.displaced[state.day] = state.displaced[state.day].filter(d => d.id !== source.item.id);
     }
 
-    lastDroppedCell = { period: target.period, teacher: target.teacher };
+    // Set contextual animation markers
+    if (wasDisplaced) {
+        lastDisplacedDrop = { period: target.period, teacher: target.teacher };
+    } else {
+        lastDroppedCell = { period: target.period, teacher: target.teacher };
+    }
+
+    // Clear animations after they finish playing
     setTimeout(() => {
         lastDroppedCell = null; 
+        lastDisplacedDrop = null;
+        newlyDisplacedItemId = null;
     }, 500);
 
     saveStateToStorage();
