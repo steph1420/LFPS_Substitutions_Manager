@@ -67,6 +67,7 @@
 
 /* MANUAL DARK MODE OVERRIDE */
 :root[data-theme="dark"] {
+    color-scheme: dark;
     --bg-color: #000000;
     --surface-color: #1c1c1e;
     --surface-elevated: #2c2c2e;
@@ -91,6 +92,35 @@
     --toast-bg: #2c2c2e;
     --drag-over-bg: rgba(48, 209, 88, 0.25);
     --shadow-soft: 0 4px 14px rgba(0,0,0,0.4);
+}
+
+/* MANUAL LIGHT MODE OVERRIDE */
+:root[data-theme="light"] {
+    color-scheme: light;
+    --bg-color: #f2f2f7;
+    --surface-color: #ffffff;
+    --surface-elevated: #ffffff;
+    --text-primary: #1c1c1e;
+    --text-secondary: #8e8e93;
+    --border-color: #e5e5ea;
+    
+    --accent-blue: #007aff;
+    --accent-red: #ff3b30;
+    --accent-pink: #ff2d55;
+    --accent-green: #34c759;
+    
+    --bg-assigned: #e5f0ff;
+    --bg-missing: #fff0f5;
+    --bg-resolved: #f0fff4;
+    --bg-absent-assigned: #fce4e4;
+    --nav-bg: rgba(255, 255, 255, 0.85);
+    --segment-bg: #e3e3e8;
+    --tray-bg: #f9f9f9;
+    --static-cell-bg: #f9f9f9;
+    --handle-color: #c7c7cc;
+    --toast-bg: #333333;
+    --drag-over-bg: #d1ffd6;
+    --shadow-soft: 0 4px 14px rgba(0,0,0,0.05);
 }
 
 * {
@@ -154,22 +184,36 @@ body {
     align-items: center;
 }
 
-.btn-icon {
-    background: transparent;
+.theme-toggle-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--surface-color);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
-    padding: 6px 10px;
-    border-radius: var(--radius-lg);
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-soft);
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s ease, border-color 0.2s ease;
+    padding: 0;
+    flex-shrink: 0;
 }
 
-.btn-icon:hover {
-    background-color: var(--border-color);
+.theme-toggle-btn:hover {
+    transform: scale(1.08);
+    background-color: var(--segment-bg);
+}
+
+.theme-toggle-btn:active {
+    transform: scale(0.92);
+}
+
+.theme-toggle-btn svg {
+    width: 17px;
+    height: 17px;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .btn-primary {

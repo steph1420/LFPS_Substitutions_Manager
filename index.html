@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.17">
+    <link rel="stylesheet" href="styles.css?v=1.18">
 </head>
 <body>
 
@@ -14,10 +14,12 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge">v1.17</span>
+                <span class="version-badge">v1.18</span>
             </div>
             <div class="header-controls">
-                <button id="theme-toggle-btn" class="btn-icon" aria-label="Toggle Night Mode" title="Toggle Night Mode">🌙</button>
+                <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Toggle Night Mode" title="Toggle Night Mode" onclick="toggleTheme()">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
                 <button id="header-undo-btn" class="btn-undo">↩ Undo</button>
                 <button id="reset-schedule-btn" class="btn-secondary">↺ Reset</button>
                 <button id="edit-toggle-btn" class="btn-primary">Edit Schedule</button>
@@ -129,6 +131,6 @@
     </div>
     <div id="sheet-overlay" class="overlay hidden"></div>
 
-    <script src="app.js?v=1.17"></script>
+    <script src="app.js?v=1.18"></script>
 </body>
 </html>
