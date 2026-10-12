@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function saveStateToStorage() {
     const data = {
-        schemaVersion: '1.26',
+        schemaVersion: '1.27',
         day: state.day,
         baseSchedule: state.baseSchedule,
         schedule: state.schedule,
@@ -88,7 +88,7 @@ function loadStateFromStorage() {
                 return false;
             }
             // Enforce schema version check: reset legacy mock data if on older schema
-            if (!parsed.schemaVersion || parsed.schemaVersion < '1.26') {
+            if (!parsed.schemaVersion || parsed.schemaVersion < '1.27') {
                 return false; // Triggers fresh, clean co-teaching-enabled generateSimulatedData()
             }
 
@@ -577,6 +577,15 @@ function handleCoTeachingClick(period, teacher) {
 }
 window.handleCoTeachingClick = handleCoTeachingClick;
 
+function extractClassSection(task) {
+    if (!task || task === 'Free' || task === '-' || task === '') return null;
+    const match = task.trim().match(/\b(\d{1,2}\s*[A-Za-z]?)\b/);
+    if (match) {
+        return match[1].replace(/\s+/g, '').toUpperCase();
+    }
+    return null;
+}
+
 // --- COLLISION DETECTION ENGINE ---
 function findCollisions() {
     if (!state.settings || state.settings.detectCollisions === false) {
@@ -589,23 +598,65 @@ function findCollisions() {
     periods.forEach(period => {
         if (period === 'BREAKFAST BREAK' || period === 'BREAKFAST') return;
 
-        // 1. Check for Duplicate Class Sections in the Same Period (e.g. "MATH 9A" taught by two teachers)
-        const classSectionToTeachers = new Map();
+        // Group assignments by Class Section (e.g. "9A", "10A", "7B")
+        const sectionMap = new Map();
+        // Also group by exact Task name (for non-numbered classes or activities)
+        const exactTaskMap = new Map();
 
         teachers.forEach(teacher => {
             const task = state.schedule[state.day]?.[period]?.[teacher];
-            if (task && task !== 'Free' && task !== '') {
-                const normalizedTask = task.trim().toUpperCase();
-                if (!classSectionToTeachers.has(normalizedTask)) {
-                    classSectionToTeachers.set(normalizedTask, []);
+            if (task && task !== 'Free' && task !== '-' && task !== '') {
+                const normTask = task.trim().toUpperCase();
+                const sec = extractClassSection(task);
+
+                if (sec) {
+                    if (!sectionMap.has(sec)) sectionMap.set(sec, []);
+                    sectionMap.get(sec).push({ teacher, task: normTask });
+                } else {
+                    if (!exactTaskMap.has(normTask)) exactTaskMap.set(normTask, []);
+                    exactTaskMap.get(normTask).push(teacher);
                 }
-                classSectionToTeachers.get(normalizedTask).push(teacher);
             }
         });
 
-        classSectionToTeachers.forEach((assignedTeachers, taskName) => {
+        // 1. Check Class Section Collisions (e.g. Section 9A assigned to "GEO 9A" AND "SCI 9A" in 5th Pd)
+        sectionMap.forEach((entries, section) => {
+            if (entries.length > 1) {
+                const uniqueTasks = new Set(entries.map(e => e.task));
+
+                if (uniqueTasks.size > 1) {
+                    // Conflicting subjects for the SAME student class section!
+                    entries.forEach(e => {
+                        const key = `${period}::${e.teacher}`;
+                        if (!collisionCells.has(key)) collisionCells.set(key, { reasons: [] });
+                        const others = entries.filter(o => o.teacher !== e.teacher).map(o => `${o.teacher} (${o.task})`).join(', ');
+                        collisionCells.get(key).reasons.push(`Class ${section} Conflict: "${e.task}" overlaps with ${others}`);
+                    });
+                    details.push(`${period}: Class ${section} double-booked across different subjects (${entries.map(e => `${e.teacher}: ${e.task}`).join(', ')})`);
+                } else {
+                    // Same task name for this section (e.g. both teaching "MATH 10A")
+                    // Check if they are legitimate designated base co-teachers
+                    const assignedTeachers = entries.map(e => e.teacher);
+                    const isDesignatedCoTeaching = assignedTeachers.every(t => {
+                        const partners = getCoTeachingPartners(state.day, period, t);
+                        return assignedTeachers.every(ot => ot === t || partners.includes(ot));
+                    });
+
+                    if (!isDesignatedCoTeaching) {
+                        assignedTeachers.forEach(t => {
+                            const key = `${period}::${t}`;
+                            if (!collisionCells.has(key)) collisionCells.set(key, { reasons: [] });
+                            collisionCells.get(key).reasons.push(`Duplicate Class: "${entries[0].task}" also with ${assignedTeachers.filter(ot => ot !== t).join(', ')}`);
+                        });
+                        details.push(`${period}: ${entries[0].task} assigned to multiple teachers (${assignedTeachers.join(', ')})`);
+                    }
+                }
+            }
+        });
+
+        // 2. Check exact task duplicates without class numbers
+        exactTaskMap.forEach((assignedTeachers, taskName) => {
             if (assignedTeachers.length > 1) {
-                // If teachers share the class as designated base co-teachers, it is legitimate co-teaching, not a collision!
                 const isDesignatedCoTeaching = assignedTeachers.every(t => {
                     const partners = getCoTeachingPartners(state.day, period, t);
                     return assignedTeachers.every(ot => ot === t || partners.includes(ot));
@@ -615,9 +666,9 @@ function findCollisions() {
                     assignedTeachers.forEach(t => {
                         const key = `${period}::${t}`;
                         if (!collisionCells.has(key)) collisionCells.set(key, { reasons: [] });
-                        collisionCells.get(key).reasons.push(`Duplicate Class: "${taskName}" also with ${assignedTeachers.filter(ot => ot !== t).join(', ')}`);
+                        collisionCells.get(key).reasons.push(`Duplicate Activity: "${taskName}" with ${assignedTeachers.filter(ot => ot !== t).join(', ')}`);
                     });
-                    details.push(`${period}: ${taskName} assigned to multiple teachers (${assignedTeachers.join(', ')})`);
+                    details.push(`${period}: "${taskName}" assigned to multiple teachers (${assignedTeachers.join(', ')})`);
                 }
             }
         });
@@ -1827,8 +1878,8 @@ function generateSimulatedData() {
                 return;
             }
 
-            // Keep track of classes assigned in this period to guarantee 0 collisions
-            const usedClassesInPeriod = new Set();
+            // Keep track of class sections assigned in this period to guarantee 0 collisions
+            const usedSectionsInPeriod = new Set();
 
             teachers.forEach((t, tIndex) => {
                 const profile = teacherProfiles.find(tp => tp.teacher === t);
@@ -1841,13 +1892,17 @@ function generateSimulatedData() {
                 if (subIndex >= subPool.length || subIndex % 4 === 0) {
                     state.schedule[d][p][t] = 'Free';
                 } else {
-                    const chosenClass = subPool[subIndex];
-                    if (!usedClassesInPeriod.has(chosenClass)) {
-                        state.schedule[d][p][t] = chosenClass;
-                        usedClassesInPeriod.add(chosenClass);
-                    } else {
-                        state.schedule[d][p][t] = 'Free';
+                    let chosenClass = 'Free';
+                    for (let offset = 0; offset < subPool.length; offset++) {
+                        const candidate = subPool[(subIndex + offset) % subPool.length];
+                        const sec = extractClassSection(candidate);
+                        if (!sec || !usedSectionsInPeriod.has(sec)) {
+                            chosenClass = candidate;
+                            if (sec) usedSectionsInPeriod.add(sec);
+                            break;
+                        }
                     }
+                    state.schedule[d][p][t] = chosenClass;
                 }
             });
         });
@@ -1858,21 +1913,41 @@ function generateSimulatedData() {
     if (state.schedule['MON'] && state.schedule['MON']['2nd Pd.']) {
         state.schedule['MON']['2nd Pd.']['Mr. Stephen'] = 'MATH 10A';
         state.schedule['MON']['2nd Pd.']['Mrs. Midha'] = 'MATH 10A';
+        teachers.forEach(t => {
+            if (t !== 'Mr. Stephen' && t !== 'Mrs. Midha' && extractClassSection(state.schedule['MON']['2nd Pd.'][t]) === '10A') {
+                state.schedule['MON']['2nd Pd.'][t] = 'Free';
+            }
+        });
     }
     // MON, 5th Pd: Mrs. Pahwa & Mrs. Bage both co-teach 'SCI 9A'
     if (state.schedule['MON'] && state.schedule['MON']['5th Pd.']) {
         state.schedule['MON']['5th Pd.']['Mrs. Pahwa'] = 'SCI 9A';
         state.schedule['MON']['5th Pd.']['Mrs. Bage'] = 'SCI 9A';
+        teachers.forEach(t => {
+            if (t !== 'Mrs. Pahwa' && t !== 'Mrs. Bage' && extractClassSection(state.schedule['MON']['5th Pd.'][t]) === '9A') {
+                state.schedule['MON']['5th Pd.'][t] = 'Free';
+            }
+        });
     }
     // WED, 3rd Pd: Mr. Adams & Mrs. Baker both co-teach 'HIST 10A'
     if (state.schedule['WED'] && state.schedule['WED']['3rd Pd.']) {
         state.schedule['WED']['3rd Pd.']['Mr. Adams'] = 'HIST 10A';
         state.schedule['WED']['3rd Pd.']['Mrs. Baker'] = 'HIST 10A';
+        teachers.forEach(t => {
+            if (t !== 'Mr. Adams' && t !== 'Mrs. Baker' && extractClassSection(state.schedule['WED']['3rd Pd.'][t]) === '10A') {
+                state.schedule['WED']['3rd Pd.'][t] = 'Free';
+            }
+        });
     }
     // FRI, 4th Pd: Ms. Clark & Mr. Davis both co-teach 'COMP 9A'
     if (state.schedule['FRI'] && state.schedule['FRI']['4th Pd.']) {
         state.schedule['FRI']['4th Pd.']['Ms. Clark'] = 'COMP 9A';
         state.schedule['FRI']['4th Pd.']['Mr. Davis'] = 'COMP 9A';
+        teachers.forEach(t => {
+            if (t !== 'Ms. Clark' && t !== 'Mr. Davis' && extractClassSection(state.schedule['FRI']['4th Pd.'][t]) === '9A') {
+                state.schedule['FRI']['4th Pd.'][t] = 'Free';
+            }
+        });
     }
 
     state.baseSchedule = JSON.parse(JSON.stringify(state.schedule));

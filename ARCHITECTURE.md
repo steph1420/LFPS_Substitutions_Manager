@@ -120,6 +120,11 @@ const state = {
     *   **Utopian Glass Theme**: Added a surreal minimalist corporate architectural glass theme (*Divergent/Insurgent* aesthetic) with deep frosted blur (`backdrop-filter: blur(28px)`), iridescent prismatic edges, and luminous cyan/white ambient glow.
     *   **Feature Overview Showcase**: Added an interactive visual modal (`#tour-modal`) accessible via header button (`💡`) and Settings, detailing the full feature set.
     *   **Schema 1.26 Migration**: Auto-migrated `schemaVersion` to `'1.26'` with realistic co-teaching seed pairings on Monday, Wednesday, and Friday.
+*   **v1.27 Release (Student Class Section Double-Booking Collision Detection Engine)**:
+    *   **Class Section Collision Scanner**: Introduced regex-based class section extraction (`extractClassSection`) identifying student grade sections (`9A`, `10A`, `7B`, `11A`, etc.). Upgraded `findCollisions()` to detect student double-booking when multiple teachers teach different subjects to the same section in the same period (e.g. `GEO 9A` with `SCI 9A` in Period 5).
+    *   **Intelligent Co-Teaching Disambiguation**: Differentiates legitimate co-teaching (teachers sharing the *same* subject for that section) from conflicting double-booked sections (different subjects for the same student cohort), triggering amber pulsing radar rings and descriptive conflict tooltips.
+    *   **Collision-Free Master Generator**: Updated `generateSimulatedData()` with per-period section tracking (`usedSectionsInPeriod`) and automated overlap suppression for co-teaching seeds, guaranteeing a 100% collision-free baseline schedule.
+    *   **Schema 1.27 Migration**: Bumped `schemaVersion` to `'1.27'` to automatically purge legacy overlapping mock data and refresh state with the collision-free baseline.
 
 ## 10. Appendix: Technical Specifications
 
