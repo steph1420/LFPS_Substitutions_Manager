@@ -85,6 +85,10 @@ const state = {
     *   **Soft Splitter Bottom Bar**: Added a subtle visual divider dividing the bottom tab bar with full-zone touch hitboxes (`.nav-zone`) for seamless tab switching.
     *   **Minimize Alerts / Quiet Mode**: Added persistent toggle in Settings to mute routine toasts and reduce notifications.
     *   **Fluid Sheet Physics**: Enhanced touch drag-to-dismiss physics on `#bottom-sheet` and handle with `touch-action: none` and elastic dismiss thresholds.
+*   **v1.25 Release (Collision-Free Realistic Master Mock Engine & Schema Versioning)**:
+    *   **Realistic Teacher-Subject Curriculum Mapping**: Refactored `generateSimulatedData()` to assign distinct, curriculum-accurate subject and class sections per teacher (Math, English, Science/Physics/Chemistry/Bio, History/Geography, Hindi/Sanskrit, Computer/IT, Physical Ed, and Arts/Crafts).
+    *   **Collision-Free Routine Generation**: Integrated strict per-period class section tracking (`usedClassesInPeriod`) ensuring 0 initial collisions upon generation.
+    *   **Automatic Schema Migration**: Introduced `schemaVersion: '1.25'` in local storage state to automatically replace legacy collision-heavy mock data upon upgrade.
 
 ## 10. Appendix: Technical Specifications
 

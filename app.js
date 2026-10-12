@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function saveStateToStorage() {
     const data = {
+        schemaVersion: '1.25',
         day: state.day,
         baseSchedule: state.baseSchedule,
         schedule: state.schedule,
@@ -86,11 +87,9 @@ function loadStateFromStorage() {
             if (!parsed || !parsed.schedule || Object.keys(parsed.schedule).length === 0) {
                 return false;
             }
-            // Detect old collision-heavy simulated data (e.g. repeated 'MATH KGA', 'ENG KGB')
-            const monTasks = Object.values(parsed.schedule?.MON?.['1st Pd.'] || {});
-            const hasLegacyMock = monTasks.includes('MATH KGA') || monTasks.includes('ENG KGB');
-            if (hasLegacyMock) {
-                return false; // Triggers fresh, clean generateSimulatedData()
+            // Enforce schema version check: reset legacy mock data if on older schema
+            if (!parsed.schemaVersion || parsed.schemaVersion < '1.25') {
+                return false; // Triggers fresh, clean collision-free generateSimulatedData()
             }
 
             state.day = parsed.day || 'MON';
