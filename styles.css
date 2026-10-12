@@ -239,6 +239,35 @@
     --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
+/* UTOPIAN GLASS (Minimalist Surreal Architectural Glass - Divergent / Insurgent Aesthetic) */
+[data-theme="utopian-glass"] {
+    color-scheme: light;
+    --bg-color: #edf2f7;
+    --surface-color: rgba(255, 255, 255, 0.65);
+    --surface-elevated: rgba(255, 255, 255, 0.82);
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --border-color: rgba(255, 255, 255, 0.6);
+    
+    --accent-blue: #0284c7;
+    --accent-red: #e11d48;
+    --accent-pink: #ec4899;
+    --accent-green: #059669;
+    
+    --bg-assigned: rgba(14, 165, 233, 0.12);
+    --bg-missing: rgba(244, 63, 94, 0.12);
+    --bg-resolved: rgba(16, 185, 129, 0.12);
+    --bg-absent-assigned: rgba(239, 68, 68, 0.15);
+    --nav-bg: rgba(241, 245, 249, 0.72);
+    --segment-bg: rgba(226, 232, 240, 0.75);
+    --tray-bg: rgba(248, 250, 252, 0.65);
+    --static-cell-bg: rgba(241, 245, 249, 0.5);
+    --handle-color: #94a3b8;
+    --toast-bg: rgba(15, 23, 42, 0.88);
+    --drag-over-bg: rgba(16, 185, 129, 0.2);
+    --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -370,7 +399,30 @@ body {
     background-color: var(--segment-bg);
 }
 
-.settings-btn:active {
+.btn-icon-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-soft);
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s ease, border-color 0.2s ease;
+    padding: 0;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.btn-icon-circle:hover {
+    transform: scale(1.08);
+    background-color: var(--segment-bg);
+}
+
+.btn-icon-circle:active {
     transform: scale(0.92);
 }
 
@@ -384,6 +436,9 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .btn-primary.save-mode {
@@ -401,11 +456,54 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .btn-secondary:active {
     background-color: var(--border-color);
     color: var(--text-primary);
+}
+
+/* Small Screen / Portrait Mobile Responsive Header */
+@media (max-width: 580px) {
+    .header-top {
+        gap: 8px;
+    }
+
+    .header-top h1 {
+        font-size: 19px;
+    }
+
+    .header-controls {
+        gap: 4px;
+        flex-shrink: 1;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+    }
+
+    .header-controls::-webkit-scrollbar {
+        display: none;
+    }
+
+    .btn-primary .btn-text,
+    .btn-secondary .btn-text,
+    .btn-history .btn-text {
+        display: none; /* Iconify buttons on tight mobile screens */
+    }
+
+    .btn-primary, .btn-secondary {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+
+    .btn-history {
+        padding: 5px 8px;
+        font-size: 13px;
+    }
 }
 
 .btn-magic {
@@ -1483,6 +1581,225 @@ input:checked + .slider:before {
 [data-theme="retro-glass"] .cell-missing {
     background: linear-gradient(180deg, rgba(247, 37, 133, 0.4) 0%, rgba(247, 37, 133, 0.15) 48%, rgba(0, 0, 0, 0.2) 52%, rgba(247, 37, 133, 0.3) 100%) !important;
     border: 1px solid rgba(247, 37, 133, 0.5) !important;
+}
+
+/* RETRO GLASS FULL UI EXPANSION (Headers, Buttons, Dock, Navigation) */
+[data-theme="retro-glass"] .app-header {
+    background: linear-gradient(180deg, rgba(35, 39, 49, 0.95), rgba(26, 28, 35, 0.95));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+[data-theme="retro-glass"] .btn-primary,
+[data-theme="retro-glass"] .btn-secondary,
+[data-theme="retro-glass"] .btn-icon-circle,
+[data-theme="retro-glass"] .settings-btn,
+[data-theme="retro-glass"] .history-btn-group,
+[data-theme="retro-glass"] .day-selector {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.25) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), 0 2px 5px rgba(0,0,0,0.4);
+    backdrop-filter: blur(10px);
+}
+
+[data-theme="retro-glass"] .bottom-nav {
+    background: linear-gradient(0deg, rgba(26, 28, 35, 0.95), rgba(35, 39, 49, 0.95));
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+}
+
+[data-theme="retro-glass"] .bottom-sheet,
+[data-theme="retro-glass"] .settings-modal,
+[data-theme="retro-glass"] .tour-modal {
+    background: linear-gradient(180deg, rgba(42, 47, 60, 0.98), rgba(26, 28, 35, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 10px 40px rgba(0,0,0,0.6);
+}
+
+/* --- UTOPIAN GLASS THEME: MINIMALIST SURREAL ARCHITECTURAL FINISH --- */
+[data-theme="utopian-glass"] {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 50%, #f8fafc 100%);
+}
+
+[data-theme="utopian-glass"] .app-header,
+[data-theme="utopian-glass"] .bottom-nav,
+[data-theme="utopian-glass"] .table-scroll-container,
+[data-theme="utopian-glass"] .settings-modal,
+[data-theme="utopian-glass"] .tour-modal,
+[data-theme="utopian-glass"] .bottom-sheet {
+    background: rgba(255, 255, 255, 0.55) !important;
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow: 0 10px 32px rgba(14, 165, 233, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="utopian-glass"] .routine-table td:not(:first-child) {
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    transition: all 0.2s ease;
+}
+
+[data-theme="utopian-glass"] .routine-table td:not(:first-child):hover {
+    background: rgba(255, 255, 255, 0.75);
+    border-color: rgba(2, 132, 199, 0.4);
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.12);
+}
+
+[data-theme="utopian-glass"] .cell-assigned {
+    background: rgba(2, 132, 199, 0.1) !important;
+    border: 1px solid rgba(2, 132, 199, 0.3) !important;
+}
+
+[data-theme="utopian-glass"] .cell-sub-active {
+    background: rgba(5, 150, 105, 0.12) !important;
+    border: 1px solid rgba(5, 150, 105, 0.35) !important;
+}
+
+/* --- CO-TEACHING SHARED BADGES & DRAG-TO-SPLIT STYLES --- */
+.cell-shared {
+    position: relative;
+    border-left: 3px solid #8b5cf6 !important;
+}
+
+.shared-badge {
+    position: absolute;
+    bottom: 2px;
+    right: 3px;
+    font-size: 9px;
+    font-weight: 700;
+    color: #7c3aed;
+    background: rgba(139, 92, 246, 0.15);
+    padding: 1px 5px;
+    border-radius: 6px;
+    line-height: 1.1;
+    pointer-events: none;
+    letter-spacing: 0.2px;
+}
+
+.shared-badge-solo {
+    color: var(--text-secondary) !important;
+    background: rgba(142, 142, 147, 0.2) !important;
+    text-decoration: none;
+    opacity: 0.75;
+}
+
+.cell-partner-highlight {
+    outline: 2px solid #8b5cf6 !important;
+    box-shadow: 0 0 14px rgba(139, 92, 246, 0.6) !important;
+    animation: partnerPulse 0.4s ease-in-out 3 alternate;
+    z-index: 10;
+}
+
+@keyframes partnerPulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.04); }
+}
+
+[data-theme="dark"] .shared-badge,
+[data-theme="midnight"] .shared-badge,
+[data-theme="slate-nord"] .shared-badge,
+[data-theme="retro-glass"] .shared-badge {
+    color: #a78bfa;
+    background: rgba(139, 92, 246, 0.25);
+}
+
+.utopian-preview {
+    background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(2,132,199,0.4), rgba(236,72,153,0.3));
+    border-color: rgba(2,132,199,0.5);
+    box-shadow: 0 0 6px rgba(2, 132, 199, 0.35);
+}
+
+/* --- FEATURE TOUR MODAL STYLES --- */
+.tour-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 92%;
+    max-width: 540px;
+    max-height: 85vh;
+    background: var(--surface-elevated);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 38px rgba(0,0,0,0.25);
+    border: 1px solid var(--border-color);
+    z-index: 2100;
+    display: flex;
+    flex-direction: column;
+    animation: tourModalEntry 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+}
+
+@keyframes tourModalEntry {
+    from { opacity: 0; transform: translate(-50%, -46%) scale(0.95); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.tour-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tour-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.tour-modal-body {
+    padding: 18px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tour-card {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    background: var(--bg-color);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.tour-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.tour-text h4 {
+    margin: 0 0 3px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.tour-text p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.35;
+}
+
+.tour-text code {
+    background: rgba(0,0,0,0.06);
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+[data-theme="dark"] .tour-text code,
+[data-theme="midnight"] .tour-text code,
+[data-theme="slate-nord"] .tour-text code,
+[data-theme="retro-glass"] .tour-text code {
+    background: rgba(255,255,255,0.12);
 }
 
 .hidden {

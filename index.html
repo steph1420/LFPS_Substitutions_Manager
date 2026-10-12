@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.25">
+    <link rel="stylesheet" href="styles.css?v=1.26">
 </head>
 <body>
 
@@ -14,15 +14,24 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge">v1.25</span>
+                <span class="version-badge">v1.26</span>
             </div>
             <div class="header-controls">
                 <div class="history-btn-group" id="history-btn-group">
-                    <button id="header-undo-btn" class="btn-history btn-undo-slot" disabled title="Undo (Cmd+Z)">↩ Undo</button>
-                    <button id="header-redo-btn" class="btn-history btn-redo-slot" disabled title="Redo (Cmd+Shift+Z / Ctrl+Y)">↪ Redo</button>
+                    <button id="header-undo-btn" class="btn-history btn-undo-slot" disabled title="Undo (Cmd+Z)">
+                        <span class="btn-icon">↩</span><span class="btn-text"> Undo</span>
+                    </button>
+                    <button id="header-redo-btn" class="btn-history btn-redo-slot" disabled title="Redo (Cmd+Shift+Z / Ctrl+Y)">
+                        <span class="btn-icon">↪</span><span class="btn-text"> Redo</span>
+                    </button>
                 </div>
-                <button id="reset-schedule-btn" class="btn-secondary">↺ Reset</button>
-                <button id="edit-toggle-btn" class="btn-primary">Edit Schedule</button>
+                <button id="reset-schedule-btn" class="btn-secondary" title="Reset Schedule to Baseline">
+                    <span class="btn-icon">↺</span><span class="btn-text"> Reset</span>
+                </button>
+                <button id="edit-toggle-btn" class="btn-primary" title="Toggle Timetable Editing">
+                    <span class="btn-icon">✎</span><span class="btn-text"> Edit Schedule</span>
+                </button>
+                <button id="tour-btn" class="btn-icon-circle" aria-label="Feature Tour" title="App Features & Overview">💡</button>
                 <button id="settings-btn" class="settings-btn" aria-label="Settings" title="Settings">
                     <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"></circle>
@@ -173,6 +182,10 @@
                         <span class="theme-preview glass-preview"></span>
                         <span class="theme-name">✨ Retro Glass</span>
                     </button>
+                    <button class="theme-option-btn" data-theme="utopian-glass">
+                        <span class="theme-preview utopian-preview"></span>
+                        <span class="theme-name">💠 Utopian Glass</span>
+                    </button>
                 </div>
             </div>
 
@@ -211,10 +224,21 @@
             </div>
 
             <div class="settings-group">
+                <div class="settings-group-title">Explore & Learn</div>
+                <div class="settings-row" style="cursor: pointer;" id="settings-open-tour-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Feature Overview & Guide</span>
+                        <span class="settings-row-desc">Explore everything Front Desk can do with an interactive visual tour.</span>
+                    </div>
+                    <span style="font-size:18px;">💡 →</span>
+                </div>
+            </div>
+
+            <div class="settings-group">
                 <div class="settings-group-title">Application Info</div>
                 <div class="settings-row">
                     <span class="settings-row-label">Version</span>
-                    <span class="settings-row-value">v1.25</span>
+                    <span class="settings-row-value">v1.26</span>
                 </div>
                 <div class="settings-row">
                     <span class="settings-row-label">Storage Engine</span>
@@ -225,6 +249,90 @@
     </div>
     <div id="settings-overlay" class="overlay"></div>
 
-    <script src="app.js?v=1.25"></script>
+    <!-- Co-Teacher Selective Split Auto-Resolve Modal -->
+    <div id="split-resolve-modal" class="settings-modal hidden">
+        <div class="settings-modal-header">
+            <h3>Co-Teaching Split Options</h3>
+            <button id="close-split-modal-btn" class="settings-close-btn" aria-label="Close">✕</button>
+        </div>
+        <div class="settings-modal-body">
+            <p style="font-size:13px; color:var(--text-secondary); line-height:1.4;">
+                All free teachers are currently occupied. The following co-teachers are sharing a class and could be split to provide coverage:
+            </p>
+            <div id="split-proposals-list" style="display:flex; flex-direction:column; gap:10px; margin: 10px 0;">
+                <!-- Populated by JS -->
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+                <button id="split-cancel-btn" class="btn-secondary">Keep All Paired</button>
+                <button id="split-confirm-btn" class="btn-primary">Apply Selected Splits</button>
+            </div>
+        </div>
+    </div>
+    <div id="split-overlay" class="overlay"></div>
+
+    <!-- Interactive Apple HIG Feature Overview Modal -->
+    <div id="tour-modal" class="tour-modal hidden">
+        <div class="tour-modal-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:22px;">💡</span>
+                <h3>Front Desk Capabilities</h3>
+            </div>
+            <button id="close-tour-btn" class="settings-close-btn" aria-label="Close Tour">✕</button>
+        </div>
+        <div class="tour-modal-body">
+            <div class="tour-card">
+                <div class="tour-icon">📊</div>
+                <div class="tour-text">
+                    <h4>Interactive Routine Matrix</h4>
+                    <p>Live spreadsheet grid with interactive teacher & period hover crosshairs, responsive mobile scrolling, and smooth day switching.</p>
+                </div>
+            </div>
+            <div class="tour-card">
+                <div class="tour-icon">🎯</div>
+                <div class="tour-text">
+                    <h4>Direct Drag-to-Assign Substitutions</h4>
+                    <p>Grab any missing class from an absent teacher and drop it directly onto a colleague to assign coverage instantly with bidirectional sync.</p>
+                </div>
+            </div>
+            <div class="tour-card">
+                <div class="tour-icon">👥</div>
+                <div class="tour-text">
+                    <h4>Smart Co-Teaching & Drag-to-Split</h4>
+                    <p>Shared classes show <code>👥 Co-teaching</code> badges. Tap to see sharing partners, or drag a sub to split them cleanly while their partner covers solo.</p>
+                </div>
+            </div>
+            <div class="tour-card">
+                <div class="tour-icon">⚓</div>
+                <div class="tour-text">
+                    <h4>Limbo Dock Displacement</h4>
+                    <p>Dropping an assignment onto a busy teacher safely moves their prior class to the smooth Limbo dock below the grid—preventing accidental data loss.</p>
+                </div>
+            </div>
+            <div class="tour-card">
+                <div class="tour-icon">⚠</div>
+                <div class="tour-text">
+                    <h4>Real-time Collision Engine</h4>
+                    <p>Real-time cross-grid scanner highlights duplicate class sections with gentle amber radar breathing rings and interactive counter pills.</p>
+                </div>
+            </div>
+            <div class="tour-card">
+                <div class="tour-icon">🎨</div>
+                <div class="tour-text">
+                    <h4>7 Apple HIG & Futuristic Themes</h4>
+                    <p>Switch seamlessly between Classic Light, Warm Sepia, Dark, Midnight OLED, Slate Nord, tactile <b>Retro Glass</b>, and surreal <b>Utopian Glass</b>.</p>
+                </div>
+            </div>
+            <div class="tour-card">
+                <div class="tour-icon">↩</div>
+                <div class="tour-text">
+                    <h4>Dual-Stack Undo & Redo Engine</h4>
+                    <p>Full action history across both Grid and Substitution tabs with stable segmented controls, <code>Cmd+Z</code>, and <code>Cmd+Shift+Z</code> shortcuts.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="tour-overlay" class="overlay"></div>
+
+    <script src="app.js?v=1.26"></script>
 </body>
 </html>

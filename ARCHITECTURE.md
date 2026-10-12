@@ -52,14 +52,35 @@ const state = {
 *   `cell-dragging`: Shrinks to 95% scale and fades to 40% opacity instantly when a cell is grabbed.
 
 ## 7. Upcoming Roadmap (Next Tasks)
-1.  **Live Google Sheets Pipeline:** Replace `generateSimulatedData()` with a `fetch()` engine to parse a live published CSV.
-2.  **Version Conflict Resolution:** Add timestamps to `localStorage` savestates. If the live CSV updates, prompt the user to resolve Cloud vs. Local states on boot.
-3.  **Priority Preference Matrix & Smart Solver:** Implement a secondary CSV tab to map teacher subject preferences. Upgrade the `performAutoResolve()` algorithm to a constraint-satisfaction engine based on these priorities.
-4.  **Auto-Resolve Multi-Option Proposals (Max 3 Solutions):** Generate up to 3 distinct substitution schedule possibilities when auto-resolving. Display them as compact tabs/segmented controls with preview details and an explicit "Apply Solution" action.
-5.  **Substitutions View Redesign (Register / Ledger):** Transition from bulky cards to a compact, high-density Daily Substitution Register tailored for at-a-glance administrative overview.
-6.  **Expanded Fit-Grid View (Mobile Landscape):** Provide an expanded view mode that, on mobile in landscape orientation, dynamically scales/fits the master timetable grid to the screen width while maintaining smooth scrollability. In this fitted mode, display a sticky top bar with a "Back to Normal" toggle button.
-7.  **In-App Master Routine Editor:** Provide a native editor directly within the app to create, adjust, and modify the master routine/timetable without requiring external spreadsheet modifications.
-8.  **Protected Routine Editing (Multi-User Access Levels):** Role-based access control (RBAC) / tiered permissions (e.g. Admin vs. Front Desk / Teacher viewer) with passcode/PIN protection to safeguard the master routine from unauthorized modifications while keeping daily substitutions accessible.
+1.  **[CO-TEACHING] Shared Badge, Drag-to-Split & Selective Auto-Resolve:**
+    *   **Shared Slot Badge & Tap Inspection:** When co-teachers share the same subject/class in the same period, display a harmonious badge on their slots (`👥 Co-teaching`). Tapping the cell presents an immediate popover/tooltip highlighting who they are sharing with (and allows jumping directly to the partner's row).
+    *   **Direct Drag-to-Split:** A missing substitution cell can be dragged directly onto either co-teacher's slot to split them—assigning that teacher to the substitution while their partner continues teaching the original class unperturbed (no Limbo displacement needed). The shared badge on the partner's slot greys out (`👥 Solo (split)`) to clearly communicate that the partner is now covering the class alone.
+    *   **Selective Auto-Resolve:** When all free teachers are exhausted, Auto-Resolve presents an interactive modal listing available co-teacher splits: allows selecting which teacher(s) to split, or choosing "None" to preserve all co-teaching pairings.
+2.  **[RESPONSIVE / ERGONOMICS] Mobile Portrait Header Compact Mode / Small Screen Detector:**
+    *   On narrow portrait screens (< 480px) where the header controls get cramped, dynamically detect viewport width or compact mode:
+    *   Transition action buttons to an Apple-style compact horizontal scroll strip or iconified pills (`↺`, `✎ Edit`, `⚙`) with tooltip/aria labels, preventing title wrapping or control overflow.
+3.  **[THEME] Retro Glass Expansion Across the Entire UI:**
+    *   Extend the retro glass calculator aesthetic from just grid cells to the entire interface: app header, buttons, segmented controllers, bottom navigation bar, limbo tray items, and modals, giving the whole app a cohesive vintage glass keycap feel.
+4.  **[THEME] "Utopian Glass" (Surreal Minimalist Architectural Glass):**
+    *   A futuristic, hyper-clean aesthetic inspired by architectural minimalism (*Divergent / Insurgent / Blade Runner 2049* pristine corporate look).
+    *   Ultra-fine frosted glass backdrops (`backdrop-filter: blur(28px)`), iridescent subtle prismatic edge borders (`linear-gradient(135deg, rgba(255,255,255,0.7), rgba(120,200,255,0.2), rgba(255,180,220,0.15))`), crisp typography, and luminous ambient cyan/white reflections.
+5.  **[SHOWCASE] Interactive "Feature Overview & Capabilities" Tour:**
+    *   A rich, Apple HIG visual walkthrough modal / sheet accessible from Settings and the header that elegantly showcases Front Desk's full power:
+        *   Master Timetable Grid & Real-time Class Matrix
+        *   Marking Absences & Live Substitution Conflict Cards
+        *   Drag-and-Drop Direct Substitution & Limbo Dock Displacement
+        *   Cross-Period Substitution with Lock Toggles
+        *   Real-Time Collision Detection & Co-Teaching Split Engine
+        *   Multi-Theme Engine (Light, Dark, Sepia, Nord, Retro Glass, Utopian Glass)
+        *   Dual-Stack Undo / Redo with Zero Dependency Offline-First Persistence.
+6.  **Live Google Sheets Pipeline:** Replace `generateSimulatedData()` with a `fetch()` engine to parse a live published CSV.
+7.  **Version Conflict Resolution:** Add timestamps to `localStorage` savestates. If the live CSV updates, prompt the user to resolve Cloud vs. Local states on boot.
+8.  **Priority Preference Matrix & Smart Solver:** Implement a secondary CSV tab to map teacher subject preferences. Upgrade the `performAutoResolve()` algorithm to a constraint-satisfaction engine based on these priorities.
+9.  **Auto-Resolve Multi-Option Proposals (Max 3 Solutions):** Generate up to 3 distinct substitution schedule possibilities when auto-resolving. Display them as compact tabs/segmented controls with preview details and an explicit "Apply Solution" action.
+10. **Substitutions View Redesign (Register / Ledger):** Transition from bulky cards to a compact, high-density Daily Substitution Register tailored for at-a-glance administrative overview.
+11. **Expanded Fit-Grid View (Mobile Landscape):** Provide an expanded view mode that, on mobile in landscape orientation, dynamically scales/fits the master timetable grid to the screen width while maintaining smooth scrollability. In this fitted mode, display a sticky top bar with a "Back to Normal" toggle button.
+12. **In-App Master Routine Editor:** Provide a native editor directly within the app to create, adjust, and modify the master routine/timetable without requiring external spreadsheet modifications.
+13. **Protected Routine Editing (Multi-User Access Levels):** Role-based access control (RBAC) / tiered permissions (e.g. Admin vs. Front Desk / Teacher viewer) with passcode/PIN protection to safeguard the master routine from unauthorized modifications while keeping daily substitutions accessible.
 
 ## 8. File Map & Project Directory
 *   `index.html`: Core markup, header controls, day segmented controller, grid view, substitutions conflict list, and iOS bottom sheet modal.
@@ -89,6 +110,16 @@ const state = {
     *   **Realistic Teacher-Subject Curriculum Mapping**: Refactored `generateSimulatedData()` to assign distinct, curriculum-accurate subject and class sections per teacher (Math, English, Science/Physics/Chemistry/Bio, History/Geography, Hindi/Sanskrit, Computer/IT, Physical Ed, and Arts/Crafts).
     *   **Collision-Free Routine Generation**: Integrated strict per-period class section tracking (`usedClassesInPeriod`) ensuring 0 initial collisions upon generation.
     *   **Automatic Schema Migration**: Introduced `schemaVersion: '1.25'` in local storage state to automatically replace legacy collision-heavy mock data upon upgrade.
+*   **v1.26 Release (Smart Co-Teaching Engine, Selective Auto-Resolve Split, Utopian Glass & Full Retro Glass UI, Feature Tour & Mobile Compact Header)**:
+    *   **Smart Co-Teaching & Shared Badges**: Legitimate co-teaching classes (e.g. Mr. Stephen & Mrs. Midha co-teaching MATH 10A) display a prominent purple `👥 Co-teaching` badge with purple accent border. Tapping/clicking any co-teaching slot inspects the pairing, generates an informational toast, and highlights the sharing partner's slot across the grid with an animated breathing ring.
+    *   **Direct Drag-to-Split**: Dragging an absent teacher's missing class onto either co-teacher's slot splits them cleanly—assigning the sub to that teacher while their partner continues teaching the class without displacing anything to Limbo. The remaining partner's badge changes to a muted `👥 Solo (split)`. Fully reversible via undo/redo.
+    *   **Selective Auto-Resolve Co-Teaching Split Modal**: When free teachers are exhausted, Auto-Resolve prompts with an Apple HIG modal (`#split-resolve-modal`) allowing administrators to choose specifically which co-teacher(s) to split (formatted concisely as `Split [Teacher] to [Period]`), or choose "Keep All Paired" with 1-click execution.
+    *   **Collision Engine Co-Teaching Awareness**: Refactored collision detection to recognize legitimate base co-teachers, preventing false conflict alerts on shared classes.
+    *   **Mobile Portrait Header Compact Mode**: Added small-screen responsive media queries (`@media (max-width: 580px)`) that hide text labels and preserve compact icon buttons (`↺`, `✎`, `⚙`, `💡`), eliminating header overflow on mobile portrait screens.
+    *   **Retro Glass Full UI Expansion**: Expanded the vintage curved glass calculator aesthetic beyond grid cells to headers, buttons, pills, dock, bottom nav, and modal dialogs.
+    *   **Utopian Glass Theme**: Added a surreal minimalist corporate architectural glass theme (*Divergent/Insurgent* aesthetic) with deep frosted blur (`backdrop-filter: blur(28px)`), iridescent prismatic edges, and luminous cyan/white ambient glow.
+    *   **Feature Overview Showcase**: Added an interactive visual modal (`#tour-modal`) accessible via header button (`💡`) and Settings, detailing the full feature set.
+    *   **Schema 1.26 Migration**: Auto-migrated `schemaVersion` to `'1.26'` with realistic co-teaching seed pairings on Monday, Wednesday, and Friday.
 
 ## 10. Appendix: Technical Specifications
 
