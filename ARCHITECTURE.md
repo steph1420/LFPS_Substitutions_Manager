@@ -120,11 +120,11 @@ const state = {
     *   **Utopian Glass Theme**: Added a surreal minimalist corporate architectural glass theme (*Divergent/Insurgent* aesthetic) with deep frosted blur (`backdrop-filter: blur(28px)`), iridescent prismatic edges, and luminous cyan/white ambient glow.
     *   **Feature Overview Showcase**: Added an interactive visual modal (`#tour-modal`) accessible via header button (`💡`) and Settings, detailing the full feature set.
     *   **Schema 1.26 Migration**: Auto-migrated `schemaVersion` to `'1.26'` with realistic co-teaching seed pairings on Monday, Wednesday, and Friday.
-*   **v1.27 Release (Option-Click Element Reset, Minimal Co-Teaching Badge & Inspector Release Modal, Cohort Double-Booking Collision Detection)**:
-    *   **Option-Click (`Alt + Click`) Rapid Reset Engine**: Holding `Option`/`Alt` and clicking any grid cell or Limbo dock item instantly resets it to its pristine state:
-        *   If the cell has an assigned substitute (`assignedSub` or `coveringFor`), reverts the substitution immediately and returns the class to the absent teacher.
-        *   If the cell was moved/overwritten, restores it to `baseSchedule` baseline and removes any corresponding displaced item from Limbo.
-        *   If clicking an item in the Limbo dock with Option key held, returns that class directly to its original teacher and period.
+    *   **Option-Click (`Alt + Click`) Rapid Reset Engine with Tactile Pop-In Animation**: Holding `Option`/`Alt` and clicking any grid cell or Limbo dock item instantly resets it to its pristine state and triggers a springy `.cell-just-reset` pop-in animation:
+        *   If the cell has an assigned substitute (`assignedSub` or `coveringFor`), reverts the substitution immediately and returns the class to the absent teacher with bounce animation on both affected cells.
+        *   If the cell was moved/overwritten, restores it to `baseSchedule` baseline with pop-in bounce animation and removes any corresponding displaced item from Limbo.
+        *   If clicking an item in the Limbo dock with Option key held, returns that class directly to its original teacher and period with bounce animation on the restored cell.
+        *   Even if already at baseline, triggers an immediate springy bounce feedback confirming pristine state.
         *   Logged as reversible actions (`cell-reset`) supported by full dual-stack Undo (`Cmd+Z`) and Redo (`Cmd+Shift+Z`).
     *   **Minimalist Icon-Only Co-Teaching Badge**: Replaced bulky "Co-teaching" text label with a compact, Apple HIG icon badge (`👥` only, 11px font size) keeping grid cells clean and high-density.
     *   **Co-Teaching Inspector & Release Modal (`#co-teach-modal`)**: Tapping any co-teaching cell opens a dedicated inspector modal displaying shared details, current partner status, and an actionable **Release Teacher** button:

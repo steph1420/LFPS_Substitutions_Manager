@@ -29,6 +29,7 @@ let isScrolling = false;
 let lastDroppedCell = null; 
 let lastDisplacedDrop = null;
 let newlyDisplacedItemId = null;
+let lastResetCells = [];
 
 const teachers = [
     'Mr. Stephen', 'Mrs. Midha', 'Mrs. Pahwa', 'Mrs. Bage', 'Mr. Adams', 
@@ -721,6 +722,7 @@ function rejoinCoTeacher(period, teacher) {
         baseTask
     });
 
+    triggerCellResetAnimation(period, teacher);
     saveStateToStorage();
     updateUndoUI();
     showToast(`Restored ${teacher} to co-teach ${baseTask} (${period}).`);
@@ -744,6 +746,19 @@ function handleCoTeachingClick(period, teacher, event) {
 window.handleCoTeachingClick = handleCoTeachingClick;
 
 // Option+Click element reset functions
+function triggerCellResetAnimation(period, teacher) {
+    if (!period || !teacher) return;
+    if (!lastResetCells) lastResetCells = [];
+    if (!lastResetCells.some(c => c.period === period && c.teacher === teacher)) {
+        lastResetCells.push({ period, teacher });
+    }
+    setTimeout(() => {
+        if (lastResetCells) {
+            lastResetCells = lastResetCells.filter(c => !(c.period === period && c.teacher === teacher));
+        }
+    }, 600);
+}
+
 function resetCellToOriginalState(period, teacher) {
     clearRedoStacks();
     const day = state.day;
@@ -772,6 +787,8 @@ function resetCellToOriginalState(period, teacher) {
     }
 
     if (coveringFor) {
+        triggerCellResetAnimation(period, teacher);
+        triggerCellResetAnimation(coveringSourcePeriod || period, coveringFor);
         unassignSubstitute(coveringSourcePeriod || period, coveringFor);
         showToast(`Reverted substitution: Sent class back to ${coveringFor}. ${teacher} freed.`);
         return;
@@ -780,6 +797,8 @@ function resetCellToOriginalState(period, teacher) {
     // Check 2: Does this teacher have a substitute covering for them in this period?
     const assignedSub = state.substitutions[day]?.[period]?.[teacher];
     if (assignedSub) {
+        triggerCellResetAnimation(period, teacher);
+        triggerCellResetAnimation(period, assignedSub);
         unassignSubstitute(period, teacher);
         showToast(`Reverted substitution: ${teacher}'s class returned from ${assignedSub}.`);
         return;
@@ -804,6 +823,7 @@ function resetCellToOriginalState(period, teacher) {
             baseTask
         });
 
+        triggerCellResetAnimation(period, teacher);
         saveStateToStorage();
         updateUndoUI();
         showToast(`Reset ${teacher} (${period}) back to baseline (${baseTask}).`);
@@ -811,6 +831,9 @@ function resetCellToOriginalState(period, teacher) {
         return;
     }
 
+    // Even if already at baseline, provide tactile bounce feedback on Option-click
+    triggerCellResetAnimation(period, teacher);
+    renderAll();
     showToast(`${teacher} (${period}) is already at original baseline.`);
 }
 window.resetCellToOriginalState = resetCellToOriginalState;
@@ -824,6 +847,7 @@ function resetDisplacedItemToOriginal(itemId) {
     state.schedule[day][item.period][item.ogTeacher] = item.task;
     state.displaced[day] = state.displaced[day].filter(d => d.id !== itemId);
 
+    triggerCellResetAnimation(item.period, item.ogTeacher);
     saveStateToStorage();
     updateUndoUI();
     showToast(`Sent ${item.task} back to ${item.ogTeacher} (${item.period}).`);
@@ -1151,6 +1175,8 @@ function renderTableRoutine() {
                 `;
             } else if (lastDroppedCell && lastDroppedCell.period === period && lastDroppedCell.teacher === teacher) {
                 cellClasses.push('cell-just-dropped');
+            } else if (lastResetCells && lastResetCells.some(c => c.period === period && c.teacher === teacher)) {
+                cellClasses.push('cell-just-reset');
             }
             
             const dragAttrs = isDraggable ? `draggable="true"` : '';
