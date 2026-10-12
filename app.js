@@ -8,7 +8,9 @@ const state = {
     substitutions: {}, 
     displaced: { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] },
     settings: {
-        samePeriodLock: true
+        samePeriodLock: true,
+        minimizeAlerts: false,
+        detectCollisions: true
     },
     actionHistory: {
         grid: [], 
@@ -90,7 +92,7 @@ function loadStateFromStorage() {
             state.substitutions = parsed.substitutions || {};
             state.displaced = parsed.displaced || { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] };
             state.absentTeachers = new Set(parsed.absentTeachers || []);
-            state.settings = parsed.settings || { samePeriodLock: true };
+            state.settings = Object.assign({ samePeriodLock: true, minimizeAlerts: false, detectCollisions: true }, parsed.settings);
             
             // Automatic migration of periods
             migratePeriodNames(state.schedule);
@@ -142,54 +144,42 @@ function loadStateFromStorage() {
 }
 
 // --- THEME MANAGEMENT ---
-const THEME_ICONS = {
-    sun: `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`,
-    moon: `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`
-};
-
 function initTheme() {
-    const savedTheme = localStorage.getItem('lfps_frontdesk_theme');
-    if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        document.body.setAttribute('data-theme', savedTheme);
-    }
-    updateThemeToggleUI();
+    const savedTheme = localStorage.getItem('lfps_frontdesk_theme') || 'system';
+    applyTheme(savedTheme);
 
     const mediaQuery = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
     if (mediaQuery && mediaQuery.addEventListener) {
         mediaQuery.addEventListener('change', () => {
-            if (!localStorage.getItem('lfps_frontdesk_theme')) {
-                updateThemeToggleUI();
+            const current = localStorage.getItem('lfps_frontdesk_theme') || 'system';
+            if (current === 'system') {
+                applyTheme('system');
             }
         });
     }
 }
 
-function toggleTheme(e) {
-    if (e && e.preventDefault) e.preventDefault();
-    if (e && e.stopPropagation) e.stopPropagation();
-
-    const current = document.documentElement.getAttribute('data-theme');
-    const systemIsDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = current ? (current === 'dark') : systemIsDark;
-    const nextTheme = isDark ? 'light' : 'dark';
-
-    document.documentElement.setAttribute('data-theme', nextTheme);
-    document.body.setAttribute('data-theme', nextTheme);
-    localStorage.setItem('lfps_frontdesk_theme', nextTheme);
-    updateThemeToggleUI();
+function applyTheme(themeKey) {
+    if (themeKey === 'system') {
+        document.documentElement.removeAttribute('data-theme');
+        document.body.removeAttribute('data-theme');
+    } else {
+        document.documentElement.setAttribute('data-theme', themeKey);
+        document.body.setAttribute('data-theme', themeKey);
+    }
+    updateThemeSelectorUI(themeKey);
 }
-window.toggleTheme = toggleTheme;
 
-function updateThemeToggleUI() {
-    const btn = document.getElementById('theme-toggle-btn');
-    if (!btn) return;
-    const current = document.documentElement.getAttribute('data-theme');
-    const systemIsDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = current ? (current === 'dark') : systemIsDark;
-    btn.innerHTML = isDark ? THEME_ICONS.sun : THEME_ICONS.moon;
-    btn.title = isDark ? 'Switch to Light Mode' : 'Switch to Night Mode';
-    btn.setAttribute('aria-label', btn.title);
+function setTheme(themeKey) {
+    localStorage.setItem('lfps_frontdesk_theme', themeKey);
+    applyTheme(themeKey);
+}
+window.setTheme = setTheme;
+
+function updateThemeSelectorUI(activeTheme) {
+    document.querySelectorAll('.theme-option-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === activeTheme);
+    });
 }
 
 function safeBind(id, eventType, handler, options = false) {
@@ -208,13 +198,18 @@ function scrollTick() {
 }
 
 function bindEvents() {
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    // Bottom Navigation with Full-Zone Switching
+    document.querySelectorAll('.nav-zone').forEach(zone => {
+        zone.addEventListener('click', (e) => {
+            const targetId = zone.dataset.target;
+            if (!targetId) return;
+
+            document.querySelectorAll('.nav-zone').forEach(z => z.classList.remove('active'));
             document.querySelectorAll('.tab-section').forEach(t => t.classList.remove('active'));
-            const target = e.currentTarget;
-            target.classList.add('active');
-            document.getElementById(target.dataset.target).classList.add('active');
+            
+            zone.classList.add('active');
+            const targetSection = document.getElementById(targetId);
+            if (targetSection) targetSection.classList.add('active');
             updateUndoUI(); 
         });
     });
@@ -250,7 +245,6 @@ function bindEvents() {
         e.preventDefault(); e.stopPropagation(); closeBottomSheet();
     }, {passive: false});
 
-    safeBind('theme-toggle-btn', 'click', toggleTheme);
     safeBind('toast-undo-btn', 'click', undoLastAction);
     safeBind('header-undo-btn', 'click', undoLastAction);
     safeBind('header-redo-btn', 'click', redoLastAction);
@@ -260,28 +254,62 @@ function bindEvents() {
     safeBind('settings-btn', 'click', openSettingsModal);
     safeBind('close-settings-btn', 'click', closeSettingsModal);
     safeBind('settings-overlay', 'click', closeSettingsModal);
+    
     safeBind('same-period-lock-toggle', 'change', (e) => {
         state.settings.samePeriodLock = e.target.checked;
         saveStateToStorage();
         showToast(state.settings.samePeriodLock ? 'Same-Period Lock enabled' : 'Same-Period Lock disabled (Cross-period subs allowed)');
     });
 
+    safeBind('minimize-alerts-toggle', 'change', (e) => {
+        state.settings.minimizeAlerts = e.target.checked;
+        saveStateToStorage();
+        showToast(state.settings.minimizeAlerts ? 'Alerts minimized' : 'Alerts set to normal', true);
+    });
+
+    safeBind('detect-collisions-toggle', 'change', (e) => {
+        state.settings.detectCollisions = e.target.checked;
+        saveStateToStorage();
+        renderAll();
+    });
+
+    safeBind('collision-indicator', 'click', () => {
+        const collisions = findCollisions();
+        if (collisions.count > 0) {
+            const firstCell = document.querySelector('.cell-collision');
+            if (firstCell) {
+                firstCell.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'center' });
+            }
+            showToast(`Found ${collisions.count} collision(s): ${collisions.details.slice(0, 2).join('; ')}`, true);
+        }
+    });
+
+    // Theme selector option buttons in Settings
+    document.querySelectorAll('.theme-option-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const theme = btn.dataset.theme;
+            setTheme(theme);
+        });
+    });
+
     window.addEventListener('keydown', handleGlobalKeydown);
 
+    // Bottom Sheet Fluid Drag-to-Dismiss Touch Physics
     const sheet = document.getElementById('bottom-sheet');
     const handle = document.getElementById('sheet-handle');
     let startY = 0;
     let currentY = 0;
     let isDraggingSheet = false;
 
-    if (sheet) {
-        sheet.addEventListener('touchstart', (e) => {
+    if (sheet && handle) {
+        handle.addEventListener('touchstart', (e) => {
             startY = e.touches[0].clientY;
+            currentY = startY;
             isDraggingSheet = true;
-            sheet.style.transition = 'none'; 
+            sheet.style.transition = 'none';
         }, {passive: true});
 
-        sheet.addEventListener('touchmove', (e) => {
+        window.addEventListener('touchmove', (e) => {
             if (!isDraggingSheet) return;
             currentY = e.touches[0].clientY;
             const deltaY = currentY - startY;
@@ -290,20 +318,20 @@ function bindEvents() {
             }
         }, {passive: true});
 
-        sheet.addEventListener('touchend', (e) => {
+        window.addEventListener('touchend', (e) => {
             if (!isDraggingSheet) return;
             isDraggingSheet = false;
-            sheet.style.transition = 'bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)';
+            sheet.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)';
             const deltaY = currentY - startY;
-            if (deltaY > 80) {
+            if (deltaY > 60) {
                 closeBottomSheet();
-                setTimeout(() => { sheet.style.transform = ''; }, 300); 
+                setTimeout(() => { sheet.style.transform = ''; }, 320); 
             } else {
                 sheet.style.transform = 'translateY(0)'; 
             }
         });
 
-        if(handle) handle.addEventListener('click', closeBottomSheet);
+        handle.addEventListener('click', closeBottomSheet);
     }
 
     const tableContainer = document.querySelector('.table-scroll-container');
@@ -454,12 +482,74 @@ function bindEvents() {
     }
 }
 
+// --- COLLISION DETECTION ENGINE ---
+function findCollisions() {
+    if (!state.settings || state.settings.detectCollisions === false) {
+        return { count: 0, collisionCells: new Map(), details: [] };
+    }
+
+    const collisionCells = new Map(); // key: `${period}::${teacher}`, value: { reasons: [] }
+    const details = [];
+
+    periods.forEach(period => {
+        if (period === 'BREAKFAST BREAK' || period === 'BREAKFAST') return;
+
+        // 1. Check for Duplicate Class Sections in the Same Period (e.g. "MATH 9A" taught by two teachers)
+        const classSectionToTeachers = new Map();
+
+        teachers.forEach(teacher => {
+            const task = state.schedule[state.day]?.[period]?.[teacher];
+            if (task && task !== 'Free' && task !== '') {
+                // Check if task represents a class/subject
+                const normalizedTask = task.trim().toUpperCase();
+                if (!classSectionToTeachers.has(normalizedTask)) {
+                    classSectionToTeachers.set(normalizedTask, []);
+                }
+                classSectionToTeachers.get(normalizedTask).push(teacher);
+            }
+        });
+
+        classSectionToTeachers.forEach((assignedTeachers, taskName) => {
+            if (assignedTeachers.length > 1) {
+                assignedTeachers.forEach(t => {
+                    const key = `${period}::${t}`;
+                    if (!collisionCells.has(key)) collisionCells.set(key, { reasons: [] });
+                    collisionCells.get(key).reasons.push(`Duplicate Class: "${taskName}" also with ${assignedTeachers.filter(ot => ot !== t).join(', ')}`);
+                });
+                details.push(`${period}: ${taskName} assigned to multiple teachers (${assignedTeachers.join(', ')})`);
+            }
+        });
+    });
+
+    return {
+        count: collisionCells.size,
+        collisionCells,
+        details
+    };
+}
+
 // --- RENDER FUNCTIONS ---
 function renderAll() {
     renderAbsentTray();
     renderTableRoutine(); 
     renderDisplacedTray();
     renderSubstitutions();
+    renderCollisionIndicator();
+}
+
+function renderCollisionIndicator() {
+    const indicator = document.getElementById('collision-indicator');
+    const counterText = document.getElementById('collision-counter-text');
+    if (!indicator || !counterText) return;
+
+    const collisions = findCollisions();
+    if (collisions.count > 0 && (!state.settings || state.settings.detectCollisions !== false)) {
+        indicator.classList.remove('hidden');
+        counterText.textContent = `${collisions.count} Collision${collisions.count > 1 ? 's' : ''}`;
+        indicator.title = collisions.details.slice(0, 3).join('\n');
+    } else {
+        indicator.classList.add('hidden');
+    }
 }
 
 function renderAbsentTray() {
@@ -491,6 +581,7 @@ function renderTableRoutine() {
     if(!table || !hideToggle) return;
     
     const hideAbsent = hideToggle.checked;
+    const collisions = findCollisions();
     
     let html = '<thead><tr><th class="teacher-header-cell">Teacher Name</th>';
     periods.forEach((p, idx) => html += `<th data-period="${p}" data-col="${idx + 1}">${p}</th>`);
@@ -513,15 +604,28 @@ function renderTableRoutine() {
             const baseTask = state.baseSchedule[state.day]?.[period]?.[teacher];
             const assignedSub = state.substitutions[state.day]?.[period]?.[teacher];
             
-            // Check if this teacher is covering for an absent colleague in this period
+            // Check if this teacher is covering for an absent colleague in THIS EXACT PERIOD
             let coveringFor = null;
-            const periodSubs = state.substitutions[state.day]?.[period];
-            if (periodSubs) {
-                for (const [absT, subT] of Object.entries(periodSubs)) {
-                    if (subT === teacher) {
-                        coveringFor = absT;
-                        break;
+            let coveringSourcePeriod = null;
+            const daySubs = state.substitutions[state.day];
+            if (daySubs) {
+                // Check all periods for any substitution assigned to this teacher in 'period'
+                for (const [sPeriod, subMap] of Object.entries(daySubs)) {
+                    for (const [absT, subT] of Object.entries(subMap)) {
+                        if (subT === teacher) {
+                            // Find corresponding action in actionHistory to match exact targetPeriod
+                            const matchAction = [...state.actionHistory.grid].reverse().find(a => 
+                                (a.type === 'sub' && a.day === state.day && a.subTeacher === teacher && a.absentTeacher === absT)
+                            );
+                            const activeTargetPeriod = matchAction ? (matchAction.targetPeriod || matchAction.period) : sPeriod;
+                            if (activeTargetPeriod === period) {
+                                coveringFor = absT;
+                                coveringSourcePeriod = sPeriod;
+                                break;
+                            }
+                        }
                     }
+                    if (coveringFor) break;
                 }
             }
 
@@ -563,13 +667,14 @@ function renderTableRoutine() {
 
             } else if (coveringFor) {
                 cellClasses.push('cell-sub-active');
+                const periodNote = coveringSourcePeriod !== period ? ` [from ${coveringSourcePeriod}]` : '';
                 cellContent = `
                     <div class="cell-sub-content">
                         <span class="sub-task">${task}</span>
                         <span class="sub-badge">Sub (${coveringFor.split(' ')[1] || coveringFor})</span>
                     </div>
                 `;
-                cellTitle = `Substituting for ${coveringFor}. Drag to another teacher to reassign, or drag back to ${coveringFor} to unassign.`;
+                cellTitle = `Substituting for ${coveringFor}${periodNote}. Drag to another teacher to reassign, or drag back to ${coveringFor} to unassign.`;
                 isDraggable = true;
                 clickHandler = state.isEditMode ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
 
@@ -586,6 +691,15 @@ function renderTableRoutine() {
                 cellTitle = `${teacher} is Free in ${period}`;
                 isDraggable = false;
                 clickHandler = state.isEditMode ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
+            }
+
+            // Check Collision for this cell
+            const cellKey = `${period}::${teacher}`;
+            const collisionInfo = collisions.collisionCells.get(cellKey);
+            if (collisionInfo) {
+                cellClasses.push('cell-collision');
+                cellTitle += `\n⚠ COLLISION: ${collisionInfo.reasons.join('; ')}`;
+                cellContent += `<span class="collision-badge" title="${collisionInfo.reasons.join('; ')}">⚠ Conflict</span>`;
             }
 
             if (selectedCell && selectedCell.type === 'grid' && selectedCell.period === period && selectedCell.teacher === teacher) {
@@ -1182,19 +1296,21 @@ function updateUndoUI() {
     
     if (undoBtn) {
         if (activeUndo.length > 0) {
-            undoBtn.classList.add('visible');
+            undoBtn.removeAttribute('disabled');
             undoBtn.textContent = `↩ Undo (${activeUndo.length})`;
         } else {
-            undoBtn.classList.remove('visible');
+            undoBtn.setAttribute('disabled', 'true');
+            undoBtn.textContent = '↩ Undo';
         }
     }
 
     if (redoBtn) {
         if (activeRedo.length > 0) {
-            redoBtn.classList.add('visible');
+            redoBtn.removeAttribute('disabled');
             redoBtn.textContent = `↪ Redo (${activeRedo.length})`;
         } else {
-            redoBtn.classList.remove('visible');
+            redoBtn.setAttribute('disabled', 'true');
+            redoBtn.textContent = '↪ Redo';
         }
     }
 }
@@ -1380,10 +1496,23 @@ function handleGlobalKeydown(e) {
 function openSettingsModal() {
     const modal = document.getElementById('settings-modal');
     const overlay = document.getElementById('settings-overlay');
-    const toggle = document.getElementById('same-period-lock-toggle');
-    if (toggle) {
-        toggle.checked = state.settings.samePeriodLock !== false;
+    const sameLockToggle = document.getElementById('same-period-lock-toggle');
+    const minAlertsToggle = document.getElementById('minimize-alerts-toggle');
+    const detectCollisionsToggle = document.getElementById('detect-collisions-toggle');
+    
+    if (sameLockToggle) {
+        sameLockToggle.checked = state.settings.samePeriodLock !== false;
     }
+    if (minAlertsToggle) {
+        minAlertsToggle.checked = state.settings.minimizeAlerts === true;
+    }
+    if (detectCollisionsToggle) {
+        detectCollisionsToggle.checked = state.settings.detectCollisions !== false;
+    }
+
+    const currentTheme = localStorage.getItem('lfps_frontdesk_theme') || 'system';
+    updateThemeSelectorUI(currentTheme);
+
     if (modal) modal.classList.remove('hidden');
     if (overlay) overlay.classList.add('active');
 }
@@ -1397,14 +1526,19 @@ function closeSettingsModal() {
 window.openSettingsModal = openSettingsModal;
 window.closeSettingsModal = closeSettingsModal;
 
-function showToast(message) {
+function showToast(message, isCritical = false) {
+    // If minimize alerts is on and message is non-critical, suppress toast
+    if (state.settings && state.settings.minimizeAlerts && !isCritical) {
+        return;
+    }
+
     const toast = document.getElementById('undo-toast');
     const msgElement = document.getElementById('toast-message');
     if(!toast || !msgElement) return;
     
     msgElement.textContent = message;
     toast.classList.remove('hidden');
-    setTimeout(() => { toast.classList.add('hidden'); }, 5000);
+    setTimeout(() => { toast.classList.add('hidden'); }, 4000);
 }
 
 // --- MOCK DATA GENERATOR ---

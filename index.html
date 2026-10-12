@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.23">
+    <link rel="stylesheet" href="styles.css?v=1.24">
 </head>
 <body>
 
@@ -14,20 +14,21 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge">v1.23</span>
+                <span class="version-badge">v1.24</span>
             </div>
             <div class="header-controls">
-                <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Toggle Theme" title="Toggle Theme"></button>
+                <div class="history-btn-group" id="history-btn-group">
+                    <button id="header-undo-btn" class="btn-history btn-undo-slot" disabled title="Undo (Cmd+Z)">↩ Undo</button>
+                    <button id="header-redo-btn" class="btn-history btn-redo-slot" disabled title="Redo (Cmd+Shift+Z / Ctrl+Y)">↪ Redo</button>
+                </div>
+                <button id="reset-schedule-btn" class="btn-secondary">↺ Reset</button>
+                <button id="edit-toggle-btn" class="btn-primary">Edit Schedule</button>
                 <button id="settings-btn" class="settings-btn" aria-label="Settings" title="Settings">
                     <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                     </svg>
                 </button>
-                <button id="header-undo-btn" class="btn-undo">↩ Undo</button>
-                <button id="header-redo-btn" class="btn-redo">↪ Redo</button>
-                <button id="reset-schedule-btn" class="btn-secondary">↺ Reset</button>
-                <button id="edit-toggle-btn" class="btn-primary">Edit Schedule</button>
             </div>
         </div>
         
@@ -57,6 +58,10 @@
                         <div id="displaced-indicator" class="displaced-indicator hidden">
                             <span class="pulse-dot"></span>
                             <span class="text">Displaced</span>
+                        </div>
+                        <div id="collision-indicator" class="collision-indicator hidden" title="Click to inspect collisions">
+                            <span class="pulse-amber-dot"></span>
+                            <span id="collision-counter-text" class="text">0 Collisions</span>
                         </div>
                     </div>
                     <label class="toggle-switch">
@@ -104,17 +109,22 @@
         <button id="toast-undo-btn">↩ Undo</button>
     </div>
 
-    <!-- Bottom Navigation Bar -->
+    <!-- Bottom Navigation Bar with Soft Splitter & Full-Zone Switching -->
     <nav class="bottom-nav">
-        <button class="nav-btn active" data-target="tab-dashboard">
-            <span class="icon">📊</span>
-            <span>Grid</span>
-        </button>
-        <button class="nav-btn" data-target="tab-substitutions">
-            <span class="icon">🔄</span>
-            <span>Substitutions</span>
-            <span class="badge hidden" id="substitutions-badge">0</span> 
-        </button>
+        <div class="nav-zone active" data-target="tab-dashboard" id="zone-tab-dashboard">
+            <button class="nav-btn active" data-target="tab-dashboard">
+                <span class="icon">📊</span>
+                <span>Grid</span>
+            </button>
+        </div>
+        <div class="nav-splitter" aria-hidden="true"></div>
+        <div class="nav-zone" data-target="tab-substitutions" id="zone-tab-substitutions">
+            <button class="nav-btn" data-target="tab-substitutions">
+                <span class="icon">🔄</span>
+                <span>Substitutions</span>
+                <span class="badge hidden" id="substitutions-badge">0</span> 
+            </button>
+        </div>
     </nav>
 
     <!-- iOS-Style Bottom Sheet for Substitute Picker -->
@@ -133,7 +143,61 @@
         </div>
         <div class="settings-modal-body">
             <div class="settings-group">
-                <div class="settings-group-title">Substitution Constraints</div>
+                <div class="settings-group-title">Appearance & Theme</div>
+                <div class="settings-theme-selector">
+                    <button class="theme-option-btn active" data-theme="system">
+                        <span class="theme-preview system-preview"></span>
+                        <span class="theme-name">Auto (System)</span>
+                    </button>
+                    <button class="theme-option-btn" data-theme="light">
+                        <span class="theme-preview light-preview"></span>
+                        <span class="theme-name">Classic Light</span>
+                    </button>
+                    <button class="theme-option-btn" data-theme="warm-sepia">
+                        <span class="theme-preview sepia-preview"></span>
+                        <span class="theme-name">Warm Sepia</span>
+                    </button>
+                    <button class="theme-option-btn" data-theme="dark">
+                        <span class="theme-preview dark-preview"></span>
+                        <span class="theme-name">Classic Dark</span>
+                    </button>
+                    <button class="theme-option-btn" data-theme="midnight">
+                        <span class="theme-preview midnight-preview"></span>
+                        <span class="theme-name">Midnight OLED</span>
+                    </button>
+                    <button class="theme-option-btn" data-theme="slate-nord">
+                        <span class="theme-preview nord-preview"></span>
+                        <span class="theme-name">Slate Nord</span>
+                    </button>
+                    <button class="theme-option-btn" data-theme="retro-glass">
+                        <span class="theme-preview glass-preview"></span>
+                        <span class="theme-name">✨ Retro Glass</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <div class="settings-group-title">Preferences & Alerts</div>
+                <div class="settings-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Minimize Alerts</span>
+                        <span class="settings-row-desc">Suppress non-critical routine notices for a quieter, distraction-free workflow.</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="minimize-alerts-toggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Highlight Collisions</span>
+                        <span class="settings-row-desc">Show soft pulsing amber radar rings on conflicting classes and double-booked teachers.</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="detect-collisions-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
                 <div class="settings-row">
                     <div class="settings-row-info">
                         <span class="settings-row-label">Same-Period Lock</span>
@@ -145,11 +209,12 @@
                     </label>
                 </div>
             </div>
+
             <div class="settings-group">
                 <div class="settings-group-title">Application Info</div>
                 <div class="settings-row">
                     <span class="settings-row-label">Version</span>
-                    <span class="settings-row-value">v1.23</span>
+                    <span class="settings-row-value">v1.24</span>
                 </div>
                 <div class="settings-row">
                     <span class="settings-row-label">Storage Engine</span>
@@ -160,6 +225,6 @@
     </div>
     <div id="settings-overlay" class="overlay"></div>
 
-    <script src="app.js?v=1.23"></script>
+    <script src="app.js?v=1.24"></script>
 </body>
 </html>
