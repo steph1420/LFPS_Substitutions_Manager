@@ -275,6 +275,10 @@ function bindEvents() {
     safeBind('split-overlay', 'click', closeSplitModal);
     safeBind('split-cancel-btn', 'click', cancelSplitModal);
     safeBind('split-confirm-btn', 'click', applySelectedSplits);
+
+    // Co-Teacher Inspector Modal
+    safeBind('close-co-teach-modal-btn', 'click', closeCoTeachingModal);
+    safeBind('co-teach-overlay', 'click', closeCoTeachingModal);
     
     safeBind('same-period-lock-toggle', 'change', (e) => {
         state.settings.samePeriodLock = e.target.checked;
@@ -359,6 +363,32 @@ function bindEvents() {
     const table = document.getElementById('routine-table');
     
     if (table && tableContainer) {
+        // Option+Click: Reset clicked element to original state (revert sub, send subject back, reset cell)
+        table.addEventListener('click', (e) => {
+            if (e.altKey) {
+                const td = e.target.closest('td');
+                if (td && td.dataset.period && td.dataset.teacher) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    resetCellToOriginalState(td.dataset.period, td.dataset.teacher);
+                }
+            }
+        }, true);
+
+        const displacedTray = document.getElementById('displaced-tray');
+        if (displacedTray) {
+            displacedTray.addEventListener('click', (e) => {
+                if (e.altKey) {
+                    const itemEl = e.target.closest('.displaced-item');
+                    if (itemEl && itemEl.dataset.id) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        resetDisplacedItemToOriginal(itemEl.dataset.id);
+                    }
+                }
+            }, true);
+        }
+
         table.addEventListener('dragstart', (e) => {
             const td = e.target.closest('td');
             if (!td || !td.dataset.period) return e.preventDefault();
@@ -535,10 +565,13 @@ function isActivelyCoTeaching(day, period, teacher) {
     });
 }
 
-function inspectCoTeachingCell(period, teacher) {
-    const partners = getCoTeachingPartners(state.day, period, teacher);
-    if (partners.length === 0) return;
+function openCoTeachingModal(period, teacher) {
+    const modal = document.getElementById('co-teach-modal');
+    const overlay = document.getElementById('co-teach-overlay');
+    const body = document.getElementById('co-teach-modal-body');
+    if (!modal || !overlay || !body) return;
 
+    const partners = getCoTeachingPartners(state.day, period, teacher);
     const baseTask = state.baseSchedule[state.day]?.[period]?.[teacher];
     const currentTask = state.schedule[state.day]?.[period]?.[teacher];
     const isActive = isActivelyCoTeaching(state.day, period, teacher);
@@ -548,34 +581,255 @@ function inspectCoTeachingCell(period, teacher) {
         const partnerCell = document.querySelector(`td[data-period="${period}"][data-teacher="${partner}"]`);
         if (partnerCell) {
             partnerCell.classList.remove('cell-partner-highlight');
-            void partnerCell.offsetWidth; // trigger reflow
+            void partnerCell.offsetWidth;
             partnerCell.classList.add('cell-partner-highlight');
-            setTimeout(() => {
-                partnerCell.classList.remove('cell-partner-highlight');
-            }, 1600);
+            setTimeout(() => { partnerCell.classList.remove('cell-partner-highlight'); }, 1600);
         }
     });
 
-    if (isActive) {
-        showToast(`👥 ${teacher} is co-teaching ${currentTask} with ${partners.join(', ')}.`);
-    } else if (currentTask === baseTask) {
-        showToast(`👥 ${teacher} is teaching ${currentTask} solo (split from ${partners.join(', ')}).`);
-    } else {
-        showToast(`👥 Co-teaching partner(s): ${partners.join(', ')}.`);
-    }
-}
-window.inspectCoTeachingCell = inspectCoTeachingCell;
+    const isCurrentFree = (currentTask === 'Free');
 
-function handleCoTeachingClick(period, teacher) {
+    body.innerHTML = `
+        <div style="background:var(--bg-color); border:1px solid var(--border-color); border-radius:12px; padding:14px 16px; margin-bottom:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong style="font-size:16px; color:var(--text-primary); font-weight:700;">${baseTask}</strong>
+                <span style="font-size:12px; font-weight:600; color:var(--accent-blue); background:rgba(0,122,255,0.12); padding:2px 8px; border-radius:12px;">${period}</span>
+            </div>
+            <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">${state.day} • Co-Taught Class</div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--surface-color); border:1px solid var(--border-color); border-radius:10px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:8px; height:8px; border-radius:50%; background:${isCurrentFree ? 'var(--accent-red)' : 'var(--accent-green)'};"></div>
+                    <strong style="font-size:14px; color:var(--text-primary);">${teacher}</strong>
+                </div>
+                <span style="font-size:12px; color:var(--text-secondary); font-weight:600;">${isCurrentFree ? 'Released (Free)' : (isActive ? 'Active Co-Teacher' : 'Teaching Solo')}</span>
+            </div>
+
+            ${partners.map(p => {
+                const pTask = state.schedule[state.day]?.[period]?.[p];
+                const pIsFree = (pTask === 'Free');
+                return `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--surface-color); border:1px solid var(--border-color); border-radius:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="width:8px; height:8px; border-radius:50%; background:${pIsFree ? 'var(--accent-red)' : 'var(--accent-green)'};"></div>
+                        <strong style="font-size:14px; color:var(--text-primary);">${p}</strong>
+                    </div>
+                    <span style="font-size:12px; color:var(--text-secondary); font-weight:600;">${pIsFree ? 'Released (Free)' : 'Co-Teacher'}</span>
+                </div>
+                `;
+            }).join('')}
+        </div>
+
+        <div style="font-size:12px; color:var(--text-secondary); line-height:1.45; margin-bottom:18px;">
+            Releasing a teacher sets them Free so they can take substitutions, while their co-teaching partner continues teaching the class alone.
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            ${!isCurrentFree ? `
+                <button class="btn-primary" style="padding:10px 16px; font-size:13px; font-weight:600;" onclick="releaseTeacher('${period}', '${teacher}', 'period')">
+                    Release ${teacher.split(' ')[1] || teacher} for this Period (Make Free)
+                </button>
+                <button class="btn-secondary" style="padding:10px 16px; font-size:13px; font-weight:600;" onclick="releaseTeacher('${period}', '${teacher}', 'day')">
+                    Release ${teacher.split(' ')[1] || teacher} for Entire Day (Free Today)
+                </button>
+            ` : `
+                <button class="btn-primary" style="padding:10px 16px; font-size:13px; font-weight:600;" onclick="rejoinCoTeacher('${period}', '${teacher}')">
+                    Rejoin Partner (Restore ${baseTask})
+                </button>
+            `}
+        </div>
+    `;
+
+    modal.classList.remove('hidden');
+    overlay.classList.add('active');
+}
+window.openCoTeachingModal = openCoTeachingModal;
+
+function closeCoTeachingModal() {
+    const modal = document.getElementById('co-teach-modal');
+    const overlay = document.getElementById('co-teach-overlay');
+    if (modal) modal.classList.add('hidden');
+    if (overlay) overlay.classList.remove('active');
+}
+window.closeCoTeachingModal = closeCoTeachingModal;
+
+function releaseTeacher(period, teacher, scope = 'period') {
+    closeCoTeachingModal();
+    clearRedoStacks();
+    const day = state.day;
+    const actionId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+
+    if (scope === 'period') {
+        const prevTask = state.schedule[day][period][teacher];
+        state.schedule[day][period][teacher] = 'Free';
+        const action = {
+            id: actionId,
+            type: 'co-teach-release',
+            scope: 'period',
+            day,
+            period,
+            teacher,
+            prevTask
+        };
+        state.actionHistory.grid.push(action);
+        showToast(`Released ${teacher} from ${period}. Now Free for substitutions.`);
+    } else if (scope === 'day') {
+        const savedTasks = [];
+        periods.forEach(p => {
+            const task = state.schedule[day]?.[p]?.[teacher];
+            if (task && task !== 'Free' && task !== '-') {
+                savedTasks.push({ period: p, task });
+                state.schedule[day][p][teacher] = 'Free';
+            }
+        });
+        const action = {
+            id: actionId,
+            type: 'co-teach-release',
+            scope: 'day',
+            day,
+            teacher,
+            savedTasks
+        };
+        state.actionHistory.grid.push(action);
+        showToast(`Released ${teacher} for entire ${day}. Now Free for substitutions.`);
+    }
+
+    saveStateToStorage();
+    updateUndoUI();
+    renderAll();
+}
+window.releaseTeacher = releaseTeacher;
+
+function rejoinCoTeacher(period, teacher) {
+    closeCoTeachingModal();
+    clearRedoStacks();
+    const day = state.day;
+    const baseTask = state.baseSchedule[day]?.[period]?.[teacher] || 'Free';
+    const prevTask = state.schedule[day][period][teacher];
+    state.schedule[day][period][teacher] = baseTask;
+
+    const actionId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+    state.actionHistory.grid.push({
+        id: actionId,
+        type: 'cell-reset',
+        day,
+        period,
+        teacher,
+        prevTask,
+        baseTask
+    });
+
+    saveStateToStorage();
+    updateUndoUI();
+    showToast(`Restored ${teacher} to co-teach ${baseTask} (${period}).`);
+    renderAll();
+}
+window.rejoinCoTeacher = rejoinCoTeacher;
+
+function handleCoTeachingClick(period, teacher, event) {
+    if (event && event.altKey) {
+        return resetCellToOriginalState(period, teacher);
+    }
     if (state.isEditMode) {
         handleGridInteraction(period, teacher);
+        return;
     }
     const partners = getCoTeachingPartners(state.day, period, teacher);
     if (partners.length > 0) {
-        inspectCoTeachingCell(period, teacher);
+        openCoTeachingModal(period, teacher);
     }
 }
 window.handleCoTeachingClick = handleCoTeachingClick;
+
+// Option+Click element reset functions
+function resetCellToOriginalState(period, teacher) {
+    clearRedoStacks();
+    const day = state.day;
+
+    // Check 1: Is this teacher substituting for someone in this period?
+    let coveringFor = null;
+    let coveringSourcePeriod = null;
+    const daySubs = state.substitutions[day];
+    if (daySubs) {
+        for (const [sPeriod, subMap] of Object.entries(daySubs)) {
+            for (const [absT, subT] of Object.entries(subMap)) {
+                if (subT === teacher) {
+                    const matchAction = [...state.actionHistory.grid].reverse().find(a => 
+                        (a.type === 'sub' && a.day === day && a.subTeacher === teacher && a.absentTeacher === absT)
+                    );
+                    const activeTargetPeriod = matchAction ? (matchAction.targetPeriod || matchAction.period) : sPeriod;
+                    if (activeTargetPeriod === period) {
+                        coveringFor = absT;
+                        coveringSourcePeriod = sPeriod;
+                        break;
+                    }
+                }
+            }
+            if (coveringFor) break;
+        }
+    }
+
+    if (coveringFor) {
+        unassignSubstitute(coveringSourcePeriod || period, coveringFor);
+        showToast(`Reverted substitution: Sent class back to ${coveringFor}. ${teacher} freed.`);
+        return;
+    }
+
+    // Check 2: Does this teacher have a substitute covering for them in this period?
+    const assignedSub = state.substitutions[day]?.[period]?.[teacher];
+    if (assignedSub) {
+        unassignSubstitute(period, teacher);
+        showToast(`Reverted substitution: ${teacher}'s class returned from ${assignedSub}.`);
+        return;
+    }
+
+    // Check 3: Current task differs from baseline task in baseSchedule
+    const currentTask = state.schedule[day]?.[period]?.[teacher];
+    const baseTask = state.baseSchedule[day]?.[period]?.[teacher] || 'Free';
+
+    if (currentTask !== baseTask) {
+        state.displaced[day] = (state.displaced[day] || []).filter(d => !(d.period === period && d.ogTeacher === teacher));
+        state.schedule[day][period][teacher] = baseTask;
+
+        const actionId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+        state.actionHistory.grid.push({
+            id: actionId,
+            type: 'cell-reset',
+            day,
+            period,
+            teacher,
+            prevTask: currentTask,
+            baseTask
+        });
+
+        saveStateToStorage();
+        updateUndoUI();
+        showToast(`Reset ${teacher} (${period}) back to baseline (${baseTask}).`);
+        renderAll();
+        return;
+    }
+
+    showToast(`${teacher} (${period}) is already at original baseline.`);
+}
+window.resetCellToOriginalState = resetCellToOriginalState;
+
+function resetDisplacedItemToOriginal(itemId) {
+    clearRedoStacks();
+    const day = state.day;
+    const item = (state.displaced[day] || []).find(d => d.id === itemId);
+    if (!item) return;
+
+    state.schedule[day][item.period][item.ogTeacher] = item.task;
+    state.displaced[day] = state.displaced[day].filter(d => d.id !== itemId);
+
+    saveStateToStorage();
+    updateUndoUI();
+    showToast(`Sent ${item.task} back to ${item.ogTeacher} (${item.period}).`);
+    renderAll();
+}
+window.resetDisplacedItemToOriginal = resetDisplacedItemToOriginal;
 
 function extractClassSection(task) {
     if (!task || task === 'Free' || task === '-' || task === '') return null;
@@ -842,25 +1096,37 @@ function renderTableRoutine() {
 
                 if (isCoActive) {
                     cellClasses.push('cell-shared');
-                    cellContent += `<span class="shared-badge">👥 Co-teaching</span>`;
+                    cellContent += `<span class="shared-badge" title="Co-teaching with ${coPartners.join(', ')}">👥</span>`;
                     cellTitle = `${teacher}: ${task} (Co-teaching with ${coPartners.join(', ')})`;
                 } else if (isCoSolo) {
                     cellClasses.push('cell-shared');
-                    cellContent += `<span class="shared-badge shared-badge-solo">👥 Solo (split)</span>`;
+                    cellContent += `<span class="shared-badge shared-badge-solo" title="Solo - split from ${coPartners.join(', ')}">👥</span>`;
                     cellTitle = `${teacher}: ${task} (Solo - split from ${coPartners.join(', ')})`;
                 } else {
                     cellTitle = `${teacher}: ${task}`;
                 }
 
                 isDraggable = state.isEditMode;
-                clickHandler = `onclick="handleCoTeachingClick('${period}', '${teacher}')"`;
+                if (hasCoPartners) {
+                    clickHandler = `onclick="handleCoTeachingClick('${period}', '${teacher}', event)"`;
+                } else {
+                    clickHandler = state.isEditMode ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
+                }
 
             } else {
                 // Free cell
                 cellContent = '';
-                cellTitle = `${teacher} is Free in ${period}`;
+                const coPartners = getCoTeachingPartners(state.day, period, teacher);
+                if (coPartners.length > 0) {
+                    cellClasses.push('cell-shared');
+                    cellContent += `<span class="shared-badge shared-badge-solo" title="Released co-teacher (Free)">👥</span>`;
+                    cellTitle = `${teacher} is Free (Released from ${baseTask} with ${coPartners.join(', ')})`;
+                    clickHandler = `onclick="handleCoTeachingClick('${period}', '${teacher}', event)"`;
+                } else {
+                    cellTitle = `${teacher} is Free in ${period}`;
+                    clickHandler = state.isEditMode ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
+                }
                 isDraggable = false;
-                clickHandler = state.isEditMode ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
             }
 
             // Check Collision for this cell
@@ -1669,6 +1935,22 @@ function undoLastAction() {
         state.schedule[day][period][previousSub] = taskToCover;
         state.schedule[day][period][absentTeacher] = 'Free';
 
+    } else if (action.type === 'cell-reset') {
+        const { day, period, teacher, prevTask } = action;
+        state.schedule[day][period][teacher] = prevTask;
+
+    } else if (action.type === 'co-teach-release') {
+        const { day, scope, teacher, period, prevTask, savedTasks } = action;
+        if (scope === 'period') {
+            state.schedule[day][period][teacher] = prevTask;
+        } else if (scope === 'day') {
+            if (savedTasks && Array.isArray(savedTasks)) {
+                savedTasks.forEach(item => {
+                    state.schedule[day][item.period][teacher] = item.task;
+                });
+            }
+        }
+
     } else if (action.type === 'batch-sub') {
         [...action.actions].reverse().forEach(sub => {
             state.schedule[sub.day][sub.period][sub.subTeacher] = sub.previousTaskForSub || 'Free';
@@ -1745,6 +2027,24 @@ function redoLastAction() {
         state.displaced[action.day] = [];
         state.substitutions[action.day] = {};
         getActiveHistoryStack().push(action);
+
+    } else if (action.type === 'cell-reset') {
+        const { day, period, teacher, baseTask } = action;
+        state.schedule[day][period][teacher] = baseTask;
+        state.actionHistory.grid.push(action);
+
+    } else if (action.type === 'co-teach-release') {
+        const { day, scope, teacher, period, savedTasks } = action;
+        if (scope === 'period') {
+            state.schedule[day][period][teacher] = 'Free';
+        } else if (scope === 'day') {
+            if (savedTasks && Array.isArray(savedTasks)) {
+                savedTasks.forEach(item => {
+                    state.schedule[day][item.period][teacher] = 'Free';
+                });
+            }
+        }
+        state.actionHistory.grid.push(action);
 
     } else if (action.type === 'batch-sub') {
         action.actions.forEach(sub => {
