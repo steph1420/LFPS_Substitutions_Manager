@@ -81,6 +81,26 @@ const state = {
 11. **Expanded Fit-Grid View (Mobile Landscape):** Provide an expanded view mode that, on mobile in landscape orientation, dynamically scales/fits the master timetable grid to the screen width while maintaining smooth scrollability. In this fitted mode, display a sticky top bar with a "Back to Normal" toggle button.
 12. **In-App Master Routine Editor:** Provide a native editor directly within the app to create, adjust, and modify the master routine/timetable without requiring external spreadsheet modifications.
 13. **Protected Routine Editing (Multi-User Access Levels):** Role-based access control (RBAC) / tiered permissions (e.g. Admin vs. Front Desk / Teacher viewer) with passcode/PIN protection to safeguard the master routine from unauthorized modifications while keeping daily substitutions accessible.
+14. **[CO-TEACHING] Inline Release Button Next to Teacher's Name:**
+    *   In the Co-Teaching inspector popup (`#co-teach-modal`), reposition the "Release" action button directly inline next to each teacher's name in their respective card/row.
+    *   Allows immediate 1-click release of either teacher directly beside their profile, rather than bottom stacked buttons.
+15. **[SUB-ACCEPTANCE] Teacher Substitution Acceptance Flow with 10s Countdown Undo Window:**
+    *   Provide an **Accept** button on substitution cards/cells for assigned teachers to acknowledge and accept their assigned substitution.
+    *   **10-Second Undo Window:** Pressing Accept initiates an interactive 10-second countdown timer toast (`Accepting in 10s... [Undo]`) allowing the teacher to cancel/undo the acceptance before it finalizes.
+    *   **Lock-in & Broadcast:** Once the 10-second timer expires without cancellation, the substitution acceptance is finalized, locked, reported to the server, and visually updated across the board with an Apple HIG verified checkmark (`✓ Accepted`).
+    *   **Immutable Teacher Lock:** Once finalized with timeout, the teacher cannot unaccept or revoke it. Only an Administrator or Academic Coordinator (AC) possesses the permission level to revoke or reassign that acceptance.
+16. **[DISPUTE ENGINE] Role-Gated Substitution Dispute Setting & Workflow:**
+    *   **Admin/AC-Only Setting:** An optional configuration setting toggle in Settings (`Allow Substitution Disputes`), strictly visible to Administrator and Academic Coordinator roles.
+    *   **Dispute Button & Reason Modal:** When enabled, substitute teachers who receive an assignment have access to a "Dispute" button.
+    *   **Optional Rationale Input:** Clicking Dispute opens a concise Apple HIG sheet with an optional reason text box (e.g. lab setup, prior student counseling, grading urgency) before submitting the dispute flag to the admin/AC substitution dashboard.
+17. **[OFFICIATING CT] Assign Officiating Class Teacher on CT Absence:**
+    *   When a Class Teacher (CT) is marked absent for the day, prompt or provide an action to assign an **Officiating Class Teacher (offCT)** for that class section.
+    *   The officiating CT temporarily assumes morning attendance, student management, and daily register responsibilities for that class.
+    *   Visually tagged in the routine and substitution register with an Apple HIG badge (e.g. `📋 Officiating CT - 9A`).
+18. **[AC ROLES & DELEGATION] Assistant AC Equivalence & Officiating AC (offAC) Delegation:**
+    *   **Assistant Academic Coordinator (Asst AC) Parity:** Grant identical administrative and substitution management permissions to the Assistant AC as the primary Academic Coordinator (AC).
+    *   **Dual-Absence Contingency (Officiating AC):** If both the AC and Assistant AC are absent on the same day, provide an admin/system prompt and option to assign an **Officiating AC (offAC)** for the day.
+    *   **Inherited Ephemeral Permissions:** The assigned `offAC` inherits full AC administrative permissions (substitution resolution, dispute review, acceptance overrides) strictly for that day, resetting automatically on the next school day.
 
 ## 8. File Map & Project Directory
 *   `index.html`: Core markup, header controls, day segmented controller, grid view, substitutions conflict list, and iOS bottom sheet modal.
@@ -120,12 +140,13 @@ const state = {
     *   **Utopian Glass Theme**: Added a surreal minimalist corporate architectural glass theme (*Divergent/Insurgent* aesthetic) with deep frosted blur (`backdrop-filter: blur(28px)`), iridescent prismatic edges, and luminous cyan/white ambient glow.
     *   **Feature Overview Showcase**: Added an interactive visual modal (`#tour-modal`) accessible via header button (`💡`) and Settings, detailing the full feature set.
     *   **Schema 1.26 Migration**: Auto-migrated `schemaVersion` to `'1.26'` with realistic co-teaching seed pairings on Monday, Wednesday, and Friday.
-    *   **Option-Click (`Alt + Click`) Rapid Reset Engine with Tactile Pop-In Animation**: Holding `Option`/`Alt` and clicking any grid cell or Limbo dock item instantly resets it to its pristine state and triggers a springy `.cell-just-reset` pop-in animation:
+    *   **Option-Click (`Alt + Click`) Rapid Reset Engine with Tactile Pop-In Animation & Smart Moved Subject Return**: Holding `Option`/`Alt` and clicking any grid cell or Limbo dock item instantly resets it to its pristine state and triggers a springy `.cell-just-reset` pop-in animation:
         *   If the cell has an assigned substitute (`assignedSub` or `coveringFor`), reverts the substitution immediately and returns the class to the absent teacher with bounce animation on both affected cells.
-        *   If the cell was moved/overwritten, restores it to `baseSchedule` baseline with pop-in bounce animation and removes any corresponding displaced item from Limbo.
+        *   **Smart Moved Subject Return (Bugfix)**: If an assignment was moved from Cell A to Cell B, Option-clicking Cell B safely returns that subject back home to Cell A (or back to Limbo if originated from Limbo), restores Cell B to its previous task, cleans up any displaced task, and fires springy tactile bounce animations on both cells without orphaning or losing the subject.
+        *   **Baseline Recall**: If Option-clicking an empty or modified cell whose original baseline class was moved elsewhere, automatically locates and recalls that class back to its original slot.
         *   If clicking an item in the Limbo dock with Option key held, returns that class directly to its original teacher and period with bounce animation on the restored cell.
         *   Even if already at baseline, triggers an immediate springy bounce feedback confirming pristine state.
-        *   Logged as reversible actions (`cell-reset`) supported by full dual-stack Undo (`Cmd+Z`) and Redo (`Cmd+Shift+Z`).
+        *   Logged as reversible actions (`cell-reset`, `cell-reset-move`, `cell-reset-return-origin`, `cell-reset-recall`) supported by full dual-stack Undo (`Cmd+Z`) and Redo (`Cmd+Shift+Z`).
     *   **Minimalist Icon-Only Co-Teaching Badge**: Replaced bulky "Co-teaching" text label with a compact, Apple HIG icon badge (`👥` only, 11px font size) keeping grid cells clean and high-density.
     *   **Co-Teaching Inspector & Release Modal (`#co-teach-modal`)**: Tapping any co-teaching cell opens a dedicated inspector modal displaying shared details, current partner status, and an actionable **Release Teacher** button:
         *   "Release for Period": Releases the teacher from co-teaching for that specific period, marking them `Free` to take substitutions or prep while their partner continues teaching solo.

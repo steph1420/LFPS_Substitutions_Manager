@@ -804,10 +804,155 @@ function resetCellToOriginalState(period, teacher) {
         return;
     }
 
-    // Check 3: Current task differs from baseline task in baseSchedule
+    // Check 3: Current task differs from baseline task in baseSchedule, OR cell was source of a moved task
     const currentTask = state.schedule[day]?.[period]?.[teacher];
     const baseTask = state.baseSchedule[day]?.[period]?.[teacher] || 'Free';
 
+    // 3A: If currentTask !== 'Free', check if this task was moved here from somewhere else
+    if (currentTask !== 'Free' && currentTask !== baseTask) {
+        // Look through grid action history in reverse to see if this task was moved to (period, teacher)
+        const moveAction = [...state.actionHistory.grid].reverse().find(a => 
+            a.type === 'move' && 
+            a.day === day && 
+            a.target && 
+            a.target.period === period && 
+            a.target.teacher === teacher && 
+            a.sTask === currentTask
+        );
+
+        if (moveAction) {
+            const { source, tTask, newlyDisplaced } = moveAction;
+            // 1. Restore target cell to its task before the move
+            state.schedule[day][period][teacher] = tTask;
+
+            // 2. Return sTask back to its source
+            if (source.type === 'grid') {
+                state.schedule[day][source.period][source.teacher] = currentTask;
+                triggerCellResetAnimation(source.period, source.teacher);
+            } else if (source.type === 'displaced') {
+                state.displaced[day].push(source.item);
+            }
+
+            // 3. If target displaced something, remove that displaced item
+            if (newlyDisplaced) {
+                state.displaced[day] = (state.displaced[day] || []).filter(d => d.id !== newlyDisplaced.id);
+            }
+
+            // Record undo action
+            const actionId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+            state.actionHistory.grid.push({
+                id: actionId,
+                type: 'cell-reset-move',
+                day,
+                targetPeriod: period,
+                targetTeacher: teacher,
+                source,
+                movedTask: currentTask,
+                restoredTargetTask: tTask,
+                newlyDisplaced
+            });
+
+            triggerCellResetAnimation(period, teacher);
+            saveStateToStorage();
+            updateUndoUI();
+            if (source.type === 'grid') {
+                showToast(`Sent ${currentTask} back to ${source.teacher} (${source.period}).`);
+            } else {
+                showToast(`Returned ${currentTask} back to Limbo.`);
+            }
+            renderAll();
+            return;
+        }
+
+        // Also check if currentTask has a baseline origin elsewhere in the grid that is currently Free
+        let foundOrigin = null;
+        if (state.baseSchedule[day]) {
+            for (const p of state.periods) {
+                for (const t of state.teachers) {
+                    if (state.baseSchedule[day][p]?.[t] === currentTask && (p !== period || t !== teacher)) {
+                        if (state.schedule[day]?.[p]?.[t] === 'Free') {
+                            foundOrigin = { period: p, teacher: t };
+                            break;
+                        }
+                    }
+                }
+                if (foundOrigin) break;
+            }
+        }
+
+        if (foundOrigin) {
+            // Restore origin cell and set current cell to baseTask
+            state.schedule[day][foundOrigin.period][foundOrigin.teacher] = currentTask;
+            state.schedule[day][period][teacher] = baseTask;
+            triggerCellResetAnimation(foundOrigin.period, foundOrigin.teacher);
+            triggerCellResetAnimation(period, teacher);
+
+            const actionId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+            state.actionHistory.grid.push({
+                id: actionId,
+                type: 'cell-reset-return-origin',
+                day,
+                fromPeriod: period,
+                fromTeacher: teacher,
+                toPeriod: foundOrigin.period,
+                toTeacher: foundOrigin.teacher,
+                task: currentTask,
+                targetBaseTask: baseTask
+            });
+
+            saveStateToStorage();
+            updateUndoUI();
+            showToast(`Sent ${currentTask} back to ${foundOrigin.teacher} (${foundOrigin.period}).`);
+            renderAll();
+            return;
+        }
+    }
+
+    // 3B: If this cell's baseline task was moved away to another cell and this cell is Free/different
+    if (baseTask !== 'Free' && currentTask !== baseTask) {
+        // Find where baseTask is currently located in schedule
+        let currentLocation = null;
+        for (const p of state.periods) {
+            for (const t of state.teachers) {
+                if (state.schedule[day]?.[p]?.[t] === baseTask && (p !== period || t !== teacher)) {
+                    currentLocation = { period: p, teacher: t };
+                    break;
+                }
+            }
+            if (currentLocation) break;
+        }
+
+        if (currentLocation) {
+            const locBaseTask = state.baseSchedule[day]?.[currentLocation.period]?.[currentLocation.teacher] || 'Free';
+            state.schedule[day][currentLocation.period][currentLocation.teacher] = locBaseTask;
+            state.schedule[day][period][teacher] = baseTask;
+
+            triggerCellResetAnimation(currentLocation.period, currentLocation.teacher);
+            triggerCellResetAnimation(period, teacher);
+
+            const actionId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+            state.actionHistory.grid.push({
+                id: actionId,
+                type: 'cell-reset-recall',
+                day,
+                period,
+                teacher,
+                recalledTask: baseTask,
+                fromPeriod: currentLocation.period,
+                fromTeacher: currentLocation.teacher,
+                fromPreviousTask: baseTask,
+                fromRestoredTask: locBaseTask
+            });
+
+            saveStateToStorage();
+            updateUndoUI();
+            showToast(`Recalled ${baseTask} back to ${teacher} (${period}).`);
+            renderAll();
+            return;
+        }
+    }
+
+    // 3C: Standard fallback reset if currentTask !== baseTask
     if (currentTask !== baseTask) {
         state.displaced[day] = (state.displaced[day] || []).filter(d => !(d.period === period && d.ogTeacher === teacher));
         state.schedule[day][period][teacher] = baseTask;
@@ -1965,6 +2110,29 @@ function undoLastAction() {
         const { day, period, teacher, prevTask } = action;
         state.schedule[day][period][teacher] = prevTask;
 
+    } else if (action.type === 'cell-reset-move') {
+        const { day, targetPeriod, targetTeacher, source, movedTask, newlyDisplaced } = action;
+        // Undo of reset-move: put movedTask back on target cell
+        state.schedule[day][targetPeriod][targetTeacher] = movedTask;
+        if (source.type === 'grid') {
+            state.schedule[day][source.period][source.teacher] = 'Free';
+        } else if (source.type === 'displaced') {
+            state.displaced[day] = state.displaced[day].filter(d => d.id !== source.item.id);
+        }
+        if (newlyDisplaced) {
+            state.displaced[day].push(newlyDisplaced);
+        }
+
+    } else if (action.type === 'cell-reset-return-origin') {
+        const { day, fromPeriod, fromTeacher, toPeriod, toTeacher, task } = action;
+        state.schedule[day][fromPeriod][fromTeacher] = task;
+        state.schedule[day][toPeriod][toTeacher] = 'Free';
+
+    } else if (action.type === 'cell-reset-recall') {
+        const { day, period, teacher, fromPeriod, fromTeacher, recalledTask } = action;
+        state.schedule[day][fromPeriod][fromTeacher] = recalledTask;
+        state.schedule[day][period][teacher] = 'Free';
+
     } else if (action.type === 'co-teach-release') {
         const { day, scope, teacher, period, prevTask, savedTasks } = action;
         if (scope === 'period') {
@@ -2057,6 +2225,31 @@ function redoLastAction() {
     } else if (action.type === 'cell-reset') {
         const { day, period, teacher, baseTask } = action;
         state.schedule[day][period][teacher] = baseTask;
+        state.actionHistory.grid.push(action);
+
+    } else if (action.type === 'cell-reset-move') {
+        const { day, targetPeriod, targetTeacher, source, movedTask, restoredTargetTask, newlyDisplaced } = action;
+        state.schedule[day][targetPeriod][targetTeacher] = restoredTargetTask;
+        if (source.type === 'grid') {
+            state.schedule[day][source.period][source.teacher] = movedTask;
+        } else if (source.type === 'displaced') {
+            state.displaced[day].push(source.item);
+        }
+        if (newlyDisplaced) {
+            state.displaced[day] = (state.displaced[day] || []).filter(d => d.id !== newlyDisplaced.id);
+        }
+        state.actionHistory.grid.push(action);
+
+    } else if (action.type === 'cell-reset-return-origin') {
+        const { day, fromPeriod, fromTeacher, toPeriod, toTeacher, task, targetBaseTask } = action;
+        state.schedule[day][toPeriod][toTeacher] = task;
+        state.schedule[day][fromPeriod][fromTeacher] = targetBaseTask;
+        state.actionHistory.grid.push(action);
+
+    } else if (action.type === 'cell-reset-recall') {
+        const { day, period, teacher, recalledTask, fromPeriod, fromTeacher, fromRestoredTask } = action;
+        state.schedule[day][fromPeriod][fromTeacher] = fromRestoredTask;
+        state.schedule[day][period][teacher] = recalledTask;
         state.actionHistory.grid.push(action);
 
     } else if (action.type === 'co-teach-release') {
