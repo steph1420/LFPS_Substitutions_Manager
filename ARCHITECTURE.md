@@ -1,5 +1,5 @@
 # Front Desk PWA - Architecture & Developer Guide
-**Current Version:** v1.21
+**Current Version:** v1.22
 **Project Type:** Vanilla JS/HTML/CSS Offline-First PWA
 **Purpose:** School substitution management and daily timetable resolution.
 
@@ -58,6 +58,9 @@ const state = {
 4.  **Auto-Resolve Multi-Option Proposals (Max 3 Solutions):** Generate up to 3 distinct substitution schedule possibilities when auto-resolving. Display them as compact tabs/segmented controls with preview details and an explicit "Apply Solution" action.
 5.  **Substitutions View Redesign (Register / Ledger):** Transition from bulky cards to a compact, high-density Daily Substitution Register tailored for at-a-glance administrative overview.
 6.  **Expanded Fit-Grid View (Mobile Landscape):** Provide an expanded view mode that, on mobile in landscape orientation, dynamically scales/fits the master timetable grid to the screen width while maintaining smooth scrollability. In this fitted mode, display a sticky top bar with a "Back to Normal" toggle button.
+7.  **Class Collision Detection:** Validate assignments across the grid to detect and flag collisions in real time (e.g. the same class section assigned to multiple teachers or slots simultaneously, or double-booked teachers).
+8.  **In-App Master Routine Editor:** Provide a native editor directly within the app to create, adjust, and modify the master routine/timetable without requiring external spreadsheet modifications.
+9.  **Protected Routine Editing (Multi-User Access Levels):** Role-based access control (RBAC) / tiered permissions (e.g. Admin vs. Front Desk / Teacher viewer) with passcode/PIN protection to safeguard the master routine from unauthorized modifications while keeping daily substitutions accessible.
 
 ## 8. File Map & Project Directory
 *   `index.html`: Core markup, header controls, day segmented controller, grid view, substitutions conflict list, and iOS bottom sheet modal.
@@ -73,6 +76,7 @@ const state = {
 *   **v1.19 Release (Theme Toggle Event Fix & Robust Selector Binding)**: Eliminated double-invocation race condition caused by duplicate inline onclick and addEventListener handlers. Simplified boolean state toggling, bound `data-theme` to both `html` and `body`, updated CSS theme selectors from `:root[data-theme]` to `[data-theme]`, and bumped cache-busting tags.
 *   **v1.20 Release (Interactive Grid Hovers & Period Refactoring)**: Implemented interactive hover indicators and synchronized row/column highlights for teacher names and period headers. Renamed 'BREAKFAST' to 'BREAKFAST BREAK'. Replaced non-editable 'PLAY TIME' with fully assignable '2nd GOLDEN HOUR' (both Golden Hours now fully editable, draggable, and substitute-eligible). Added automatic backward-compatible storage migration for period names.
 *   **v1.21 Release (Banner Removal & Bottom Sheet Fix)**: Removed the intrusive 'Fully Covered' notification banner from the Substitutions tab. Fixed bottom sheet teacher selection popup by removing blocking `.hidden` class from markup, ensuring smooth transition open/close, and globally exporting handlers to `window`.
+*   **v1.22 Release (Drag-to-Assign Substitutions in Main Grid & Bidirectional Sync)**: Implemented full drag-and-drop substitution assignment on the master routine grid. Dragging an absent teacher's missing class onto an available teacher immediately registers `state.substitutions`, displays green Apple HIG covering tags (`.cell-sub-active`) and covered indicators (`.cell-covered`), displaces busy teachers' tasks into the Limbo Dock, updates the Substitutions tab count/badges/cards in real-time, and enables drag-to-reassign and drag-to-unassign. Synchronized dual-stack history undo engine across both views.
 
 ## 10. Appendix: Technical Specifications
 

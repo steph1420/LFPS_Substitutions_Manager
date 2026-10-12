@@ -742,16 +742,99 @@ input:checked + .slider:before {
     color: var(--text-primary);
 }
 
+.cell-sub-active {
+    background-color: var(--bg-resolved) !important;
+    border-left: 3px solid var(--accent-green) !important;
+    color: var(--text-primary) !important;
+    position: relative;
+    cursor: grab;
+}
+
+.cell-sub-active .sub-task {
+    font-weight: 600;
+    display: block;
+}
+
+.cell-sub-active .sub-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent-green);
+    margin-top: 3px;
+    background: rgba(52, 199, 89, 0.14);
+    padding: 1px 6px;
+    border-radius: 6px;
+    letter-spacing: 0.2px;
+}
+
+.cell-covered {
+    background-color: rgba(52, 199, 89, 0.08) !important;
+    color: var(--text-secondary);
+    cursor: grab;
+}
+
+.cell-covered .covered-task {
+    font-size: 11px;
+    text-decoration: line-through;
+    opacity: 0.65;
+    display: block;
+}
+
+.cell-covered .covered-by-tag {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent-green);
+    display: inline-block;
+    margin-top: 2px;
+}
+
 .cell-missing {
     background-color: var(--bg-missing);
     border: 2px solid var(--accent-pink);
     color: var(--accent-pink);
     font-weight: bold;
+    cursor: grab;
+}
+
+.cell-missing-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cell-missing .missing-hint {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.85;
+}
+
+[data-theme="dark"] .cell-sub-active {
+    background-color: rgba(48, 209, 88, 0.15) !important;
+    border-left: 3px solid var(--accent-green) !important;
+}
+
+[data-theme="dark"] .cell-sub-active .sub-badge {
+    background: rgba(48, 209, 88, 0.25);
+}
+
+[data-theme="dark"] .cell-covered {
+    background-color: rgba(48, 209, 88, 0.08) !important;
 }
 
 .row-absent td {
     opacity: 0.6;
     color: var(--accent-red);
+}
+
+.row-absent td.cell-missing {
+    opacity: 1;
+    color: var(--accent-pink);
+}
+
+.row-absent td.cell-covered {
+    opacity: 0.9;
 }
 
 .row-absent td.cell-assigned {
@@ -778,6 +861,13 @@ input:checked + .slider:before {
     background-color: var(--drag-over-bg) !important;
     outline: 2px dashed var(--accent-green) !important;
     outline-offset: -2px;
+}
+
+.drag-over-sub {
+    background-color: var(--bg-resolved) !important;
+    outline: 2px dashed var(--accent-green) !important;
+    outline-offset: -2px;
+    box-shadow: inset 0 0 10px rgba(52, 199, 89, 0.2);
 }
 
 .cell-just-dropped {

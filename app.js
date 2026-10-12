@@ -287,11 +287,42 @@ function bindEvents() {
     
     if (table && tableContainer) {
         table.addEventListener('dragstart', (e) => {
-            if (!state.isEditMode) return e.preventDefault();
             const td = e.target.closest('td');
             if (!td || !td.dataset.period) return e.preventDefault();
             
-            draggedData = { type: 'grid', period: td.dataset.period, teacher: td.dataset.teacher };
+            const period = td.dataset.period;
+            const teacher = td.dataset.teacher;
+            const isAbsent = state.absentTeachers.has(teacher);
+            const baseTask = state.baseSchedule[state.day]?.[period]?.[teacher];
+            const assignedSub = state.substitutions[state.day]?.[period]?.[teacher];
+            
+            let coveringFor = null;
+            const periodSubs = state.substitutions[state.day]?.[period];
+            if (periodSubs) {
+                for (const [absT, subT] of Object.entries(periodSubs)) {
+                    if (subT === teacher) {
+                        coveringFor = absT;
+                        break;
+                    }
+                }
+            }
+            
+            const isMissingSub = isAbsent && baseTask && baseTask !== 'Free' && !assignedSub;
+            const isSubRelated = isMissingSub || assignedSub || coveringFor;
+            
+            if (!state.isEditMode && !isSubRelated) {
+                return e.preventDefault();
+            }
+            
+            draggedData = { 
+                type: 'grid', 
+                period, 
+                teacher,
+                isSubRelated,
+                isMissingSub,
+                assignedSub,
+                coveringFor
+            };
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', ''); 
             scrollSpeed = 0;
@@ -300,7 +331,7 @@ function bindEvents() {
         });
 
         tableContainer.addEventListener('dragover', (e) => {
-            if (!state.isEditMode) return;
+            if (!draggedData) return;
             e.preventDefault(); 
             
             const rect = tableContainer.getBoundingClientRect();
@@ -319,13 +350,19 @@ function bindEvents() {
 
             const targetCell = e.target.closest('td');
             if (targetCell && targetCell.dataset.period) {
-                targetCell.classList.add('drag-over');
+                if (draggedData.isSubRelated && targetCell.dataset.period === draggedData.period) {
+                    targetCell.classList.add('drag-over-sub');
+                } else {
+                    targetCell.classList.add('drag-over');
+                }
             }
         });
 
         tableContainer.addEventListener('dragleave', (e) => {
             const targetCell = e.target.closest('td');
-            if (targetCell) targetCell.classList.remove('drag-over');
+            if (targetCell) {
+                targetCell.classList.remove('drag-over', 'drag-over-sub');
+            }
             
             const rect = tableContainer.getBoundingClientRect();
             if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
@@ -336,12 +373,12 @@ function bindEvents() {
         tableContainer.addEventListener('drop', (e) => {
             e.preventDefault();
             scrollSpeed = 0; 
-            if (!state.isEditMode || !draggedData) return;
+            if (!draggedData) return;
             
             const targetCell = e.target.closest('td');
-            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            document.querySelectorAll('.drag-over, .drag-over-sub').forEach(el => el.classList.remove('drag-over', 'drag-over-sub'));
             
-            if (targetCell && targetCell.dataset.period) {
+            if (targetCell && targetCell.dataset.period && targetCell.dataset.teacher) {
                 if (draggedData.type === 'grid' && draggedData.period === targetCell.dataset.period && draggedData.teacher === targetCell.dataset.teacher) {
                     draggedData = null;
                     document.querySelectorAll('.cell-dragging').forEach(el => el.classList.remove('cell-dragging'));
@@ -356,7 +393,7 @@ function bindEvents() {
         table.addEventListener('dragend', () => {
             scrollSpeed = 0;
             draggedData = null;
-            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            document.querySelectorAll('.drag-over, .drag-over-sub').forEach(el => el.classList.remove('drag-over', 'drag-over-sub'));
             document.querySelectorAll('.cell-dragging').forEach(el => el.classList.remove('cell-dragging'));
         });
 
@@ -450,16 +487,81 @@ function renderTableRoutine() {
             
             const task = state.schedule[state.day]?.[period]?.[teacher] || 'Free';
             const baseTask = state.baseSchedule[state.day]?.[period]?.[teacher];
-            const isMissingSub = isAbsent && baseTask && baseTask !== 'Free' && !state.substitutions[state.day]?.[period]?.[teacher];
+            const assignedSub = state.substitutions[state.day]?.[period]?.[teacher];
+            
+            // Check if this teacher is covering for an absent colleague in this period
+            let coveringFor = null;
+            const periodSubs = state.substitutions[state.day]?.[period];
+            if (periodSubs) {
+                for (const [absT, subT] of Object.entries(periodSubs)) {
+                    if (subT === teacher) {
+                        coveringFor = absT;
+                        break;
+                    }
+                }
+            }
+
+            const isMissingSub = isAbsent && baseTask && baseTask !== 'Free' && !assignedSub;
             
             let cellClasses = [];
-            let cellText = task === 'Free' ? '' : task;
-            
+            let cellContent = '';
+            let cellTitle = '';
+            let isDraggable = false;
+            let clickHandler = '';
+
             if (isMissingSub) {
                 cellClasses.push('cell-missing');
-                cellText = '⚠ ' + baseTask; 
+                cellContent = `
+                    <div class="cell-missing-content">
+                        <span>⚠ ${baseTask}</span>
+                        <span class="missing-hint">Drag to Sub</span>
+                    </div>
+                `;
+                cellTitle = `${teacher} is absent. Drag this cell to an available teacher to assign substitute, or tap to choose.`;
+                isDraggable = true;
+                clickHandler = state.isEditMode 
+                    ? `onclick="handleGridInteraction('${period}', '${teacher}')"` 
+                    : `onclick="openBottomSheet('${period}', '${teacher}')"`;
+
+            } else if (assignedSub) {
+                cellClasses.push('cell-covered');
+                cellContent = `
+                    <div class="cell-covered-content">
+                        <span class="covered-task">${baseTask}</span>
+                        <span class="covered-by-tag">↳ ${assignedSub.split(' ')[1] || assignedSub}</span>
+                    </div>
+                `;
+                cellTitle = `Covered by ${assignedSub}. Drag to reassign substitute, or tap to manage.`;
+                isDraggable = true;
+                clickHandler = state.isEditMode 
+                    ? `onclick="handleGridInteraction('${period}', '${teacher}')"` 
+                    : `onclick="openBottomSheet('${period}', '${teacher}')"`;
+
+            } else if (coveringFor) {
+                cellClasses.push('cell-sub-active');
+                cellContent = `
+                    <div class="cell-sub-content">
+                        <span class="sub-task">${task}</span>
+                        <span class="sub-badge">Sub (${coveringFor.split(' ')[1] || coveringFor})</span>
+                    </div>
+                `;
+                cellTitle = `Substituting for ${coveringFor}. Drag to another teacher to reassign, or drag back to ${coveringFor} to unassign.`;
+                isDraggable = true;
+                clickHandler = state.isEditMode ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
+
             } else if (task !== 'Free') {
                 cellClasses.push('cell-assigned');
+                cellContent = task;
+                cellTitle = `${teacher}: ${task}`;
+                isDraggable = state.isEditMode;
+                clickHandler = state.isEditMode ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
+
+            } else {
+                // Free cell
+                cellContent = '';
+                cellTitle = `${teacher} is Free in ${period}`;
+                isDraggable = false;
+                clickHandler = state.isEditMode ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
             }
 
             if (selectedCell && selectedCell.type === 'grid' && selectedCell.period === period && selectedCell.teacher === teacher) {
@@ -469,18 +571,17 @@ function renderTableRoutine() {
             // Apply contextual drop animations and ghost slide
             if (lastDisplacedDrop && lastDisplacedDrop.period === period && lastDisplacedDrop.teacher === teacher) {
                 cellClasses.push('cell-displaced-flash');
-                cellText = `
-                    <div style="position:relative; z-index:2; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;">${cellText}</div>
+                cellContent = `
+                    <div style="position:relative; z-index:2; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;">${cellContent}</div>
                     <div class="ghost-displaced">${lastDisplacedDrop.oldTask}</div>
                 `;
             } else if (lastDroppedCell && lastDroppedCell.period === period && lastDroppedCell.teacher === teacher) {
                 cellClasses.push('cell-just-dropped');
             }
             
-            let clickHandler = state.isEditMode ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
-            let dragAttrs = state.isEditMode ? `draggable="true" data-period="${period}" data-teacher="${teacher}"` : '';
+            const dragAttrs = isDraggable ? `draggable="true"` : '';
             
-            html += `<td class="${cellClasses.join(' ')}" style="cursor:pointer;" ${clickHandler} ${dragAttrs}>${cellText}</td>`;
+            html += `<td class="${cellClasses.join(' ')}" style="cursor:pointer;" title="${cellTitle}" data-period="${period}" data-teacher="${teacher}" ${clickHandler} ${dragAttrs}>${cellContent}</td>`;
         });
         html += '</tr>';
     });
@@ -651,6 +752,69 @@ function handleDisplacedInteraction(item) {
 }
 
 function executeMove(source, target) {
+    if (!source || !target) return;
+
+    // Check if source is a grid cell
+    if (source.type === 'grid') {
+        const sPeriod = source.period;
+        const sTeacher = source.teacher;
+        const tPeriod = target.period;
+        const tTeacher = target.teacher;
+
+        const sIsAbsent = state.absentTeachers.has(sTeacher);
+        const sBaseTask = state.baseSchedule[state.day]?.[sPeriod]?.[sTeacher];
+        const sAssignedSub = state.substitutions[state.day]?.[sPeriod]?.[sTeacher];
+
+        let sCoveringFor = null;
+        const periodSubs = state.substitutions[state.day]?.[sPeriod];
+        if (periodSubs) {
+            for (const [absT, subT] of Object.entries(periodSubs)) {
+                if (subT === sTeacher) {
+                    sCoveringFor = absT;
+                    break;
+                }
+            }
+        }
+
+        const isSourceSubRelated = (sIsAbsent && sBaseTask && sBaseTask !== 'Free') || sCoveringFor || sAssignedSub;
+
+        // --- SCENARIO 1: SAME PERIOD SUBSTITUTION ASSIGNMENT / REASSIGNMENT ---
+        if (isSourceSubRelated && sPeriod === tPeriod) {
+            // Cannot assign another absent teacher as sub (unless it's the original absent teacher being unassigned)
+            if (state.absentTeachers.has(tTeacher) && tTeacher !== sCoveringFor) {
+                showToast(`Cannot assign ${tTeacher} as substitute (they are marked absent).`);
+                return;
+            }
+
+            // Subcase 1A: Dropping an active substitute back onto the original absent teacher -> Unassign
+            if (sCoveringFor && tTeacher === sCoveringFor) {
+                unassignSubstitute(sPeriod, sCoveringFor);
+                return;
+            }
+
+            // Subcase 1B: Reassigning an active substitute to a new teacher
+            if (sCoveringFor) {
+                if (tTeacher === sTeacher) return;
+                assignSubstitute(sPeriod, sCoveringFor, tTeacher);
+                return;
+            }
+
+            // Subcase 1C: Assigning substitute from absent teacher cell (whether missing or covered)
+            if (sIsAbsent) {
+                if (tTeacher === sTeacher) return;
+                assignSubstitute(sPeriod, sTeacher, tTeacher);
+                return;
+            }
+        }
+
+        // --- SCENARIO 2: ATTEMPTED SUB DRAG ACROSS DIFFERENT PERIODS ---
+        if (isSourceSubRelated && sPeriod !== tPeriod && !state.isEditMode) {
+            showToast(`Substitutions must be in the same period (${sPeriod}).`);
+            return;
+        }
+    }
+
+    // --- SCENARIO 3: REGULAR TIMETABLE EDIT (Edit Mode Move / Displaced Drag) ---
     let sTask = '';
     if (source.type === 'grid') {
         sTask = state.schedule[state.day][source.period][source.teacher];
@@ -797,10 +961,36 @@ function assignSubstitute(period, absentTeacher, subTeacher) {
     const previousTaskForSub = state.schedule[state.day][period][subTeacher];
     const taskToCover = state.baseSchedule[state.day][period][absentTeacher];
     
-    state.actionHistory.subs.push({ 
+    let newlyDisplaced = null;
+    // If target substitute teacher already has a class in this period, displace it to Limbo
+    if (previousTaskForSub && previousTaskForSub !== 'Free' && subTeacher !== previousSub) {
+        newlyDisplaced = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+            task: previousTaskForSub,
+            ogTeacher: subTeacher,
+            period: period
+        };
+        state.displaced[state.day].push(newlyDisplaced);
+        newlyDisplacedItemId = newlyDisplaced.id;
+    }
+    
+    const actionId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+    const subAction = { 
+        id: actionId,
         type: 'sub',
-        period, absentTeacher, subTeacher, previousSub, previousTaskForSub, taskToCover, day: state.day 
-    });
+        period, 
+        absentTeacher, 
+        subTeacher, 
+        previousSub, 
+        previousTaskForSub, 
+        taskToCover, 
+        newlyDisplaced,
+        day: state.day 
+    };
+    
+    // Register in both history stacks for seamless dual-tab undo
+    state.actionHistory.grid.push(subAction);
+    state.actionHistory.subs.push(subAction);
     
     if (previousSub && previousSub !== subTeacher) {
         state.schedule[state.day][period][previousSub] = 'Free'; 
@@ -810,12 +1000,49 @@ function assignSubstitute(period, absentTeacher, subTeacher) {
     state.schedule[state.day][period][absentTeacher] = 'Free'; 
     state.substitutions[state.day][period][absentTeacher] = subTeacher;
     
+    lastDroppedCell = { period, teacher: subTeacher };
+    setTimeout(() => {
+        lastDroppedCell = null;
+        newlyDisplacedItemId = null;
+    }, 600);
+    
     saveStateToStorage();
     updateUndoUI();
-    showToast(`Assigned ${subTeacher} to ${period}`);
+    showToast(`Assigned ${subTeacher} to cover for ${absentTeacher} (${period})`);
     renderAll();
 }
 window.assignSubstitute = assignSubstitute;
+
+function unassignSubstitute(period, absentTeacher) {
+    const currentSub = state.substitutions[state.day]?.[period]?.[absentTeacher];
+    if (!currentSub) return;
+    
+    const taskToCover = state.baseSchedule[state.day]?.[period]?.[absentTeacher] || 'Free';
+    
+    const actionId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+    const unassignAction = {
+        id: actionId,
+        type: 'unassign-sub',
+        period,
+        absentTeacher,
+        previousSub: currentSub,
+        taskToCover,
+        day: state.day
+    };
+    
+    state.actionHistory.grid.push(unassignAction);
+    state.actionHistory.subs.push(unassignAction);
+    
+    state.schedule[state.day][period][currentSub] = 'Free';
+    state.schedule[state.day][period][absentTeacher] = taskToCover;
+    delete state.substitutions[state.day][period][absentTeacher];
+    
+    saveStateToStorage();
+    updateUndoUI();
+    showToast(`Unassigned substitute for ${absentTeacher} (${period})`);
+    renderAll();
+}
+window.unassignSubstitute = unassignSubstitute;
 
 // --- AUTO-RESOLVE ENGINE ---
 function performAutoResolve() {
@@ -876,10 +1103,14 @@ function performAutoResolve() {
     });
     
     if (batchActions.length > 0) {
-        state.actionHistory.subs.push({
+        const actionId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+        const batchAction = {
+            id: actionId,
             type: 'batch-sub',
             actions: batchActions
-        });
+        };
+        state.actionHistory.subs.push(batchAction);
+        state.actionHistory.grid.push(batchAction);
         saveStateToStorage();
         updateUndoUI();
         
@@ -923,6 +1154,13 @@ function undoLastAction() {
 
     const action = activeStack.pop();
 
+    // Synchronize across both history stacks if action has a shared ID
+    if (action.id) {
+        const otherStack = (activeStack === state.actionHistory.grid) ? state.actionHistory.subs : state.actionHistory.grid;
+        const idx = otherStack.findIndex(a => a.id === action.id);
+        if (idx !== -1) otherStack.splice(idx, 1);
+    }
+
     if (action.type === 'move') {
         const { day, source, target, sTask, tTask, newlyDisplaced } = action;
         
@@ -945,16 +1183,31 @@ function undoLastAction() {
         state.substitutions[action.day] = action.prevSubs;
 
     } else if (action.type === 'sub') {
-        const { period, absentTeacher, subTeacher, previousSub, previousTaskForSub, taskToCover, day } = action;
+        const { period, absentTeacher, subTeacher, previousSub, previousTaskForSub, taskToCover, day, newlyDisplaced } = action;
         state.schedule[day][period][subTeacher] = previousTaskForSub || 'Free';
         
+        if (newlyDisplaced) {
+            state.displaced[day] = state.displaced[day].filter(d => d.id !== newlyDisplaced.id);
+        }
+
         if (previousSub) {
             state.substitutions[day][period][absentTeacher] = previousSub;
             state.schedule[day][period][previousSub] = taskToCover;
         } else {
-            delete state.substitutions[day][period][absentTeacher];
+            if (state.substitutions[day] && state.substitutions[day][period]) {
+                delete state.substitutions[day][period][absentTeacher];
+            }
             state.schedule[day][period][absentTeacher] = taskToCover;
         }
+
+    } else if (action.type === 'unassign-sub') {
+        const { period, absentTeacher, previousSub, taskToCover, day } = action;
+        if (!state.substitutions[day]) state.substitutions[day] = {};
+        if (!state.substitutions[day][period]) state.substitutions[day][period] = {};
+        state.substitutions[day][period][absentTeacher] = previousSub;
+        state.schedule[day][period][previousSub] = taskToCover;
+        state.schedule[day][period][absentTeacher] = 'Free';
+
     } else if (action.type === 'batch-sub') {
         [...action.actions].reverse().forEach(sub => {
             state.schedule[sub.day][sub.period][sub.subTeacher] = sub.previousTaskForSub || 'Free';
