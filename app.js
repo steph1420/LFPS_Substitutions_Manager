@@ -86,6 +86,13 @@ function loadStateFromStorage() {
             if (!parsed || !parsed.schedule || Object.keys(parsed.schedule).length === 0) {
                 return false;
             }
+            // Detect old collision-heavy simulated data (e.g. repeated 'MATH KGA', 'ENG KGB')
+            const monTasks = Object.values(parsed.schedule?.MON?.['1st Pd.'] || {});
+            const hasLegacyMock = monTasks.includes('MATH KGA') || monTasks.includes('ENG KGB');
+            if (hasLegacyMock) {
+                return false; // Triggers fresh, clean generateSimulatedData()
+            }
+
             state.day = parsed.day || 'MON';
             state.baseSchedule = parsed.baseSchedule || JSON.parse(JSON.stringify(parsed.schedule)); 
             state.schedule = parsed.schedule;
@@ -1544,17 +1551,54 @@ function showToast(message, isCritical = false) {
 // --- MOCK DATA GENERATOR ---
 function generateSimulatedData() {
     const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-    const subjects = ['MATH KGA', 'ENG KGB', 'EVS PREPA', 'SING KGA', 'GAMES PREP'];
     
-    days.forEach(d => {
+    // Structured class pools - unique subjects & sections to prevent natural collisions
+    const teacherProfiles = [
+        { teacher: 'Mr. Stephen', subjects: ['MATH 10A', 'MATH 9A', 'MATH 10B', 'PHY 11A', 'MATH 8A', 'MATH 7B'] },
+        { teacher: 'Mrs. Midha', subjects: ['ENG 10A', 'ENG 9B', 'ENG 8A', 'ENG 7A', 'LIT 11B', 'ENG 6A'] },
+        { teacher: 'Mrs. Pahwa', subjects: ['CHEM 11A', 'SCI 9A', 'SCI 10B', 'SCI 8B', 'CHEM 12B', 'SCI 7B'] },
+        { teacher: 'Mrs. Bage', subjects: ['BIO 11A', 'SCI 9B', 'EVS 6A', 'BIO 12A', 'SCI 8A', 'EVS 5A'] },
+        { teacher: 'Mr. Adams', subjects: ['HIST 10A', 'GEO 9A', 'SST 8A', 'HIST 11B', 'SST 7A', 'CIV 9B'] },
+        { teacher: 'Mrs. Baker', subjects: ['HINDI 10A', 'HINDI 9A', 'HINDI 8B', 'HINDI 7B', 'HINDI 6B', 'SKT 8A'] },
+        { teacher: 'Ms. Clark', subjects: ['COMP 9A', 'IT 10A', 'COMP 8A', 'COMP 7A', 'AI 11A', 'IT 9B'] },
+        { teacher: 'Mr. Davis', subjects: ['P.E. 10B', 'GAMES 8A', 'P.E. 9A', 'GAMES 7B', 'YOGA 6A', 'P.E. 11B'] },
+        { teacher: 'Mrs. Evans', subjects: ['ART 7A', 'CRAFT 6A', 'MUSIC 8B', 'ART 9B', 'CRAFT 5B', 'ART 8A'] }
+    ];
+
+    days.forEach((d, dayIndex) => {
         state.schedule[d] = {};
-        periods.forEach(p => {
+        
+        periods.forEach((p, pIndex) => {
             state.schedule[d][p] = {};
-            teachers.forEach(t => {
-                if (p !== 'BREAKFAST BREAK' && p !== 'BREAKFAST' && Math.random() > 0.3) {
-                    state.schedule[d][p][t] = subjects[Math.floor(Math.random() * subjects.length)];
-                } else {
+            
+            if (p === 'BREAKFAST BREAK' || p === 'BREAKFAST') {
+                teachers.forEach(t => {
+                    state.schedule[d][p][t] = '-';
+                });
+                return;
+            }
+
+            // Keep track of classes assigned in this period to guarantee 0 collisions
+            const usedClassesInPeriod = new Set();
+
+            teachers.forEach((t, tIndex) => {
+                const profile = teacherProfiles.find(tp => tp.teacher === t);
+                const subPool = profile ? profile.subjects : ['STUDY 10A', 'LIB 9A', 'ACT 8A'];
+
+                // Rotate through subjects deterministically across days and periods
+                const subIndex = (dayIndex * 3 + pIndex + tIndex) % (subPool.length + 3);
+                
+                // Realistic ~30% free periods for teachers so substitutions can occur
+                if (subIndex >= subPool.length || subIndex % 4 === 0) {
                     state.schedule[d][p][t] = 'Free';
+                } else {
+                    const chosenClass = subPool[subIndex];
+                    if (!usedClassesInPeriod.has(chosenClass)) {
+                        state.schedule[d][p][t] = chosenClass;
+                        usedClassesInPeriod.add(chosenClass);
+                    } else {
+                        state.schedule[d][p][t] = 'Free';
+                    }
                 }
             });
         });
