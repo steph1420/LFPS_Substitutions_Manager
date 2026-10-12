@@ -7,9 +7,14 @@ const state = {
     schedule: {},     
     substitutions: {}, 
     displaced: { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] },
+    settings: {
+        samePeriodLock: true
+    },
     actionHistory: {
         grid: [], 
-        subs: []  
+        subs: [],
+        redoGrid: [],
+        redoSubs: []
     }
 };
 
@@ -49,6 +54,7 @@ function saveStateToStorage() {
         substitutions: state.substitutions,
         displaced: state.displaced,
         absentTeachers: Array.from(state.absentTeachers), 
+        settings: state.settings,
         actionHistory: state.actionHistory
     };
     localStorage.setItem('lfps_frontdesk_state', JSON.stringify(data));
@@ -84,6 +90,7 @@ function loadStateFromStorage() {
             state.substitutions = parsed.substitutions || {};
             state.displaced = parsed.displaced || { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] };
             state.absentTeachers = new Set(parsed.absentTeachers || []);
+            state.settings = parsed.settings || { samePeriodLock: true };
             
             // Automatic migration of periods
             migratePeriodNames(state.schedule);
@@ -112,10 +119,15 @@ function loadStateFromStorage() {
                 }
             });
             
-            if (parsed.actionHistory && Array.isArray(parsed.actionHistory.grid)) {
-                state.actionHistory = parsed.actionHistory;
+            if (parsed.actionHistory) {
+                state.actionHistory = {
+                    grid: Array.isArray(parsed.actionHistory.grid) ? parsed.actionHistory.grid : [],
+                    subs: Array.isArray(parsed.actionHistory.subs) ? parsed.actionHistory.subs : [],
+                    redoGrid: Array.isArray(parsed.actionHistory.redoGrid) ? parsed.actionHistory.redoGrid : [],
+                    redoSubs: Array.isArray(parsed.actionHistory.redoSubs) ? parsed.actionHistory.redoSubs : []
+                };
             } else {
-                state.actionHistory = { grid: [], subs: [] };
+                state.actionHistory = { grid: [], subs: [], redoGrid: [], redoSubs: [] };
             }
             
             document.querySelectorAll('.day-btn').forEach(b => {
@@ -241,8 +253,20 @@ function bindEvents() {
     safeBind('theme-toggle-btn', 'click', toggleTheme);
     safeBind('toast-undo-btn', 'click', undoLastAction);
     safeBind('header-undo-btn', 'click', undoLastAction);
+    safeBind('header-redo-btn', 'click', redoLastAction);
     safeBind('reset-schedule-btn', 'click', handleResetSchedule);
     safeBind('auto-resolve-btn', 'click', performAutoResolve);
+
+    safeBind('settings-btn', 'click', openSettingsModal);
+    safeBind('close-settings-btn', 'click', closeSettingsModal);
+    safeBind('settings-overlay', 'click', closeSettingsModal);
+    safeBind('same-period-lock-toggle', 'change', (e) => {
+        state.settings.samePeriodLock = e.target.checked;
+        saveStateToStorage();
+        showToast(state.settings.samePeriodLock ? 'Same-Period Lock enabled' : 'Same-Period Lock disabled (Cross-period subs allowed)');
+    });
+
+    window.addEventListener('keydown', handleGlobalKeydown);
 
     const sheet = document.getElementById('bottom-sheet');
     const handle = document.getElementById('sheet-handle');
@@ -350,7 +374,8 @@ function bindEvents() {
 
             const targetCell = e.target.closest('td');
             if (targetCell && targetCell.dataset.period) {
-                if (draggedData.isSubRelated && targetCell.dataset.period === draggedData.period) {
+                const isCrossAllowed = (!state.settings || state.settings.samePeriodLock === false);
+                if (draggedData.isSubRelated && (targetCell.dataset.period === draggedData.period || isCrossAllowed)) {
                     targetCell.classList.add('drag-over-sub');
                 } else {
                     targetCell.classList.add('drag-over');
@@ -434,7 +459,6 @@ function renderAll() {
     renderAbsentTray();
     renderTableRoutine(); 
     renderDisplacedTray();
-    renderCardRoutine();  
     renderSubstitutions();
 }
 
@@ -639,12 +663,6 @@ function renderDisplacedTray() {
     }
 }
 
-function renderCardRoutine() {
-    const grid = document.getElementById('timeline-grid');
-    if(!grid) return;
-    grid.innerHTML = '<p style="color:gray; font-size:14px;">Card layout functioning.</p>';
-}
-
 function renderSubstitutions() {
     const conflictList = document.getElementById('conflict-list');
     const badge = document.getElementById('substitutions-badge');
@@ -753,6 +771,7 @@ function handleDisplacedInteraction(item) {
 
 function executeMove(source, target) {
     if (!source || !target) return;
+    clearRedoStacks();
 
     // Check if source is a grid cell
     if (source.type === 'grid') {
@@ -777,9 +796,11 @@ function executeMove(source, target) {
         }
 
         const isSourceSubRelated = (sIsAbsent && sBaseTask && sBaseTask !== 'Free') || sCoveringFor || sAssignedSub;
+        const isSamePeriod = (sPeriod === tPeriod);
+        const allowCrossPeriod = (!state.settings || state.settings.samePeriodLock === false);
 
-        // --- SCENARIO 1: SAME PERIOD SUBSTITUTION ASSIGNMENT / REASSIGNMENT ---
-        if (isSourceSubRelated && sPeriod === tPeriod) {
+        // --- SCENARIO 1: SUBSTITUTION ASSIGNMENT / REASSIGNMENT ---
+        if (isSourceSubRelated && (isSamePeriod || allowCrossPeriod)) {
             // Cannot assign another absent teacher as sub (unless it's the original absent teacher being unassigned)
             if (state.absentTeachers.has(tTeacher) && tTeacher !== sCoveringFor) {
                 showToast(`Cannot assign ${tTeacher} as substitute (they are marked absent).`);
@@ -794,22 +815,22 @@ function executeMove(source, target) {
 
             // Subcase 1B: Reassigning an active substitute to a new teacher
             if (sCoveringFor) {
-                if (tTeacher === sTeacher) return;
-                assignSubstitute(sPeriod, sCoveringFor, tTeacher);
+                if (tTeacher === sTeacher && sPeriod === tPeriod) return;
+                assignSubstitute(sPeriod, sCoveringFor, tTeacher, tPeriod);
                 return;
             }
 
             // Subcase 1C: Assigning substitute from absent teacher cell (whether missing or covered)
             if (sIsAbsent) {
-                if (tTeacher === sTeacher) return;
-                assignSubstitute(sPeriod, sTeacher, tTeacher);
+                if (tTeacher === sTeacher && sPeriod === tPeriod) return;
+                assignSubstitute(sPeriod, sTeacher, tTeacher, tPeriod);
                 return;
             }
         }
 
-        // --- SCENARIO 2: ATTEMPTED SUB DRAG ACROSS DIFFERENT PERIODS ---
-        if (isSourceSubRelated && sPeriod !== tPeriod && !state.isEditMode) {
-            showToast(`Substitutions must be in the same period (${sPeriod}).`);
+        // --- SCENARIO 2: ATTEMPTED SUB DRAG ACROSS DIFFERENT PERIODS WHEN LOCKED ---
+        if (isSourceSubRelated && !isSamePeriod && !allowCrossPeriod && !state.isEditMode) {
+            showToast(`Substitutions are locked to the same period (${sPeriod}). Turn off "Same-Period Lock" in Settings to assign across periods.`);
             return;
         }
     }
@@ -951,24 +972,30 @@ function closeBottomSheet() {
 window.openBottomSheet = openBottomSheet;
 window.closeBottomSheet = closeBottomSheet;
 
-function assignSubstitute(period, absentTeacher, subTeacher) {
+function clearRedoStacks() {
+    state.actionHistory.redoGrid = [];
+    state.actionHistory.redoSubs = [];
+}
+
+function assignSubstitute(period, absentTeacher, subTeacher, targetPeriod = period) {
     closeBottomSheet();
+    clearRedoStacks();
     
     if (!state.substitutions[state.day]) state.substitutions[state.day] = {};
     if (!state.substitutions[state.day][period]) state.substitutions[state.day][period] = {};
     
     const previousSub = state.substitutions[state.day][period][absentTeacher];
-    const previousTaskForSub = state.schedule[state.day][period][subTeacher];
+    const previousTaskForSub = state.schedule[state.day][targetPeriod][subTeacher];
     const taskToCover = state.baseSchedule[state.day][period][absentTeacher];
     
     let newlyDisplaced = null;
-    // If target substitute teacher already has a class in this period, displace it to Limbo
+    // If target substitute teacher already has a class in targetPeriod, displace it to Limbo
     if (previousTaskForSub && previousTaskForSub !== 'Free' && subTeacher !== previousSub) {
         newlyDisplaced = {
             id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
             task: previousTaskForSub,
             ogTeacher: subTeacher,
-            period: period
+            period: targetPeriod
         };
         state.displaced[state.day].push(newlyDisplaced);
         newlyDisplacedItemId = newlyDisplaced.id;
@@ -979,6 +1006,7 @@ function assignSubstitute(period, absentTeacher, subTeacher) {
         id: actionId,
         type: 'sub',
         period, 
+        targetPeriod,
         absentTeacher, 
         subTeacher, 
         previousSub, 
@@ -996,11 +1024,11 @@ function assignSubstitute(period, absentTeacher, subTeacher) {
         state.schedule[state.day][period][previousSub] = 'Free'; 
     }
 
-    state.schedule[state.day][period][subTeacher] = taskToCover;
+    state.schedule[state.day][targetPeriod][subTeacher] = taskToCover;
     state.schedule[state.day][period][absentTeacher] = 'Free'; 
     state.substitutions[state.day][period][absentTeacher] = subTeacher;
     
-    lastDroppedCell = { period, teacher: subTeacher };
+    lastDroppedCell = { period: targetPeriod, teacher: subTeacher };
     setTimeout(() => {
         lastDroppedCell = null;
         newlyDisplacedItemId = null;
@@ -1008,12 +1036,14 @@ function assignSubstitute(period, absentTeacher, subTeacher) {
     
     saveStateToStorage();
     updateUndoUI();
-    showToast(`Assigned ${subTeacher} to cover for ${absentTeacher} (${period})`);
+    const periodLabel = targetPeriod === period ? `(${period})` : `(${targetPeriod} for ${period})`;
+    showToast(`Assigned ${subTeacher} to cover for ${absentTeacher} ${periodLabel}`);
     renderAll();
 }
 window.assignSubstitute = assignSubstitute;
 
 function unassignSubstitute(period, absentTeacher) {
+    clearRedoStacks();
     const currentSub = state.substitutions[state.day]?.[period]?.[absentTeacher];
     if (!currentSub) return;
     
@@ -1046,6 +1076,7 @@ window.unassignSubstitute = unassignSubstitute;
 
 // --- AUTO-RESOLVE ENGINE ---
 function performAutoResolve() {
+    clearRedoStacks();
     const batchActions = [];
     let conflictsResolved = 0;
     let conflictsRemaining = 0;
@@ -1125,7 +1156,7 @@ function performAutoResolve() {
     }
 }
 
-// --- DUAL-STACK UNDO ENGINE ---
+// --- DUAL-STACK UNDO & REDO ENGINE ---
 function getActiveHistoryStack() {
     const activeTab = document.querySelector('.tab-section.active');
     if (activeTab && activeTab.id === 'tab-substitutions') {
@@ -1134,17 +1165,37 @@ function getActiveHistoryStack() {
     return state.actionHistory.grid; 
 }
 
+function getActiveRedoStack() {
+    const activeTab = document.querySelector('.tab-section.active');
+    if (activeTab && activeTab.id === 'tab-substitutions') {
+        return state.actionHistory.redoSubs; 
+    }
+    return state.actionHistory.redoGrid; 
+}
+
 function updateUndoUI() {
-    const headerBtn = document.getElementById('header-undo-btn');
-    if(!headerBtn) return;
+    const undoBtn = document.getElementById('header-undo-btn');
+    const redoBtn = document.getElementById('header-redo-btn');
     
-    const activeStack = getActiveHistoryStack();
+    const activeUndo = getActiveHistoryStack();
+    const activeRedo = getActiveRedoStack();
     
-    if (activeStack.length > 0) {
-        headerBtn.classList.add('visible');
-        headerBtn.textContent = `↩ Undo (${activeStack.length})`;
-    } else {
-        headerBtn.classList.remove('visible');
+    if (undoBtn) {
+        if (activeUndo.length > 0) {
+            undoBtn.classList.add('visible');
+            undoBtn.textContent = `↩ Undo (${activeUndo.length})`;
+        } else {
+            undoBtn.classList.remove('visible');
+        }
+    }
+
+    if (redoBtn) {
+        if (activeRedo.length > 0) {
+            redoBtn.classList.add('visible');
+            redoBtn.textContent = `↪ Redo (${activeRedo.length})`;
+        } else {
+            redoBtn.classList.remove('visible');
+        }
     }
 }
 
@@ -1159,6 +1210,10 @@ function undoLastAction() {
         const otherStack = (activeStack === state.actionHistory.grid) ? state.actionHistory.subs : state.actionHistory.grid;
         const idx = otherStack.findIndex(a => a.id === action.id);
         if (idx !== -1) otherStack.splice(idx, 1);
+        state.actionHistory.redoGrid.push(action);
+        state.actionHistory.redoSubs.push(action);
+    } else {
+        getActiveRedoStack().push(action);
     }
 
     if (action.type === 'move') {
@@ -1183,8 +1238,8 @@ function undoLastAction() {
         state.substitutions[action.day] = action.prevSubs;
 
     } else if (action.type === 'sub') {
-        const { period, absentTeacher, subTeacher, previousSub, previousTaskForSub, taskToCover, day, newlyDisplaced } = action;
-        state.schedule[day][period][subTeacher] = previousTaskForSub || 'Free';
+        const { period, targetPeriod = period, absentTeacher, subTeacher, previousSub, previousTaskForSub, taskToCover, day, newlyDisplaced } = action;
+        state.schedule[day][targetPeriod][subTeacher] = previousTaskForSub || 'Free';
         
         if (newlyDisplaced) {
             state.displaced[day] = state.displaced[day].filter(d => d.id !== newlyDisplaced.id);
@@ -1222,8 +1277,125 @@ function undoLastAction() {
     updateUndoUI();
     const toast = document.getElementById('undo-toast');
     if(toast) toast.classList.add('hidden');
+    showToast("Action undone.");
     renderAll();
 }
+
+function redoLastAction() {
+    const activeRedo = getActiveRedoStack();
+    if (activeRedo.length === 0) return;
+
+    const action = activeRedo.pop();
+
+    if (action.id) {
+        const otherRedo = (activeRedo === state.actionHistory.redoGrid) ? state.actionHistory.redoSubs : state.actionHistory.redoGrid;
+        const idx = otherRedo.findIndex(a => a.id === action.id);
+        if (idx !== -1) otherRedo.splice(idx, 1);
+    }
+
+    if (action.type === 'move') {
+        const { day, source, target, sTask, tTask, newlyDisplaced } = action;
+        state.schedule[day][target.period][target.teacher] = sTask;
+        if (source.type === 'grid') {
+            state.schedule[day][source.period][source.teacher] = 'Free';
+        } else if (source.type === 'displaced') {
+            state.displaced[day] = state.displaced[day].filter(d => d.id !== source.item.id);
+        }
+        if (newlyDisplaced) {
+            state.displaced[day].push(newlyDisplaced);
+        }
+        state.actionHistory.grid.push(action);
+
+    } else if (action.type === 'sub') {
+        const { period, targetPeriod = period, absentTeacher, subTeacher, previousSub, taskToCover, day, newlyDisplaced } = action;
+        if (!state.substitutions[day]) state.substitutions[day] = {};
+        if (!state.substitutions[day][period]) state.substitutions[day][period] = {};
+
+        if (previousSub && previousSub !== subTeacher) {
+            state.schedule[day][period][previousSub] = 'Free';
+        }
+        if (newlyDisplaced) {
+            state.displaced[day].push(newlyDisplaced);
+        }
+        state.schedule[day][targetPeriod][subTeacher] = taskToCover;
+        state.schedule[day][period][absentTeacher] = 'Free';
+        state.substitutions[day][period][absentTeacher] = subTeacher;
+
+        state.actionHistory.grid.push(action);
+        state.actionHistory.subs.push(action);
+
+    } else if (action.type === 'unassign-sub') {
+        const { period, absentTeacher, previousSub, taskToCover, day } = action;
+        state.schedule[day][period][previousSub] = 'Free';
+        state.schedule[day][period][absentTeacher] = taskToCover;
+        if (state.substitutions[day] && state.substitutions[day][period]) {
+            delete state.substitutions[day][period][absentTeacher];
+        }
+        state.actionHistory.grid.push(action);
+        state.actionHistory.subs.push(action);
+
+    } else if (action.type === 'reset') {
+        state.schedule[action.day] = JSON.parse(JSON.stringify(state.baseSchedule[action.day]));
+        state.displaced[action.day] = [];
+        state.substitutions[action.day] = {};
+        getActiveHistoryStack().push(action);
+
+    } else if (action.type === 'batch-sub') {
+        action.actions.forEach(sub => {
+            state.schedule[sub.day][sub.period][sub.subTeacher] = sub.taskToCover;
+            state.schedule[sub.day][sub.period][sub.absentTeacher] = 'Free';
+            if (!state.substitutions[sub.day]) state.substitutions[sub.day] = {};
+            if (!state.substitutions[sub.day][sub.period]) state.substitutions[sub.day][sub.period] = {};
+            state.substitutions[sub.day][sub.period][sub.absentTeacher] = sub.subTeacher;
+        });
+        state.actionHistory.grid.push(action);
+        state.actionHistory.subs.push(action);
+    }
+
+    saveStateToStorage();
+    updateUndoUI();
+    showToast("Action redone.");
+    renderAll();
+}
+window.redoLastAction = redoLastAction;
+
+function handleGlobalKeydown(e) {
+    if ((e.metaKey || e.ctrlKey) && !e.altKey) {
+        if (e.key === 'z' || e.key === 'Z') {
+            if (e.shiftKey) {
+                e.preventDefault();
+                redoLastAction();
+            } else {
+                e.preventDefault();
+                undoLastAction();
+            }
+        } else if (e.key === 'y' || e.key === 'Y') {
+            e.preventDefault();
+            redoLastAction();
+        }
+    }
+}
+
+// --- SETTINGS MODAL ---
+function openSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    const overlay = document.getElementById('settings-overlay');
+    const toggle = document.getElementById('same-period-lock-toggle');
+    if (toggle) {
+        toggle.checked = state.settings.samePeriodLock !== false;
+    }
+    if (modal) modal.classList.remove('hidden');
+    if (overlay) overlay.classList.add('active');
+}
+
+function closeSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    const overlay = document.getElementById('settings-overlay');
+    if (modal) modal.classList.add('hidden');
+    if (overlay) overlay.classList.remove('active');
+}
+window.openSettingsModal = openSettingsModal;
+window.closeSettingsModal = closeSettingsModal;
 
 function showToast(message) {
     const toast = document.getElementById('undo-toast');

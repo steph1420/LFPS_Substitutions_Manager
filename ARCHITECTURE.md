@@ -1,5 +1,5 @@
 # Front Desk PWA - Architecture & Developer Guide
-**Current Version:** v1.22
+**Current Version:** v1.23
 **Project Type:** Vanilla JS/HTML/CSS Offline-First PWA
 **Purpose:** School substitution management and daily timetable resolution.
 
@@ -77,6 +77,7 @@ const state = {
 *   **v1.20 Release (Interactive Grid Hovers & Period Refactoring)**: Implemented interactive hover indicators and synchronized row/column highlights for teacher names and period headers. Renamed 'BREAKFAST' to 'BREAKFAST BREAK'. Replaced non-editable 'PLAY TIME' with fully assignable '2nd GOLDEN HOUR' (both Golden Hours now fully editable, draggable, and substitute-eligible). Added automatic backward-compatible storage migration for period names.
 *   **v1.21 Release (Banner Removal & Bottom Sheet Fix)**: Removed the intrusive 'Fully Covered' notification banner from the Substitutions tab. Fixed bottom sheet teacher selection popup by removing blocking `.hidden` class from markup, ensuring smooth transition open/close, and globally exporting handlers to `window`.
 *   **v1.22 Release (Drag-to-Assign Substitutions in Main Grid & Bidirectional Sync)**: Implemented full drag-and-drop substitution assignment on the master routine grid. Dragging an absent teacher's missing class onto an available teacher immediately registers `state.substitutions`, displays green Apple HIG covering tags (`.cell-sub-active`) and covered indicators (`.cell-covered`), displaces busy teachers' tasks into the Limbo Dock, updates the Substitutions tab count/badges/cards in real-time, and enables drag-to-reassign and drag-to-unassign. Synchronized dual-stack history undo engine across both views.
+*   **v1.23 Release (Redo Engine, Settings Modal, Cross-Period Dragging & Streamlined UI)**: Deprecated and removed the obsolete Cards page (`#tab-cards`) and bottom navigation tab. Introduced paired dual-stack Redo engine with `#header-redo-btn` and keyboard shortcuts (`Cmd+Shift+Z` / `Ctrl+Y`). Built Apple HIG Settings modal with persistent "Same-Period Lock" toggle switch. When Same-Period Lock is disabled, cross-period drag-and-drop substitutions are fully enabled across the grid with multi-period Limbo displacement and dual-stack undo/redo support.
 
 ## 10. Appendix: Technical Specifications
 
