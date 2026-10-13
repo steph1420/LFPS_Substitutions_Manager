@@ -263,14 +263,14 @@
                         <span>🎓</span>
                         <div>
                             <div class="role-opt-title">Academic Coord.</div>
-                            <div class="role-opt-sub">Mr. Stephen (Primary AC)</div>
+                            <div class="role-opt-sub">Mrs. R. Pahwa (Primary AC)</div>
                         </div>
                     </button>
                     <button class="role-option-btn" data-role="asst_ac">
                         <span>🎓</span>
                         <div>
                             <div class="role-opt-title">Asst. Academic Coord.</div>
-                            <div class="role-opt-sub">Mrs. Midha (Full AC parity)</div>
+                            <div class="role-opt-sub">Mrs. S. Lakra (Full AC parity)</div>
                         </div>
                     </button>
                     <button class="role-option-btn" data-role="teacher">
@@ -337,6 +337,34 @@
                 </div>
             </div>
 
+            <!-- Timetable Baseline & Mock Data Generator -->
+            <div class="settings-group">
+                <div class="settings-group-title">Timetable Baseline & Mock Data Generator</div>
+                <div class="settings-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Reset to 2026–2027 Timetable</span>
+                        <span class="settings-row-desc">Restores the official LFPS timetable baseline from the Excel master sheet.</span>
+                    </div>
+                    <button id="btn-pristine-reset" class="btn-secondary" style="font-size:11px; padding:6px 10px; font-weight:700; white-space:nowrap;">Reset Baseline</button>
+                </div>
+                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
+                    <div class="settings-row-info" style="min-width:180px;">
+                        <span class="settings-row-label">Simulate Absence / Test Scenarios</span>
+                        <span class="settings-row-desc">Generates test states or procedural routines based on real teacher subject pools.</span>
+                    </div>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <select id="mock-scenario-select" class="apple-select" style="font-size:12px; padding:5px 8px;">
+                            <option value="single_absence">Single: Ms. N. Horo (Hindi)</option>
+                            <option value="ct_absence">Class Teacher: Mrs. S. Lakra (KG A)</option>
+                            <option value="dual_absence">Multi: Mrs. S. Lakra + Ms. A. Amira</option>
+                            <option value="coordinator_contingency">Dual AC: Mrs. R. Pahwa + Mrs. S. Lakra</option>
+                            <option value="procedural">Procedural Timetable Generation</option>
+                        </select>
+                        <button id="btn-apply-scenario" class="btn-secondary" style="font-size:11px; padding:6px 10px; font-weight:700; white-space:nowrap;">Run Test</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="settings-group">
                 <div class="settings-group-title">Explore & Learn</div>
                 <div class="settings-row" style="cursor: pointer;" id="settings-open-tour-row">
@@ -352,7 +380,7 @@
                 <div class="settings-group-title">Application Info</div>
                 <div class="settings-row">
                     <span class="settings-row-label">Version</span>
-                    <span class="settings-row-value">v1.29</span>
+                    <span class="settings-row-value">v2.0 (Official 2026-2027)</span>
                 </div>
                 <div class="settings-row">
                     <span class="settings-row-label">Storage Engine</span>

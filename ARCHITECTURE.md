@@ -333,3 +333,16 @@ To enable live synchronization from Google Sheets in future releases:
 1.  **Tab 1 (`Master_Log`):** Flat CSV format (`Class, Day, Period, Subject, Teacher Abbr, Full Name, Role`). Optimal for 1-click cloud sync and delta ingestion.
 2.  **Tab 2 (`Staff_Directory`):** `Full Name, Abbr, Role, Primary Class, Secondary Class, Dept, Initials`.
 3.  **Tabs 3–6 (`Class_Timetables` & `Teacher_Timetables`):** Human-readable 2D grids for printing and administrative notice boards.
+
+### 11.6 Embedded Excel Knowledge & Mock Data Generator Engine
+*   **[`subjectsCatalog`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/app.js):** 49 official subjects from Sheet 2 (`Subjects List`) with `baseClass` (`KG` / `PREP`), full name, abbreviation, and domain clustering (`CORE_LANG`, `CORE_MATH`, `HINDI`, `HOLISTIC`, `ACTIVITY`).
+*   **[`subjectAllocations`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/app.js):** 96 curriculum allocations from Sheet 12 (`TABLE 2: SUBJECT ALLOCATIONS`), wiring class-subject-teacher assignments directly into affinity scoring (`★ Official Alloc` +48 bonus).
+*   **[`masterTimetableLog`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/app.js):** 158 normalized records from Sheet 12 (`TABLE 1: MASTER TIMETABLE LOG`) representing the exact ground-truth schedule across all sections.
+*   **Simulation & Mock Data Generator Engine (`generateSimulatedData(options)`):**
+    *   `'pristine'`: Restores pristine real 2026–2027 timetable with zero absences.
+    *   `'procedural'` (`generateProceduralRoutine()`): Dynamically generates a conflict-free weekly schedule across the 4 classes and 9 teachers using real curriculum subject allocations.
+    *   `'single_absence'`: Simulates `Ms. N. Horo` absent (Hindi co-teaching split test).
+    *   `'ct_absence'`: Simulates `Mrs. S. Lakra` absent (Officiating Class Teacher flow).
+    *   `'dual_absence'`: Simulates `Mrs. S. Lakra` and `Ms. A. Amira` absent (multi-class substitution test).
+    *   `'coordinator_contingency'`: Simulates `Mrs. R. Pahwa` (AC) and `Mrs. S. Lakra` (Asst AC) absent (Officiating AC delegation banner test).
+    *   **Settings UI Integration:** Accessible directly via Settings > "Timetable Baseline & Mock Data Generator".

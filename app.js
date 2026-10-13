@@ -31,16 +31,412 @@ const PRIMARY_AC = 'Mrs. R. Pahwa';
 const ASSISTANT_AC = 'Mrs. S. Lakra';
 
 const staffDirectory = {
-    'Mrs. S. Lakra': { fullName: 'Mrs. Synthia Lakra', role: 'Class Teacher / Asst. Academic Coordinator', primaryClass: 'KG A' },
-    'Mrs. M. Midha': { fullName: 'Mrs. Manisha Midha', role: 'Class Teacher', primaryClass: 'KG B' },
-    'Mrs. R. Pahwa': { fullName: 'Mrs. Riya Pahwa', role: 'Class Teacher / Academic Coordinator', primaryClass: 'PREP A' },
-    'Mrs. R. Narayan': { fullName: 'Mrs. Ritika Narayan', role: 'Class Teacher', primaryClass: 'PREP B' },
-    'Ms. N. Horo': { fullName: 'Ms. Namlen Horo', role: '2nd Teacher', primaryClass: 'KG A' },
-    'Ms. K. Sanga': { fullName: 'Ms. Kalista Sanga', role: '2nd Teacher', primaryClass: 'KG B' },
-    'Ms. A. Amira': { fullName: 'Ms. Ashna Amira', role: '2nd Teacher', primaryClass: 'PREP A' },
-    'Mrs. S. Bage': { fullName: 'Mrs. Suman Bage', role: '2nd Teacher', primaryClass: 'PREP B' },
-    'Mr. S. A. Lakra': { fullName: 'Mr. Stephen Ashish Lakra', role: '3rd Teacher / Support', primaryClass: 'KG A' }
+    "Mrs. S. Lakra": {
+        fullName: "Mrs. Synthia Lakra",
+        abbr: "Mrs. S. Lakra",
+        role: "Class Teacher / Asst. Academic Coordinator",
+        primaryClass: "KG A",
+        periodsTaught: 22,
+        initials: "SL",
+        department: "KG",
+        assignedSubjectPool: ["ENG. REC.", "M. SC.", "ENG. ORAL", "ENG. WR.", "SUB. TABLE", "M. ORAL", "M. PR.", "M. ACT.", "SING.", "M. NO. WK.", "ENG. STORY", "ENG. CONV.", "ENG. ACT."]
+    },
+    "Mrs. M. Midha": {
+        fullName: "Mrs. Manisha Midha",
+        abbr: "Mrs. M. Midha",
+        role: "Class Teacher",
+        primaryClass: "KG B",
+        periodsTaught: 22,
+        initials: "MM",
+        department: "KG",
+        assignedSubjectPool: ["ENG. REC.", "M. SC.", "ENG. ORAL", "ENG. WR.", "SUB. TABLE", "M. ACT.", "M. ORAL", "M. PR.", "SING.", "M. NO. WK.", "ENG. STORY", "ENG. CONV.", "ENG. ACT."]
+    },
+    "Mrs. R. Pahwa": {
+        fullName: "Mrs. Riya Pahwa",
+        abbr: "Mrs. R. Pahwa",
+        role: "Class Teacher / Academic Coordinator",
+        primaryClass: "PREP A",
+        periodsTaught: 20,
+        initials: "RP",
+        department: "PREP",
+        assignedSubjectPool: ["ENG. REC.", "M. SC.", "M. Bas.", "ENG. WR.", "ST. TIME.", "M. GEN.", "ENG. SPELL.", "ENG. LANG.", "M. NO. WK.", "ENG.", "ENG. LIT.", "SING.", "ENG. CR. WR."]
+    },
+    "Mrs. R. Narayan": {
+        fullName: "Mrs. Ritika Narayan",
+        abbr: "Mrs. R. Narayan",
+        role: "Class Teacher",
+        primaryClass: "PREP B",
+        periodsTaught: 20,
+        initials: "RN",
+        department: "PREP",
+        assignedSubjectPool: ["ENG. REC.", "M. SC.", "ENG. WR.", "M. Bas.", "ENG. SPELL.", "M. GEN.", "ST. TIME.", "ENG. LANG.", "M. NO. WK.", "ENG.", "ENG. LIT.", "ENG. CR. WR.", "SING."]
+    },
+    "Ms. N. Horo": {
+        fullName: "Ms. Namlen Horo",
+        abbr: "Ms. N. Horo",
+        role: "2nd Teacher",
+        primaryClass: "KG A",
+        periodsTaught: 10,
+        initials: "NH",
+        department: "Hindi Specialist",
+        assignedSubjectPool: ["HIN. KAV./GEET", "HIN. LIK. KAR.", "HIN. KAH.", "HIN. VYAK.", "HIN. SUL.", "HIN. KAR. PUS.", "HIN. SAHIT."]
+    },
+    "Ms. K. Sanga": {
+        fullName: "Ms. Kalista Sanga",
+        abbr: "Ms. K. Sanga",
+        role: "2nd Teacher",
+        primaryClass: "KG B",
+        periodsTaught: 10,
+        initials: "KS",
+        department: "Hindi Specialist",
+        assignedSubjectPool: ["HIN. KAV./GEET", "HIN. LIK. KAR.", "HIN. KAH.", "HIN. VYAK.", "HIN. KAR. PUS.", "HIN. SUL.", "HIN. SAHIT."]
+    },
+    "Ms. A. Amira": {
+        fullName: "Ms. Ashna Amira",
+        abbr: "Ms. A. Amira",
+        role: "2nd Teacher",
+        primaryClass: "PREP A",
+        periodsTaught: 18,
+        initials: "AA",
+        department: "Holistic & Activity",
+        assignedSubjectPool: ["GAMES", "NT", "HT", "GK", "1ST DRILL", "CR.", "DR.", "DRILL"]
+    },
+    "Mrs. S. Bage": {
+        fullName: "Mrs. Suman Bage",
+        abbr: "Mrs. S. Bage",
+        role: "2nd Teacher",
+        primaryClass: "PREP B",
+        periodsTaught: 18,
+        initials: "SB",
+        department: "Holistic & Activity",
+        assignedSubjectPool: ["GAMES", "HT", "GK", "NT", "2ND DRILL", "CR.", "DR.", "DRILL"]
+    },
+    "Mr. S. A. Lakra": {
+        fullName: "Mr. Stephen Ashish Lakra",
+        abbr: "Mr. S. A. Lakra",
+        role: "3rd Teacher / Support",
+        primaryClass: "KG A",
+        periodsTaught: 14,
+        initials: "AL",
+        department: "Games, Drill & Music Support",
+        assignedSubjectPool: ["GAMES", "HIN. KAV./GEET", "DRILL", "SING.", "GK"]
+    }
 };
+
+// --- 1. SUBJECT CATALOG (49 SUBJECTS FROM LFPS EXCEL SHEET 2) ---
+const subjectsCatalog = [
+    { baseClass: "KG", name: "ENGLISH ACTIVITY", abbr: "ENG. ACT.", domain: "CORE_LANG" },
+    { baseClass: "KG", name: "ENGLISH CONVERSATION", abbr: "ENG. CONV.", domain: "CORE_LANG" },
+    { baseClass: "KG", name: "ENGLISH ORAL", abbr: "ENG. ORAL", domain: "CORE_LANG" },
+    { baseClass: "KG", name: "ENGLISH RECITATION", abbr: "ENG. REC.", domain: "CORE_LANG" },
+    { baseClass: "KG", name: "ENGLISH WRITING", abbr: "ENG. WR.", domain: "CORE_LANG" },
+    { baseClass: "KG", name: "MATH ACTIVITY", abbr: "M. ACT.", domain: "CORE_MATH" },
+    { baseClass: "KG", name: "MATH NUMBER WORK", abbr: "M. NO. WK.", domain: "CORE_MATH" },
+    { baseClass: "KG", name: "MATH ORAL", abbr: "M. ORAL", domain: "CORE_MATH" },
+    { baseClass: "KG", name: "MATH PRIMARY", abbr: "M. PR.", domain: "CORE_MATH" },
+    { baseClass: "KG", name: "MORAL SCIENCE", abbr: "M. SC.", domain: "CORE_MATH" },
+    { baseClass: "KG", name: "SUBSTITUTION TABLE", abbr: "SUB. TABLE", domain: "CORE_MATH" },
+    { baseClass: "KG", name: "ENGLISH STORY", abbr: "ENG. STORY", domain: "CORE_LANG" },
+    { baseClass: "KG", name: "HINDI KAHANI", abbr: "HIN. KAH.", domain: "HINDI" },
+    { baseClass: "KG", name: "HINDI KARYA PUSTIKA", abbr: "HIN. KAR. PUS.", domain: "HINDI" },
+    { baseClass: "KG", name: "HINDI KAVITA/GEET", abbr: "HIN. KAV./GEET", domain: "HINDI" },
+    { baseClass: "KG", name: "HINDI LIKHIT KARYA", abbr: "HIN. LIK. KAR.", domain: "HINDI" },
+    { baseClass: "KG", name: "GENERAL KNOWLEDGE", abbr: "GK", domain: "HOLISTIC" },
+    { baseClass: "KG", name: "HEALTH TALK", abbr: "HT", domain: "HOLISTIC" },
+    { baseClass: "KG", name: "NATURE TALK", abbr: "NT", domain: "HOLISTIC" },
+    { baseClass: "KG", name: "DRAWING", abbr: "DR.", domain: "HOLISTIC" },
+    { baseClass: "KG", name: "CRAFT", abbr: "CR.", domain: "HOLISTIC" },
+    { baseClass: "KG", name: "GAMES", abbr: "GAMES", domain: "ACTIVITY" },
+    { baseClass: "KG", name: "DRILL", abbr: "DRILL", domain: "ACTIVITY" },
+    { baseClass: "KG", name: "SINGING", abbr: "SING.", domain: "ACTIVITY" },
+    { baseClass: "PREP", name: "ENGLISH", abbr: "ENG.", domain: "CORE_LANG" },
+    { baseClass: "PREP", name: "ENGLISH CREATIVE WRITING", abbr: "ENG. CR. WR.", domain: "CORE_LANG" },
+    { baseClass: "PREP", name: "ENGLISH LANGUAGE", abbr: "ENG. LANG.", domain: "CORE_LANG" },
+    { baseClass: "PREP", name: "ENGLISH LIT.", abbr: "ENG. LIT.", domain: "CORE_LANG" },
+    { baseClass: "PREP", name: "ENGLISH RECITATION", abbr: "ENG. REC.", domain: "CORE_LANG" },
+    { baseClass: "PREP", name: "ENGLISH SPELLING", abbr: "ENG. SPELL.", domain: "CORE_LANG" },
+    { baseClass: "PREP", name: "ENGLISH WRITING", abbr: "ENG. WR.", domain: "CORE_LANG" },
+    { baseClass: "PREP", name: "MATH BASIC", abbr: "M. BASIC.", domain: "CORE_MATH" },
+    { baseClass: "PREP", name: "MATH GENERAL", abbr: "M. GEN.", domain: "CORE_MATH" },
+    { baseClass: "PREP", name: "MATH NUMBER WORK", abbr: "M. NO. WK.", domain: "CORE_MATH" },
+    { baseClass: "PREP", name: "MORAL SCIENCE", abbr: "M. SC.", domain: "CORE_MATH" },
+    { baseClass: "PREP", name: "STORY TIME", abbr: "ST. TIME.", domain: "HOLISTIC" },
+    { baseClass: "PREP", name: "HINDI KAVITA/GEET", abbr: "HIN. KAV./GEET", domain: "HINDI" },
+    { baseClass: "PREP", name: "HINDI SAHITYA", abbr: "HIN. SAHIT.", domain: "HINDI" },
+    { baseClass: "PREP", name: "HINDI SULEKH", abbr: "HIN. SUL.", domain: "HINDI" },
+    { baseClass: "PREP", name: "HINDI VYAKRAN", abbr: "HIN. VYAK.", domain: "HINDI" },
+    { baseClass: "PREP", name: "GENERAL KNOWLEDGE", abbr: "GK", domain: "HOLISTIC" },
+    { baseClass: "PREP", name: "HEALTH TALK", abbr: "HT", domain: "HOLISTIC" },
+    { baseClass: "PREP", name: "NATURE TALK", abbr: "NT", domain: "HOLISTIC" },
+    { baseClass: "PREP", name: "DRAWING", abbr: "DR.", domain: "HOLISTIC" },
+    { baseClass: "PREP", name: "CRAFT", abbr: "CR.", domain: "HOLISTIC" },
+    { baseClass: "PREP", name: "GAMES", abbr: "GAMES", domain: "ACTIVITY" },
+    { baseClass: "PREP", name: "1ST HALF DRILL", abbr: "1ST DRILL", domain: "ACTIVITY" },
+    { baseClass: "PREP", name: "2ND HALF DRILL", abbr: "2ND DRILL", domain: "ACTIVITY" },
+    { baseClass: "PREP", name: "SINGING", abbr: "SING.", domain: "ACTIVITY" }
+];
+
+// --- 2. TABLE 2: SUBJECT ALLOCATIONS (96 ALLOCATIONS FROM LFPS OVERVIEW) ---
+const subjectAllocations = [
+    { class: "KG A", subject: "CR.", assignedTeachers: ["Ms. A. Amira"] },
+    { class: "KG A", subject: "DR.", assignedTeachers: ["Ms. A. Amira"] },
+    { class: "KG A", subject: "DRILL", assignedTeachers: ["Ms. A. Amira","Mr. S. A. Lakra"] },
+    { class: "KG A", subject: "ENG. ACT.", assignedTeachers: ["Mrs. S. Lakra"] },
+    { class: "KG A", subject: "ENG. CONV.", assignedTeachers: ["Mrs. S. Lakra"] },
+    { class: "KG A", subject: "ENG. ORAL", assignedTeachers: ["Mrs. S. Lakra"] },
+    { class: "KG A", subject: "ENG. REC.", assignedTeachers: ["Mrs. S. Lakra"] },
+    { class: "KG A", subject: "ENG. STORY", assignedTeachers: ["Mrs. S. Lakra"] },
+    { class: "KG A", subject: "ENG. WR.", assignedTeachers: ["Mrs. S. Lakra"] },
+    { class: "KG A", subject: "GAMES", assignedTeachers: ["Ms. A. Amira","Mr. S. A. Lakra"] },
+    { class: "KG A", subject: "GK", assignedTeachers: ["Mr. S. A. Lakra"] },
+    { class: "KG A", subject: "HIN. KAH.", assignedTeachers: ["Ms. N. Horo"] },
+    { class: "KG A", subject: "HIN. KAR. PUS.", assignedTeachers: ["Ms. N. Horo"] },
+    { class: "KG A", subject: "HIN. KAV./GEET", assignedTeachers: ["Ms. N. Horo","Mr. S. A. Lakra"] },
+    { class: "KG A", subject: "HIN. LIK. KAR.", assignedTeachers: ["Ms. N. Horo"] },
+    { class: "KG A", subject: "HT", assignedTeachers: ["Ms. A. Amira"] },
+    { class: "KG A", subject: "M. ACT.", assignedTeachers: ["Mrs. S. Lakra"] },
+    { class: "KG A", subject: "M. NO. WK.", assignedTeachers: ["Mrs. S. Lakra"] },
+    { class: "KG A", subject: "M. ORAL", assignedTeachers: ["Mrs. S. Lakra"] },
+    { class: "KG A", subject: "M. PR.", assignedTeachers: ["Mrs. S. Lakra"] },
+    { class: "KG A", subject: "M. SC.", assignedTeachers: ["Mrs. S. Lakra"] },
+    { class: "KG A", subject: "NT", assignedTeachers: ["Ms. A. Amira"] },
+    { class: "KG A", subject: "SING.", assignedTeachers: ["Mrs. S. Lakra","Mr. S. A. Lakra"] },
+    { class: "KG A", subject: "SUB. TABLE", assignedTeachers: ["Mrs. S. Lakra"] },
+    { class: "KG B", subject: "CR.", assignedTeachers: ["Mrs. S. Bage"] },
+    { class: "KG B", subject: "DR.", assignedTeachers: ["Mrs. S. Bage"] },
+    { class: "KG B", subject: "DRILL", assignedTeachers: ["Mrs. S. Bage","Mr. S. A. Lakra"] },
+    { class: "KG B", subject: "ENG. ACT.", assignedTeachers: ["Mrs. M. Midha"] },
+    { class: "KG B", subject: "ENG. CONV.", assignedTeachers: ["Mrs. M. Midha"] },
+    { class: "KG B", subject: "ENG. ORAL", assignedTeachers: ["Mrs. M. Midha"] },
+    { class: "KG B", subject: "ENG. REC.", assignedTeachers: ["Mrs. M. Midha"] },
+    { class: "KG B", subject: "ENG. STORY", assignedTeachers: ["Mrs. M. Midha"] },
+    { class: "KG B", subject: "ENG. WR.", assignedTeachers: ["Mrs. M. Midha"] },
+    { class: "KG B", subject: "GAMES", assignedTeachers: ["Mrs. S. Bage","Mr. S. A. Lakra"] },
+    { class: "KG B", subject: "GK", assignedTeachers: ["Mr. S. A. Lakra"] },
+    { class: "KG B", subject: "HIN. KAH.", assignedTeachers: ["Ms. K. Sanga"] },
+    { class: "KG B", subject: "HIN. KAR. PUS.", assignedTeachers: ["Ms. K. Sanga"] },
+    { class: "KG B", subject: "HIN. KAV./GEET", assignedTeachers: ["Ms. K. Sanga","Mr. S. A. Lakra"] },
+    { class: "KG B", subject: "HIN. LIK. KAR.", assignedTeachers: ["Ms. K. Sanga"] },
+    { class: "KG B", subject: "HT", assignedTeachers: ["Mrs. S. Bage"] },
+    { class: "KG B", subject: "M. ACT.", assignedTeachers: ["Mrs. M. Midha"] },
+    { class: "KG B", subject: "M. NO. WK.", assignedTeachers: ["Mrs. M. Midha"] },
+    { class: "KG B", subject: "M. ORAL", assignedTeachers: ["Mrs. M. Midha"] },
+    { class: "KG B", subject: "M. PR.", assignedTeachers: ["Mrs. M. Midha"] },
+    { class: "KG B", subject: "M. SC.", assignedTeachers: ["Mrs. M. Midha"] },
+    { class: "KG B", subject: "NT", assignedTeachers: ["Mrs. S. Bage"] },
+    { class: "KG B", subject: "SING.", assignedTeachers: ["Mrs. M. Midha","Mr. S. A. Lakra"] },
+    { class: "KG B", subject: "SUB. TABLE", assignedTeachers: ["Mrs. M. Midha"] },
+    { class: "PREP A", subject: "1ST DRILL", assignedTeachers: ["Ms. A. Amira","Mr. S. A. Lakra"] },
+    { class: "PREP A", subject: "CR.", assignedTeachers: ["Ms. A. Amira"] },
+    { class: "PREP A", subject: "DR.", assignedTeachers: ["Ms. A. Amira"] },
+    { class: "PREP A", subject: "ENG.", assignedTeachers: ["Mrs. R. Pahwa"] },
+    { class: "PREP A", subject: "ENG. CR. WR.", assignedTeachers: ["Mrs. R. Pahwa"] },
+    { class: "PREP A", subject: "ENG. LANG.", assignedTeachers: ["Mrs. R. Pahwa"] },
+    { class: "PREP A", subject: "ENG. LIT.", assignedTeachers: ["Mrs. R. Pahwa"] },
+    { class: "PREP A", subject: "ENG. REC.", assignedTeachers: ["Mrs. R. Pahwa"] },
+    { class: "PREP A", subject: "ENG. SPELL.", assignedTeachers: ["Mrs. R. Pahwa"] },
+    { class: "PREP A", subject: "ENG. WR.", assignedTeachers: ["Mrs. R. Pahwa"] },
+    { class: "PREP A", subject: "GAMES", assignedTeachers: ["Ms. A. Amira","Mr. S. A. Lakra"] },
+    { class: "PREP A", subject: "GK", assignedTeachers: ["Ms. A. Amira"] },
+    { class: "PREP A", subject: "HIN. KAV./GEET", assignedTeachers: ["Ms. N. Horo","Mr. S. A. Lakra"] },
+    { class: "PREP A", subject: "HIN. SAHIT.", assignedTeachers: ["Ms. N. Horo"] },
+    { class: "PREP A", subject: "HIN. SUL.", assignedTeachers: ["Ms. N. Horo"] },
+    { class: "PREP A", subject: "HIN. VYAK.", assignedTeachers: ["Ms. N. Horo"] },
+    { class: "PREP A", subject: "HT", assignedTeachers: ["Ms. A. Amira"] },
+    { class: "PREP A", subject: "M. Bas.", assignedTeachers: ["Mrs. R. Pahwa"] },
+    { class: "PREP A", subject: "M. GEN.", assignedTeachers: ["Mrs. R. Pahwa"] },
+    { class: "PREP A", subject: "M. NO. WK.", assignedTeachers: ["Mrs. R. Pahwa"] },
+    { class: "PREP A", subject: "M. SC.", assignedTeachers: ["Mrs. R. Pahwa"] },
+    { class: "PREP A", subject: "NT", assignedTeachers: ["Ms. A. Amira"] },
+    { class: "PREP A", subject: "SING.", assignedTeachers: ["Mrs. R. Pahwa","Mr. S. A. Lakra"] },
+    { class: "PREP A", subject: "ST. TIME.", assignedTeachers: ["Mrs. R. Pahwa"] },
+    { class: "PREP B", subject: "2ND DRILL", assignedTeachers: ["Mrs. S. Bage","Mr. S. A. Lakra"] },
+    { class: "PREP B", subject: "CR.", assignedTeachers: ["Mrs. S. Bage"] },
+    { class: "PREP B", subject: "DR.", assignedTeachers: ["Mrs. S. Bage"] },
+    { class: "PREP B", subject: "ENG.", assignedTeachers: ["Mrs. R. Narayan"] },
+    { class: "PREP B", subject: "ENG. CR. WR.", assignedTeachers: ["Mrs. R. Narayan"] },
+    { class: "PREP B", subject: "ENG. LANG.", assignedTeachers: ["Mrs. R. Narayan"] },
+    { class: "PREP B", subject: "ENG. LIT.", assignedTeachers: ["Mrs. R. Narayan"] },
+    { class: "PREP B", subject: "ENG. REC.", assignedTeachers: ["Mrs. R. Narayan"] },
+    { class: "PREP B", subject: "ENG. SPELL.", assignedTeachers: ["Mrs. R. Narayan"] },
+    { class: "PREP B", subject: "ENG. WR.", assignedTeachers: ["Mrs. R. Narayan"] },
+    { class: "PREP B", subject: "GAMES", assignedTeachers: ["Mrs. S. Bage","Mr. S. A. Lakra"] },
+    { class: "PREP B", subject: "GK", assignedTeachers: ["Mrs. S. Bage"] },
+    { class: "PREP B", subject: "HIN. KAV./GEET", assignedTeachers: ["Ms. K. Sanga","Mr. S. A. Lakra"] },
+    { class: "PREP B", subject: "HIN. SAHIT.", assignedTeachers: ["Ms. K. Sanga"] },
+    { class: "PREP B", subject: "HIN. SUL.", assignedTeachers: ["Ms. K. Sanga"] },
+    { class: "PREP B", subject: "HIN. VYAK.", assignedTeachers: ["Ms. K. Sanga"] },
+    { class: "PREP B", subject: "HT", assignedTeachers: ["Mrs. S. Bage"] },
+    { class: "PREP B", subject: "M. Bas.", assignedTeachers: ["Mrs. R. Narayan"] },
+    { class: "PREP B", subject: "M. GEN.", assignedTeachers: ["Mrs. R. Narayan"] },
+    { class: "PREP B", subject: "M. NO. WK.", assignedTeachers: ["Mrs. R. Narayan"] },
+    { class: "PREP B", subject: "M. SC.", assignedTeachers: ["Mrs. R. Narayan"] },
+    { class: "PREP B", subject: "NT", assignedTeachers: ["Mrs. S. Bage"] },
+    { class: "PREP B", subject: "SING.", assignedTeachers: ["Mrs. R. Narayan","Mr. S. A. Lakra"] },
+    { class: "PREP B", subject: "ST. TIME.", assignedTeachers: ["Mrs. R. Narayan"] }
+];
+
+// --- 3. TABLE 1: MASTER TIMETABLE LOG (158 NORMALIZED RECORDS FOR EXPORT / CLOUD SYNC) ---
+const masterTimetableLog = [
+    { class: "KG A", day: "MON.", period: "G/PD", subject: "ENG. REC.", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "MON.", period: "1st", subject: "M. SC.", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "MON.", period: "4th", subject: "ENG. ORAL", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "MON.", period: "5th", subject: "ENG. WR.", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "TUES.", period: "G/PD", subject: "SUB. TABLE", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "TUES.", period: "1st", subject: "ENG. REC.", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "TUES.", period: "2nd", subject: "M. ORAL", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "TUES.", period: "3rd", subject: "M. PR.", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "TUES.", period: "6th", subject: "M. ACT.", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "WED.", period: "G/PD", subject: "ENG. REC.", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "WED.", period: "1st", subject: "M. SC.", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "WED.", period: "2nd", subject: "SING.", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "WED.", period: "4th", subject: "ENG. WR.", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "WED.", period: "5th", subject: "ENG. WR.", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "THU.", period: "1st", subject: "ENG. ORAL", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "THU.", period: "3rd", subject: "M. NO. WK.", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "THU.", period: "4th", subject: "M. NO. WK.", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "FRI.", period: "G/PD", subject: "ENG. REC.", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "FRI.", period: "1st", subject: "M. ORAL", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "FRI.", period: "4th", subject: "ENG. STORY", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "FRI.", period: "5th", subject: "ENG. CONV.", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG A", day: "FRI.", period: "6th", subject: "ENG. ACT.", teacherAbbr: "Mrs. S. Lakra", fullName: "Mrs. Synthia Lakra", role: "Class Teacher" },
+    { class: "KG B", day: "MON.", period: "G/PD", subject: "ENG. REC.", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "MON.", period: "1st", subject: "M. SC.", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "MON.", period: "4th", subject: "ENG. ORAL", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "MON.", period: "5th", subject: "ENG. WR.", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "TUES.", period: "G/PD", subject: "SUB. TABLE", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "TUES.", period: "1st", subject: "M. ACT.", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "TUES.", period: "2nd", subject: "M. ORAL", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "TUES.", period: "4th", subject: "ENG. REC.", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "TUES.", period: "5th", subject: "M. PR.", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "WED.", period: "G/PD", subject: "ENG. REC.", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "WED.", period: "1st", subject: "M. SC.", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "WED.", period: "3rd", subject: "ENG. WR.", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "WED.", period: "4th", subject: "ENG. WR.", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "WED.", period: "5th", subject: "SING.", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "THU.", period: "1st", subject: "ENG. ORAL", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "THU.", period: "3rd", subject: "M. NO. WK.", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "THU.", period: "4th", subject: "M. NO. WK.", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "FRI.", period: "G/PD", subject: "ENG. REC.", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "FRI.", period: "1st", subject: "M. ORAL", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "FRI.", period: "2nd", subject: "ENG. STORY", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "FRI.", period: "3rd", subject: "ENG. CONV.", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "KG B", day: "FRI.", period: "6th", subject: "ENG. ACT.", teacherAbbr: "Mrs. M. Midha", fullName: "Mrs. Manisha Midha", role: "Class Teacher" },
+    { class: "PREP A", day: "MON.", period: "G/PD", subject: "ENG. REC.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "MON.", period: "1st", subject: "M. SC.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "MON.", period: "3rd", subject: "M. Bas.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "MON.", period: "6th", subject: "ENG. WR.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "TUES.", period: "1st", subject: "ST. TIME.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "TUES.", period: "2nd", subject: "M. GEN.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "TUES.", period: "3rd", subject: "M. GEN.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "TUES.", period: "4th", subject: "ENG. SPELL.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "WED.", period: "1st", subject: "M. SC.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "WED.", period: "2nd", subject: "ENG. LANG.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "WED.", period: "3rd", subject: "ENG. LANG.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "WED.", period: "6th", subject: "M. NO. WK.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "THU.", period: "G/PD", subject: "ENG.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "THU.", period: "2nd", subject: "ENG. LIT.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "THU.", period: "3rd", subject: "ENG. LIT.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "THU.", period: "5th", subject: "M. GEN.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "THU.", period: "6th", subject: "M. GEN.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "FRI.", period: "3rd", subject: "SING.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "FRI.", period: "4th", subject: "ENG. CR. WR.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP A", day: "FRI.", period: "5th", subject: "ENG. REC.", teacherAbbr: "Mrs. R. Pahwa", fullName: "Mrs. Riya Pahwa", role: "Class Teacher" },
+    { class: "PREP B", day: "MON.", period: "G/PD", subject: "ENG. REC.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "MON.", period: "1st", subject: "M. SC.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "MON.", period: "2nd", subject: "ENG. WR.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "MON.", period: "3rd", subject: "M. Bas.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "TUES.", period: "2nd", subject: "ENG. SPELL.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "TUES.", period: "4th", subject: "M. GEN.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "TUES.", period: "5th", subject: "M. GEN.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "TUES.", period: "6th", subject: "ST. TIME.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "WED.", period: "1st", subject: "M. SC.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "WED.", period: "3rd", subject: "ENG. LANG.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "WED.", period: "4th", subject: "ENG. LANG.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "WED.", period: "5th", subject: "M. NO. WK.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "THU.", period: "G/PD", subject: "ENG.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "THU.", period: "1st", subject: "ENG. LIT.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "THU.", period: "2nd", subject: "ENG. LIT.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "THU.", period: "5th", subject: "M. GEN.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "THU.", period: "6th", subject: "M. GEN.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "FRI.", period: "2nd", subject: "ENG. CR. WR.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "FRI.", period: "3rd", subject: "ENG. REC.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "PREP B", day: "FRI.", period: "6th", subject: "SING.", teacherAbbr: "Mrs. R. Narayan", fullName: "Mrs. Ritika Narayan", role: "Class Teacher" },
+    { class: "KG A", day: "MON.", period: "2nd", subject: "HIN. KAV./GEET", teacherAbbr: "Ms. N. Horo", fullName: "Ms. Namlen Horo", role: "2nd Teacher" },
+    { class: "PREP A", day: "MON.", period: "4th", subject: "HIN. KAV./GEET", teacherAbbr: "Ms. N. Horo", fullName: "Ms. Namlen Horo", role: "2nd Teacher" },
+    { class: "KG A", day: "TUES.", period: "4th", subject: "HIN. LIK. KAR.", teacherAbbr: "Ms. N. Horo", fullName: "Ms. Namlen Horo", role: "2nd Teacher" },
+    { class: "KG A", day: "TUES.", period: "5th", subject: "HIN. LIK. KAR.", teacherAbbr: "Ms. N. Horo", fullName: "Ms. Namlen Horo", role: "2nd Teacher" },
+    { class: "KG A", day: "WED.", period: "3rd", subject: "HIN. KAH.", teacherAbbr: "Ms. N. Horo", fullName: "Ms. Namlen Horo", role: "2nd Teacher" },
+    { class: "PREP A", day: "WED.", period: "4th", subject: "HIN. VYAK.", teacherAbbr: "Ms. N. Horo", fullName: "Ms. Namlen Horo", role: "2nd Teacher" },
+    { class: "PREP A", day: "THU.", period: "1st", subject: "HIN. SUL.", teacherAbbr: "Ms. N. Horo", fullName: "Ms. Namlen Horo", role: "2nd Teacher" },
+    { class: "KG A", day: "THU.", period: "6th", subject: "HIN. KAR. PUS.", teacherAbbr: "Ms. N. Horo", fullName: "Ms. Namlen Horo", role: "2nd Teacher" },
+    { class: "PREP A", day: "FRI.", period: "2nd", subject: "HIN. SAHIT.", teacherAbbr: "Ms. N. Horo", fullName: "Ms. Namlen Horo", role: "2nd Teacher" },
+    { class: "PREP A", day: "FRI.", period: "6th", subject: "HIN. SAHIT.", teacherAbbr: "Ms. N. Horo", fullName: "Ms. Namlen Horo", role: "2nd Teacher" },
+    { class: "KG B", day: "MON.", period: "3rd", subject: "HIN. KAV./GEET", teacherAbbr: "Ms. K. Sanga", fullName: "Ms. Kalista Sanga", role: "2nd Teacher" },
+    { class: "PREP B", day: "MON.", period: "6th", subject: "HIN. KAV./GEET", teacherAbbr: "Ms. K. Sanga", fullName: "Ms. Kalista Sanga", role: "2nd Teacher" },
+    { class: "KG B", day: "TUES.", period: "3rd", subject: "HIN. LIK. KAR.", teacherAbbr: "Ms. K. Sanga", fullName: "Ms. Kalista Sanga", role: "2nd Teacher" },
+    { class: "KG B", day: "TUES.", period: "6th", subject: "HIN. LIK. KAR.", teacherAbbr: "Ms. K. Sanga", fullName: "Ms. Kalista Sanga", role: "2nd Teacher" },
+    { class: "KG B", day: "WED.", period: "2nd", subject: "HIN. KAH.", teacherAbbr: "Ms. K. Sanga", fullName: "Ms. Kalista Sanga", role: "2nd Teacher" },
+    { class: "PREP B", day: "WED.", period: "6th", subject: "HIN. VYAK.", teacherAbbr: "Ms. K. Sanga", fullName: "Ms. Kalista Sanga", role: "2nd Teacher" },
+    { class: "KG B", day: "THU.", period: "2nd", subject: "HIN. KAR. PUS.", teacherAbbr: "Ms. K. Sanga", fullName: "Ms. Kalista Sanga", role: "2nd Teacher" },
+    { class: "PREP B", day: "THU.", period: "3rd", subject: "HIN. SUL.", teacherAbbr: "Ms. K. Sanga", fullName: "Ms. Kalista Sanga", role: "2nd Teacher" },
+    { class: "PREP B", day: "FRI.", period: "4th", subject: "HIN. SAHIT.", teacherAbbr: "Ms. K. Sanga", fullName: "Ms. Kalista Sanga", role: "2nd Teacher" },
+    { class: "PREP B", day: "FRI.", period: "5th", subject: "HIN. SAHIT.", teacherAbbr: "Ms. K. Sanga", fullName: "Ms. Kalista Sanga", role: "2nd Teacher" },
+    { class: "KG A", day: "MON.", period: "G/PD", subject: "GAMES", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "PREP A", day: "MON.", period: "2nd", subject: "NT", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "KG A", day: "MON.", period: "3rd", subject: "HT", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "PREP A", day: "MON.", period: "5th", subject: "GK", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "KG A", day: "MON.", period: "6th", subject: "NT", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "PREP A", day: "TUES.", period: "G/PD", subject: "1ST DRILL", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "PREP A", day: "TUES.", period: "5th", subject: "CR.", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "PREP A", day: "TUES.", period: "6th", subject: "DR.", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "PREP A", day: "WED.", period: "G/PD", subject: "GK", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "PREP A", day: "WED.", period: "5th", subject: "HT", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "KG A", day: "WED.", period: "6th", subject: "HT", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "KG A", day: "THU.", period: "G/PD", subject: "DRILL", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "PREP A", day: "THU.", period: "4th", subject: "NT", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "KG A", day: "THU.", period: "5th", subject: "NT", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "PREP A", day: "FRI.", period: "G/PD", subject: "GAMES", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "PREP A", day: "FRI.", period: "1st", subject: "HT", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "KG A", day: "FRI.", period: "2nd", subject: "DR.", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "KG A", day: "FRI.", period: "3rd", subject: "CR.", teacherAbbr: "Ms. A. Amira", fullName: "Ms. Ashna Amira", role: "2nd Teacher" },
+    { class: "KG B", day: "MON.", period: "G/PD", subject: "GAMES", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "KG B", day: "MON.", period: "2nd", subject: "HT", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "PREP B", day: "MON.", period: "4th", subject: "GK", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "PREP B", day: "MON.", period: "5th", subject: "NT", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "KG B", day: "MON.", period: "6th", subject: "NT", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "PREP B", day: "TUES.", period: "G/PD", subject: "2ND DRILL", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "PREP B", day: "TUES.", period: "1st", subject: "CR.", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "PREP B", day: "TUES.", period: "3rd", subject: "DR.", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "PREP B", day: "WED.", period: "G/PD", subject: "GK", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "PREP B", day: "WED.", period: "2nd", subject: "HT", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "KG B", day: "WED.", period: "6th", subject: "HT", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "KG B", day: "THU.", period: "G/PD", subject: "DRILL", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "PREP B", day: "THU.", period: "4th", subject: "NT", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "KG B", day: "THU.", period: "5th", subject: "NT", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "PREP B", day: "FRI.", period: "G/PD", subject: "GAMES", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "PREP B", day: "FRI.", period: "1st", subject: "HT", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "KG B", day: "FRI.", period: "4th", subject: "DR.", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "KG B", day: "FRI.", period: "5th", subject: "CR.", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
+    { class: "KG A", day: "MON.", period: "G/PD", subject: "GAMES", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "KG B", day: "MON.", period: "G/PD", subject: "GAMES", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "KG A", day: "MON.", period: "2nd", subject: "HIN. KAV./GEET", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "KG B", day: "MON.", period: "3rd", subject: "HIN. KAV./GEET", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "PREP A", day: "MON.", period: "4th", subject: "HIN. KAV./GEET", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "PREP B", day: "MON.", period: "6th", subject: "HIN. KAV./GEET", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "PREP A", day: "TUES.", period: "G/PD", subject: "1ST DRILL", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "PREP B", day: "TUES.", period: "G/PD", subject: "2ND DRILL", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "KG A", day: "WED.", period: "2nd", subject: "SING.", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "KG B", day: "WED.", period: "5th", subject: "SING.", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "KG A", day: "THU.", period: "G/PD", subject: "DRILL", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "KG B", day: "THU.", period: "G/PD", subject: "DRILL", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "KG A", day: "THU.", period: "2nd", subject: "GK", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "KG B", day: "THU.", period: "6th", subject: "GK", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "PREP A", day: "FRI.", period: "G/PD", subject: "GAMES", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "PREP B", day: "FRI.", period: "G/PD", subject: "GAMES", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "PREP A", day: "FRI.", period: "3rd", subject: "SING.", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
+    { class: "PREP B", day: "FRI.", period: "6th", subject: "SING.", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" }
+];
 
 const classTeacherMap = {
     'Mrs. S. Lakra': 'KG A',
@@ -83,6 +479,7 @@ const teachers = [
     'Ms. N. Horo', 'Ms. K. Sanga', 'Ms. A. Amira', 'Mrs. S. Bage', 'Mr. S. A. Lakra'
 ];
 const periods = ['G/PD', '1st', 'BREAK', '2nd', '3rd', '4th', 'PLAYTIME / 2ND GOLDEN HOUR', '5th', '6th'];
+const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
 // --- INITIALIZATION & STORAGE ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -374,6 +771,20 @@ function bindEvents() {
     safeBind('settings-btn', 'click', openSettingsModal);
     safeBind('close-settings-btn', 'click', closeSettingsModal);
     safeBind('settings-overlay', 'click', closeSettingsModal);
+
+    // Timetable Baseline & Mock Data Generator
+    safeBind('btn-pristine-reset', 'click', () => {
+        closeSettingsModal();
+        generateSimulatedData('pristine');
+        showToast('Reset schedule to official pristine 2026–2027 routine.');
+    });
+
+    safeBind('btn-apply-scenario', 'click', () => {
+        const scenario = document.getElementById('mock-scenario-select')?.value || 'single_absence';
+        closeSettingsModal();
+        generateSimulatedData(scenario);
+        showToast(`Loaded test simulation: ${scenario}`);
+    });
     
     // Feature Overview Tour Modal
     safeBind('tour-btn', 'click', openTourModal);
@@ -2442,13 +2853,26 @@ function evaluateTeacherAffinity(subTeacher, taskToCover, period, day = state.da
     const reasons = [];
     let primaryBadge = '';
 
+    // 0. Official Curriculum Allocation from Excel Table 2
+    if (taskInfo.section && taskInfo.subjectPrefix && typeof subjectAllocations !== 'undefined') {
+        const alloc = subjectAllocations.find(a => 
+            a.class === taskInfo.section && 
+            (taskInfo.subjectPrefix.includes(a.subject) || a.subject.includes(taskInfo.subjectPrefix))
+        );
+        if (alloc && alloc.assignedTeachers.includes(subTeacher)) {
+            score += 48;
+            reasons.push('Curriculum Allocated Teacher');
+            primaryBadge = '★ Official Alloc';
+        }
+    }
+
     // 1. Class Team Member Priority (2nd Teacher or Support assigned to this class)
     if (taskInfo.section && classTeams[taskInfo.section]) {
         const team = classTeams[taskInfo.section];
         if (team.second === subTeacher || team.support === subTeacher) {
             score += 42;
             reasons.push(`${taskInfo.section} Team Partner`);
-            primaryBadge = `★ ${taskInfo.section} Team`;
+            if (!primaryBadge) primaryBadge = `★ ${taskInfo.section} Team`;
         }
     }
 
@@ -4329,13 +4753,77 @@ const realMasterSchedule = {
     }
 };
 
-function generateSimulatedData() {
-    state.schedule = JSON.parse(JSON.stringify(realMasterSchedule));
-    state.baseSchedule = JSON.parse(JSON.stringify(realMasterSchedule));
+// --- MOCK DATA & SIMULATION GENERATOR ENGINE ---
+function generateProceduralRoutine() {
+    const schedule = {};
+    days.forEach(d => {
+        schedule[d] = {};
+        periods.forEach(p => {
+            schedule[d][p] = {};
+            teachers.forEach(t => schedule[d][p][t] = (p === 'BREAK' ? '-' : 'Free'));
+
+            if (d === 'SAT' || p === 'BREAK' || p === 'PLAYTIME / 2ND GOLDEN HOUR') return;
+
+            // Distribute subjects to classes using real curriculum allocations from Excel Table 2
+            classes.forEach(cls => {
+                const classAllocations = subjectAllocations.filter(a => a.class === cls);
+                const shuffled = [...classAllocations].sort(() => Math.random() - 0.5);
+                for (const alloc of shuffled) {
+                    const candidateTeachers = alloc.assignedTeachers;
+                    const allFree = candidateTeachers.every(t => schedule[d][p][t] === 'Free');
+                    if (allFree) {
+                        candidateTeachers.forEach(t => {
+                            schedule[d][p][t] = `${alloc.subject} ${cls}`;
+                        });
+                        break;
+                    }
+                }
+            });
+        });
+    });
+    return schedule;
+}
+
+function generateSimulatedData(options = 'pristine') {
+    const mode = typeof options === 'string' ? options : (options.mode || 'pristine');
+
+    if (mode === 'procedural') {
+        const proceduralSched = generateProceduralRoutine();
+        state.schedule = JSON.parse(JSON.stringify(proceduralSched));
+        state.baseSchedule = JSON.parse(JSON.stringify(proceduralSched));
+    } else {
+        state.schedule = JSON.parse(JSON.stringify(realMasterSchedule));
+        state.baseSchedule = JSON.parse(JSON.stringify(realMasterSchedule));
+    }
+
     state.substitutions = {};
     state.subStatus = {};
     state.officiatingAC = {};
     state.officiatingCT = {};
     state.displaced = { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] };
     state.absentTeachers = new Set();
+
+    // Preset test scenarios for substitutions, coordinator delegation & officiating CT flows
+    if (mode === 'single_absence') {
+        state.absentTeachers.add('Ms. N. Horo'); // Hindi teacher absent
+    } else if (mode === 'ct_absence') {
+        state.absentTeachers.add('Mrs. S. Lakra'); // Class Teacher of KG A absent -> triggers Officiating CT prompt
+    } else if (mode === 'dual_absence') {
+        state.absentTeachers.add('Mrs. S. Lakra');
+        state.absentTeachers.add('Ms. A. Amira');
+    } else if (mode === 'coordinator_contingency') {
+        state.absentTeachers.add(PRIMARY_AC);    // Mrs. R. Pahwa absent
+        state.absentTeachers.add(ASSISTANT_AC);  // Mrs. S. Lakra absent -> triggers Officiating AC banner!
+    }
+
+    saveStateToStorage();
+    if (typeof updateUndoUI === 'function') updateUndoUI();
+    if (typeof renderAll === 'function') renderAll();
 }
+window.state = state;
+window.staffDirectory = staffDirectory;
+window.subjectsCatalog = subjectsCatalog;
+window.subjectAllocations = subjectAllocations;
+window.masterTimetableLog = masterTimetableLog;
+window.generateSimulatedData = generateSimulatedData;
+window.generateProceduralRoutine = generateProceduralRoutine;
