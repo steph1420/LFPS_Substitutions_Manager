@@ -101,6 +101,12 @@ const state = {
     *   **Assistant Academic Coordinator (Asst AC) Parity:** Grant identical administrative and substitution management permissions to the Assistant AC as the primary Academic Coordinator (AC).
     *   **Dual-Absence Contingency (Officiating AC):** If both the AC and Assistant AC are absent on the same day, provide an admin/system prompt and option to assign an **Officiating AC (offAC)** for the day.
     *   **Inherited Ephemeral Permissions:** The assigned `offAC` inherits full AC administrative permissions (substitution resolution, dispute review, acceptance overrides) strictly for that day, resetting automatically on the next school day.
+19. **[BUG] Settings Window Too Big / Ergonomic Viewport Sizing:**
+    *   **Symptom:** The Settings modal dialog (`.settings-modal`) has grown excessively tall with the addition of Theme selectors, Role hierarchies, Coordinator controls, Timetable baselines, and Mock generators, overflowing screen viewports on smaller displays/laptops without a tight, cohesive scroll boundary.
+    *   **Fix Strategy:** Enforce a strict max viewport height (`max-height: min(720px, 88vh)`), lock the modal header in place, establish a smooth internal scrolling container with Apple momentum physics (`-webkit-overflow-scrolling: touch`), and streamline vertical padding and spacing across settings groups for a compact, scannable layout.
+20. **[GRID ERGONOMICS] Harmonize Grid Cell Sizes:**
+    *   **Requirement:** Establish balanced, consistent, and harmonious column widths and row heights across the master timetable grid (`#routine-table`).
+    *   **Details:** Columns currently flex unevenly depending on text content (e.g. `PLAYTIME / 2ND GOLDEN HOUR` vs `1st` or static `BREAK` `-`), producing irregular visual rhythm. Harmonize period column widths (e.g., standardized min-width/width constraints, consistent padding), lock teacher header cell widths, ensure uniform row heights across both Teacher View and Class View, and provide clean multi-line wrapping/truncation with tooltips so the grid maintains an architecturally uniform layout.
 
 ## 8. File Map & Project Directory
 *   `index.html`: Core markup, header controls, day segmented controller, grid view, substitutions conflict list, and iOS bottom sheet modal.

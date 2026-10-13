@@ -2322,7 +2322,15 @@ function renderTableRoutine() {
     const collisions = findCollisions();
     
     let html = '<thead><tr><th class="teacher-header-cell">Teacher Name</th>';
-    periods.forEach((p, idx) => html += `<th data-period="${p}" data-col="${idx + 1}">${p}</th>`);
+    periods.forEach((p, idx) => {
+        let label = p;
+        if (p === 'PLAYTIME / 2ND GOLDEN HOUR') {
+            label = 'PLAYTIME<span class="period-sub-header">2ND GOLDEN HR</span>';
+        } else if (p === 'G/PD') {
+            label = 'G/PD<span class="period-sub-header">GOLDEN HR</span>';
+        }
+        html += `<th data-period="${p}" data-col="${idx + 1}" title="${p}">${label}</th>`;
+    });
     html += '</tr></thead><tbody>';
     
     teachers.forEach(teacher => {
@@ -2533,7 +2541,15 @@ function renderClassRoutineTable(table) {
     const collisions = findCollisions();
     
     let html = '<thead><tr><th class="class-header-cell">Class</th>';
-    periods.forEach((p, idx) => html += `<th data-period="${p}" data-col="${idx + 1}">${p}</th>`);
+    periods.forEach((p, idx) => {
+        let label = p;
+        if (p === 'PLAYTIME / 2ND GOLDEN HOUR') {
+            label = 'PLAYTIME<span class="period-sub-header">2ND GOLDEN HR</span>';
+        } else if (p === 'G/PD') {
+            label = 'G/PD<span class="period-sub-header">GOLDEN HR</span>';
+        }
+        html += `<th data-period="${p}" data-col="${idx + 1}" title="${p}">${label}</th>`;
+    });
     html += '</tr></thead><tbody>';
     
     classes.forEach(cls => {
