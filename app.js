@@ -24,6 +24,10 @@ let selectedCell = null;
 let draggedData = null;  
 let scrollSpeed = 0;
 let isScrolling = false;
+let registerFilter = 'all';
+let isFitGridMode = false;
+let generatedProposals = [];
+let activeProposalIndex = 0;
 
 // Transient states for specific drop animations
 let lastDroppedCell = null; 
@@ -221,14 +225,29 @@ function bindEvents() {
         });
     });
 
-    document.querySelectorAll('.day-btn').forEach(btn => {
+    document.querySelectorAll('.day-btn, .fit-day-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
-            e.currentTarget.classList.add('active');
-            state.day = e.currentTarget.dataset.day;
+            const chosenDay = e.currentTarget.dataset.day;
+            if (!chosenDay) return;
+            state.day = chosenDay;
             selectedCell = null; 
+            syncDayButtonsUI();
             saveStateToStorage();
             renderAll();
+        });
+    });
+
+    // Expanded Fit-Grid View (Mobile Landscape & Full-Width Fit)
+    safeBind('fit-grid-btn', 'click', () => toggleFitGridMode(true));
+    safeBind('exit-fit-grid-btn', 'click', () => toggleFitGridMode(false));
+
+    // Daily Substitution Register Filter Tabs
+    document.querySelectorAll('.reg-filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.reg-filter-btn').forEach(b => b.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            registerFilter = e.currentTarget.dataset.filter || 'all';
+            renderSubstitutions();
         });
     });
 
@@ -257,6 +276,12 @@ function bindEvents() {
     safeBind('header-redo-btn', 'click', redoLastAction);
     safeBind('reset-schedule-btn', 'click', handleResetSchedule);
     safeBind('auto-resolve-btn', 'click', performAutoResolve);
+
+    // Multi-Option Smart Auto-Resolve Proposals Modal
+    safeBind('close-auto-resolve-modal-btn', 'click', closeAutoResolveModal);
+    safeBind('auto-resolve-overlay', 'click', closeAutoResolveModal);
+    safeBind('auto-resolve-cancel-btn', 'click', closeAutoResolveModal);
+    safeBind('auto-resolve-apply-btn', 'click', applySelectedProposal);
 
     safeBind('settings-btn', 'click', openSettingsModal);
     safeBind('close-settings-btn', 'click', closeSettingsModal);
@@ -566,6 +591,30 @@ function isActivelyCoTeaching(day, period, teacher) {
     });
 }
 
+// --- FIT-GRID VIEW (MOBILE LANDSCAPE & FULL-SCREEN FIT) ---
+function syncDayButtonsUI() {
+    document.querySelectorAll('.day-btn, .fit-day-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.day === state.day);
+    });
+    const pill = document.getElementById('fit-bar-day-pill');
+    if (pill) pill.textContent = state.day;
+}
+window.syncDayButtonsUI = syncDayButtonsUI;
+
+function toggleFitGridMode(enable) {
+    isFitGridMode = (typeof enable === 'boolean') ? enable : !isFitGridMode;
+    document.body.classList.toggle('fit-grid-mode', isFitGridMode);
+    const stickyBar = document.getElementById('fit-grid-sticky-bar');
+    if (stickyBar) {
+        stickyBar.classList.toggle('hidden', !isFitGridMode);
+    }
+    syncDayButtonsUI();
+    if (isFitGridMode) {
+        showToast('Fit-Grid View enabled. Tap "Back to Normal" or press Esc to exit.');
+    }
+}
+window.toggleFitGridMode = toggleFitGridMode;
+
 function openCoTeachingModal(period, teacher) {
     const modal = document.getElementById('co-teach-modal');
     const overlay = document.getElementById('co-teach-overlay');
@@ -574,8 +623,7 @@ function openCoTeachingModal(period, teacher) {
 
     const partners = getCoTeachingPartners(state.day, period, teacher);
     const baseTask = state.baseSchedule[state.day]?.[period]?.[teacher];
-    const currentTask = state.schedule[state.day]?.[period]?.[teacher];
-    const isActive = isActivelyCoTeaching(state.day, period, teacher);
+    const allCoTeachers = [teacher, ...partners];
 
     // Briefly highlight partner cell(s)
     partners.forEach(partner => {
@@ -588,7 +636,60 @@ function openCoTeachingModal(period, teacher) {
         }
     });
 
-    const isCurrentFree = (currentTask === 'Free');
+    const rowsHtml = allCoTeachers.map(t => {
+        const tTask = state.schedule[state.day]?.[period]?.[t] || 'Free';
+        const tIsAbsent = state.absentTeachers.has(t);
+        const tIsFree = (tTask === 'Free');
+        const tIsActive = isActivelyCoTeaching(state.day, period, t);
+
+        let statusColor = 'var(--accent-green)';
+        let statusLabel = tIsActive ? 'Active Co-Teacher' : 'Teaching Solo';
+        if (tIsAbsent) {
+            statusColor = 'var(--accent-pink)';
+            statusLabel = 'Absent Today';
+        } else if (tIsFree) {
+            statusColor = 'var(--accent-orange)';
+            statusLabel = 'Released (Free)';
+        } else if (tTask !== baseTask) {
+            statusColor = 'var(--accent-blue)';
+            statusLabel = `Assigned to ${tTask}`;
+        }
+
+        let inlineActions = '';
+        if (tIsAbsent) {
+            inlineActions = `<span style="font-size:11px; color:var(--accent-pink); font-weight:600;">Absent</span>`;
+        } else if (tIsFree) {
+            inlineActions = `
+                <button class="btn-inline-rejoin" onclick="rejoinCoTeacher('${period}', '${t}')">
+                    ↩ Rejoin
+                </button>
+            `;
+        } else {
+            inlineActions = `
+                <button class="btn-inline-release" onclick="releaseTeacher('${period}', '${t}', 'period')" title="Release ${t} for ${period}">
+                    Release
+                </button>
+                <button class="btn-inline-release-day" onclick="releaseTeacher('${period}', '${t}', 'day')" title="Make ${t} Free for the entire day">
+                    Free Day
+                </button>
+            `;
+        }
+
+        return `
+            <div class="co-teacher-row">
+                <div class="co-teacher-info">
+                    <div style="width:9px; height:9px; border-radius:50%; background:${statusColor}; flex-shrink:0;"></div>
+                    <div class="co-teacher-meta">
+                        <strong style="font-size:14px; color:var(--text-primary);">${t}</strong>
+                        <span style="font-size:11px; color:var(--text-secondary); font-weight:500;">${statusLabel}</span>
+                    </div>
+                </div>
+                <div class="co-inline-actions">
+                    ${inlineActions}
+                </div>
+            </div>
+        `;
+    }).join('');
 
     body.innerHTML = `
         <div style="background:var(--bg-color); border:1px solid var(--border-color); border-radius:12px; padding:14px 16px; margin-bottom:14px;">
@@ -596,50 +697,15 @@ function openCoTeachingModal(period, teacher) {
                 <strong style="font-size:16px; color:var(--text-primary); font-weight:700;">${baseTask}</strong>
                 <span style="font-size:12px; font-weight:600; color:var(--accent-blue); background:rgba(0,122,255,0.12); padding:2px 8px; border-radius:12px;">${period}</span>
             </div>
-            <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">${state.day} • Co-Taught Class</div>
+            <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">${state.day} • Shared Co-Teaching Slot</div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--surface-color); border:1px solid var(--border-color); border-radius:10px;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <div style="width:8px; height:8px; border-radius:50%; background:${isCurrentFree ? 'var(--accent-red)' : 'var(--accent-green)'};"></div>
-                    <strong style="font-size:14px; color:var(--text-primary);">${teacher}</strong>
-                </div>
-                <span style="font-size:12px; color:var(--text-secondary); font-weight:600;">${isCurrentFree ? 'Released (Free)' : (isActive ? 'Active Co-Teacher' : 'Teaching Solo')}</span>
-            </div>
-
-            ${partners.map(p => {
-                const pTask = state.schedule[state.day]?.[period]?.[p];
-                const pIsFree = (pTask === 'Free');
-                return `
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--surface-color); border:1px solid var(--border-color); border-radius:10px;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="width:8px; height:8px; border-radius:50%; background:${pIsFree ? 'var(--accent-red)' : 'var(--accent-green)'};"></div>
-                        <strong style="font-size:14px; color:var(--text-primary);">${p}</strong>
-                    </div>
-                    <span style="font-size:12px; color:var(--text-secondary); font-weight:600;">${pIsFree ? 'Released (Free)' : 'Co-Teacher'}</span>
-                </div>
-                `;
-            }).join('')}
+        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
+            ${rowsHtml}
         </div>
 
-        <div style="font-size:12px; color:var(--text-secondary); line-height:1.45; margin-bottom:18px;">
-            Releasing a teacher sets them Free so they can take substitutions, while their co-teaching partner continues teaching the class alone.
-        </div>
-
-        <div style="display:flex; flex-direction:column; gap:8px;">
-            ${!isCurrentFree ? `
-                <button class="btn-primary" style="padding:10px 16px; font-size:13px; font-weight:600;" onclick="releaseTeacher('${period}', '${teacher}', 'period')">
-                    Release ${teacher.split(' ')[1] || teacher} for this Period (Make Free)
-                </button>
-                <button class="btn-secondary" style="padding:10px 16px; font-size:13px; font-weight:600;" onclick="releaseTeacher('${period}', '${teacher}', 'day')">
-                    Release ${teacher.split(' ')[1] || teacher} for Entire Day (Free Today)
-                </button>
-            ` : `
-                <button class="btn-primary" style="padding:10px 16px; font-size:13px; font-weight:600;" onclick="rejoinCoTeacher('${period}', '${teacher}')">
-                    Rejoin Partner (Restore ${baseTask})
-                </button>
-            `}
+        <div style="font-size:12px; color:var(--text-secondary); line-height:1.45;">
+            Use the inline <b>Release</b> button beside any teacher's name to free them for this period or the whole day while their partner covers the class solo.
         </div>
     `;
 
@@ -1384,54 +1450,160 @@ function renderDisplacedTray() {
     }
 }
 
+// --- PRIORITY PREFERENCE MATRIX & SUBJECT/GRADE AFFINITY ENGINE ---
+const teacherPreferences = {
+    'Mr. Stephen': { dept: 'STEM & Math', cluster: 'STEM', subjects: ['MATH', 'PHY'], grades: [7, 8, 9, 10, 11] },
+    'Mrs. Midha':  { dept: 'English & Lit', cluster: 'HUMANITIES', subjects: ['ENG', 'LIT'], grades: [6, 7, 8, 9, 10, 11] },
+    'Mrs. Pahwa':  { dept: 'Sciences', cluster: 'STEM', subjects: ['CHEM', 'SCI'], grades: [7, 8, 9, 10, 11, 12] },
+    'Mrs. Bage':   { dept: 'Bio & EVS', cluster: 'STEM', subjects: ['BIO', 'SCI', 'EVS'], grades: [5, 6, 8, 9, 11, 12] },
+    'Mr. Adams':   { dept: 'Social Studies', cluster: 'HUMANITIES', subjects: ['HIST', 'GEO', 'SST', 'CIV'], grades: [7, 8, 9, 10, 11] },
+    'Mrs. Baker':  { dept: 'Languages', cluster: 'HUMANITIES', subjects: ['HINDI', 'SKT'], grades: [6, 7, 8, 9, 10] },
+    'Ms. Clark':   { dept: 'Computer & AI', cluster: 'STEM', subjects: ['COMP', 'IT', 'AI'], grades: [7, 8, 9, 10, 11] },
+    'Mr. Davis':   { dept: 'PE & Sports', cluster: 'HOLISTIC', subjects: ['P.E.', 'GAMES', 'YOGA'], grades: [6, 7, 8, 9, 10, 11] },
+    'Mrs. Evans':  { dept: 'Arts & Music', cluster: 'HOLISTIC', subjects: ['ART', 'CRAFT', 'MUSIC'], grades: [5, 6, 7, 8, 9] }
+};
+
+function parseTaskDetails(task) {
+    if (!task || task === 'Free' || task === '-') {
+        return { subjectPrefix: '', section: '', grade: null, dept: 'General', cluster: 'GENERAL' };
+    }
+    const clean = task.trim().toUpperCase();
+    const parts = clean.split(/\s+/);
+    const subjectPrefix = parts[0] || '';
+    const section = extractClassSection(clean) || '';
+    const gradeMatch = section.match(/^(\d{1,2})/);
+    const grade = gradeMatch ? parseInt(gradeMatch[1], 10) : null;
+
+    let dept = 'General';
+    let cluster = 'GENERAL';
+    for (const prof of Object.values(teacherPreferences)) {
+        if (prof.subjects.includes(subjectPrefix)) {
+            dept = prof.dept;
+            cluster = prof.cluster;
+            break;
+        }
+    }
+    return { subjectPrefix, section, grade, dept, cluster };
+}
+
+function getTeacherDailyStats(teacher, day, customSchedule = null) {
+    const sched = customSchedule || state.schedule[day] || {};
+    let teachingLoad = 0;
+    let totalSlots = 0;
+    periods.forEach(p => {
+        if (p === 'BREAKFAST BREAK' || p === 'BREAKFAST') return;
+        totalSlots++;
+        const t = sched[p]?.[teacher];
+        if (t && t !== 'Free' && t !== '-') {
+            teachingLoad++;
+        }
+    });
+    return {
+        teachingLoad,
+        freePeriods: Math.max(0, totalSlots - teachingLoad),
+        totalSlots
+    };
+}
+
+function doesTeacherTeachSection(teacher, section, day) {
+    if (!section) return false;
+    const dayBase = state.baseSchedule[day] || {};
+    for (const p of periods) {
+        const task = dayBase[p]?.[teacher];
+        if (task && extractClassSection(task) === section) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function evaluateTeacherAffinity(subTeacher, taskToCover, period, day = state.day, customSchedule = null) {
+    const pref = teacherPreferences[subTeacher] || { dept: 'General', cluster: 'GENERAL', subjects: [], grades: [] };
+    const taskInfo = parseTaskDetails(taskToCover);
+    const stats = getTeacherDailyStats(subTeacher, day, customSchedule);
+
+    let score = 0;
+    const reasons = [];
+    let primaryBadge = '';
+
+    // 1. Subject & Department Affinity
+    if (taskInfo.subjectPrefix && pref.subjects.includes(taskInfo.subjectPrefix)) {
+        score += 48;
+        reasons.push('Subject Specialist');
+        primaryBadge = '★ Subject Match';
+    } else if (taskInfo.cluster && pref.cluster === taskInfo.cluster) {
+        score += 26;
+        reasons.push(`${pref.dept} Affinity`);
+        if (!primaryBadge) primaryBadge = '◆ Dept Match';
+    }
+
+    // 2. Class Section & Grade Band Familiarity
+    if (taskInfo.section && doesTeacherTeachSection(subTeacher, taskInfo.section, day)) {
+        score += 24;
+        reasons.push(`Teaches ${taskInfo.section}`);
+        if (!primaryBadge) primaryBadge = `Familiar (${taskInfo.section})`;
+    } else if (taskInfo.grade && pref.grades.includes(taskInfo.grade)) {
+        score += 14;
+        reasons.push(`Grade ${taskInfo.grade} Band`);
+        if (!primaryBadge) primaryBadge = `Grade ${taskInfo.grade} Fit`;
+    }
+
+    // 3. Workload Balance Bonus
+    const loadBonus = Math.max(0, (stats.totalSlots - stats.teachingLoad) * 4);
+    score += loadBonus;
+
+    if (!primaryBadge) {
+        primaryBadge = stats.teachingLoad <= 4 ? '⚖ Light Load' : 'Available';
+    }
+
+    return {
+        score,
+        reasons,
+        primaryBadge,
+        dept: pref.dept,
+        taskDept: taskInfo.dept,
+        teachingLoad: stats.teachingLoad,
+        freePeriods: stats.freePeriods,
+        totalSlots: stats.totalSlots
+    };
+}
+
 function renderSubstitutions() {
     const conflictList = document.getElementById('conflict-list');
     const badge = document.getElementById('substitutions-badge');
     const autoBtn = document.getElementById('auto-resolve-btn');
+    const summaryBar = document.getElementById('register-summary-bar');
+    const statsPills = document.getElementById('register-stats-pills');
     if(!conflictList || !badge) return;
     
     conflictList.innerHTML = '';
     let conflicts = 0;
     let resolvedCount = 0;
     let totalAbsences = 0;
+    const rowsData = [];
 
     periods.forEach(period => {
+        if (period === 'BREAKFAST BREAK' || period === 'BREAKFAST') return;
         teachers.forEach(teacher => {
             const isAbsent = state.absentTeachers.has(teacher);
             if (!isAbsent) return;
 
             const baseTask = state.baseSchedule[state.day]?.[period]?.[teacher];
-            if (!baseTask || baseTask === 'Free' || baseTask === '') return;
+            if (!baseTask || baseTask === 'Free' || baseTask === '' || baseTask === '-') return;
 
             totalAbsences++;
             const subTeacher = state.substitutions[state.day]?.[period]?.[teacher];
-            
             if (subTeacher) {
                 resolvedCount++;
-                conflictList.innerHTML += `
-                    <div class="period-card resolved" style="margin-bottom:15px;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                            <strong style="color:var(--accent-green);">${period} - ${baseTask}</strong>
-                            <span style="text-decoration: line-through; color:var(--text-secondary);">${teacher}</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-weight:600; color:var(--text-primary);">Covered by: ${subTeacher}</span>
-                            <button onclick="event.stopPropagation(); openBottomSheet('${period}', '${teacher}')" style="background:transparent; border:1px solid var(--accent-green); color:var(--accent-green); padding:4px 10px; border-radius:12px; font-size:12px; cursor:pointer;">Reassign</button>
-                        </div>
-                    </div>
-                `;
             } else {
                 conflicts++;
-                conflictList.innerHTML += `
-                    <div class="period-card needs-action" style="margin-bottom:15px; cursor:pointer;" onclick="openBottomSheet('${period}', '${teacher}')">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                            <strong style="color:var(--accent-pink);">${period} - ${baseTask}</strong>
-                            <span>${teacher}</span>
-                        </div>
-                        <div style="font-size:13px; color:var(--accent-blue);">Tap to assign substitute →</div>
-                    </div>
-                `;
             }
+            rowsData.push({
+                period,
+                absentTeacher: teacher,
+                baseTask,
+                subTeacher: subTeacher || null
+            });
         });
     });
 
@@ -1448,14 +1620,120 @@ function renderSubstitutions() {
     }
 
     if (totalAbsences === 0) {
+        if (summaryBar) summaryBar.classList.add('hidden');
         conflictList.innerHTML = `
             <div style="text-align:center; padding: 40px 20px;">
                 <div style="font-size:48px; margin-bottom:10px;">🎉</div>
                 <h3 style="color:var(--text-primary); margin-bottom:5px;">All Clear!</h3>
-                <p style="color:var(--text-secondary); font-size:14px;">No absences marked for today.</p>
+                <p style="color:var(--text-secondary); font-size:14px;">No absences marked for ${state.day}. Mark a teacher absent on the Grid tab to populate the Daily Substitution Register.</p>
             </div>
         `;
+        return;
     }
+
+    if (summaryBar && statsPills) {
+        summaryBar.classList.remove('hidden');
+        const pct = Math.round((resolvedCount / totalAbsences) * 100);
+        statsPills.innerHTML = `
+            <span class="reg-stat-pill">📋 Total: <b>${totalAbsences}</b></span>
+            <span class="reg-stat-pill stat-pending">⚠ Pending: <b>${conflicts}</b></span>
+            <span class="reg-stat-pill stat-covered">✓ Covered: <b>${resolvedCount} (${pct}%)</b></span>
+        `;
+    }
+
+    const filteredRows = rowsData.filter(r => {
+        if (registerFilter === 'pending') return !r.subTeacher;
+        if (registerFilter === 'covered') return Boolean(r.subTeacher);
+        return true;
+    });
+
+    if (filteredRows.length === 0) {
+        conflictList.innerHTML = `
+            <div style="text-align:center; padding: 30px 16px; background:var(--surface-color); border:1px solid var(--border-color); border-radius:14px; color:var(--text-secondary); font-size:13px;">
+                No ${registerFilter} substitution entries for ${state.day}.
+            </div>
+        `;
+        return;
+    }
+
+    let tableHtml = `
+        <div class="sub-register-wrapper">
+            <table class="sub-register-table">
+                <thead>
+                    <tr>
+                        <th>Period</th>
+                        <th>Class & Dept</th>
+                        <th>Absent Teacher</th>
+                        <th>Assigned Substitute</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    filteredRows.forEach(row => {
+        const { period, absentTeacher, baseTask, subTeacher } = row;
+        const taskInfo = parseTaskDetails(baseTask);
+
+        if (subTeacher) {
+            const affinity = evaluateTeacherAffinity(subTeacher, baseTask, period, state.day);
+            const coPartners = getCoTeachingPartners(state.day, period, subTeacher);
+            const isSplitSub = coPartners.length > 0;
+
+            const statusBadge = isSplitSub
+                ? `<span class="reg-status-badge status-split" title="Split from co-teaching with ${coPartners.join(', ')}">👥 Split Sub</span>`
+                : `<span class="reg-status-badge status-covered">✓ Covered</span>`;
+
+            tableHtml += `
+                <tr class="reg-row-covered">
+                    <td><span class="reg-period-badge">${period}</span></td>
+                    <td>
+                        <span class="reg-class-pill">${baseTask}</span>
+                        <span class="reg-dept-tag">${taskInfo.dept}</span>
+                    </td>
+                    <td style="color:var(--text-secondary); text-decoration:line-through;">${absentTeacher}</td>
+                    <td>
+                        <strong style="color:var(--text-primary);">${subTeacher}</strong>
+                        <span class="reg-affinity-tag" title="Score: ${affinity.score} pts • Load: ${affinity.teachingLoad}/${affinity.totalSlots} pds">${affinity.primaryBadge}</span>
+                    </td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <div class="reg-actions-cell">
+                            <button class="btn-reg-reassign" onclick="openBottomSheet('${period}', '${absentTeacher}')">Reassign</button>
+                            <button class="btn-reg-unassign" title="Unassign Substitute" onclick="unassignSubstitute('${period}', '${absentTeacher}')">✕</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        } else {
+            tableHtml += `
+                <tr class="reg-row-pending">
+                    <td><span class="reg-period-badge">${period}</span></td>
+                    <td>
+                        <span class="reg-class-pill" style="color:var(--accent-pink);">${baseTask}</span>
+                        <span class="reg-dept-tag">${taskInfo.dept}</span>
+                    </td>
+                    <td><strong style="color:var(--text-primary);">${absentTeacher}</strong></td>
+                    <td><span style="color:var(--text-secondary); font-style:italic; font-size:12px;">Unassigned</span></td>
+                    <td><span class="reg-status-badge status-pending">⚠ Needs Sub</span></td>
+                    <td>
+                        <div class="reg-actions-cell">
+                            <button class="btn-reg-assign" onclick="openBottomSheet('${period}', '${absentTeacher}')">+ Assign Sub</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+    });
+
+    tableHtml += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    conflictList.innerHTML = tableHtml;
 }
 
 // --- INTERACTION MECHANICS ---
@@ -1650,26 +1928,63 @@ function openBottomSheet(period, targetTeacher) {
     const list = document.getElementById('sheet-teacher-list');
     if(!sheet || !overlay || !list) return;
 
-    list.innerHTML = `<p style="margin-bottom:15px; font-size:13px; color:var(--text-secondary);">Assigning substitute for ${period}</p>`;
+    const taskToCover = state.baseSchedule[state.day]?.[period]?.[targetTeacher] || 'Class';
+    list.innerHTML = `<p style="margin-bottom:14px; font-size:13px; color:var(--text-secondary);">Assigning substitute for <b>${targetTeacher}</b> • <b>${taskToCover}</b> (${period})</p>`;
     
     const available = [];
+    const coTeachSplit = [];
     const busy = [];
     
     teachers.forEach(t => {
         if (state.absentTeachers.has(t)) return;
         const currentTask = state.schedule[state.day]?.[period]?.[t];
-        if (!currentTask || currentTask === 'Free') available.push(t);
-        else busy.push({ name: t, task: currentTask });
+        const affinity = evaluateTeacherAffinity(t, taskToCover, period, state.day);
+        if (!currentTask || currentTask === 'Free') {
+            available.push({ name: t, affinity });
+        } else if (isActivelyCoTeaching(state.day, period, t)) {
+            coTeachSplit.push({ name: t, task: currentTask, affinity });
+        } else {
+            busy.push({ name: t, task: currentTask, affinity });
+        }
+    });
+
+    // Sort available and co-teaching candidates by Priority Preference Matrix affinity score
+    available.sort((a, b) => b.affinity.score - a.affinity.score);
+    coTeachSplit.sort((a, b) => b.affinity.score - a.affinity.score);
+    
+    available.forEach(item => {
+        const { name, affinity } = item;
+        list.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; margin-bottom:8px; background:var(--surface-color); border-radius:10px; border:1px solid var(--accent-blue); cursor:pointer;" 
+                 onclick="event.stopPropagation(); assignSubstitute('${period}', '${targetTeacher}', '${name}')">
+                <div>
+                    <strong style="color:var(--text-primary); font-size:14px;">🟢 ${name}</strong>
+                    <span class="reg-affinity-tag">${affinity.primaryBadge}</span>
+                </div>
+                <span style="font-size:11px; color:var(--text-secondary); font-weight:600;">Load: ${affinity.teachingLoad}/${affinity.totalSlots} pds</span>
+            </div>`;
+    });
+
+    coTeachSplit.forEach(item => {
+        const { name, task, affinity } = item;
+        list.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; margin-bottom:8px; background:var(--surface-color); border-radius:10px; border:1px solid #8b5cf6; cursor:pointer;" 
+                 onclick="event.stopPropagation(); assignSubstitute('${period}', '${targetTeacher}', '${name}')">
+                <div>
+                    <strong style="color:var(--text-primary); font-size:14px;">🟣 ${name}</strong>
+                    <span class="reg-affinity-tag" style="background:rgba(139,92,246,0.14); color:#7c3aed;">👥 Split Co-Teach (${task})</span>
+                </div>
+                <span style="font-size:11px; color:var(--text-secondary); font-weight:600;">${affinity.primaryBadge}</span>
+            </div>`;
     });
     
-    available.forEach(t => {
-        list.innerHTML += `<div style="padding:15px; margin-bottom:8px; background:var(--surface-color); border-radius:8px; border:1px solid var(--accent-blue); font-weight:bold; cursor:pointer;" 
-                            onclick="event.stopPropagation(); assignSubstitute('${period}', '${targetTeacher}', '${t}')">🟢 ${t} (Free)</div>`;
-    });
-    
-    busy.forEach(t => {
-        list.innerHTML += `<div style="padding:15px; margin-bottom:8px; background:var(--bg-color); border:1px solid var(--border-color); border-radius:8px; color:var(--text-secondary); cursor:pointer;" 
-                            onclick="event.stopPropagation(); assignSubstitute('${period}', '${targetTeacher}', '${t.name}')">🟡 ${t.name} (Currently in ${t.task})</div>`;
+    busy.forEach(item => {
+        list.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:11px 14px; margin-bottom:8px; background:var(--bg-color); border:1px solid var(--border-color); border-radius:10px; color:var(--text-secondary); cursor:pointer;" 
+                 onclick="event.stopPropagation(); assignSubstitute('${period}', '${targetTeacher}', '${item.name}')">
+                <span>🟡 ${item.name} (In ${item.task})</span>
+                <span style="font-size:11px;">Displaces to Limbo</span>
+            </div>`;
     });
 
     sheet.classList.remove('hidden');
@@ -1807,7 +2122,7 @@ function unassignSubstitute(period, absentTeacher) {
 }
 window.unassignSubstitute = unassignSubstitute;
 
-// --- AUTO-RESOLVE ENGINE WITH CO-TEACHING SELECTIVE SPLIT ---
+// --- SMART SOLVER & MULTI-OPTION AUTO-RESOLVE ENGINE (MAX 3 SOLUTIONS) ---
 let pendingSplitProposals = [];
 
 function closeSplitModal() {
@@ -1849,62 +2164,304 @@ function applySelectedSplits() {
 }
 window.applySelectedSplits = applySelectedSplits;
 
+function generateStrategySolution(strategyKey, unresolvedList, day) {
+    // Deep clone current day schedule to simulate load updates accurately
+    const simSchedule = JSON.parse(JSON.stringify(state.schedule[day] || {}));
+    const assignments = [];
+    let splitsCount = 0;
+    let totalAffinity = 0;
+
+    unresolvedList.forEach((need, needIdx) => {
+        const { period, absentTeacher, task } = need;
+        const candidates = [];
+
+        teachers.forEach(t => {
+            if (state.absentTeachers.has(t) || t === absentTeacher) return;
+            const currentTask = simSchedule[period]?.[t];
+            const isFree = (!currentTask || currentTask === 'Free');
+
+            // Check if t is actively co-teaching in simSchedule
+            const partners = getCoTeachingPartners(day, period, t);
+            const baseT = state.baseSchedule[day]?.[period]?.[t];
+            const isCoTeachActive = (!isFree && partners.length > 0 && currentTask === baseT && partners.some(p => simSchedule[period]?.[p] === baseT && !state.absentTeachers.has(p)));
+
+            if (!isFree && !isCoTeachActive) return;
+            if (strategyKey === 'minimal-splits' && isCoTeachActive) return;
+
+            const affinity = evaluateTeacherAffinity(t, task, period, day, simSchedule);
+            candidates.push({
+                teacher: t,
+                isFree,
+                isSplit: isCoTeachActive,
+                previousTaskForSub: currentTask || 'Free',
+                affinity
+            });
+        });
+
+        if (candidates.length === 0) return;
+
+        // Sort candidates based on strategy heuristic
+        candidates.sort((a, b) => {
+            // Always prefer Free teachers over Co-Teach Splits first
+            if (a.isFree !== b.isFree) return a.isFree ? -1 : 1;
+
+            if (strategyKey === 'subject-match') {
+                // Maximize academic subject & class match
+                return b.affinity.score - a.affinity.score;
+            } else if (strategyKey === 'balanced-load') {
+                // Strictly lightest daily workload first, then affinity
+                if (a.affinity.teachingLoad !== b.affinity.teachingLoad) {
+                    return a.affinity.teachingLoad - b.affinity.teachingLoad;
+                }
+                return b.affinity.score - a.affinity.score;
+            } else {
+                // 'minimal-splits': Zero splits + prioritize grade/class familiarity & alternative rotation
+                const aFam = a.affinity.reasons.some(r => r.includes('Teaches') || r.includes('Grade')) ? 20 : 0;
+                const bFam = b.affinity.reasons.some(r => r.includes('Teaches') || r.includes('Grade')) ? 20 : 0;
+                if (aFam !== bFam) return bFam - aFam;
+                // Rotate tie-breaker so Option 3 surfaces distinct teacher pairings when possible
+                if (candidates.length > 1 && needIdx % 2 === 1) {
+                    return a.affinity.teachingLoad - b.affinity.teachingLoad;
+                }
+                return b.affinity.score - a.affinity.score;
+            }
+        });
+
+        // For minimal-splits, if top candidate is identical to subject-match on every slot and another good free candidate exists, offer the alternative on even slots
+        let chosen = candidates[0];
+        if (strategyKey === 'minimal-splits' && candidates.length > 1 && candidates[1].isFree && (needIdx % 2 === 0)) {
+            chosen = candidates[1];
+        }
+
+        // Apply to simulated schedule
+        simSchedule[period][chosen.teacher] = task;
+        simSchedule[period][absentTeacher] = 'Free';
+
+        if (chosen.isSplit) splitsCount++;
+        totalAffinity += chosen.affinity.score;
+
+        const updatedStats = getTeacherDailyStats(chosen.teacher, day, simSchedule);
+
+        assignments.push({
+            period,
+            absentTeacher,
+            subTeacher: chosen.teacher,
+            previousTaskForSub: chosen.previousTaskForSub,
+            taskToCover: task,
+            isSplit: chosen.isSplit,
+            primaryBadge: chosen.isSplit ? '👥 Co-Teach Split' : chosen.affinity.primaryBadge,
+            affinityScore: chosen.affinity.score,
+            newLoad: `${updatedStats.teachingLoad}/${updatedStats.totalSlots} pds`,
+            checked: true,
+            day
+        });
+    });
+
+    // Compute peak teacher load across staff
+    let peakLoad = 0;
+    teachers.forEach(t => {
+        if (!state.absentTeachers.has(t)) {
+            const st = getTeacherDailyStats(t, day, simSchedule);
+            if (st.teachingLoad > peakLoad) peakLoad = st.teachingLoad;
+        }
+    });
+
+    const avgAffinity = assignments.length > 0 ? Math.round(totalAffinity / assignments.length) : 0;
+
+    return {
+        assignments,
+        coveredCount: assignments.length,
+        totalNeeded: unresolvedList.length,
+        splitsCount,
+        avgAffinity,
+        peakLoad
+    };
+}
+
 function performAutoResolve() {
-    clearRedoStacks();
-    const batchActions = [];
-    let conflictsResolved = 0;
-    
-    // Step 1: Assign completely free teachers first
+    const day = state.day;
+    const unresolvedList = [];
+
     periods.forEach(period => {
-        const needsSub = [];
+        if (period === 'BREAKFAST BREAK' || period === 'BREAKFAST') return;
         teachers.forEach(t => {
             const isAbsent = state.absentTeachers.has(t);
-            const baseTask = state.baseSchedule[state.day]?.[period]?.[t];
-            const currentSub = state.substitutions[state.day]?.[period]?.[t];
-            
-            if (isAbsent && baseTask && baseTask !== 'Free' && !currentSub) {
-                needsSub.push({ absentTeacher: t, task: baseTask });
-            }
-        });
-        
-        if (needsSub.length === 0) return;
-        
-        const available = [];
-        teachers.forEach(t => {
-            if (!state.absentTeachers.has(t)) {
-                const task = state.schedule[state.day]?.[period]?.[t];
-                if (!task || task === 'Free') {
-                    available.push(t);
-                }
-            }
-        });
-        
-        needsSub.forEach(need => {
-            if (available.length > 0) {
-                const subTeacher = available.shift();
-                const previousTaskForSub = state.schedule[state.day][period][subTeacher];
-                
-                batchActions.push({
-                    period,
-                    absentTeacher: need.absentTeacher,
-                    subTeacher,
-                    previousTaskForSub,
-                    taskToCover: need.task,
-                    day: state.day
-                });
-                
-                state.schedule[state.day][period][subTeacher] = need.task;
-                state.schedule[state.day][period][need.absentTeacher] = 'Free';
-                
-                if (!state.substitutions[state.day]) state.substitutions[state.day] = {};
-                if (!state.substitutions[state.day][period]) state.substitutions[state.day][period] = {};
-                state.substitutions[state.day][period][need.absentTeacher] = subTeacher;
-                
-                conflictsResolved++;
+            const baseTask = state.baseSchedule[day]?.[period]?.[t];
+            const currentSub = state.substitutions[day]?.[period]?.[t];
+            if (isAbsent && baseTask && baseTask !== 'Free' && baseTask !== '-' && !currentSub) {
+                unresolvedList.push({ period, absentTeacher: t, task: baseTask });
             }
         });
     });
-    
+
+    if (unresolvedList.length === 0) {
+        showToast("No unresolved conflicts to auto-resolve.");
+        return;
+    }
+
+    const opt1 = generateStrategySolution('subject-match', unresolvedList, day);
+    const opt2 = generateStrategySolution('balanced-load', unresolvedList, day);
+    const opt3 = generateStrategySolution('minimal-splits', unresolvedList, day);
+
+    generatedProposals = [
+        {
+            id: 'subject-match',
+            title: 'Option 1: Subject Match',
+            subtitle: '★ Best Academic Fit',
+            desc: 'Matches classes to teachers in the same subject or department first.',
+            ...opt1
+        },
+        {
+            id: 'balanced-load',
+            title: 'Option 2: Balanced Load',
+            subtitle: '⚖ Lightest Workload',
+            desc: 'Distributes substitutions to teachers with the most free periods today.',
+            ...opt2
+        },
+        {
+            id: 'minimal-splits',
+            title: 'Option 3: Minimal Splits',
+            subtitle: '🛡 Preserve Co-Teaching',
+            desc: 'Strictly uses 100% Free teachers (0 co-teaching splits) with grade familiarity.',
+            ...opt3
+        }
+    ];
+
+    activeProposalIndex = 0;
+    renderProposalModalUI();
+
+    const modal = document.getElementById('auto-resolve-modal');
+    const overlay = document.getElementById('auto-resolve-overlay');
+    if (modal) modal.classList.remove('hidden');
+    if (overlay) overlay.classList.add('active');
+}
+window.performAutoResolve = performAutoResolve;
+
+function selectProposalTab(index) {
+    if (index < 0 || index >= generatedProposals.length) return;
+    activeProposalIndex = index;
+    renderProposalModalUI();
+}
+window.selectProposalTab = selectProposalTab;
+
+function toggleProposalAssignmentCheck(assignmentIdx, checked) {
+    const currentProp = generatedProposals[activeProposalIndex];
+    if (currentProp && currentProp.assignments[assignmentIdx]) {
+        currentProp.assignments[assignmentIdx].checked = checked;
+    }
+}
+window.toggleProposalAssignmentCheck = toggleProposalAssignmentCheck;
+
+function renderProposalModalUI() {
+    const tabsEl = document.getElementById('proposal-tabs');
+    const metricsEl = document.getElementById('proposal-metrics-bar');
+    const previewEl = document.getElementById('proposal-preview-container');
+    if (!tabsEl || !metricsEl || !previewEl || generatedProposals.length === 0) return;
+
+    tabsEl.innerHTML = generatedProposals.map((prop, idx) => `
+        <button class="proposal-tab-btn ${idx === activeProposalIndex ? 'active' : ''}" onclick="selectProposalTab(${idx})">
+            <span class="tab-title">${prop.title}</span>
+            <span class="tab-subtitle">${prop.subtitle} (${prop.coveredCount}/${prop.totalNeeded})</span>
+        </button>
+    `).join('');
+
+    const activeProp = generatedProposals[activeProposalIndex];
+    metricsEl.innerHTML = `
+        <span class="proposal-metric-pill">✓ Coverage: <b>${activeProp.coveredCount}/${activeProp.totalNeeded}</b></span>
+        <span class="proposal-metric-pill">★ Avg Affinity: <b>${activeProp.avgAffinity} pts</b></span>
+        <span class="proposal-metric-pill">👥 Co-Teach Splits: <b>${activeProp.splitsCount}</b></span>
+        <span class="proposal-metric-pill">📊 Peak Teacher Load: <b>${activeProp.peakLoad} pds</b></span>
+    `;
+
+    if (activeProp.assignments.length === 0) {
+        previewEl.innerHTML = `
+            <div style="padding:24px; text-align:center; color:var(--text-secondary); font-size:13px;">
+                No eligible teachers available under this constraint (${activeProp.title}). Try Option 1 or Option 2 to include Co-Teaching splits.
+            </div>
+        `;
+        return;
+    }
+
+    let rowsHtml = activeProp.assignments.map((a, idx) => `
+        <tr>
+            <td style="width:32px; text-align:center;">
+                <input type="checkbox" ${a.checked ? 'checked' : ''} onchange="toggleProposalAssignmentCheck(${idx}, this.checked)" style="accent-color:var(--accent-blue); cursor:pointer;">
+            </td>
+            <td><span class="reg-period-badge">${a.period}</span></td>
+            <td><strong style="color:var(--text-primary);">${a.taskToCover}</strong></td>
+            <td style="color:var(--text-secondary);">${a.absentTeacher}</td>
+            <td><strong style="color:var(--accent-green);">→ ${a.subTeacher}</strong></td>
+            <td>
+                <span class="reg-affinity-tag" style="${a.isSplit ? 'background:rgba(139,92,246,0.15); color:#7c3aed;' : ''}">${a.primaryBadge}</span>
+                <span style="font-size:10px; color:var(--text-secondary); margin-left:4px;">${a.newLoad}</span>
+            </td>
+        </tr>
+    `).join('');
+
+    previewEl.innerHTML = `
+        <table class="proposal-table">
+            <thead>
+                <tr>
+                    <th style="width:32px; text-align:center;">Use</th>
+                    <th>Period</th>
+                    <th>Class</th>
+                    <th>Absent</th>
+                    <th>Proposed Sub</th>
+                    <th>Match & Load</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rowsHtml}
+            </tbody>
+        </table>
+    `;
+}
+
+function closeAutoResolveModal() {
+    const modal = document.getElementById('auto-resolve-modal');
+    const overlay = document.getElementById('auto-resolve-overlay');
+    if (modal) modal.classList.add('hidden');
+    if (overlay) overlay.classList.remove('active');
+}
+window.closeAutoResolveModal = closeAutoResolveModal;
+
+function applySelectedProposal() {
+    const activeProp = generatedProposals[activeProposalIndex];
+    if (!activeProp) {
+        closeAutoResolveModal();
+        return;
+    }
+
+    const chosenAssignments = activeProp.assignments.filter(a => a.checked);
+    if (chosenAssignments.length === 0) {
+        closeAutoResolveModal();
+        showToast("No assignments selected.");
+        return;
+    }
+
+    clearRedoStacks();
+    const batchActions = [];
+
+    chosenAssignments.forEach(item => {
+        const { period, absentTeacher, subTeacher, previousTaskForSub, taskToCover, day } = item;
+
+        batchActions.push({
+            period,
+            absentTeacher,
+            subTeacher,
+            previousTaskForSub,
+            taskToCover,
+            day
+        });
+
+        state.schedule[day][period][subTeacher] = taskToCover;
+        state.schedule[day][period][absentTeacher] = 'Free';
+
+        if (!state.substitutions[day]) state.substitutions[day] = {};
+        if (!state.substitutions[day][period]) state.substitutions[day][period] = {};
+        state.substitutions[day][period][absentTeacher] = subTeacher;
+    });
+
     if (batchActions.length > 0) {
         const actionId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
         const batchAction = {
@@ -1916,86 +2473,13 @@ function performAutoResolve() {
         state.actionHistory.grid.push(batchAction);
         saveStateToStorage();
         updateUndoUI();
-        renderAll();
     }
 
-    // Step 2: Check for any remaining unresolved conflicts
-    const remainingUnresolved = [];
-    periods.forEach(period => {
-        teachers.forEach(t => {
-            const isAbsent = state.absentTeachers.has(t);
-            const baseTask = state.baseSchedule[state.day]?.[period]?.[t];
-            const currentSub = state.substitutions[state.day]?.[period]?.[t];
-            if (isAbsent && baseTask && baseTask !== 'Free' && !currentSub) {
-                remainingUnresolved.push({ period, absentTeacher: t, task: baseTask });
-            }
-        });
-    });
-
-    if (remainingUnresolved.length === 0) {
-        if (batchActions.length > 0) {
-            showToast(`Auto-resolved all ${conflictsResolved} conflicts.`);
-        } else {
-            showToast("No unresolved conflicts.");
-        }
-        return;
-    }
-
-    // Step 3: Find available co-teachers who could be split
-    const splitProposals = [];
-    const usedTeachersInProposals = new Set();
-
-    remainingUnresolved.forEach(unresolved => {
-        const p = unresolved.period;
-        teachers.forEach(t => {
-            if (!state.absentTeachers.has(t) && !usedTeachersInProposals.has(t)) {
-                if (isActivelyCoTeaching(state.day, p, t)) {
-                    splitProposals.push({
-                        teacher: t,
-                        period: p,
-                        absentTeacher: unresolved.absentTeacher,
-                        task: unresolved.task
-                    });
-                    usedTeachersInProposals.add(t);
-                }
-            }
-        });
-    });
-
-    if (splitProposals.length > 0) {
-        pendingSplitProposals = splitProposals;
-        const listEl = document.getElementById('split-proposals-list');
-        if (listEl) {
-            listEl.innerHTML = '';
-            splitProposals.forEach((prop, idx) => {
-                const label = document.createElement('label');
-                label.style.cssText = 'display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--surface-color); border:1px solid var(--border-color); border-radius:10px; cursor:pointer;';
-                label.innerHTML = `
-                    <input type="checkbox" data-proposal-index="${idx}" checked style="width:18px; height:18px; accent-color:var(--accent-blue); cursor:pointer;">
-                    <div style="display:flex; flex-direction:column; gap:2px;">
-                        <strong style="color:var(--text-primary); font-size:14px;">Split ${prop.teacher} to ${prop.period}</strong>
-                        <span style="color:var(--text-secondary); font-size:12px;">Cover ${prop.task} for ${prop.absentTeacher} (partner continues solo)</span>
-                    </div>
-                `;
-                listEl.appendChild(label);
-            });
-        }
-        const modal = document.getElementById('split-resolve-modal');
-        const overlay = document.getElementById('split-overlay');
-        if (modal) modal.classList.remove('hidden');
-        if (overlay) overlay.classList.add('active');
-
-        if (conflictsResolved > 0) {
-            showToast(`Resolved ${conflictsResolved} with free teachers. Review co-teacher split options.`);
-        }
-    } else {
-        if (batchActions.length > 0) {
-            showToast(`Auto-resolved ${conflictsResolved}. ${remainingUnresolved.length} remaining (no free teachers or co-teachers left).`);
-        } else {
-            showToast("No free teachers or co-teachers available to resolve conflicts.");
-        }
-    }
+    closeAutoResolveModal();
+    renderAll();
+    showToast(`Applied ${activeProp.title} (${batchActions.length} substitution${batchActions.length > 1 ? 's' : ''} assigned).`);
 }
+window.applySelectedProposal = applySelectedProposal;
 
 // --- DUAL-STACK UNDO & REDO ENGINE ---
 function getActiveHistoryStack() {
@@ -2285,6 +2769,18 @@ function redoLastAction() {
 window.redoLastAction = redoLastAction;
 
 function handleGlobalKeydown(e) {
+    if (e.key === 'Escape') {
+        if (isFitGridMode) {
+            toggleFitGridMode(false);
+        }
+        closeAutoResolveModal();
+        closeCoTeachingModal();
+        closeSplitModal();
+        closeSettingsModal();
+        closeTourModal();
+        closeBottomSheet();
+        return;
+    }
     if ((e.metaKey || e.ctrlKey) && !e.altKey) {
         if (e.key === 'z' || e.key === 'Z') {
             if (e.shiftKey) {

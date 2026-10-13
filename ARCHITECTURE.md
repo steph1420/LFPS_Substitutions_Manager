@@ -157,6 +157,16 @@ const state = {
     *   **Intelligent Co-Teaching Disambiguation**: Differentiates legitimate co-teaching (teachers sharing the *same* subject for that section) from conflicting double-booked sections (different subjects for the same student cohort), triggering amber pulsing radar rings and descriptive conflict tooltips.
     *   **Collision-Free Master Generator**: Updated `generateSimulatedData()` with per-period section tracking (`usedSectionsInPeriod`) and automated overlap suppression for co-teaching seeds, guaranteeing a 100% collision-free baseline schedule.
     *   **Schema 1.27 Migration**: Bumped `schemaVersion` to `'1.27'` to automatically purge legacy overlapping mock data and refresh state with the collision-free baseline.
+*   **v1.28 Release (Inline Co-Teacher Release, High-Density Daily Substitution Register, Expanded Fit-Grid View, Priority Preference Matrix & 3-Option Smart Auto-Resolve Solver)**:
+    *   **Inline Co-Teacher Release (`#co-teach-modal`)**: Repositioned the `Release`, `Free Day`, and `↩ Rejoin` buttons directly inline next to each teacher's name in `.co-teacher-row`, enabling immediate 1-click release of either co-teacher right beside their name.
+    *   **High-Density Daily Substitution Register / Ledger (`renderSubstitutions`)**: Upgraded the Substitutions tab from bulky cards to a scannable, high-density **Daily Substitution Register** table (`.sub-register-table`) with live summary stats (`Total`, `Pending`, `Covered %`), segmented filter pills (`All`, `Pending`, `Covered`), department tags, subject affinity badges, and 1-click `+ Assign Sub` / `Reassign` / `✕` actions.
+    *   **Expanded Fit-Grid View (`toggleFitGridMode`)**: Added a 1-tap `⛶ Fit Grid` mode in the routine header that scales the entire master timetable grid to 100% of the screen width (`body.fit-grid-mode`)—ideal for mobile landscape viewing—complete with a sticky floating top bar (`#fit-grid-sticky-bar`), compact day switcher pills, and a `"↙ Back to Normal"` button (or `Esc` key).
+    *   **Priority Preference Matrix (`teacherPreferences` & `evaluateTeacherAffinity`)**: Built a multi-factor subject, department cluster, class-section familiarity, grade-band, and daily workload scoring engine. Also integrated affinity ranking and daily period load indicators (`Load: X/9 pds`) directly into the manual Substitute Picker Bottom Sheet (`openBottomSheet`).
+    *   **Multi-Option Smart Auto-Resolve Proposals (`#auto-resolve-modal`)**: Upgraded `✨ Smart Auto-Resolve` to generate up to **3 distinct schedule strategies** displayed as interactive segmented tabs:
+        *   `Option 1: Subject Match (★ Best Academic Fit)`
+        *   `Option 2: Balanced Load (⚖ Lightest Workload)`
+        *   `Option 3: Minimal Splits (🛡 Preserve Co-Teaching)`
+        *   Includes summary metric pills (`Coverage`, `Avg Affinity`, `Co-Teach Splits`, `Peak Teacher Load`), per-row checkboxes, and a 1-click **`✨ Apply Solution`** button backed by atomic `batch-sub` undo/redo.
 
 ## 10. Appendix: Technical Specifications
 

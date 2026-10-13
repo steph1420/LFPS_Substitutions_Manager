@@ -6,15 +6,36 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.27">
+    <link rel="stylesheet" href="styles.css?v=1.28">
 </head>
 <body>
+
+    <!-- Sticky Top Bar for Expanded Fit-Grid View (Mobile Landscape & Full-Screen Fit) -->
+    <div id="fit-grid-sticky-bar" class="fit-grid-sticky-bar hidden">
+        <div class="fit-bar-left">
+            <span class="fit-bar-title">📊 Master Routine</span>
+            <span id="fit-bar-day-pill" class="fit-bar-day-pill">MON</span>
+            <div class="fit-bar-days">
+                <button class="fit-day-btn" data-day="MON">M</button>
+                <button class="fit-day-btn" data-day="TUE">T</button>
+                <button class="fit-day-btn" data-day="WED">W</button>
+                <button class="fit-day-btn" data-day="THU">Th</button>
+                <button class="fit-day-btn" data-day="FRI">F</button>
+                <button class="fit-day-btn" data-day="SAT">S</button>
+            </div>
+        </div>
+        <div class="fit-bar-right">
+            <button id="exit-fit-grid-btn" class="btn-exit-fit" title="Exit Fit-Grid View (Esc)">
+                <span>↙ Back to Normal</span>
+            </button>
+        </div>
+    </div>
 
     <header class="app-header">
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge">v1.27</span>
+                <span class="version-badge">v1.28</span>
             </div>
             <div class="header-controls">
                 <div class="history-btn-group" id="history-btn-group">
@@ -62,7 +83,7 @@
 
             <div class="master-routine-container">
                 <div class="routine-header">
-                    <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                         <h2>Master Routine</h2>
                         <div id="displaced-indicator" class="displaced-indicator hidden">
                             <span class="pulse-dot"></span>
@@ -73,11 +94,16 @@
                             <span id="collision-counter-text" class="text">0 Collisions</span>
                         </div>
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="hide-absent-toggle">
-                        <span class="slider round"></span>
-                        <span class="label-text">Hide Absent</span>
-                    </label>
+                    <div class="routine-header-actions" style="display: flex; align-items: center; gap: 12px;">
+                        <button id="fit-grid-btn" class="btn-fit-grid" title="Scale grid to fit screen width (Ideal for Mobile Landscape)">
+                            <span>⛶</span> <span class="fit-btn-text">Fit Grid</span>
+                        </button>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="hide-absent-toggle">
+                            <span class="slider round"></span>
+                            <span class="label-text">Hide Absent</span>
+                        </label>
+                    </div>
                 </div>
                 
                 <div class="table-scroll-container">
@@ -97,17 +123,32 @@
             </div>
         </section>
 
-        <!-- TAB 2: SUBSTITUTIONS -->
+        <!-- TAB 2: SUBSTITUTIONS (Daily Substitution Register / Ledger) -->
         <section id="tab-substitutions" class="tab-section">
             <div class="resolver-header">
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 5px;">
-                    <h2>Substitutions</h2>
-                    <button id="auto-resolve-btn" class="btn-magic hidden">✨ Auto-Resolve</button>
+                <div class="register-top-bar">
+                    <div>
+                        <h2>Daily Substitution Register</h2>
+                        <p style="color: var(--text-secondary); font-size: 13px; margin-top: 2px;">High-density ledger of absent teacher classes, coverage status, and smart solver proposals.</p>
+                    </div>
+                    <div class="register-header-actions">
+                        <button id="auto-resolve-btn" class="btn-magic hidden">✨ Smart Auto-Resolve</button>
+                    </div>
                 </div>
-                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">Review and assign substitute coverage.</p>
+                <!-- Register Filter & Summary Strip -->
+                <div id="register-summary-bar" class="register-summary-bar hidden">
+                    <div class="register-stats" id="register-stats-pills">
+                        <!-- Populated by JS -->
+                    </div>
+                    <div class="register-filter-group" id="register-filter-group">
+                        <button class="reg-filter-btn active" data-filter="all">All</button>
+                        <button class="reg-filter-btn" data-filter="pending">Pending</button>
+                        <button class="reg-filter-btn" data-filter="covered">Covered</button>
+                    </div>
+                </div>
             </div>
             <div class="conflict-list" id="conflict-list">
-                <!-- Pink & Green Cards populated by JS -->
+                <!-- High-Density Register Ledger populated by JS -->
             </div>
         </section>
 
@@ -238,7 +279,7 @@
                 <div class="settings-group-title">Application Info</div>
                 <div class="settings-row">
                     <span class="settings-row-label">Version</span>
-                    <span class="settings-row-value">v1.27</span>
+                    <span class="settings-row-value">v1.28</span>
                 </div>
                 <div class="settings-row">
                     <span class="settings-row-label">Storage Engine</span>
@@ -248,6 +289,39 @@
         </div>
     </div>
     <div id="settings-overlay" class="overlay"></div>
+
+    <!-- Multi-Option Smart Auto-Resolve Proposals Modal (Max 3 Solutions) -->
+    <div id="auto-resolve-modal" class="settings-modal auto-resolve-modal hidden">
+        <div class="settings-modal-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:20px;">✨</span>
+                <h3>Smart Auto-Resolve Proposals</h3>
+            </div>
+            <button id="close-auto-resolve-modal-btn" class="settings-close-btn" aria-label="Close">✕</button>
+        </div>
+        <div class="settings-modal-body">
+            <p style="font-size:13px; color:var(--text-secondary); line-height:1.4; margin-bottom: 12px;">
+                Select one of the generated substitution strategies below. Each proposal uses the Priority Preference Matrix to score subject affinity, grade familiarity, and daily teacher workload:
+            </p>
+            <!-- Segmented Control for the 3 Solutions -->
+            <div class="proposal-tabs" id="proposal-tabs">
+                <!-- Populated by JS -->
+            </div>
+            <!-- Selected Proposal Summary Metrics -->
+            <div class="proposal-metrics-bar" id="proposal-metrics-bar">
+                <!-- Populated by JS -->
+            </div>
+            <!-- Selected Proposal Assignment Table -->
+            <div class="proposal-preview-container" id="proposal-preview-container">
+                <!-- Populated by JS -->
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+                <button id="auto-resolve-cancel-btn" class="btn-secondary">Cancel</button>
+                <button id="auto-resolve-apply-btn" class="btn-magic">✨ Apply Solution</button>
+            </div>
+        </div>
+    </div>
+    <div id="auto-resolve-overlay" class="overlay"></div>
 
     <!-- Co-Teacher Selective Split Auto-Resolve Modal -->
     <div id="split-resolve-modal" class="settings-modal hidden">
@@ -298,22 +372,29 @@
             <div class="tour-card">
                 <div class="tour-icon">📊</div>
                 <div class="tour-text">
-                    <h4>Interactive Routine Matrix</h4>
-                    <p>Live spreadsheet grid with interactive teacher & period hover crosshairs, responsive mobile scrolling, and smooth day switching.</p>
+                    <h4>Interactive Routine Matrix & Fit-Grid View</h4>
+                    <p>Live spreadsheet grid with interactive hover crosshairs and 1-tap <b>Fit Grid</b> mode for full-width mobile landscape viewing.</p>
                 </div>
             </div>
             <div class="tour-card">
-                <div class="tour-icon">🎯</div>
+                <div class="tour-icon">📋</div>
                 <div class="tour-text">
-                    <h4>Direct Drag-to-Assign Substitutions</h4>
-                    <p>Grab any missing class from an absent teacher and drop it directly onto a colleague to assign coverage instantly with bidirectional sync.</p>
+                    <h4>High-Density Daily Substitution Register</h4>
+                    <p>Scannable ledger of absent teacher classes, coverage status, subject match badges, and instant 1-click assignment actions.</p>
+                </div>
+            </div>
+            <div class="tour-card">
+                <div class="tour-icon">✨</div>
+                <div class="tour-text">
+                    <h4>Priority Preference Matrix & 3-Option Solver</h4>
+                    <p>Smart Auto-Resolve generates up to 3 previewable schedule strategies (<i>Subject Match</i>, <i>Balanced Load</i>, <i>Minimal Splits</i>).</p>
                 </div>
             </div>
             <div class="tour-card">
                 <div class="tour-icon">👥</div>
                 <div class="tour-text">
-                    <h4>Smart Co-Teaching & Drag-to-Split</h4>
-                    <p>Shared classes show <code>👥 Co-teaching</code> badges. Tap to see sharing partners, or drag a sub to split them cleanly while their partner covers solo.</p>
+                    <h4>Smart Co-Teaching & Inline Release</h4>
+                    <p>Shared classes show <code>👥</code> badges. Tap to see sharing partners and release either teacher inline, or drag a sub to split cleanly.</p>
                 </div>
             </div>
             <div class="tour-card">
@@ -337,17 +418,10 @@
                     <p>Switch seamlessly between Classic Light, Warm Sepia, Dark, Midnight OLED, Slate Nord, tactile <b>Retro Glass</b>, and surreal <b>Utopian Glass</b>.</p>
                 </div>
             </div>
-            <div class="tour-card">
-                <div class="tour-icon">↩</div>
-                <div class="tour-text">
-                    <h4>Dual-Stack Undo & Redo Engine</h4>
-                    <p>Full action history across both Grid and Substitution tabs with stable segmented controls, <code>Cmd+Z</code>, and <code>Cmd+Shift+Z</code> shortcuts.</p>
-                </div>
-            </div>
         </div>
     </div>
     <div id="tour-overlay" class="overlay"></div>
 
-    <script src="app.js?v=1.27"></script>
+    <script src="app.js?v=1.28"></script>
 </body>
 </html>
