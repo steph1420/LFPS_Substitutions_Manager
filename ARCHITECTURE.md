@@ -292,3 +292,44 @@ Secondary Google Sheets tab guiding `performAutoResolve()`:
     }
 }
 ```
+
+---
+
+## 11. Schema 2.0 Real Timetable Architecture & Cloud Sync Blueprint
+
+### 11.1 School Scope & Staff Directory
+Little Flower Preparatory School (Doranda, Ranchi-2) 2026–2027 Official Timetable:
+*   **Classes:** `KG A`, `KG B`, `PREP A`, `PREP B`
+*   **Periods:** 9 periods (`G/PD`, `1st`, `BREAK`, `2nd`, `3rd`, `4th`, `PLAYTIME / 2ND GOLDEN HOUR`, `5th`, `6th`)
+*   **Staff Matrix (9 Teachers):**
+    1.  `Mrs. S. Lakra` (CT `KG A` / Asst. Academic Coordinator)
+    2.  `Mrs. M. Midha` (CT `KG B`)
+    3.  `Mrs. R. Pahwa` (CT `PREP A` / Academic Coordinator)
+    4.  `Mrs. R. Narayan` (CT `PREP B`)
+    5.  `Ms. N. Horo` (2nd Teacher `KG A` — Hindi specialist)
+    6.  `Ms. K. Sanga` (2nd Teacher `KG B` — Hindi specialist)
+    7.  `Ms. A. Amira` (2nd Teacher `PREP A` — Holistic/Activity/Games)
+    8.  `Mrs. S. Bage` (2nd Teacher `PREP B` — Holistic/Activity/Games)
+    9.  `Mr. S. A. Lakra` (3rd Teacher / Support `KG A` — Games, Drill, Singing, Support)
+
+### 11.2 Monday G/PD Parallel Activity Rule
+On Monday `G/PD`, Class Teachers take English recitation (`ENG. REC.`) while Activity teachers (`Ms. A. Amira`, `Mrs. S. Bage`, `Mr. S. A. Lakra`) run outdoor Games/Drill rotating `KG A` (1st half) and `KG B` (2nd half). This is an intentional parallel activity split and is whitelisted in collision detection.
+
+### 11.3 Class View vs Teacher View Engine
+*   **Interactive Segmented Control:** `#routine-view-toggle` switches instantly between `👨‍🏫 Teachers` and `🏫 Classes`.
+*   **Class View Rows:** 4 class rows (`KG A`, `KG B`, `PREP A`, `PREP B`) showing class subjects, active teachers, co-teacher partnerships (`.pill-coteach`), substitute coverage (`.pill-sub`), and unassigned absences (`.pill-missing`).
+*   **Tappable Interactions in Class View:** Clicking unassigned or covered pills directly opens the substitution bottom sheet or co-teaching inspector.
+
+### 11.4 Officiating Hierarchy
+*   **Academic Coordinator (AC):** `Mrs. R. Pahwa` (Primary AC), `Mrs. S. Lakra` (Assistant AC). If both are absent, an Officiating AC (`offAC`) can be appointed who temporarily inherits coordinator privileges.
+*   **Class Teacher (CT):** If a CT is absent, the officiating modal automatically recommends the preferred class team partner:
+    *   `KG A`: `Mr. S. A. Lakra` (`★ Class Team (Recommended)`)
+    *   `KG B`: `Ms. K. Sanga`
+    *   `PREP A`: `Ms. A. Amira`
+    *   `PREP B`: `Mrs. S. Bage`
+
+### 11.5 Google Sheets Cloud Sync Blueprint
+To enable live synchronization from Google Sheets in future releases:
+1.  **Tab 1 (`Master_Log`):** Flat CSV format (`Class, Day, Period, Subject, Teacher Abbr, Full Name, Role`). Optimal for 1-click cloud sync and delta ingestion.
+2.  **Tab 2 (`Staff_Directory`):** `Full Name, Abbr, Role, Primary Class, Secondary Class, Dept, Initials`.
+3.  **Tabs 3–6 (`Class_Timetables` & `Teacher_Timetables`):** Human-readable 2D grids for printing and administrative notice boards.

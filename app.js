@@ -2,8 +2,9 @@
 const state = {
     day: 'MON',
     isEditMode: false,
+    routineViewMode: 'teacher', // 'teacher' | 'class'
     currentRole: 'admin', // 'admin' | 'ac' | 'asst_ac' | 'teacher'
-    activeTeacher: 'Mrs. Pahwa',
+    activeTeacher: 'Mrs. R. Pahwa',
     absentTeachers: new Set(),
     baseSchedule: {}, 
     schedule: {},     
@@ -26,19 +27,36 @@ const state = {
     }
 };
 
-const PRIMARY_AC = 'Mr. Stephen';
-const ASSISTANT_AC = 'Mrs. Midha';
-const classTeacherMap = {
-    'Mr. Stephen': '10A',
-    'Mrs. Midha': '10B',
-    'Mrs. Pahwa': '9A',
-    'Mrs. Bage': '9B',
-    'Mr. Adams': '8A',
-    'Mrs. Baker': '8B',
-    'Ms. Clark': '7A',
-    'Mr. Davis': '7B',
-    'Mrs. Evans': '6A'
+const PRIMARY_AC = 'Mrs. R. Pahwa';
+const ASSISTANT_AC = 'Mrs. S. Lakra';
+
+const staffDirectory = {
+    'Mrs. S. Lakra': { fullName: 'Mrs. Synthia Lakra', role: 'Class Teacher / Asst. Academic Coordinator', primaryClass: 'KG A' },
+    'Mrs. M. Midha': { fullName: 'Mrs. Manisha Midha', role: 'Class Teacher', primaryClass: 'KG B' },
+    'Mrs. R. Pahwa': { fullName: 'Mrs. Riya Pahwa', role: 'Class Teacher / Academic Coordinator', primaryClass: 'PREP A' },
+    'Mrs. R. Narayan': { fullName: 'Mrs. Ritika Narayan', role: 'Class Teacher', primaryClass: 'PREP B' },
+    'Ms. N. Horo': { fullName: 'Ms. Namlen Horo', role: '2nd Teacher', primaryClass: 'KG A' },
+    'Ms. K. Sanga': { fullName: 'Ms. Kalista Sanga', role: '2nd Teacher', primaryClass: 'KG B' },
+    'Ms. A. Amira': { fullName: 'Ms. Ashna Amira', role: '2nd Teacher', primaryClass: 'PREP A' },
+    'Mrs. S. Bage': { fullName: 'Mrs. Suman Bage', role: '2nd Teacher', primaryClass: 'PREP B' },
+    'Mr. S. A. Lakra': { fullName: 'Mr. Stephen Ashish Lakra', role: '3rd Teacher / Support', primaryClass: 'KG A' }
 };
+
+const classTeacherMap = {
+    'Mrs. S. Lakra': 'KG A',
+    'Mrs. M. Midha': 'KG B',
+    'Mrs. R. Pahwa': 'PREP A',
+    'Mrs. R. Narayan': 'PREP B'
+};
+
+const classTeams = {
+    'KG A': { ct: 'Mrs. S. Lakra', second: 'Ms. N. Horo', support: 'Mr. S. A. Lakra', preferredOffCT: 'Mr. S. A. Lakra' },
+    'KG B': { ct: 'Mrs. M. Midha', second: 'Ms. K. Sanga', support: null, preferredOffCT: 'Ms. K. Sanga' },
+    'PREP A': { ct: 'Mrs. R. Pahwa', second: 'Ms. A. Amira', support: null, preferredOffCT: 'Ms. A. Amira' },
+    'PREP B': { ct: 'Mrs. R. Narayan', second: 'Mrs. S. Bage', support: null, preferredOffCT: 'Mrs. S. Bage' }
+};
+
+const classes = ['KG A', 'KG B', 'PREP A', 'PREP B'];
 
 // Active 10-second acceptance countdown timers: key = `${day}::${period}::${absentTeacher}` -> { remaining, intervalId }
 const activeAcceptTimers = new Map();
@@ -61,10 +79,10 @@ let newlyDisplacedItemId = null;
 let lastResetCells = [];
 
 const teachers = [
-    'Mr. Stephen', 'Mrs. Midha', 'Mrs. Pahwa', 'Mrs. Bage', 'Mr. Adams', 
-    'Mrs. Baker', 'Ms. Clark', 'Mr. Davis', 'Mrs. Evans'
+    'Mrs. S. Lakra', 'Mrs. M. Midha', 'Mrs. R. Pahwa', 'Mrs. R. Narayan',
+    'Ms. N. Horo', 'Ms. K. Sanga', 'Ms. A. Amira', 'Mrs. S. Bage', 'Mr. S. A. Lakra'
 ];
-const periods = ['GOLDEN HOUR', '1st Pd.', 'BREAKFAST BREAK', '2nd Pd.', '3rd Pd.', '4th Pd.', '5th Pd.', '2nd GOLDEN HOUR', '6th Pd.', '7th Pd.'];
+const periods = ['G/PD', '1st', 'BREAK', '2nd', '3rd', '4th', 'PLAYTIME / 2ND GOLDEN HOUR', '5th', '6th'];
 
 // --- INITIALIZATION & STORAGE ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -80,8 +98,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function saveStateToStorage() {
     const data = {
-        schemaVersion: '1.27',
+        schemaVersion: '2.0',
         day: state.day,
+        routineViewMode: state.routineViewMode || 'teacher',
         currentRole: state.currentRole,
         activeTeacher: state.activeTeacher,
         baseSchedule: state.baseSchedule,
@@ -103,13 +122,25 @@ function migratePeriodNames(scheduleObj) {
     Object.keys(scheduleObj).forEach(day => {
         const daySched = scheduleObj[day];
         if (!daySched) return;
-        if (daySched['BREAKFAST'] && !daySched['BREAKFAST BREAK']) {
-            daySched['BREAKFAST BREAK'] = daySched['BREAKFAST'];
+        if (daySched['BREAKFAST'] && !daySched['BREAK']) {
+            daySched['BREAK'] = daySched['BREAKFAST'];
             delete daySched['BREAKFAST'];
         }
-        if (daySched['PLAY TIME'] && !daySched['2nd GOLDEN HOUR']) {
-            daySched['2nd GOLDEN HOUR'] = daySched['PLAY TIME'];
+        if (daySched['BREAKFAST BREAK'] && !daySched['BREAK']) {
+            daySched['BREAK'] = daySched['BREAKFAST BREAK'];
+            delete daySched['BREAKFAST BREAK'];
+        }
+        if (daySched['GOLDEN HOUR'] && !daySched['G/PD']) {
+            daySched['G/PD'] = daySched['GOLDEN HOUR'];
+            delete daySched['GOLDEN HOUR'];
+        }
+        if (daySched['PLAY TIME'] && !daySched['PLAYTIME / 2ND GOLDEN HOUR']) {
+            daySched['PLAYTIME / 2ND GOLDEN HOUR'] = daySched['PLAY TIME'];
             delete daySched['PLAY TIME'];
+        }
+        if (daySched['2nd GOLDEN HOUR'] && !daySched['PLAYTIME / 2ND GOLDEN HOUR']) {
+            daySched['PLAYTIME / 2ND GOLDEN HOUR'] = daySched['2nd GOLDEN HOUR'];
+            delete daySched['2nd GOLDEN HOUR'];
         }
     });
 }
@@ -122,14 +153,15 @@ function loadStateFromStorage() {
             if (!parsed || !parsed.schedule || Object.keys(parsed.schedule).length === 0) {
                 return false;
             }
-            // Enforce schema version check: reset legacy mock data if on older schema
-            if (!parsed.schemaVersion || parsed.schemaVersion < '1.27') {
-                return false; // Triggers fresh, clean co-teaching-enabled generateSimulatedData()
+            // Enforce schema version check: reset to Schema 2.0 with the real LFPS timetable
+            if (!parsed.schemaVersion || parsed.schemaVersion < '2.0') {
+                return false; // Triggers fresh, clean load of real 2026-2027 timetable via generateSimulatedData()
             }
 
             state.day = parsed.day || 'MON';
+            state.routineViewMode = parsed.routineViewMode || 'teacher';
             state.currentRole = parsed.currentRole || 'admin';
-            state.activeTeacher = parsed.activeTeacher || 'Mrs. Pahwa';
+            state.activeTeacher = parsed.activeTeacher || 'Mrs. R. Pahwa';
             state.baseSchedule = parsed.baseSchedule || JSON.parse(JSON.stringify(parsed.schedule)); 
             state.schedule = parsed.schedule;
             state.substitutions = parsed.substitutions || {};
@@ -147,8 +179,8 @@ function loadStateFromStorage() {
             Object.keys(state.displaced).forEach(day => {
                 if (Array.isArray(state.displaced[day])) {
                     state.displaced[day].forEach(item => {
-                        if (item.period === 'PLAY TIME') item.period = '2nd GOLDEN HOUR';
-                        if (item.period === 'BREAKFAST') item.period = 'BREAKFAST BREAK';
+                        if (item.period === 'PLAY TIME' || item.period === '2nd GOLDEN HOUR') item.period = 'PLAYTIME / 2ND GOLDEN HOUR';
+                        if (item.period === 'BREAKFAST' || item.period === 'BREAKFAST BREAK') item.period = 'BREAK';
                     });
                 }
             });
@@ -156,13 +188,21 @@ function loadStateFromStorage() {
             Object.keys(state.substitutions).forEach(day => {
                 const daySubs = state.substitutions[day];
                 if (daySubs) {
-                    if (daySubs['PLAY TIME'] && !daySubs['2nd GOLDEN HOUR']) {
-                        daySubs['2nd GOLDEN HOUR'] = daySubs['PLAY TIME'];
+                    if (daySubs['PLAY TIME'] && !daySubs['PLAYTIME / 2ND GOLDEN HOUR']) {
+                        daySubs['PLAYTIME / 2ND GOLDEN HOUR'] = daySubs['PLAY TIME'];
                         delete daySubs['PLAY TIME'];
                     }
-                    if (daySubs['BREAKFAST'] && !daySubs['BREAKFAST BREAK']) {
-                        daySubs['BREAKFAST BREAK'] = daySubs['BREAKFAST'];
+                    if (daySubs['2nd GOLDEN HOUR'] && !daySubs['PLAYTIME / 2ND GOLDEN HOUR']) {
+                        daySubs['PLAYTIME / 2ND GOLDEN HOUR'] = daySubs['2nd GOLDEN HOUR'];
+                        delete daySubs['2nd GOLDEN HOUR'];
+                    }
+                    if (daySubs['BREAKFAST'] && !daySubs['BREAK']) {
+                        daySubs['BREAK'] = daySubs['BREAKFAST'];
                         delete daySubs['BREAKFAST'];
+                    }
+                    if (daySubs['BREAKFAST BREAK'] && !daySubs['BREAK']) {
+                        daySubs['BREAK'] = daySubs['BREAKFAST BREAK'];
+                        delete daySubs['BREAKFAST BREAK'];
                     }
                 }
             });
@@ -269,6 +309,19 @@ function bindEvents() {
             syncDayButtonsUI();
             saveStateToStorage();
             renderAll();
+        });
+    });
+
+    // Master Routine View Switcher (Teacher View vs Class View)
+    document.querySelectorAll('.view-seg-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const chosenView = e.currentTarget.dataset.view;
+            if (!chosenView) return;
+            state.routineViewMode = chosenView;
+            document.querySelectorAll('.view-seg-btn').forEach(b => b.classList.toggle('active', b.dataset.view === chosenView));
+            selectedCell = null;
+            saveStateToStorage();
+            renderTableRoutine();
         });
     });
 
@@ -637,11 +690,25 @@ function getCoTeachingPartners(day, period, teacher) {
     if (!baseTask || baseTask === 'Free' || baseTask === '-' || baseTask === '') return [];
     
     const partners = [];
+    const bClean = baseTask.trim().toUpperCase();
     teachers.forEach(otherT => {
         if (otherT !== teacher) {
             const otherBase = state.baseSchedule[day]?.[period]?.[otherT];
-            if (otherBase && otherBase.trim().toUpperCase() === baseTask.trim().toUpperCase()) {
+            if (!otherBase || otherBase === 'Free' || otherBase === '-') return;
+            const oClean = otherBase.trim().toUpperCase();
+            if (oClean === bClean) {
                 partners.push(otherT);
+            } else {
+                // Support joint multi-class co-teaching (e.g. "GAMES KG A + KG B" with "GAMES KG A" or "GAMES KG B")
+                const bPrefix = bClean.split(' ')[0];
+                const oPrefix = oClean.split(' ')[0];
+                if (bPrefix === oPrefix && (bClean.includes('+') || oClean.includes('+'))) {
+                    const bSecs = extractClassSections(bClean);
+                    const oSecs = extractClassSections(oClean);
+                    if (bSecs.some(s => oSecs.includes(s))) {
+                        partners.push(otherT);
+                    }
+                }
             }
         }
     });
@@ -1151,11 +1218,31 @@ window.resetDisplacedItemToOriginal = resetDisplacedItemToOriginal;
 
 function extractClassSection(task) {
     if (!task || task === 'Free' || task === '-' || task === '') return null;
-    const match = task.trim().match(/\b(\d{1,2}\s*[A-Za-z]?)\b/);
-    if (match) {
-        return match[1].replace(/\s+/g, '').toUpperCase();
+    const clean = task.trim().toUpperCase();
+    const kgPrepMatch = clean.match(/\b(KG\s*[AB]|PREP\s*[AB])\b/i);
+    if (kgPrepMatch) {
+        return kgPrepMatch[1].replace(/\s+/g, ' ').toUpperCase();
+    }
+    const numMatch = clean.match(/\b(\d{1,2}\s*[A-Za-z]?)\b/);
+    if (numMatch) {
+        return numMatch[1].replace(/\s+/g, '').toUpperCase();
     }
     return null;
+}
+
+function extractClassSections(task) {
+    if (!task || task === 'Free' || task === '-' || task === '') return [];
+    const clean = task.trim().toUpperCase();
+    const sections = [];
+    const kgPrepMatches = clean.match(/\b(KG\s*[AB]|PREP\s*[AB])\b/gi);
+    if (kgPrepMatches) {
+        kgPrepMatches.forEach(m => sections.push(m.replace(/\s+/g, ' ').toUpperCase()));
+    }
+    const numMatches = clean.match(/\b(\d{1,2}\s*[A-Za-z]?)\b/g);
+    if (numMatches) {
+        numMatches.forEach(m => sections.push(m.replace(/\s+/g, '').toUpperCase()));
+    }
+    return [...new Set(sections)];
 }
 
 // --- COLLISION DETECTION ENGINE ---
@@ -1168,9 +1255,9 @@ function findCollisions() {
     const details = [];
 
     periods.forEach(period => {
-        if (period === 'BREAKFAST BREAK' || period === 'BREAKFAST') return;
+        if (period === 'BREAK' || period === 'BREAKFAST BREAK' || period === 'BREAKFAST') return;
 
-        // Group assignments by Class Section (e.g. "9A", "10A", "7B")
+        // Group assignments by Class Section (e.g. "KG A", "KG B", "PREP A", "PREP B")
         const sectionMap = new Map();
         // Also group by exact Task name (for non-numbered classes or activities)
         const exactTaskMap = new Map();
@@ -1179,11 +1266,13 @@ function findCollisions() {
             const task = state.schedule[state.day]?.[period]?.[teacher];
             if (task && task !== 'Free' && task !== '-' && task !== '') {
                 const normTask = task.trim().toUpperCase();
-                const sec = extractClassSection(task);
+                const secs = extractClassSections(task);
 
-                if (sec) {
-                    if (!sectionMap.has(sec)) sectionMap.set(sec, []);
-                    sectionMap.get(sec).push({ teacher, task: normTask });
+                if (secs.length > 0) {
+                    secs.forEach(sec => {
+                        if (!sectionMap.has(sec)) sectionMap.set(sec, []);
+                        sectionMap.get(sec).push({ teacher, task: normTask });
+                    });
                 } else {
                     if (!exactTaskMap.has(normTask)) exactTaskMap.set(normTask, []);
                     exactTaskMap.get(normTask).push(teacher);
@@ -1191,11 +1280,31 @@ function findCollisions() {
             }
         });
 
-        // 1. Check Class Section Collisions (e.g. Section 9A assigned to "GEO 9A" AND "SCI 9A" in 5th Pd)
+        // 1. Check Class Section Collisions
         sectionMap.forEach((entries, section) => {
             if (entries.length > 1) {
-                const uniqueTasks = new Set(entries.map(e => e.task));
+                // Special exception: Monday G/PD parallel half-period rotation for KG A and KG B (ENG. REC. & GAMES)
+                if (state.day === 'MON' && period === 'G/PD' && (section === 'KG A' || section === 'KG B')) {
+                    const allDesignated = entries.every(e => 
+                        e.task.includes('ENG. REC.') || e.task.includes('GAMES')
+                    );
+                    if (allDesignated) {
+                        return; // Valid designated half-period parallel activity rotation
+                    }
+                }
 
+                // Check if all assigned teachers are designated co-teachers
+                const assignedTeachers = entries.map(e => e.teacher);
+                const isDesignatedCoTeaching = assignedTeachers.every(t => {
+                    const partners = getCoTeachingPartners(state.day, period, t);
+                    return assignedTeachers.every(ot => ot === t || partners.includes(ot));
+                });
+
+                if (isDesignatedCoTeaching) {
+                    return; // Legitimate co-teachers sharing this class
+                }
+
+                const uniqueTasks = new Set(entries.map(e => e.task));
                 if (uniqueTasks.size > 1) {
                     // Conflicting subjects for the SAME student class section!
                     entries.forEach(e => {
@@ -1206,22 +1315,12 @@ function findCollisions() {
                     });
                     details.push(`${period}: Class ${section} double-booked across different subjects (${entries.map(e => `${e.teacher}: ${e.task}`).join(', ')})`);
                 } else {
-                    // Same task name for this section (e.g. both teaching "MATH 10A")
-                    // Check if they are legitimate designated base co-teachers
-                    const assignedTeachers = entries.map(e => e.teacher);
-                    const isDesignatedCoTeaching = assignedTeachers.every(t => {
-                        const partners = getCoTeachingPartners(state.day, period, t);
-                        return assignedTeachers.every(ot => ot === t || partners.includes(ot));
+                    assignedTeachers.forEach(t => {
+                        const key = `${period}::${t}`;
+                        if (!collisionCells.has(key)) collisionCells.set(key, { reasons: [] });
+                        collisionCells.get(key).reasons.push(`Duplicate Class: "${entries[0].task}" also with ${assignedTeachers.filter(ot => ot !== t).join(', ')}`);
                     });
-
-                    if (!isDesignatedCoTeaching) {
-                        assignedTeachers.forEach(t => {
-                            const key = `${period}::${t}`;
-                            if (!collisionCells.has(key)) collisionCells.set(key, { reasons: [] });
-                            collisionCells.get(key).reasons.push(`Duplicate Class: "${entries[0].task}" also with ${assignedTeachers.filter(ot => ot !== t).join(', ')}`);
-                        });
-                        details.push(`${period}: ${entries[0].task} assigned to multiple teachers (${assignedTeachers.join(', ')})`);
-                    }
+                    details.push(`${period}: ${entries[0].task} assigned to multiple teachers (${assignedTeachers.join(', ')})`);
                 }
             }
         });
@@ -1447,16 +1546,22 @@ function openOfficiatingModal(type, section = null, absentCT = null) {
         if (subtitleEl) subtitleEl.textContent = `${absentCT} (Class Teacher of ${section}) is absent on ${state.day}. Select a present teacher to serve as Officiating Class Teacher (offCT) for ${section}.`;
     }
 
+    const preferredOffCT = (type === 'ct' && section && classTeams[section]) ? classTeams[section].preferredOffCT : null;
+
     const candidates = teachers
         .filter(t => !state.absentTeachers.has(t))
         .map(t => {
             const stats = getTeacherDailyStats(t, state.day);
-            const isGoldenFree = (state.schedule[state.day]?.['GOLDEN HOUR']?.[t] || 'Free') === 'Free';
+            const isGoldenFree = (state.schedule[state.day]?.['G/PD']?.[t] || 'Free') === 'Free';
             const teachesSec = section ? doesTeacherTeachSection(t, section, state.day) : false;
-            return { name: t, stats, isGoldenFree, teachesSec };
+            const isPreferred = (t === preferredOffCT);
+            return { name: t, stats, isGoldenFree, teachesSec, isPreferred };
         })
         .sort((a, b) => {
-            if (type === 'ct' && a.teachesSec !== b.teachesSec) return a.teachesSec ? -1 : 1;
+            if (type === 'ct') {
+                if (a.isPreferred !== b.isPreferred) return a.isPreferred ? -1 : 1;
+                if (a.teachesSec !== b.teachesSec) return a.teachesSec ? -1 : 1;
+            }
             return a.stats.teachingLoad - b.stats.teachingLoad;
         });
 
@@ -1467,12 +1572,13 @@ function openOfficiatingModal(type, section = null, absentCT = null) {
         const isSelected = (type === 'ac' && currentOffAC === c.name) || (type === 'ct' && currentOffCT === c.name);
 
         const row = document.createElement('div');
-        row.style.cssText = `display:flex; justify-content:space-between; align-items:center; padding:11px 14px; background:var(--bg-color); border:1px solid ${isSelected ? 'var(--accent-blue)' : 'var(--border-color)'}; border-radius:10px; cursor:pointer;`;
+        row.style.cssText = `display:flex; justify-content:space-between; align-items:center; padding:11px 14px; background:var(--bg-color); border:1px solid ${isSelected ? 'var(--accent-blue)' : (c.isPreferred ? 'rgba(52,199,89,0.4)' : 'var(--border-color)')}; border-radius:10px; cursor:pointer;`;
         row.innerHTML = `
             <div>
-                <strong style="color:var(--text-primary); font-size:13px;">${isSelected ? '✓ ' : '🟢 '}${c.name}</strong>
-                <span class="ct-badge-mini">Own CT: ${classTeacherMap[c.name] || '-'}</span>
-                ${c.teachesSec ? `<span class="reg-affinity-tag">Teaches ${section}</span>` : ''}
+                <strong style="color:var(--text-primary); font-size:13px;">${isSelected ? '✓ ' : (c.isPreferred ? '★ ' : '🟢 ')}${c.name}</strong>
+                ${c.isPreferred ? `<span class="reg-affinity-tag" style="background:rgba(52,199,89,0.18); color:var(--accent-green); font-weight:700;">★ Class Team (Recommended)</span>` : ''}
+                <span class="ct-badge-mini">${classTeacherMap[c.name] ? `CT ${classTeacherMap[c.name]}` : (staffDirectory[c.name]?.role || 'Support')}</span>
+                ${(c.teachesSec && !c.isPreferred) ? `<span class="reg-affinity-tag">Teaches ${section}</span>` : ''}
             </div>
             <span style="font-size:11px; color:var(--text-secondary); font-weight:600;">Load: ${c.stats.teachingLoad}/${c.stats.totalSlots} pds</span>
         `;
@@ -1745,21 +1851,35 @@ function renderAbsentTray() {
     
     teachers.forEach(teacher => {
         const isAbsent = state.absentTeachers.has(teacher);
+        const staff = staffDirectory[teacher];
         const ctSec = classTeacherMap[teacher];
         const isOffAC = !isAbsent && state.officiatingAC?.[state.day] === teacher && state.absentTeachers.has(PRIMARY_AC) && state.absentTeachers.has(ASSISTANT_AC);
         const offCTSecs = !isAbsent ? getOfficiatingCTSectionsForTeacher(teacher, state.day) : [];
 
-        let roleSubtag = ctSec ? `CT ${ctSec}` : '';
+        let roleSubtag = '';
+        if (ctSec) {
+            roleSubtag = `CT ${ctSec}`;
+        } else if (staff?.role === '2nd Teacher') {
+            roleSubtag = `2nd ${staff.classSection || ''}`;
+        } else if (staff?.role === '3rd Teacher / Support') {
+            roleSubtag = `Support`;
+        }
+
         if (teacher === PRIMARY_AC) roleSubtag = `AC • ${roleSubtag}`;
         else if (teacher === ASSISTANT_AC) roleSubtag = `Asst AC • ${roleSubtag}`;
         if (isOffAC) roleSubtag = `⚡ offAC`;
         else if (offCTSecs.length > 0) roleSubtag = `offCT ${offCTSecs.join(',')}`;
 
+        const initials = staff?.initials || teacher.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '').slice(0, 2).toUpperCase();
+        const shortName = teacher.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
+        const fullName = staff?.fullName || teacher;
+
         const el = document.createElement('div');
         el.className = `teacher-avatar ${isAbsent ? 'absent' : ''}`;
+        el.title = `${fullName} (${staff?.role || 'Teacher'}${staff?.additionalRole ? ' • ' + staff.additionalRole : ''})\nClick to toggle absent/present`;
         el.innerHTML = `
-            <div class="avatar-circle">${teacher.charAt(0)}</div>
-            <span class="name" style="font-size:11px; margin-top:4px; font-weight:600;">${teacher.split(' ')[1] || teacher}</span>
+            <div class="avatar-circle">${initials}</div>
+            <span class="name" style="font-size:11px; margin-top:4px; font-weight:600;">${shortName}</span>
             <span style="font-size:9px; color:var(--text-secondary); font-weight:600;">${roleSubtag}</span>
         `;
         el.addEventListener('click', () => {
@@ -1777,6 +1897,16 @@ function renderTableRoutine() {
     const hideToggle = document.getElementById('hide-absent-toggle');
     if(!table || !hideToggle) return;
     
+    // Sync view switcher buttons
+    document.querySelectorAll('.view-seg-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.view === (state.routineViewMode || 'teacher'));
+    });
+
+    if (state.routineViewMode === 'class') {
+        renderClassRoutineTable(table);
+        return;
+    }
+
     const hideAbsent = hideToggle.checked;
     const collisions = findCollisions();
     
@@ -1788,6 +1918,7 @@ function renderTableRoutine() {
         const isAbsent = state.absentTeachers.has(teacher);
         if (isAbsent && hideAbsent) return;
 
+        const staffInfo = staffDirectory[teacher];
         const ctSec = classTeacherMap[teacher];
         const isOffAC = !isAbsent && state.officiatingAC?.[state.day] === teacher && state.absentTeachers.has(PRIMARY_AC) && state.absentTeachers.has(ASSISTANT_AC);
         const offCTSecs = !isAbsent ? getOfficiatingCTSectionsForTeacher(teacher, state.day) : [];
@@ -1807,12 +1938,18 @@ function renderTableRoutine() {
         offCTSecs.forEach(sec => {
             teacherBadges += `<span class="off-badge-mini">📋 offCT ${sec}</span>`;
         });
+
+        const fullNameSub = staffInfo?.fullName ? `<div class="teacher-fullname-sub" style="font-size:10px; color:var(--text-secondary); font-weight:normal; margin-top:1px;">${staffInfo.fullName}</div>` : '';
         
         html += `<tr class="${isAbsent ? 'row-absent' : ''}">`;
-        html += `<td class="teacher-cell" data-teacher="${teacher}"><div>${teacher}</div><div style="margin-top:2px; display:flex; flex-wrap:wrap; gap:2px;">${teacherBadges}</div></td>`;
+        html += `<td class="teacher-cell" data-teacher="${teacher}" title="${staffInfo?.fullName || teacher} - ${staffInfo?.role || ''}">
+            <div style="font-weight:700;">${teacher}</div>
+            ${fullNameSub}
+            <div style="margin-top:3px; display:flex; flex-wrap:wrap; gap:2px;">${teacherBadges}</div>
+        </td>`;
         
         periods.forEach(period => {
-            if (period === 'BREAKFAST BREAK' || period === 'BREAKFAST') {
+            if (period === 'BREAK' || period === 'BREAKFAST BREAK' || period === 'BREAKFAST') {
                 html += `<td style="background:var(--static-cell-bg); text-align:center; color:var(--text-secondary);">-</td>`;
                 return;
             }
@@ -1872,10 +2009,11 @@ function renderTableRoutine() {
                 cellClasses.push('cell-covered');
                 const subStatusInfo = getSubStatusObj(state.day, period, teacher);
                 const statusIcon = subStatusInfo.status === 'accepted' ? '🔒 ' : (subStatusInfo.status === 'disputed' ? '⚑ ' : '↳ ');
+                const subShort = assignedSub.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
                 cellContent = `
                     <div class="cell-covered-content">
                         <span class="covered-task">${baseTask}</span>
-                        <span class="covered-by-tag">${statusIcon}${assignedSub.split(' ')[1] || assignedSub}</span>
+                        <span class="covered-by-tag">${statusIcon}${subShort}</span>
                     </div>
                 `;
                 cellTitle = `Covered by ${assignedSub} (${subStatusInfo.status}). Drag to reassign substitute, or tap to manage.`;
@@ -1889,10 +2027,11 @@ function renderTableRoutine() {
                 const periodNote = coveringSourcePeriod !== period ? ` [from ${coveringSourcePeriod}]` : '';
                 const subStatusInfo = getSubStatusObj(state.day, coveringSourcePeriod || period, coveringFor);
                 const statusBadgePrefix = subStatusInfo.status === 'accepted' ? '🔒 ' : (subStatusInfo.status === 'disputed' ? '⚑ ' : '');
+                const covShort = coveringFor.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
                 cellContent = `
                     <div class="cell-sub-content">
                         <span class="sub-task">${task}</span>
-                        <span class="sub-badge">${statusBadgePrefix}Sub (${coveringFor.split(' ')[1] || coveringFor})</span>
+                        <span class="sub-badge">${statusBadgePrefix}Sub (${covShort})</span>
                     </div>
                 `;
                 cellTitle = `Substituting for ${coveringFor}${periodNote} (${subStatusInfo.status}). Drag to another teacher to reassign, or drag back to ${coveringFor} to unassign.`;
@@ -1979,6 +2118,204 @@ function renderTableRoutine() {
     table.innerHTML = html;
 }
 
+function renderClassRoutineTable(table) {
+    const collisions = findCollisions();
+    
+    let html = '<thead><tr><th class="class-header-cell">Class</th>';
+    periods.forEach((p, idx) => html += `<th data-period="${p}" data-col="${idx + 1}">${p}</th>`);
+    html += '</tr></thead><tbody>';
+    
+    classes.forEach(cls => {
+        const team = classTeams[cls] || {};
+        const ctName = team.classTeacher || '';
+        const isCTAbsent = state.absentTeachers.has(ctName);
+        const offCT = state.officiatingCT?.[state.day]?.[cls];
+        
+        let teamSubtext = '';
+        if (ctName) {
+            const ctShort = ctName.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
+            if (isCTAbsent && offCT) {
+                const offCTShort = offCT.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
+                teamSubtext = `<span style="color:var(--accent-pink);">CT ${ctShort} (Abs)</span> • <span style="color:var(--accent-orange); font-weight:700;">⚡ offCT: ${offCTShort}</span>`;
+            } else if (isCTAbsent) {
+                teamSubtext = `<span style="color:var(--accent-pink);">CT ${ctShort} (Absent)</span>`;
+            } else {
+                teamSubtext = `CT: ${ctShort}`;
+            }
+        }
+        if (team.secondTeacher) {
+            const secShort = team.secondTeacher.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
+            teamSubtext += ` • 2nd: ${secShort}`;
+        }
+        if (team.thirdTeacher) {
+            const thirdShort = team.thirdTeacher.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
+            teamSubtext += ` • 3rd: ${thirdShort}`;
+        }
+
+        html += `<tr>`;
+        html += `<td class="class-name-cell">
+            <div class="class-title-text">${cls}</div>
+            <div class="class-team-subtext">${teamSubtext}</div>
+        </td>`;
+
+        periods.forEach(period => {
+            if (period === 'BREAK' || period === 'BREAKFAST BREAK' || period === 'BREAKFAST') {
+                html += `<td style="background:var(--static-cell-bg); text-align:center; color:var(--text-secondary);">-</td>`;
+                return;
+            }
+
+            // Find all teacher assignments for this class in this period
+            const assignedTeachersMap = new Map(); // key -> entry info
+
+            // 1. Expected assignments from baseSchedule
+            teachers.forEach(t => {
+                const baseTask = state.baseSchedule[state.day]?.[period]?.[t];
+                if (baseTask && extractClassSections(baseTask).includes(cls)) {
+                    const isAbsent = state.absentTeachers.has(t);
+                    const subTeacher = state.substitutions[state.day]?.[period]?.[t];
+
+                    if (isAbsent && !subTeacher) {
+                        // Absent and uncovered
+                        assignedTeachersMap.set(`missing_${t}`, {
+                            task: baseTask,
+                            teacher: t,
+                            isMissing: true,
+                            absentTeacher: t
+                        });
+                    } else if (isAbsent && subTeacher) {
+                        // Absent and covered by substitute
+                        const subStatus = getSubStatusObj(state.day, period, t);
+                        assignedTeachersMap.set(`sub_${t}`, {
+                            task: baseTask,
+                            teacher: subTeacher,
+                            isSub: true,
+                            absentTeacher: t,
+                            subStatus
+                        });
+                    } else {
+                        // Present teacher originally scheduled
+                        const activeTask = state.schedule[state.day]?.[period]?.[t];
+                        if (activeTask && extractClassSections(activeTask).includes(cls)) {
+                            assignedTeachersMap.set(t, {
+                                task: activeTask,
+                                teacher: t,
+                                isBase: true
+                            });
+                        } else {
+                            // Diverted as a sub for someone else, or task moved
+                            assignedTeachersMap.set(`diverted_${t}`, {
+                                task: baseTask,
+                                teacher: t,
+                                isDiverted: true
+                            });
+                        }
+                    }
+                }
+            });
+
+            // 2. Extra assignments in current schedule not originally in base
+            teachers.forEach(t => {
+                if (state.absentTeachers.has(t)) return;
+                const activeTask = state.schedule[state.day]?.[period]?.[t];
+                if (activeTask && extractClassSections(activeTask).includes(cls)) {
+                    const baseTask = state.baseSchedule[state.day]?.[period]?.[t];
+                    if (!baseTask || !extractClassSections(baseTask).includes(cls)) {
+                        // Check if teacher is already represented as a substitute above
+                        let isCoveringAbsent = false;
+                        for (const item of assignedTeachersMap.values()) {
+                            if (item.isSub && item.teacher === t) {
+                                isCoveringAbsent = true;
+                                break;
+                            }
+                        }
+                        if (!isCoveringAbsent) {
+                            assignedTeachersMap.set(`additional_${t}`, {
+                                task: activeTask,
+                                teacher: t,
+                                isAdditional: true
+                            });
+                        }
+                    }
+                }
+            });
+
+            const entries = Array.from(assignedTeachersMap.values());
+            let cellClasses = ['class-routine-cell'];
+            let cellContent = '';
+            let cellTitle = `${cls} • ${period}`;
+            let hasMissing = entries.some(e => e.isMissing);
+            let hasCovered = entries.some(e => e.isSub);
+            let hasCollision = false;
+
+            // Check if any teacher in this class slot has a collision
+            entries.forEach(e => {
+                const tName = e.teacher;
+                if (tName && !e.isMissing) {
+                    const cKey = `${period}::${tName}`;
+                    if (collisions.collisionCells.has(cKey)) {
+                        hasCollision = true;
+                    }
+                }
+            });
+
+            if (hasCollision) {
+                cellClasses.push('cell-collision');
+            }
+            if (hasMissing) {
+                cellClasses.push('cell-missing');
+            } else if (hasCovered) {
+                cellClasses.push('cell-covered');
+            }
+
+            if (entries.length === 0) {
+                cellContent = '<span style="color:var(--text-tertiary); font-size:11px;">Free</span>';
+            } else {
+                // Group entries by subject/task name
+                const taskGroups = {};
+                entries.forEach(entry => {
+                    let subj = entry.task;
+                    classes.forEach(c => {
+                        subj = subj.replace(new RegExp(`\\b${c}\\b`, 'gi'), '');
+                    });
+                    subj = subj.replace(/\+/g, '').trim();
+                    if (!taskGroups[subj]) taskGroups[subj] = [];
+                    taskGroups[subj].push(entry);
+                });
+
+                const groupHtmls = Object.entries(taskGroups).map(([subj, groupEntries]) => {
+                    const pills = groupEntries.map(e => {
+                        const tShort = e.teacher.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
+                        if (e.isMissing) {
+                            return `<span class="class-teacher-pill pill-missing" style="cursor:pointer;" onclick="openBottomSheet('${period}', '${e.absentTeacher}')" title="${e.absentTeacher} is absent. Click to assign substitute.">⚠ ${tShort}</span>`;
+                        } else if (e.isSub) {
+                            const icon = e.subStatus?.status === 'accepted' ? '🔒 ' : (e.subStatus?.status === 'disputed' ? '⚑ ' : '↳ ');
+                            const absShort = e.absentTeacher.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
+                            return `<span class="class-teacher-pill pill-sub" style="cursor:pointer;" onclick="openBottomSheet('${period}', '${e.absentTeacher}')" title="Sub ${e.teacher} for ${e.absentTeacher} (${e.subStatus?.status}). Click to manage.">${icon}${tShort} (${absShort})</span>`;
+                        } else if (e.isDiverted) {
+                            return `<span class="class-teacher-pill" style="opacity:0.6; text-decoration:line-through;" title="${e.teacher} reassigned elsewhere">${tShort}</span>`;
+                        } else {
+                            const isCo = groupEntries.length > 1;
+                            const coClass = isCo ? 'pill-coteach' : '';
+                            return `<span class="class-teacher-pill ${coClass}" style="cursor:pointer;" onclick="handleCoTeachingClick('${period}', '${e.teacher}', event)" title="${e.teacher}">${tShort}</span>`;
+                        }
+                    }).join(' ');
+
+                    return `<div class="class-routine-item"><span class="class-sub-title">${subj}</span><div style="display:flex; flex-wrap:wrap; gap:3px; justify-content:center;">${pills}</div></div>`;
+                });
+
+                cellContent = groupHtmls.join('<div style="height:4px;"></div>');
+            }
+
+            html += `<td class="${cellClasses.join(' ')}" title="${cellTitle}">${cellContent}</td>`;
+        });
+
+        html += `</tr>`;
+    });
+
+    html += '</tbody>';
+    table.innerHTML = html;
+}
+
 function renderDisplacedTray() {
     const indicator = document.getElementById('displaced-indicator');
     const wrapper = document.getElementById('limbo-wrapper');
@@ -2031,15 +2368,15 @@ function renderDisplacedTray() {
 
 // --- PRIORITY PREFERENCE MATRIX & SUBJECT/GRADE AFFINITY ENGINE ---
 const teacherPreferences = {
-    'Mr. Stephen': { dept: 'STEM & Math', cluster: 'STEM', subjects: ['MATH', 'PHY'], grades: [7, 8, 9, 10, 11] },
-    'Mrs. Midha':  { dept: 'English & Lit', cluster: 'HUMANITIES', subjects: ['ENG', 'LIT'], grades: [6, 7, 8, 9, 10, 11] },
-    'Mrs. Pahwa':  { dept: 'Sciences', cluster: 'STEM', subjects: ['CHEM', 'SCI'], grades: [7, 8, 9, 10, 11, 12] },
-    'Mrs. Bage':   { dept: 'Bio & EVS', cluster: 'STEM', subjects: ['BIO', 'SCI', 'EVS'], grades: [5, 6, 8, 9, 11, 12] },
-    'Mr. Adams':   { dept: 'Social Studies', cluster: 'HUMANITIES', subjects: ['HIST', 'GEO', 'SST', 'CIV'], grades: [7, 8, 9, 10, 11] },
-    'Mrs. Baker':  { dept: 'Languages', cluster: 'HUMANITIES', subjects: ['HINDI', 'SKT'], grades: [6, 7, 8, 9, 10] },
-    'Ms. Clark':   { dept: 'Computer & AI', cluster: 'STEM', subjects: ['COMP', 'IT', 'AI'], grades: [7, 8, 9, 10, 11] },
-    'Mr. Davis':   { dept: 'PE & Sports', cluster: 'HOLISTIC', subjects: ['P.E.', 'GAMES', 'YOGA'], grades: [6, 7, 8, 9, 10, 11] },
-    'Mrs. Evans':  { dept: 'Arts & Music', cluster: 'HOLISTIC', subjects: ['ART', 'CRAFT', 'MUSIC'], grades: [5, 6, 7, 8, 9] }
+    'Mrs. S. Lakra': { dept: 'English & Math', cluster: 'CORE', subjects: ['ENG. REC.', 'ENG. WR.', 'ENG. ORAL', 'ENG. ACT.', 'ENG. CONV.', 'ENG. STORY', 'M. SC.', 'M. ORAL', 'M. PR.', 'M. NO. WK.', 'M. ACT.', 'SUB. TABLE', 'SING.'], sections: ['KG A', 'KG B'] },
+    'Mrs. M. Midha':  { dept: 'English & Math', cluster: 'CORE', subjects: ['ENG. REC.', 'ENG. WR.', 'ENG. ORAL', 'ENG. ACT.', 'ENG. CONV.', 'ENG. STORY', 'M. SC.', 'M. ORAL', 'M. PR.', 'M. NO. WK.', 'M. ACT.', 'SUB. TABLE', 'SING.'], sections: ['KG B', 'KG A'] },
+    'Mrs. R. Pahwa':  { dept: 'English & Math', cluster: 'CORE', subjects: ['ENG.', 'ENG. REC.', 'ENG. WR.', 'ENG. LANG.', 'ENG. LIT.', 'ENG. SPELL.', 'ENG. CR. WR.', 'M. SC.', 'M. GEN.', 'M. Bas.', 'M. NO. WK.', 'ST. TIME.', 'SING.'], sections: ['PREP A', 'PREP B'] },
+    'Mrs. R. Narayan':{ dept: 'English & Math', cluster: 'CORE', subjects: ['ENG.', 'ENG. REC.', 'ENG. WR.', 'ENG. LANG.', 'ENG. LIT.', 'ENG. SPELL.', 'ENG. CR. WR.', 'M. SC.', 'M. GEN.', 'M. Bas.', 'M. NO. WK.', 'ST. TIME.', 'SING.'], sections: ['PREP B', 'PREP A'] },
+    'Ms. N. Horo':   { dept: 'Hindi', cluster: 'HINDI', subjects: ['HIN. KAV./GEET', 'HIN. LIK. KAR.', 'HIN. KAH.', 'HIN. VYAK.', 'HIN. SUL.', 'HIN. KAR. PUS.', 'HIN. SAHIT.'], sections: ['KG A', 'PREP A'] },
+    'Ms. K. Sanga':  { dept: 'Hindi', cluster: 'HINDI', subjects: ['HIN. KAV./GEET', 'HIN. LIK. KAR.', 'HIN. KAH.', 'HIN. VYAK.', 'HIN. SUL.', 'HIN. KAR. PUS.', 'HIN. SAHIT.'], sections: ['KG B', 'PREP B'] },
+    'Ms. A. Amira':  { dept: 'Holistic & Activity', cluster: 'HOLISTIC', subjects: ['GK', 'HT', 'NT', 'DR.', 'CR.', 'GAMES', 'DRILL', '1ST DRILL'], sections: ['KG A', 'PREP A'] },
+    'Mrs. S. Bage':   { dept: 'Holistic & Activity', cluster: 'HOLISTIC', subjects: ['GK', 'HT', 'NT', 'DR.', 'CR.', 'GAMES', 'DRILL', '2ND DRILL'], sections: ['KG B', 'PREP B'] },
+    'Mr. S. A. Lakra':{ dept: 'Sports, Drill & Support', cluster: 'SUPPORT', subjects: ['GAMES', 'DRILL', '1ST DRILL', '2ND DRILL', 'SING.', 'GK', 'HIN. KAV./GEET'], sections: ['KG A', 'KG B', 'PREP A', 'PREP B'] }
 };
 
 function parseTaskDetails(task) {
@@ -2047,22 +2384,22 @@ function parseTaskDetails(task) {
         return { subjectPrefix: '', section: '', grade: null, dept: 'General', cluster: 'GENERAL' };
     }
     const clean = task.trim().toUpperCase();
-    const parts = clean.split(/\s+/);
-    const subjectPrefix = parts[0] || '';
     const section = extractClassSection(clean) || '';
-    const gradeMatch = section.match(/^(\d{1,2})/);
-    const grade = gradeMatch ? parseInt(gradeMatch[1], 10) : null;
+    let subjectPrefix = clean;
+    if (section) {
+        subjectPrefix = clean.replace(section, '').replace(/\+.*$/, '').trim();
+    }
 
     let dept = 'General';
     let cluster = 'GENERAL';
     for (const prof of Object.values(teacherPreferences)) {
-        if (prof.subjects.includes(subjectPrefix)) {
+        if (prof.subjects.some(s => subjectPrefix.startsWith(s) || s.startsWith(subjectPrefix))) {
             dept = prof.dept;
             cluster = prof.cluster;
             break;
         }
     }
-    return { subjectPrefix, section, grade, dept, cluster };
+    return { subjectPrefix, section, dept, cluster };
 }
 
 function getTeacherDailyStats(teacher, day, customSchedule = null) {
@@ -2070,7 +2407,7 @@ function getTeacherDailyStats(teacher, day, customSchedule = null) {
     let teachingLoad = 0;
     let totalSlots = 0;
     periods.forEach(p => {
-        if (p === 'BREAKFAST BREAK' || p === 'BREAKFAST') return;
+        if (p === 'BREAK' || p === 'BREAKFAST BREAK' || p === 'BREAKFAST') return;
         totalSlots++;
         const t = sched[p]?.[teacher];
         if (t && t !== 'Free' && t !== '-') {
@@ -2089,7 +2426,7 @@ function doesTeacherTeachSection(teacher, section, day) {
     const dayBase = state.baseSchedule[day] || {};
     for (const p of periods) {
         const task = dayBase[p]?.[teacher];
-        if (task && extractClassSection(task) === section) {
+        if (task && extractClassSections(task).includes(section)) {
             return true;
         }
     }
@@ -2097,7 +2434,7 @@ function doesTeacherTeachSection(teacher, section, day) {
 }
 
 function evaluateTeacherAffinity(subTeacher, taskToCover, period, day = state.day, customSchedule = null) {
-    const pref = teacherPreferences[subTeacher] || { dept: 'General', cluster: 'GENERAL', subjects: [], grades: [] };
+    const pref = teacherPreferences[subTeacher] || { dept: 'General', cluster: 'GENERAL', subjects: [], sections: [] };
     const taskInfo = parseTaskDetails(taskToCover);
     const stats = getTeacherDailyStats(subTeacher, day, customSchedule);
 
@@ -2105,34 +2442,45 @@ function evaluateTeacherAffinity(subTeacher, taskToCover, period, day = state.da
     const reasons = [];
     let primaryBadge = '';
 
-    // 1. Subject & Department Affinity
-    if (taskInfo.subjectPrefix && pref.subjects.includes(taskInfo.subjectPrefix)) {
-        score += 48;
+    // 1. Class Team Member Priority (2nd Teacher or Support assigned to this class)
+    if (taskInfo.section && classTeams[taskInfo.section]) {
+        const team = classTeams[taskInfo.section];
+        if (team.second === subTeacher || team.support === subTeacher) {
+            score += 42;
+            reasons.push(`${taskInfo.section} Team Partner`);
+            primaryBadge = `★ ${taskInfo.section} Team`;
+        }
+    }
+
+    // 2. Subject & Department Affinity
+    const isSubMatch = pref.subjects.some(s => taskInfo.subjectPrefix.startsWith(s) || s.startsWith(taskInfo.subjectPrefix));
+    if (isSubMatch) {
+        score += 38;
         reasons.push('Subject Specialist');
-        primaryBadge = '★ Subject Match';
+        if (!primaryBadge) primaryBadge = '★ Subject Match';
     } else if (taskInfo.cluster && pref.cluster === taskInfo.cluster) {
-        score += 26;
+        score += 24;
         reasons.push(`${pref.dept} Affinity`);
         if (!primaryBadge) primaryBadge = '◆ Dept Match';
     }
 
-    // 2. Class Section & Grade Band Familiarity
+    // 3. Class Section Familiarity
     if (taskInfo.section && doesTeacherTeachSection(subTeacher, taskInfo.section, day)) {
-        score += 24;
+        score += 22;
         reasons.push(`Teaches ${taskInfo.section}`);
         if (!primaryBadge) primaryBadge = `Familiar (${taskInfo.section})`;
-    } else if (taskInfo.grade && pref.grades.includes(taskInfo.grade)) {
-        score += 14;
-        reasons.push(`Grade ${taskInfo.grade} Band`);
-        if (!primaryBadge) primaryBadge = `Grade ${taskInfo.grade} Fit`;
+    } else if (taskInfo.section && pref.sections.includes(taskInfo.section)) {
+        score += 15;
+        reasons.push(`${taskInfo.section} Wing Fit`);
+        if (!primaryBadge) primaryBadge = `${taskInfo.section} Fit`;
     }
 
-    // 3. Workload Balance Bonus
+    // 4. Workload Balance Bonus
     const loadBonus = Math.max(0, (stats.totalSlots - stats.teachingLoad) * 4);
     score += loadBonus;
 
     if (!primaryBadge) {
-        primaryBadge = stats.teachingLoad <= 4 ? '⚖ Light Load' : 'Available';
+        primaryBadge = stats.teachingLoad <= 3 ? '⚖ Light Load' : 'Available';
     }
 
     return {
@@ -2164,7 +2512,7 @@ function renderSubstitutions() {
     const rowsData = [];
 
     periods.forEach(period => {
-        if (period === 'BREAKFAST BREAK' || period === 'BREAKFAST') return;
+        if (period === 'BREAK' || period === 'BREAKFAST BREAK' || period === 'BREAKFAST') return;
         teachers.forEach(teacher => {
             const isAbsent = state.absentTeachers.has(teacher);
             if (!isAbsent) return;
@@ -2947,7 +3295,7 @@ function performAutoResolve() {
     const unresolvedList = [];
 
     periods.forEach(period => {
-        if (period === 'BREAKFAST BREAK' || period === 'BREAKFAST') return;
+        if (period === 'BREAK' || period === 'BREAKFAST BREAK' || period === 'BREAKFAST') return;
         teachers.forEach(t => {
             const isAbsent = state.absentTeachers.has(t);
             const baseTask = state.baseSchedule[day]?.[period]?.[t];
@@ -3531,109 +3879,463 @@ function showToast(message, isCritical = false) {
     setTimeout(() => { toast.classList.add('hidden'); }, 4000);
 }
 
-// --- MOCK DATA GENERATOR ---
+// --- REAL 2026 - 2027 MASTER TIMETABLE DATA (LITTLE FLOWER PREPARATORY SCHOOL) ---
+const realMasterSchedule = {
+    'MON': {
+        'G/PD': {
+            'Mrs. S. Lakra': 'ENG. REC. KG A',
+            'Mrs. M. Midha': 'ENG. REC. KG B',
+            'Mrs. R. Pahwa': 'ENG. REC. PREP A',
+            'Mrs. R. Narayan': 'ENG. REC. PREP B',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'GAMES KG A',
+            'Mrs. S. Bage': 'GAMES KG B',
+            'Mr. S. A. Lakra': 'GAMES KG A + KG B'
+        },
+        '1st': {
+            'Mrs. S. Lakra': 'M. SC. KG A',
+            'Mrs. M. Midha': 'M. SC. KG B',
+            'Mrs. R. Pahwa': 'M. SC. PREP A',
+            'Mrs. R. Narayan': 'M. SC. PREP B',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        'BREAK': {
+            'Mrs. S. Lakra': '-', 'Mrs. M. Midha': '-', 'Mrs. R. Pahwa': '-', 'Mrs. R. Narayan': '-',
+            'Ms. N. Horo': '-', 'Ms. K. Sanga': '-', 'Ms. A. Amira': '-', 'Mrs. S. Bage': '-', 'Mr. S. A. Lakra': '-'
+        },
+        '2nd': {
+            'Mrs. S. Lakra': 'Free',
+            'Mrs. M. Midha': 'Free',
+            'Mrs. R. Pahwa': 'Free',
+            'Mrs. R. Narayan': 'ENG. WR. PREP B',
+            'Ms. N. Horo': 'HIN. KAV./GEET KG A',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'NT PREP A',
+            'Mrs. S. Bage': 'HT KG B',
+            'Mr. S. A. Lakra': 'HIN. KAV./GEET KG A'
+        },
+        '3rd': {
+            'Mrs. S. Lakra': 'Free',
+            'Mrs. M. Midha': 'Free',
+            'Mrs. R. Pahwa': 'M. Bas. PREP A',
+            'Mrs. R. Narayan': 'M. Bas. PREP B',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'HIN. KAV./GEET KG B',
+            'Ms. A. Amira': 'HT KG A',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'HIN. KAV./GEET KG B'
+        },
+        '4th': {
+            'Mrs. S. Lakra': 'ENG. ORAL KG A',
+            'Mrs. M. Midha': 'ENG. ORAL KG B',
+            'Mrs. R. Pahwa': 'Free',
+            'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'HIN. KAV./GEET PREP A',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'GK PREP B',
+            'Mr. S. A. Lakra': 'HIN. KAV./GEET PREP A'
+        },
+        'PLAYTIME / 2ND GOLDEN HOUR': {
+            'Mrs. S. Lakra': 'Free', 'Mrs. M. Midha': 'Free', 'Mrs. R. Pahwa': 'Free', 'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free', 'Ms. K. Sanga': 'Free', 'Ms. A. Amira': 'Free', 'Mrs. S. Bage': 'Free', 'Mr. S. A. Lakra': 'Free'
+        },
+        '5th': {
+            'Mrs. S. Lakra': 'ENG. WR. KG A',
+            'Mrs. M. Midha': 'ENG. WR. KG B',
+            'Mrs. R. Pahwa': 'Free',
+            'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'GK PREP A',
+            'Mrs. S. Bage': 'NT PREP B',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        '6th': {
+            'Mrs. S. Lakra': 'Free',
+            'Mrs. M. Midha': 'Free',
+            'Mrs. R. Pahwa': 'ENG. WR. PREP A',
+            'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'HIN. KAV./GEET PREP B',
+            'Ms. A. Amira': 'NT KG A',
+            'Mrs. S. Bage': 'NT KG B',
+            'Mr. S. A. Lakra': 'HIN. KAV./GEET PREP B'
+        }
+    },
+    'TUE': {
+        'G/PD': {
+            'Mrs. S. Lakra': 'SUB. TABLE KG A',
+            'Mrs. M. Midha': 'SUB. TABLE KG B',
+            'Mrs. R. Pahwa': 'Free',
+            'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': '1ST DRILL PREP A',
+            'Mrs. S. Bage': '2ND DRILL PREP B',
+            'Mr. S. A. Lakra': 'DRILL PREP A + PREP B'
+        },
+        '1st': {
+            'Mrs. S. Lakra': 'ENG. REC. KG A',
+            'Mrs. M. Midha': 'M. ACT. KG B',
+            'Mrs. R. Pahwa': 'ST. TIME. PREP A',
+            'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'CR. PREP B',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        'BREAK': {
+            'Mrs. S. Lakra': '-', 'Mrs. M. Midha': '-', 'Mrs. R. Pahwa': '-', 'Mrs. R. Narayan': '-',
+            'Ms. N. Horo': '-', 'Ms. K. Sanga': '-', 'Ms. A. Amira': '-', 'Mrs. S. Bage': '-', 'Mr. S. A. Lakra': '-'
+        },
+        '2nd': {
+            'Mrs. S. Lakra': 'M. ORAL KG A',
+            'Mrs. M. Midha': 'M. ORAL KG B',
+            'Mrs. R. Pahwa': 'M. GEN. PREP A',
+            'Mrs. R. Narayan': 'ENG. SPELL. PREP B',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        '3rd': {
+            'Mrs. S. Lakra': 'M. PR. KG A',
+            'Mrs. M. Midha': 'Free',
+            'Mrs. R. Pahwa': 'M. GEN. PREP A',
+            'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'HIN. LIK. KAR. KG B',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'DR. PREP B',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        '4th': {
+            'Mrs. S. Lakra': 'Free',
+            'Mrs. M. Midha': 'ENG. REC. KG B',
+            'Mrs. R. Pahwa': 'ENG. SPELL. PREP A',
+            'Mrs. R. Narayan': 'M. GEN. PREP B',
+            'Ms. N. Horo': 'HIN. LIK. KAR. KG A',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        'PLAYTIME / 2ND GOLDEN HOUR': {
+            'Mrs. S. Lakra': 'Free', 'Mrs. M. Midha': 'Free', 'Mrs. R. Pahwa': 'Free', 'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free', 'Ms. K. Sanga': 'Free', 'Ms. A. Amira': 'Free', 'Mrs. S. Bage': 'Free', 'Mr. S. A. Lakra': 'Free'
+        },
+        '5th': {
+            'Mrs. S. Lakra': 'Free',
+            'Mrs. M. Midha': 'M. PR. KG B',
+            'Mrs. R. Pahwa': 'Free',
+            'Mrs. R. Narayan': 'M. GEN. PREP B',
+            'Ms. N. Horo': 'HIN. LIK. KAR. KG A',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'CR. PREP A',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        '6th': {
+            'Mrs. S. Lakra': 'M. ACT. KG A',
+            'Mrs. M. Midha': 'Free',
+            'Mrs. R. Pahwa': 'Free',
+            'Mrs. R. Narayan': 'ST. TIME. PREP B',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'HIN. LIK. KAR. KG B',
+            'Ms. A. Amira': 'DR. PREP A',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'Free'
+        }
+    },
+    'WED': {
+        'G/PD': {
+            'Mrs. S. Lakra': 'ENG. REC. KG A',
+            'Mrs. M. Midha': 'ENG. REC. KG B',
+            'Mrs. R. Pahwa': 'Free',
+            'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'GK PREP A',
+            'Mrs. S. Bage': 'GK PREP B',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        '1st': {
+            'Mrs. S. Lakra': 'M. SC. KG A',
+            'Mrs. M. Midha': 'M. SC. KG B',
+            'Mrs. R. Pahwa': 'M. SC. PREP A',
+            'Mrs. R. Narayan': 'M. SC. PREP B',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        'BREAK': {
+            'Mrs. S. Lakra': '-', 'Mrs. M. Midha': '-', 'Mrs. R. Pahwa': '-', 'Mrs. R. Narayan': '-',
+            'Ms. N. Horo': '-', 'Ms. K. Sanga': '-', 'Ms. A. Amira': '-', 'Mrs. S. Bage': '-', 'Mr. S. A. Lakra': '-'
+        },
+        '2nd': {
+            'Mrs. S. Lakra': 'SING. KG A',
+            'Mrs. M. Midha': 'Free',
+            'Mrs. R. Pahwa': 'ENG. LANG. PREP A',
+            'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'HIN. KAH. KG B',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'HT PREP B',
+            'Mr. S. A. Lakra': 'SING. KG A'
+        },
+        '3rd': {
+            'Mrs. S. Lakra': 'Free',
+            'Mrs. M. Midha': 'ENG. WR. KG B',
+            'Mrs. R. Pahwa': 'ENG. LANG. PREP A',
+            'Mrs. R. Narayan': 'ENG. LANG. PREP B',
+            'Ms. N. Horo': 'HIN. KAH. KG A',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        '4th': {
+            'Mrs. S. Lakra': 'ENG. WR. KG A',
+            'Mrs. M. Midha': 'ENG. WR. KG B',
+            'Mrs. R. Pahwa': 'Free',
+            'Mrs. R. Narayan': 'ENG. LANG. PREP B',
+            'Ms. N. Horo': 'HIN. VYAK. PREP A',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        'PLAYTIME / 2ND GOLDEN HOUR': {
+            'Mrs. S. Lakra': 'Free', 'Mrs. M. Midha': 'Free', 'Mrs. R. Pahwa': 'Free', 'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free', 'Ms. K. Sanga': 'Free', 'Ms. A. Amira': 'Free', 'Mrs. S. Bage': 'Free', 'Mr. S. A. Lakra': 'Free'
+        },
+        '5th': {
+            'Mrs. S. Lakra': 'ENG. WR. KG A',
+            'Mrs. M. Midha': 'SING. KG B',
+            'Mrs. R. Pahwa': 'Free',
+            'Mrs. R. Narayan': 'M. NO. WK. PREP B',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'HT PREP A',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'SING. KG B'
+        },
+        '6th': {
+            'Mrs. S. Lakra': 'Free',
+            'Mrs. M. Midha': 'Free',
+            'Mrs. R. Pahwa': 'M. NO. WK. PREP A',
+            'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'HIN. VYAK. PREP B',
+            'Ms. A. Amira': 'HT KG A',
+            'Mrs. S. Bage': 'HT KG B',
+            'Mr. S. A. Lakra': 'Free'
+        }
+    },
+    'THU': {
+        'G/PD': {
+            'Mrs. S. Lakra': 'Free',
+            'Mrs. M. Midha': 'Free',
+            'Mrs. R. Pahwa': 'ENG. PREP A',
+            'Mrs. R. Narayan': 'ENG. PREP B',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'DRILL KG A',
+            'Mrs. S. Bage': 'DRILL KG B',
+            'Mr. S. A. Lakra': 'DRILL KG A + KG B'
+        },
+        '1st': {
+            'Mrs. S. Lakra': 'ENG. ORAL KG A',
+            'Mrs. M. Midha': 'ENG. ORAL KG B',
+            'Mrs. R. Pahwa': 'Free',
+            'Mrs. R. Narayan': 'ENG. LIT. PREP B',
+            'Ms. N. Horo': 'HIN. SUL. PREP A',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        'BREAK': {
+            'Mrs. S. Lakra': '-', 'Mrs. M. Midha': '-', 'Mrs. R. Pahwa': '-', 'Mrs. R. Narayan': '-',
+            'Ms. N. Horo': '-', 'Ms. K. Sanga': '-', 'Ms. A. Amira': '-', 'Mrs. S. Bage': '-', 'Mr. S. A. Lakra': '-'
+        },
+        '2nd': {
+            'Mrs. S. Lakra': 'Free',
+            'Mrs. M. Midha': 'Free',
+            'Mrs. R. Pahwa': 'ENG. LIT. PREP A',
+            'Mrs. R. Narayan': 'ENG. LIT. PREP B',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'HIN. KAR. PUS. KG B',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'GK KG A'
+        },
+        '3rd': {
+            'Mrs. S. Lakra': 'M. NO. WK. KG A',
+            'Mrs. M. Midha': 'M. NO. WK. KG B',
+            'Mrs. R. Pahwa': 'ENG. LIT. PREP A',
+            'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'HIN. SUL. PREP B',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        '4th': {
+            'Mrs. S. Lakra': 'M. NO. WK. KG A',
+            'Mrs. M. Midha': 'M. NO. WK. KG B',
+            'Mrs. R. Pahwa': 'Free',
+            'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'NT PREP A',
+            'Mrs. S. Bage': 'NT PREP B',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        'PLAYTIME / 2ND GOLDEN HOUR': {
+            'Mrs. S. Lakra': 'Free', 'Mrs. M. Midha': 'Free', 'Mrs. R. Pahwa': 'Free', 'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free', 'Ms. K. Sanga': 'Free', 'Ms. A. Amira': 'Free', 'Mrs. S. Bage': 'Free', 'Mr. S. A. Lakra': 'Free'
+        },
+        '5th': {
+            'Mrs. S. Lakra': 'Free',
+            'Mrs. M. Midha': 'Free',
+            'Mrs. R. Pahwa': 'M. GEN. PREP A',
+            'Mrs. R. Narayan': 'M. GEN. PREP B',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'NT KG A',
+            'Mrs. S. Bage': 'NT KG B',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        '6th': {
+            'Mrs. S. Lakra': 'Free',
+            'Mrs. M. Midha': 'Free',
+            'Mrs. R. Pahwa': 'M. GEN. PREP A',
+            'Mrs. R. Narayan': 'M. GEN. PREP B',
+            'Ms. N. Horo': 'HIN. KAR. PUS. KG A',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'GK KG B'
+        }
+    },
+    'FRI': {
+        'G/PD': {
+            'Mrs. S. Lakra': 'ENG. REC. KG A',
+            'Mrs. M. Midha': 'ENG. REC. KG B',
+            'Mrs. R. Pahwa': 'Free',
+            'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'GAMES PREP A',
+            'Mrs. S. Bage': 'GAMES PREP B',
+            'Mr. S. A. Lakra': 'GAMES PREP A + PREP B'
+        },
+        '1st': {
+            'Mrs. S. Lakra': 'M. ORAL KG A',
+            'Mrs. M. Midha': 'M. ORAL KG B',
+            'Mrs. R. Pahwa': 'Free',
+            'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'HT PREP A',
+            'Mrs. S. Bage': 'HT PREP B',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        'BREAK': {
+            'Mrs. S. Lakra': '-', 'Mrs. M. Midha': '-', 'Mrs. R. Pahwa': '-', 'Mrs. R. Narayan': '-',
+            'Ms. N. Horo': '-', 'Ms. K. Sanga': '-', 'Ms. A. Amira': '-', 'Mrs. S. Bage': '-', 'Mr. S. A. Lakra': '-'
+        },
+        '2nd': {
+            'Mrs. S. Lakra': 'Free',
+            'Mrs. M. Midha': 'ENG. STORY KG B',
+            'Mrs. R. Pahwa': 'Free',
+            'Mrs. R. Narayan': 'ENG. CR. WR. PREP B',
+            'Ms. N. Horo': 'HIN. SAHIT. PREP A',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'DR. KG A',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        '3rd': {
+            'Mrs. S. Lakra': 'Free',
+            'Mrs. M. Midha': 'ENG. CONV. KG B',
+            'Mrs. R. Pahwa': 'SING. PREP A',
+            'Mrs. R. Narayan': 'ENG. REC. PREP B',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'CR. KG A',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'SING. PREP A'
+        },
+        '4th': {
+            'Mrs. S. Lakra': 'ENG. STORY KG A',
+            'Mrs. M. Midha': 'Free',
+            'Mrs. R. Pahwa': 'ENG. CR. WR. PREP A',
+            'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'HIN. SAHIT. PREP B',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'DR. KG B',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        'PLAYTIME / 2ND GOLDEN HOUR': {
+            'Mrs. S. Lakra': 'Free', 'Mrs. M. Midha': 'Free', 'Mrs. R. Pahwa': 'Free', 'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free', 'Ms. K. Sanga': 'Free', 'Ms. A. Amira': 'Free', 'Mrs. S. Bage': 'Free', 'Mr. S. A. Lakra': 'Free'
+        },
+        '5th': {
+            'Mrs. S. Lakra': 'ENG. CONV. KG A',
+            'Mrs. M. Midha': 'Free',
+            'Mrs. R. Pahwa': 'ENG. REC. PREP A',
+            'Mrs. R. Narayan': 'Free',
+            'Ms. N. Horo': 'Free',
+            'Ms. K. Sanga': 'HIN. SAHIT. PREP B',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'CR. KG B',
+            'Mr. S. A. Lakra': 'Free'
+        },
+        '6th': {
+            'Mrs. S. Lakra': 'ENG. ACT. KG A',
+            'Mrs. M. Midha': 'ENG. ACT. KG B',
+            'Mrs. R. Pahwa': 'Free',
+            'Mrs. R. Narayan': 'SING. PREP B',
+            'Ms. N. Horo': 'HIN. SAHIT. PREP A',
+            'Ms. K. Sanga': 'Free',
+            'Ms. A. Amira': 'Free',
+            'Mrs. S. Bage': 'Free',
+            'Mr. S. A. Lakra': 'SING. PREP B'
+        }
+    },
+    'SAT': {
+        'G/PD': { 'Mrs. S. Lakra': 'Free', 'Mrs. M. Midha': 'Free', 'Mrs. R. Pahwa': 'Free', 'Mrs. R. Narayan': 'Free', 'Ms. N. Horo': 'Free', 'Ms. K. Sanga': 'Free', 'Ms. A. Amira': 'Free', 'Mrs. S. Bage': 'Free', 'Mr. S. A. Lakra': 'Free' },
+        '1st': { 'Mrs. S. Lakra': 'Free', 'Mrs. M. Midha': 'Free', 'Mrs. R. Pahwa': 'Free', 'Mrs. R. Narayan': 'Free', 'Ms. N. Horo': 'Free', 'Ms. K. Sanga': 'Free', 'Ms. A. Amira': 'Free', 'Mrs. S. Bage': 'Free', 'Mr. S. A. Lakra': 'Free' },
+        'BREAK': { 'Mrs. S. Lakra': '-', 'Mrs. M. Midha': '-', 'Mrs. R. Pahwa': '-', 'Mrs. R. Narayan': '-', 'Ms. N. Horo': '-', 'Ms. K. Sanga': '-', 'Ms. A. Amira': '-', 'Mrs. S. Bage': '-', 'Mr. S. A. Lakra': '-' },
+        '2nd': { 'Mrs. S. Lakra': 'Free', 'Mrs. M. Midha': 'Free', 'Mrs. R. Pahwa': 'Free', 'Mrs. R. Narayan': 'Free', 'Ms. N. Horo': 'Free', 'Ms. K. Sanga': 'Free', 'Ms. A. Amira': 'Free', 'Mrs. S. Bage': 'Free', 'Mr. S. A. Lakra': 'Free' },
+        '3rd': { 'Mrs. S. Lakra': 'Free', 'Mrs. M. Midha': 'Free', 'Mrs. R. Pahwa': 'Free', 'Mrs. R. Narayan': 'Free', 'Ms. N. Horo': 'Free', 'Ms. K. Sanga': 'Free', 'Ms. A. Amira': 'Free', 'Mrs. S. Bage': 'Free', 'Mr. S. A. Lakra': 'Free' },
+        '4th': { 'Mrs. S. Lakra': 'Free', 'Mrs. M. Midha': 'Free', 'Mrs. R. Pahwa': 'Free', 'Mrs. R. Narayan': 'Free', 'Ms. N. Horo': 'Free', 'Ms. K. Sanga': 'Free', 'Ms. A. Amira': 'Free', 'Mrs. S. Bage': 'Free', 'Mr. S. A. Lakra': 'Free' },
+        'PLAYTIME / 2ND GOLDEN HOUR': { 'Mrs. S. Lakra': 'Free', 'Mrs. M. Midha': 'Free', 'Mrs. R. Pahwa': 'Free', 'Mrs. R. Narayan': 'Free', 'Ms. N. Horo': 'Free', 'Ms. K. Sanga': 'Free', 'Ms. A. Amira': 'Free', 'Mrs. S. Bage': 'Free', 'Mr. S. A. Lakra': 'Free' },
+        '5th': { 'Mrs. S. Lakra': 'Free', 'Mrs. M. Midha': 'Free', 'Mrs. R. Pahwa': 'Free', 'Mrs. R. Narayan': 'Free', 'Ms. N. Horo': 'Free', 'Ms. K. Sanga': 'Free', 'Ms. A. Amira': 'Free', 'Mrs. S. Bage': 'Free', 'Mr. S. A. Lakra': 'Free' },
+        '6th': { 'Mrs. S. Lakra': 'Free', 'Mrs. M. Midha': 'Free', 'Mrs. R. Pahwa': 'Free', 'Mrs. R. Narayan': 'Free', 'Ms. N. Horo': 'Free', 'Ms. K. Sanga': 'Free', 'Ms. A. Amira': 'Free', 'Mrs. S. Bage': 'Free', 'Mr. S. A. Lakra': 'Free' }
+    }
+};
+
 function generateSimulatedData() {
-    const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-    
-    // Structured class pools - unique subjects & sections to prevent natural collisions
-    const teacherProfiles = [
-        { teacher: 'Mr. Stephen', subjects: ['MATH 10A', 'MATH 9A', 'MATH 10B', 'PHY 11A', 'MATH 8A', 'MATH 7B'] },
-        { teacher: 'Mrs. Midha', subjects: ['ENG 10A', 'ENG 9B', 'ENG 8A', 'ENG 7A', 'LIT 11B', 'ENG 6A'] },
-        { teacher: 'Mrs. Pahwa', subjects: ['CHEM 11A', 'SCI 9A', 'SCI 10B', 'SCI 8B', 'CHEM 12B', 'SCI 7B'] },
-        { teacher: 'Mrs. Bage', subjects: ['BIO 11A', 'SCI 9B', 'EVS 6A', 'BIO 12A', 'SCI 8A', 'EVS 5A'] },
-        { teacher: 'Mr. Adams', subjects: ['HIST 10A', 'GEO 9A', 'SST 8A', 'HIST 11B', 'SST 7A', 'CIV 9B'] },
-        { teacher: 'Mrs. Baker', subjects: ['HINDI 10A', 'HINDI 9A', 'HINDI 8B', 'HINDI 7B', 'HINDI 6B', 'SKT 8A'] },
-        { teacher: 'Ms. Clark', subjects: ['COMP 9A', 'IT 10A', 'COMP 8A', 'COMP 7A', 'AI 11A', 'IT 9B'] },
-        { teacher: 'Mr. Davis', subjects: ['P.E. 10B', 'GAMES 8A', 'P.E. 9A', 'GAMES 7B', 'YOGA 6A', 'P.E. 11B'] },
-        { teacher: 'Mrs. Evans', subjects: ['ART 7A', 'CRAFT 6A', 'MUSIC 8B', 'ART 9B', 'CRAFT 5B', 'ART 8A'] }
-    ];
-
-    days.forEach((d, dayIndex) => {
-        state.schedule[d] = {};
-        
-        periods.forEach((p, pIndex) => {
-            state.schedule[d][p] = {};
-            
-            if (p === 'BREAKFAST BREAK' || p === 'BREAKFAST') {
-                teachers.forEach(t => {
-                    state.schedule[d][p][t] = '-';
-                });
-                return;
-            }
-
-            // Keep track of class sections assigned in this period to guarantee 0 collisions
-            const usedSectionsInPeriod = new Set();
-
-            teachers.forEach((t, tIndex) => {
-                const profile = teacherProfiles.find(tp => tp.teacher === t);
-                const subPool = profile ? profile.subjects : ['STUDY 10A', 'LIB 9A', 'ACT 8A'];
-
-                // Rotate through subjects deterministically across days and periods
-                const subIndex = (dayIndex * 3 + pIndex + tIndex) % (subPool.length + 3);
-                
-                // Realistic ~30% free periods for teachers so substitutions can occur
-                if (subIndex >= subPool.length || subIndex % 4 === 0) {
-                    state.schedule[d][p][t] = 'Free';
-                } else {
-                    let chosenClass = 'Free';
-                    for (let offset = 0; offset < subPool.length; offset++) {
-                        const candidate = subPool[(subIndex + offset) % subPool.length];
-                        const sec = extractClassSection(candidate);
-                        if (!sec || !usedSectionsInPeriod.has(sec)) {
-                            chosenClass = candidate;
-                            if (sec) usedSectionsInPeriod.add(sec);
-                            break;
-                        }
-                    }
-                    state.schedule[d][p][t] = chosenClass;
-                }
-            });
-        });
-    });
-
-    // Seed intentional Co-Teaching assignments across the week
-    // MON, 2nd Pd: Mr. Stephen & Mrs. Midha both co-teach 'MATH 10A'
-    if (state.schedule['MON'] && state.schedule['MON']['2nd Pd.']) {
-        state.schedule['MON']['2nd Pd.']['Mr. Stephen'] = 'MATH 10A';
-        state.schedule['MON']['2nd Pd.']['Mrs. Midha'] = 'MATH 10A';
-        teachers.forEach(t => {
-            if (t !== 'Mr. Stephen' && t !== 'Mrs. Midha' && extractClassSection(state.schedule['MON']['2nd Pd.'][t]) === '10A') {
-                state.schedule['MON']['2nd Pd.'][t] = 'Free';
-            }
-        });
-    }
-    // MON, 5th Pd: Mrs. Pahwa & Mrs. Bage both co-teach 'SCI 9A'
-    if (state.schedule['MON'] && state.schedule['MON']['5th Pd.']) {
-        state.schedule['MON']['5th Pd.']['Mrs. Pahwa'] = 'SCI 9A';
-        state.schedule['MON']['5th Pd.']['Mrs. Bage'] = 'SCI 9A';
-        teachers.forEach(t => {
-            if (t !== 'Mrs. Pahwa' && t !== 'Mrs. Bage' && extractClassSection(state.schedule['MON']['5th Pd.'][t]) === '9A') {
-                state.schedule['MON']['5th Pd.'][t] = 'Free';
-            }
-        });
-    }
-    // WED, 3rd Pd: Mr. Adams & Mrs. Baker both co-teach 'HIST 10A'
-    if (state.schedule['WED'] && state.schedule['WED']['3rd Pd.']) {
-        state.schedule['WED']['3rd Pd.']['Mr. Adams'] = 'HIST 10A';
-        state.schedule['WED']['3rd Pd.']['Mrs. Baker'] = 'HIST 10A';
-        teachers.forEach(t => {
-            if (t !== 'Mr. Adams' && t !== 'Mrs. Baker' && extractClassSection(state.schedule['WED']['3rd Pd.'][t]) === '10A') {
-                state.schedule['WED']['3rd Pd.'][t] = 'Free';
-            }
-        });
-    }
-    // FRI, 4th Pd: Ms. Clark & Mr. Davis both co-teach 'COMP 9A'
-    if (state.schedule['FRI'] && state.schedule['FRI']['4th Pd.']) {
-        state.schedule['FRI']['4th Pd.']['Ms. Clark'] = 'COMP 9A';
-        state.schedule['FRI']['4th Pd.']['Mr. Davis'] = 'COMP 9A';
-        teachers.forEach(t => {
-            if (t !== 'Ms. Clark' && t !== 'Mr. Davis' && extractClassSection(state.schedule['FRI']['4th Pd.'][t]) === '9A') {
-                state.schedule['FRI']['4th Pd.'][t] = 'Free';
-            }
-        });
-    }
-
-    state.baseSchedule = JSON.parse(JSON.stringify(state.schedule));
+    state.schedule = JSON.parse(JSON.stringify(realMasterSchedule));
+    state.baseSchedule = JSON.parse(JSON.stringify(realMasterSchedule));
     state.substitutions = {};
+    state.subStatus = {};
+    state.officiatingAC = {};
+    state.officiatingCT = {};
     state.displaced = { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] };
+    state.absentTeachers = new Set();
 }
