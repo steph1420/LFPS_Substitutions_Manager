@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.28">
+    <link rel="stylesheet" href="styles.css?v=1.29">
 </head>
 <body>
 
@@ -35,7 +35,11 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge">v1.28</span>
+                <span class="version-badge">v1.29</span>
+                <button id="role-badge-btn" class="role-badge-btn" title="Switch Active Role (Admin / AC / Asst AC / Teacher)">
+                    <span id="role-badge-icon">🛡</span>
+                    <span id="role-badge-text">Admin</span>
+                </button>
             </div>
             <div class="header-controls">
                 <div class="history-btn-group" id="history-btn-group">
@@ -74,6 +78,16 @@
 
     <main class="app-content">
         
+        <!-- Dual-Absence Officiating AC Contingency Banner -->
+        <div id="off-ac-banner" class="off-ac-banner hidden">
+            <!-- Populated by JS when both AC & Asst AC are absent -->
+        </div>
+
+        <!-- Officiating Class Teacher (offCT) Strip when any CT is absent -->
+        <div id="off-ct-strip" class="off-ct-strip hidden">
+            <!-- Populated by JS when any Class Teacher is absent -->
+        </div>
+
         <!-- TAB 1: DASHBOARD (Grid Matrix Layout) -->
         <section id="tab-dashboard" class="tab-section active">
             <div class="absent-tray-container">
@@ -230,8 +244,63 @@
                 </div>
             </div>
 
+            <!-- Role Hierarchy & Active Identity Selector -->
             <div class="settings-group">
-                <div class="settings-group-title">Preferences & Alerts</div>
+                <div class="settings-group-title">Access Role & Identity</div>
+                <div class="role-selector-grid" id="settings-role-grid">
+                    <button class="role-option-btn active" data-role="admin">
+                        <span>🛡</span>
+                        <div>
+                            <div class="role-opt-title">Administrator</div>
+                            <div class="role-opt-sub">Full system & override access</div>
+                        </div>
+                    </button>
+                    <button class="role-option-btn" data-role="ac">
+                        <span>🎓</span>
+                        <div>
+                            <div class="role-opt-title">Academic Coord.</div>
+                            <div class="role-opt-sub">Mr. Stephen (Primary AC)</div>
+                        </div>
+                    </button>
+                    <button class="role-option-btn" data-role="asst_ac">
+                        <span>🎓</span>
+                        <div>
+                            <div class="role-opt-title">Asst. Academic Coord.</div>
+                            <div class="role-opt-sub">Mrs. Midha (Full AC parity)</div>
+                        </div>
+                    </button>
+                    <button class="role-option-btn" data-role="teacher">
+                        <span>👤</span>
+                        <div>
+                            <div class="role-opt-title">Teacher View</div>
+                            <div class="role-opt-sub">Accept/Dispute & offAC inheritance</div>
+                        </div>
+                    </button>
+                </div>
+                <div id="teacher-identity-row" class="settings-row hidden" style="margin-top: 8px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Viewing as Teacher</span>
+                        <span class="settings-row-desc">Select which teacher profile is active in Teacher View.</span>
+                    </div>
+                    <select id="active-teacher-select" class="apple-select">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <div class="settings-group-title">Preferences & Coordinator Controls</div>
+                <!-- Admin / AC / Asst AC / offAC Only Setting -->
+                <div class="settings-row" id="admin-dispute-setting-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Allow Substitution Disputes <span class="admin-only-tag">Admin / AC Only</span></span>
+                        <span class="settings-row-desc">Permit teachers to flag a substitution with a Dispute button and optional reason note.</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="allow-disputes-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
                 <div class="settings-row">
                     <div class="settings-row-info">
                         <span class="settings-row-label">Minimize Alerts</span>
@@ -279,7 +348,7 @@
                 <div class="settings-group-title">Application Info</div>
                 <div class="settings-row">
                     <span class="settings-row-label">Version</span>
-                    <span class="settings-row-value">v1.28</span>
+                    <span class="settings-row-value">v1.29</span>
                 </div>
                 <div class="settings-row">
                     <span class="settings-row-label">Storage Engine</span>
@@ -289,6 +358,48 @@
         </div>
     </div>
     <div id="settings-overlay" class="overlay"></div>
+
+    <!-- Officiating Role Picker Modal (Assign Officiating AC or Officiating CT) -->
+    <div id="officiating-modal" class="settings-modal hidden">
+        <div class="settings-modal-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span id="officiating-modal-icon" style="font-size:20px;">📋</span>
+                <h3 id="officiating-modal-title">Assign Officiating Teacher</h3>
+            </div>
+            <button id="close-officiating-modal-btn" class="settings-close-btn" aria-label="Close">✕</button>
+        </div>
+        <div class="settings-modal-body" id="officiating-modal-body">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+    <div id="officiating-overlay" class="overlay"></div>
+
+    <!-- Substitution Dispute Modal (Optional Reason Input) -->
+    <div id="dispute-modal" class="settings-modal hidden">
+        <div class="settings-modal-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:20px;">⚑</span>
+                <h3>Dispute Substitution</h3>
+            </div>
+            <button id="close-dispute-modal-btn" class="settings-close-btn" aria-label="Close">✕</button>
+        </div>
+        <div class="settings-modal-body">
+            <div id="dispute-context-box" style="background:var(--bg-color); border:1px solid var(--border-color); border-radius:10px; padding:12px 14px; font-size:13px;">
+                <!-- Populated by JS -->
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <label for="dispute-reason-input" style="font-size:12px; font-weight:600; color:var(--text-secondary);">
+                    Reason for Dispute <span style="font-weight:400;">(Optional)</span>
+                </label>
+                <textarea id="dispute-reason-input" class="apple-textarea" rows="3" placeholder="e.g., Lab apparatus setup required, scheduled parent meeting, or consecutive class load..."></textarea>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:6px;">
+                <button id="dispute-cancel-btn" class="btn-secondary">Cancel</button>
+                <button id="dispute-submit-btn" class="btn-primary" style="background:var(--accent-pink);">⚑ Submit Dispute</button>
+            </div>
+        </div>
+    </div>
+    <div id="dispute-overlay" class="overlay"></div>
 
     <!-- Multi-Option Smart Auto-Resolve Proposals Modal (Max 3 Solutions) -->
     <div id="auto-resolve-modal" class="settings-modal auto-resolve-modal hidden">
@@ -370,6 +481,13 @@
         </div>
         <div class="tour-modal-body">
             <div class="tour-card">
+                <div class="tour-icon">🛡</div>
+                <div class="tour-text">
+                    <h4>Roles, Officiating AC/CT & 10s Sub Acceptance</h4>
+                    <p>Tiered Admin / AC / Asst AC / Teacher permissions, automatic Officiating AC & Class Teacher delegation, 10s countdown acceptance lock-in, and role-gated disputes.</p>
+                </div>
+            </div>
+            <div class="tour-card">
                 <div class="tour-icon">📊</div>
                 <div class="tour-text">
                     <h4>Interactive Routine Matrix & Fit-Grid View</h4>
@@ -398,20 +516,6 @@
                 </div>
             </div>
             <div class="tour-card">
-                <div class="tour-icon">⚓</div>
-                <div class="tour-text">
-                    <h4>Limbo Dock Displacement</h4>
-                    <p>Dropping an assignment onto a busy teacher safely moves their prior class to the smooth Limbo dock below the grid—preventing accidental data loss.</p>
-                </div>
-            </div>
-            <div class="tour-card">
-                <div class="tour-icon">⚠</div>
-                <div class="tour-text">
-                    <h4>Real-time Collision Engine</h4>
-                    <p>Real-time cross-grid scanner highlights duplicate class sections with gentle amber radar breathing rings and interactive counter pills.</p>
-                </div>
-            </div>
-            <div class="tour-card">
                 <div class="tour-icon">🎨</div>
                 <div class="tour-text">
                     <h4>7 Apple HIG & Futuristic Themes</h4>
@@ -422,6 +526,6 @@
     </div>
     <div id="tour-overlay" class="overlay"></div>
 
-    <script src="app.js?v=1.28"></script>
+    <script src="app.js?v=1.29"></script>
 </body>
 </html>

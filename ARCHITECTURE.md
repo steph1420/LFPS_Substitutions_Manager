@@ -1,5 +1,5 @@
 # Front Desk PWA - Architecture & Developer Guide
-**Current Version:** v1.27
+**Current Version:** v1.29
 **Project Type:** Vanilla JS/HTML/CSS Offline-First PWA
 **Purpose:** School substitution management and daily timetable resolution.
 
@@ -167,6 +167,17 @@ const state = {
         *   `Option 2: Balanced Load (⚖ Lightest Workload)`
         *   `Option 3: Minimal Splits (🛡 Preserve Co-Teaching)`
         *   Includes summary metric pills (`Coverage`, `Avg Affinity`, `Co-Teach Splits`, `Peak Teacher Load`), per-row checkboxes, and a 1-click **`✨ Apply Solution`** button backed by atomic `batch-sub` undo/redo.
+*   **v1.29 Release (Multi-Role Hierarchy, Assistant AC Equivalence, Officiating AC & CT Contingencies, 10s Teacher Acceptance Lock-In & Dispute Engine)**:
+    *   **Role & Permission Switcher (`Admin`, `AC`, `Asst AC`, `Teacher`)**: Added a live header role badge (`#role-badge-btn`) and Settings Role Selector (`#settings-role-grid`) with Teacher Identity selector (`#active-teacher-select`). Assistant Academic Coordinator (`Mrs. Midha`) holds full parity permissions alongside primary AC (`Mr. Stephen`) and `Admin`.
+    *   **Dual-Absence Officiating AC (`offAC`) Contingency**: When both `Mr. Stephen (AC)` and `Mrs. Midha (Asst AC)` are marked absent on the same day, displays `#off-ac-banner` prompting assignment of an **Officiating AC (`offAC`)** for the day (`state.officiatingAC[day]`). The assigned `offAC` automatically inherits full coordinator permissions (unlocking acceptances, reviewing disputes, managing substitutions) for that day.
+    *   **Officiating Class Teacher (`offCT`) Assignment**: Mapped baseline Class Teacher sections (`10A`–`6A`) in `classTeacherMap` with `CT` badges on teacher avatars and grid rows. When any CT is marked absent, displays `#off-ct-strip` with interactive chips to assign an **Officiating Class Teacher (`offCT`)** for that section (`state.officiatingCT[day][section]`), ranking available teachers by whether they teach that section and their daily period load.
+    *   **Teacher Substitution Acceptance with 10s Undo Countdown & Permanent Lock-In**:
+        *   Assigned substitutions feature a **`✓ Accept`** button (`startAcceptSubCountdown`).
+        *   Pressing Accept starts a live **10-second countdown timer** (`⏳ Confirming 10s • Undo`) allowing immediate cancellation (`cancelAcceptSub`) before server lock-in.
+        *   Once the 10-second timer finishes, the substitution locks in (`🔒 Accepted` in `state.subStatus[day][period][absentTeacher]`) across both the Register and Routine Grid. Teachers cannot unaccept, dispute, or unassign a locked substitution; only `Admin`, `AC`, `Asst AC`, or `offAC` (`hasCoordinatorPermissions()`) can unlock (`🔓 Unlock`) or reassign it.
+    *   **Admin/AC-Gated Substitution Dispute Engine**:
+        *   Added `#admin-dispute-setting-row` (`Allow Substitution Disputes` toggle) in Settings, visible exclusively to `Admin`, `AC`, `Asst AC`, and `offAC`.
+        *   When enabled, unaccepted substitutions show a **`⚑ Dispute`** button opening `#dispute-modal` with an optional reason text box (`#dispute-reason-input`), flagging the assignment as `⚑ Disputed` with the teacher's note displayed inline in the Daily Substitution Register.
 
 ## 10. Appendix: Technical Specifications
 

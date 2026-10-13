@@ -2,15 +2,21 @@
 const state = {
     day: 'MON',
     isEditMode: false,
+    currentRole: 'admin', // 'admin' | 'ac' | 'asst_ac' | 'teacher'
+    activeTeacher: 'Mrs. Pahwa',
     absentTeachers: new Set(),
     baseSchedule: {}, 
     schedule: {},     
     substitutions: {}, 
+    subStatus: {}, // day -> period -> absentTeacher -> { status: 'pending'|'accepted'|'disputed', acceptedBy, disputeReason }
+    officiatingAC: {}, // day -> teacherName
+    officiatingCT: {}, // day -> { section: teacherName }
     displaced: { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] },
     settings: {
         samePeriodLock: true,
         minimizeAlerts: false,
-        detectCollisions: true
+        detectCollisions: true,
+        allowDisputes: true
     },
     actionHistory: {
         grid: [], 
@@ -19,6 +25,25 @@ const state = {
         redoSubs: []
     }
 };
+
+const PRIMARY_AC = 'Mr. Stephen';
+const ASSISTANT_AC = 'Mrs. Midha';
+const classTeacherMap = {
+    'Mr. Stephen': '10A',
+    'Mrs. Midha': '10B',
+    'Mrs. Pahwa': '9A',
+    'Mrs. Bage': '9B',
+    'Mr. Adams': '8A',
+    'Mrs. Baker': '8B',
+    'Ms. Clark': '7A',
+    'Mr. Davis': '7B',
+    'Mrs. Evans': '6A'
+};
+
+// Active 10-second acceptance countdown timers: key = `${day}::${period}::${absentTeacher}` -> { remaining, intervalId }
+const activeAcceptTimers = new Map();
+let pendingDisputeTarget = null;
+let pendingOfficiatingTarget = null; // { type: 'ac' } or { type: 'ct', section, absentCT }
 
 let selectedCell = null; 
 let draggedData = null;  
@@ -57,9 +82,14 @@ function saveStateToStorage() {
     const data = {
         schemaVersion: '1.27',
         day: state.day,
+        currentRole: state.currentRole,
+        activeTeacher: state.activeTeacher,
         baseSchedule: state.baseSchedule,
         schedule: state.schedule,
         substitutions: state.substitutions,
+        subStatus: state.subStatus,
+        officiatingAC: state.officiatingAC,
+        officiatingCT: state.officiatingCT,
         displaced: state.displaced,
         absentTeachers: Array.from(state.absentTeachers), 
         settings: state.settings,
@@ -98,12 +128,17 @@ function loadStateFromStorage() {
             }
 
             state.day = parsed.day || 'MON';
+            state.currentRole = parsed.currentRole || 'admin';
+            state.activeTeacher = parsed.activeTeacher || 'Mrs. Pahwa';
             state.baseSchedule = parsed.baseSchedule || JSON.parse(JSON.stringify(parsed.schedule)); 
             state.schedule = parsed.schedule;
             state.substitutions = parsed.substitutions || {};
+            state.subStatus = parsed.subStatus || {};
+            state.officiatingAC = parsed.officiatingAC || {};
+            state.officiatingCT = parsed.officiatingCT || {};
             state.displaced = parsed.displaced || { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] };
             state.absentTeachers = new Set(parsed.absentTeachers || []);
-            state.settings = Object.assign({ samePeriodLock: true, minimizeAlerts: false, detectCollisions: true }, parsed.settings);
+            state.settings = Object.assign({ samePeriodLock: true, minimizeAlerts: false, detectCollisions: true, allowDisputes: true }, parsed.settings);
             
             // Automatic migration of periods
             migratePeriodNames(state.schedule);
@@ -305,6 +340,43 @@ function bindEvents() {
     // Co-Teacher Inspector Modal
     safeBind('close-co-teach-modal-btn', 'click', closeCoTeachingModal);
     safeBind('co-teach-overlay', 'click', closeCoTeachingModal);
+
+    // Officiating Role Picker Modal (offAC & offCT)
+    safeBind('close-officiating-modal-btn', 'click', closeOfficiatingModal);
+    safeBind('officiating-overlay', 'click', closeOfficiatingModal);
+
+    // Substitution Dispute Modal
+    safeBind('close-dispute-modal-btn', 'click', closeDisputeModal);
+    safeBind('dispute-overlay', 'click', closeDisputeModal);
+    safeBind('dispute-cancel-btn', 'click', closeDisputeModal);
+    safeBind('dispute-submit-btn', 'click', submitDisputeReason);
+
+    // Header Role Badge Button -> opens Settings to switch role
+    safeBind('role-badge-btn', 'click', openSettingsModal);
+
+    // Role Option Buttons in Settings
+    document.querySelectorAll('.role-option-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const role = btn.dataset.role;
+            if (role) setActiveRole(role);
+        });
+    });
+
+    safeBind('active-teacher-select', 'change', (e) => {
+        state.activeTeacher = e.target.value;
+        saveStateToStorage();
+        updateRolePermissionsUI();
+        renderAll();
+        showToast(`Viewing as ${state.activeTeacher}`);
+    });
+
+    safeBind('allow-disputes-toggle', 'change', (e) => {
+        if (!hasCoordinatorPermissions()) return;
+        state.settings.allowDisputes = e.target.checked;
+        saveStateToStorage();
+        renderAll();
+        showToast(state.settings.allowDisputes ? 'Teacher Substitution Disputes enabled' : 'Teacher Substitution Disputes disabled');
+    });
     
     safeBind('same-period-lock-toggle', 'change', (e) => {
         state.settings.samePeriodLock = e.target.checked;
@@ -853,9 +925,15 @@ function resetCellToOriginalState(period, teacher) {
     }
 
     if (coveringFor) {
+        const srcP = coveringSourcePeriod || period;
+        const stObj = getSubStatusObj(day, srcP, coveringFor);
+        if (stObj.status === 'accepted' && !hasCoordinatorPermissions()) {
+            showToast(`🔒 Locked: Once accepted, only Admin or Academic Coordinator can unassign this substitution.`, true);
+            return;
+        }
         triggerCellResetAnimation(period, teacher);
-        triggerCellResetAnimation(coveringSourcePeriod || period, coveringFor);
-        unassignSubstitute(coveringSourcePeriod || period, coveringFor);
+        triggerCellResetAnimation(srcP, coveringFor);
+        unassignSubstitute(srcP, coveringFor);
         showToast(`Reverted substitution: Sent class back to ${coveringFor}. ${teacher} freed.`);
         return;
     }
@@ -863,6 +941,11 @@ function resetCellToOriginalState(period, teacher) {
     // Check 2: Does this teacher have a substitute covering for them in this period?
     const assignedSub = state.substitutions[day]?.[period]?.[teacher];
     if (assignedSub) {
+        const stObj = getSubStatusObj(day, period, teacher);
+        if (stObj.status === 'accepted' && !hasCoordinatorPermissions()) {
+            showToast(`🔒 Locked: Once accepted, only Admin or Academic Coordinator can unassign this substitution.`, true);
+            return;
+        }
         triggerCellResetAnimation(period, teacher);
         triggerCellResetAnimation(period, assignedSub);
         unassignSubstitute(period, teacher);
@@ -933,8 +1016,8 @@ function resetCellToOriginalState(period, teacher) {
         // Also check if currentTask has a baseline origin elsewhere in the grid that is currently Free
         let foundOrigin = null;
         if (state.baseSchedule[day]) {
-            for (const p of state.periods) {
-                for (const t of state.teachers) {
+            for (const p of periods) {
+                for (const t of teachers) {
                     if (state.baseSchedule[day][p]?.[t] === currentTask && (p !== period || t !== teacher)) {
                         if (state.schedule[day]?.[p]?.[t] === 'Free') {
                             foundOrigin = { period: p, teacher: t };
@@ -1170,8 +1253,469 @@ function findCollisions() {
     };
 }
 
+// --- ROLES, OFFICIATING (offAC / offCT), 10s ACCEPTANCE & DISPUTE ENGINE ---
+
+function hasCoordinatorPermissions() {
+    if (state.currentRole === 'admin' || state.currentRole === 'ac' || state.currentRole === 'asst_ac') {
+        return true;
+    }
+    if (state.currentRole === 'teacher' && state.officiatingAC?.[state.day] === state.activeTeacher) {
+        return true;
+    }
+    return false;
+}
+
+function getOfficiatingCTSectionsForTeacher(teacher, day = state.day) {
+    const map = state.officiatingCT?.[day] || {};
+    const sections = [];
+    for (const [sec, t] of Object.entries(map)) {
+        if (t === teacher && !state.absentTeachers.has(t)) {
+            sections.push(sec);
+        }
+    }
+    return sections;
+}
+
+function setActiveRole(role) {
+    state.currentRole = role;
+    saveStateToStorage();
+    updateRolePermissionsUI();
+    renderAll();
+    const roleLabels = {
+        admin: '🛡 Admin',
+        ac: `🎓 AC (${PRIMARY_AC})`,
+        asst_ac: `🎓 Asst AC (${ASSISTANT_AC})`,
+        teacher: `👤 Teacher (${state.activeTeacher})`
+    };
+    showToast(`Switched active role to ${roleLabels[role] || role}`);
+}
+window.setActiveRole = setActiveRole;
+
+function updateRolePermissionsUI() {
+    const badgeBtn = document.getElementById('role-badge-btn');
+    const teacherRow = document.getElementById('teacher-identity-row');
+    const teacherSelect = document.getElementById('active-teacher-select');
+    const disputeSettingRow = document.getElementById('admin-dispute-setting-row');
+    const allowDisputesToggle = document.getElementById('allow-disputes-toggle');
+
+    // Populate teacher select dropdown if needed
+    if (teacherSelect && teacherSelect.options.length === 0) {
+        teachers.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t;
+            opt.textContent = `${t} (CT ${classTeacherMap[t] || '-'})`;
+            teacherSelect.appendChild(opt);
+        });
+    }
+    if (teacherSelect) {
+        teacherSelect.value = state.activeTeacher;
+    }
+
+    // Highlight active role button in Settings
+    document.querySelectorAll('.role-option-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.role === state.currentRole);
+    });
+
+    // Show/hide Teacher identity selector row in Settings
+    if (teacherRow) {
+        teacherRow.classList.toggle('hidden', state.currentRole !== 'teacher');
+    }
+
+    // Update header Role Badge button
+    if (badgeBtn) {
+        badgeBtn.classList.remove('role-teacher', 'role-off-ac');
+        const isOffAC = state.currentRole === 'teacher' && state.officiatingAC?.[state.day] === state.activeTeacher;
+        if (state.currentRole === 'admin') {
+            badgeBtn.textContent = '🛡 Admin';
+        } else if (state.currentRole === 'ac') {
+            badgeBtn.textContent = '🎓 AC';
+        } else if (state.currentRole === 'asst_ac') {
+            badgeBtn.textContent = '🎓 Asst AC';
+        } else if (isOffAC) {
+            badgeBtn.textContent = `⚡ offAC (${state.activeTeacher.split(' ')[1] || state.activeTeacher})`;
+            badgeBtn.classList.add('role-off-ac');
+        } else {
+            badgeBtn.textContent = `👤 ${state.activeTeacher.split(' ')[1] || state.activeTeacher}`;
+            badgeBtn.classList.add('role-teacher');
+        }
+    }
+
+    // Show/hide Admin/AC-only Dispute setting row
+    const isCoord = hasCoordinatorPermissions();
+    if (disputeSettingRow) {
+        disputeSettingRow.classList.toggle('hidden', !isCoord);
+    }
+    if (allowDisputesToggle) {
+        allowDisputesToggle.checked = state.settings.allowDisputes !== false;
+    }
+}
+
+function renderOfficiatingBanners() {
+    const acBanner = document.getElementById('off-ac-banner');
+    const ctStrip = document.getElementById('off-ct-strip');
+    const day = state.day;
+
+    // 1. Dual-Absence Officiating AC (offAC) Contingency
+    const bothACsAbsent = state.absentTeachers.has(PRIMARY_AC) && state.absentTeachers.has(ASSISTANT_AC);
+    if (acBanner) {
+        if (bothACsAbsent) {
+            acBanner.classList.remove('hidden');
+            const currentOffAC = state.officiatingAC?.[day];
+            const validOffAC = currentOffAC && !state.absentTeachers.has(currentOffAC) ? currentOffAC : null;
+
+            if (validOffAC) {
+                acBanner.innerHTML = `
+                    <div class="off-ac-banner-text">
+                        <span>⚡</span>
+                        <div>
+                            <strong>Officiating AC (${day}): ${validOffAC}</strong>
+                            <div style="font-size:11px; font-weight:500; opacity:0.9;">Both ${PRIMARY_AC} (AC) & ${ASSISTANT_AC} (Asst AC) are absent • ${validOffAC} inherits Coordinator permissions today.</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <button class="btn-assign-off-ac" onclick="openOfficiatingModal('ac')">Change offAC</button>
+                        <button class="btn-assign-off-ac" style="padding:5px 8px;" title="Clear Officiating AC" onclick="clearOfficiatingAssignment('ac')">✕</button>
+                    </div>
+                `;
+            } else {
+                acBanner.innerHTML = `
+                    <div class="off-ac-banner-text">
+                        <span>🚨</span>
+                        <div>
+                            <strong>Both Academic Coordinators Absent (${PRIMARY_AC} & ${ASSISTANT_AC})</strong>
+                            <div style="font-size:11px; font-weight:500; opacity:0.9;">Assign an Officiating AC (offAC) to inherit coordinator permissions for ${day}.</div>
+                        </div>
+                    </div>
+                    <button class="btn-assign-off-ac" onclick="openOfficiatingModal('ac')">+ Assign Officiating AC</button>
+                `;
+            }
+        } else {
+            acBanner.classList.add('hidden');
+        }
+    }
+
+    // 2. Officiating Class Teacher (offCT) Strip when any CT is marked absent
+    if (ctStrip) {
+        const absentCTs = teachers.filter(t => state.absentTeachers.has(t) && classTeacherMap[t]);
+        if (absentCTs.length > 0) {
+            ctStrip.classList.remove('hidden');
+            let html = `<span style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.3px; margin-right:2px;">Absent CTs:</span>`;
+            absentCTs.forEach(absentCT => {
+                const section = classTeacherMap[absentCT];
+                const assignedOffCT = state.officiatingCT?.[day]?.[section];
+                const validOffCT = assignedOffCT && !state.absentTeachers.has(assignedOffCT) ? assignedOffCT : null;
+                const shortAbsent = absentCT.split(' ')[1] || absentCT;
+
+                if (validOffCT) {
+                    html += `
+                        <div class="off-ct-chip assigned" onclick="openOfficiatingModal('ct', '${section}', '${absentCT}')" title="Click to change Officiating Class Teacher for ${section}">
+                            <span>🏫 <b>${section}</b> (${shortAbsent}) → 📋 <b>${validOffCT}</b></span>
+                            <span style="margin-left:4px; opacity:0.75; font-weight:700;" title="Remove offCT" onclick="event.stopPropagation(); clearOfficiatingAssignment('ct', '${section}')">✕</span>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="off-ct-chip" onclick="openOfficiatingModal('ct', '${section}', '${absentCT}')" title="Assign Officiating Class Teacher for Class ${section}">
+                            <span>⚠ CT <b>${section}</b> (${shortAbsent})</span>
+                            <span style="text-decoration:underline; margin-left:3px;">+ Assign offCT</span>
+                        </div>
+                    `;
+                }
+            });
+            ctStrip.innerHTML = html;
+        } else {
+            ctStrip.classList.add('hidden');
+        }
+    }
+}
+
+function openOfficiatingModal(type, section = null, absentCT = null) {
+    const modal = document.getElementById('officiating-modal');
+    const overlay = document.getElementById('officiating-overlay');
+    const titleEl = document.getElementById('officiating-modal-title');
+    const subtitleEl = document.getElementById('officiating-modal-subtitle');
+    const listEl = document.getElementById('officiating-teacher-list');
+    if (!modal || !overlay || !listEl) return;
+
+    pendingOfficiatingTarget = { type, section, absentCT };
+
+    if (type === 'ac') {
+        if (titleEl) titleEl.textContent = '⚡ Assign Officiating AC (offAC)';
+        if (subtitleEl) subtitleEl.textContent = `Both ${PRIMARY_AC} (AC) and ${ASSISTANT_AC} (Asst AC) are absent on ${state.day}. Select a present teacher to inherit Academic Coordinator permissions for the day.`;
+    } else {
+        if (titleEl) titleEl.textContent = `🏫 Assign Officiating CT (Class ${section})`;
+        if (subtitleEl) subtitleEl.textContent = `${absentCT} (Class Teacher of ${section}) is absent on ${state.day}. Select a present teacher to serve as Officiating Class Teacher (offCT) for ${section}.`;
+    }
+
+    const candidates = teachers
+        .filter(t => !state.absentTeachers.has(t))
+        .map(t => {
+            const stats = getTeacherDailyStats(t, state.day);
+            const isGoldenFree = (state.schedule[state.day]?.['GOLDEN HOUR']?.[t] || 'Free') === 'Free';
+            const teachesSec = section ? doesTeacherTeachSection(t, section, state.day) : false;
+            return { name: t, stats, isGoldenFree, teachesSec };
+        })
+        .sort((a, b) => {
+            if (type === 'ct' && a.teachesSec !== b.teachesSec) return a.teachesSec ? -1 : 1;
+            return a.stats.teachingLoad - b.stats.teachingLoad;
+        });
+
+    listEl.innerHTML = '';
+    candidates.forEach(c => {
+        const currentOffAC = state.officiatingAC?.[state.day];
+        const currentOffCT = section ? state.officiatingCT?.[state.day]?.[section] : null;
+        const isSelected = (type === 'ac' && currentOffAC === c.name) || (type === 'ct' && currentOffCT === c.name);
+
+        const row = document.createElement('div');
+        row.style.cssText = `display:flex; justify-content:space-between; align-items:center; padding:11px 14px; background:var(--bg-color); border:1px solid ${isSelected ? 'var(--accent-blue)' : 'var(--border-color)'}; border-radius:10px; cursor:pointer;`;
+        row.innerHTML = `
+            <div>
+                <strong style="color:var(--text-primary); font-size:13px;">${isSelected ? '✓ ' : '🟢 '}${c.name}</strong>
+                <span class="ct-badge-mini">Own CT: ${classTeacherMap[c.name] || '-'}</span>
+                ${c.teachesSec ? `<span class="reg-affinity-tag">Teaches ${section}</span>` : ''}
+            </div>
+            <span style="font-size:11px; color:var(--text-secondary); font-weight:600;">Load: ${c.stats.teachingLoad}/${c.stats.totalSlots} pds</span>
+        `;
+        row.addEventListener('click', () => selectOfficiatingTeacher(c.name));
+        listEl.appendChild(row);
+    });
+
+    modal.classList.remove('hidden');
+    overlay.classList.add('active');
+}
+window.openOfficiatingModal = openOfficiatingModal;
+
+function closeOfficiatingModal() {
+    const modal = document.getElementById('officiating-modal');
+    const overlay = document.getElementById('officiating-overlay');
+    if (modal) modal.classList.add('hidden');
+    if (overlay) overlay.classList.remove('active');
+    pendingOfficiatingTarget = null;
+}
+window.closeOfficiatingModal = closeOfficiatingModal;
+
+function selectOfficiatingTeacher(teacherName) {
+    if (!pendingOfficiatingTarget) return;
+    const { type, section } = pendingOfficiatingTarget;
+    const day = state.day;
+
+    if (type === 'ac') {
+        if (!state.officiatingAC) state.officiatingAC = {};
+        state.officiatingAC[day] = teacherName;
+        showToast(`Assigned ${teacherName} as Officiating AC (offAC) for ${day}`);
+    } else if (type === 'ct' && section) {
+        if (!state.officiatingCT) state.officiatingCT = {};
+        if (!state.officiatingCT[day]) state.officiatingCT[day] = {};
+        state.officiatingCT[day][section] = teacherName;
+        showToast(`Assigned ${teacherName} as Officiating CT (offCT) for Class ${section}`);
+    }
+
+    closeOfficiatingModal();
+    saveStateToStorage();
+    updateRolePermissionsUI();
+    renderAll();
+}
+window.selectOfficiatingTeacher = selectOfficiatingTeacher;
+
+function clearOfficiatingAssignment(type, section = null) {
+    const day = state.day;
+    if (type === 'ac' && state.officiatingAC?.[day]) {
+        delete state.officiatingAC[day];
+        showToast(`Cleared Officiating AC for ${day}`);
+    } else if (type === 'ct' && section && state.officiatingCT?.[day]?.[section]) {
+        delete state.officiatingCT[day][section];
+        showToast(`Cleared Officiating CT for Class ${section}`);
+    }
+    saveStateToStorage();
+    updateRolePermissionsUI();
+    renderAll();
+}
+window.clearOfficiatingAssignment = clearOfficiatingAssignment;
+
+function getSubStatusObj(day, period, absentTeacher) {
+    return state.subStatus?.[day]?.[period]?.[absentTeacher] || { status: 'pending' };
+}
+
+function clearSubStatusAndTimer(day, period, absentTeacher) {
+    const key = `${day}::${period}::${absentTeacher}`;
+    const timer = activeAcceptTimers.get(key);
+    if (timer) {
+        clearInterval(timer.intervalId);
+        activeAcceptTimers.delete(key);
+    }
+    if (state.subStatus?.[day]?.[period]?.[absentTeacher]) {
+        delete state.subStatus[day][period][absentTeacher];
+    }
+}
+
+function startAcceptSubCountdown(period, absentTeacher) {
+    const day = state.day;
+    const subTeacher = state.substitutions?.[day]?.[period]?.[absentTeacher];
+    if (!subTeacher) return;
+
+    const existingStatus = getSubStatusObj(day, period, absentTeacher);
+    if (existingStatus.status === 'accepted') return;
+
+    const key = `${day}::${period}::${absentTeacher}`;
+    if (activeAcceptTimers.has(key)) return;
+
+    // Clear any prior dispute state when teacher clicks Accept
+    if (state.subStatus?.[day]?.[period]?.[absentTeacher]) {
+        delete state.subStatus[day][period][absentTeacher];
+    }
+
+    const entry = {
+        remaining: 10,
+        day,
+        period,
+        absentTeacher,
+        subTeacher,
+        intervalId: null
+    };
+
+    entry.intervalId = setInterval(() => {
+        entry.remaining -= 1;
+        if (entry.remaining > 0) {
+            // Update countdown label live
+            const btn = document.querySelector(`[data-accept-timer="${key}"]`);
+            if (btn) {
+                btn.innerHTML = `⏳ Confirming ${entry.remaining}s • <u>Undo</u>`;
+            }
+        } else {
+            clearInterval(entry.intervalId);
+            activeAcceptTimers.delete(key);
+            if (!state.subStatus[day]) state.subStatus[day] = {};
+            if (!state.subStatus[day][period]) state.subStatus[day][period] = {};
+            state.subStatus[day][period][absentTeacher] = {
+                status: 'accepted',
+                acceptedBy: subTeacher,
+                acceptedAt: Date.now()
+            };
+            saveStateToStorage();
+            renderAll();
+            showToast(`🔒 Substitution (${period} • ${subTeacher}) accepted & reported across the board!`, true);
+        }
+    }, 1000);
+
+    activeAcceptTimers.set(key, entry);
+    renderSubstitutions();
+}
+window.startAcceptSubCountdown = startAcceptSubCountdown;
+
+function cancelAcceptSub(period, absentTeacher) {
+    const day = state.day;
+    const key = `${day}::${period}::${absentTeacher}`;
+    const timer = activeAcceptTimers.get(key);
+    if (timer) {
+        clearInterval(timer.intervalId);
+        activeAcceptTimers.delete(key);
+        renderSubstitutions();
+        showToast(`Acceptance cancelled within 10s window.`);
+    }
+}
+window.cancelAcceptSub = cancelAcceptSub;
+
+function revokeAcceptedSub(period, absentTeacher) {
+    if (!hasCoordinatorPermissions()) {
+        showToast(`Locked: Only Admin or Academic Coordinator can remove a locked acceptance.`, true);
+        return;
+    }
+    const day = state.day;
+    clearSubStatusAndTimer(day, period, absentTeacher);
+    saveStateToStorage();
+    renderAll();
+    showToast(`Coordinator unlocked acceptance for ${period}.`);
+}
+window.revokeAcceptedSub = revokeAcceptedSub;
+
+function openDisputeModal(period, absentTeacher) {
+    if (state.settings.allowDisputes === false) {
+        showToast(`Disputes are currently disabled by Admin / Academic Coordinator.`);
+        return;
+    }
+    const day = state.day;
+    const subTeacher = state.substitutions?.[day]?.[period]?.[absentTeacher];
+    if (!subTeacher) return;
+
+    const statusObj = getSubStatusObj(day, period, absentTeacher);
+    if (statusObj.status === 'accepted') {
+        showToast(`Locked: Accepted substitutions cannot be disputed.`);
+        return;
+    }
+
+    pendingDisputeTarget = { day, period, absentTeacher, subTeacher };
+    const modal = document.getElementById('dispute-modal');
+    const overlay = document.getElementById('dispute-overlay');
+    const descEl = document.getElementById('dispute-modal-desc');
+    const inputEl = document.getElementById('dispute-reason-input');
+
+    const baseTask = state.baseSchedule[day]?.[period]?.[absentTeacher] || 'Class';
+    if (descEl) {
+        descEl.innerHTML = `Flagging substitution for <b>${subTeacher}</b> covering <b>${baseTask}</b> (${period} • Absent: ${absentTeacher}). Provide an optional reason for the Admin / Academic Coordinator:`;
+    }
+    if (inputEl) {
+        inputEl.value = statusObj.reason || '';
+    }
+
+    if (modal) modal.classList.remove('hidden');
+    if (overlay) overlay.classList.add('active');
+}
+window.openDisputeModal = openDisputeModal;
+
+function closeDisputeModal() {
+    const modal = document.getElementById('dispute-modal');
+    const overlay = document.getElementById('dispute-overlay');
+    if (modal) modal.classList.add('hidden');
+    if (overlay) overlay.classList.remove('active');
+    pendingDisputeTarget = null;
+}
+window.closeDisputeModal = closeDisputeModal;
+
+function submitDisputeReason() {
+    if (!pendingDisputeTarget) return;
+    const { day, period, absentTeacher, subTeacher } = pendingDisputeTarget;
+    const inputEl = document.getElementById('dispute-reason-input');
+    const reason = inputEl ? inputEl.value.trim() : '';
+
+    // Cancel any running 10s acceptance countdown on this slot
+    const key = `${day}::${period}::${absentTeacher}`;
+    if (activeAcceptTimers.has(key)) {
+        clearInterval(activeAcceptTimers.get(key).intervalId);
+        activeAcceptTimers.delete(key);
+    }
+
+    if (!state.subStatus[day]) state.subStatus[day] = {};
+    if (!state.subStatus[day][period]) state.subStatus[day][period] = {};
+    state.subStatus[day][period][absentTeacher] = {
+        status: 'disputed',
+        disputedBy: subTeacher,
+        reason: reason || 'Requested review / reassignment',
+        disputedAt: Date.now()
+    };
+
+    closeDisputeModal();
+    saveStateToStorage();
+    renderAll();
+    showToast(`⚑ Substitution (${period}) flagged for Coordinator review.`, true);
+}
+window.submitDisputeReason = submitDisputeReason;
+
+function dismissDispute(period, absentTeacher) {
+    if (!hasCoordinatorPermissions()) {
+        showToast(`Only Admin or Academic Coordinator can clear a dispute.`);
+        return;
+    }
+    clearSubStatusAndTimer(state.day, period, absentTeacher);
+    saveStateToStorage();
+    renderAll();
+    showToast(`Cleared dispute flag for ${period}.`);
+}
+window.dismissDispute = dismissDispute;
+
 // --- RENDER FUNCTIONS ---
 function renderAll() {
+    updateRolePermissionsUI();
+    renderOfficiatingBanners();
     renderAbsentTray();
     renderTableRoutine(); 
     renderDisplacedTray();
@@ -1201,11 +1745,22 @@ function renderAbsentTray() {
     
     teachers.forEach(teacher => {
         const isAbsent = state.absentTeachers.has(teacher);
+        const ctSec = classTeacherMap[teacher];
+        const isOffAC = !isAbsent && state.officiatingAC?.[state.day] === teacher && state.absentTeachers.has(PRIMARY_AC) && state.absentTeachers.has(ASSISTANT_AC);
+        const offCTSecs = !isAbsent ? getOfficiatingCTSectionsForTeacher(teacher, state.day) : [];
+
+        let roleSubtag = ctSec ? `CT ${ctSec}` : '';
+        if (teacher === PRIMARY_AC) roleSubtag = `AC • ${roleSubtag}`;
+        else if (teacher === ASSISTANT_AC) roleSubtag = `Asst AC • ${roleSubtag}`;
+        if (isOffAC) roleSubtag = `⚡ offAC`;
+        else if (offCTSecs.length > 0) roleSubtag = `offCT ${offCTSecs.join(',')}`;
+
         const el = document.createElement('div');
         el.className = `teacher-avatar ${isAbsent ? 'absent' : ''}`;
         el.innerHTML = `
             <div class="avatar-circle">${teacher.charAt(0)}</div>
-            <span class="name" style="font-size:11px; margin-top:4px;">${teacher.split(' ')[1] || teacher}</span>
+            <span class="name" style="font-size:11px; margin-top:4px; font-weight:600;">${teacher.split(' ')[1] || teacher}</span>
+            <span style="font-size:9px; color:var(--text-secondary); font-weight:600;">${roleSubtag}</span>
         `;
         el.addEventListener('click', () => {
             if (isAbsent) state.absentTeachers.delete(teacher);
@@ -1232,9 +1787,29 @@ function renderTableRoutine() {
     teachers.forEach(teacher => {
         const isAbsent = state.absentTeachers.has(teacher);
         if (isAbsent && hideAbsent) return;
+
+        const ctSec = classTeacherMap[teacher];
+        const isOffAC = !isAbsent && state.officiatingAC?.[state.day] === teacher && state.absentTeachers.has(PRIMARY_AC) && state.absentTeachers.has(ASSISTANT_AC);
+        const offCTSecs = !isAbsent ? getOfficiatingCTSectionsForTeacher(teacher, state.day) : [];
+
+        let teacherBadges = '';
+        if (teacher === PRIMARY_AC) {
+            teacherBadges += `<span class="ct-badge-mini" style="background:rgba(0,122,255,0.12); color:var(--accent-blue);">AC</span>`;
+        } else if (teacher === ASSISTANT_AC) {
+            teacherBadges += `<span class="ct-badge-mini" style="background:rgba(0,122,255,0.12); color:var(--accent-blue);">Asst AC</span>`;
+        }
+        if (ctSec) {
+            teacherBadges += `<span class="ct-badge-mini">CT ${ctSec}</span>`;
+        }
+        if (isOffAC) {
+            teacherBadges += `<span class="off-badge-mini">⚡ offAC</span>`;
+        }
+        offCTSecs.forEach(sec => {
+            teacherBadges += `<span class="off-badge-mini">📋 offCT ${sec}</span>`;
+        });
         
         html += `<tr class="${isAbsent ? 'row-absent' : ''}">`;
-        html += `<td class="teacher-cell" data-teacher="${teacher}">${teacher}</td>`;
+        html += `<td class="teacher-cell" data-teacher="${teacher}"><div>${teacher}</div><div style="margin-top:2px; display:flex; flex-wrap:wrap; gap:2px;">${teacherBadges}</div></td>`;
         
         periods.forEach(period => {
             if (period === 'BREAKFAST BREAK' || period === 'BREAKFAST') {
@@ -1295,13 +1870,15 @@ function renderTableRoutine() {
 
             } else if (assignedSub) {
                 cellClasses.push('cell-covered');
+                const subStatusInfo = getSubStatusObj(state.day, period, teacher);
+                const statusIcon = subStatusInfo.status === 'accepted' ? '🔒 ' : (subStatusInfo.status === 'disputed' ? '⚑ ' : '↳ ');
                 cellContent = `
                     <div class="cell-covered-content">
                         <span class="covered-task">${baseTask}</span>
-                        <span class="covered-by-tag">↳ ${assignedSub.split(' ')[1] || assignedSub}</span>
+                        <span class="covered-by-tag">${statusIcon}${assignedSub.split(' ')[1] || assignedSub}</span>
                     </div>
                 `;
-                cellTitle = `Covered by ${assignedSub}. Drag to reassign substitute, or tap to manage.`;
+                cellTitle = `Covered by ${assignedSub} (${subStatusInfo.status}). Drag to reassign substitute, or tap to manage.`;
                 isDraggable = true;
                 clickHandler = state.isEditMode 
                     ? `onclick="handleGridInteraction('${period}', '${teacher}')"` 
@@ -1310,13 +1887,15 @@ function renderTableRoutine() {
             } else if (coveringFor) {
                 cellClasses.push('cell-sub-active');
                 const periodNote = coveringSourcePeriod !== period ? ` [from ${coveringSourcePeriod}]` : '';
+                const subStatusInfo = getSubStatusObj(state.day, coveringSourcePeriod || period, coveringFor);
+                const statusBadgePrefix = subStatusInfo.status === 'accepted' ? '🔒 ' : (subStatusInfo.status === 'disputed' ? '⚑ ' : '');
                 cellContent = `
                     <div class="cell-sub-content">
                         <span class="sub-task">${task}</span>
-                        <span class="sub-badge">Sub (${coveringFor.split(' ')[1] || coveringFor})</span>
+                        <span class="sub-badge">${statusBadgePrefix}Sub (${coveringFor.split(' ')[1] || coveringFor})</span>
                     </div>
                 `;
-                cellTitle = `Substituting for ${coveringFor}${periodNote}. Drag to another teacher to reassign, or drag back to ${coveringFor} to unassign.`;
+                cellTitle = `Substituting for ${coveringFor}${periodNote} (${subStatusInfo.status}). Drag to another teacher to reassign, or drag back to ${coveringFor} to unassign.`;
                 isDraggable = true;
                 clickHandler = state.isEditMode ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
 
@@ -1579,6 +2158,8 @@ function renderSubstitutions() {
     conflictList.innerHTML = '';
     let conflicts = 0;
     let resolvedCount = 0;
+    let acceptedCount = 0;
+    let disputedCount = 0;
     let totalAbsences = 0;
     const rowsData = [];
 
@@ -1593,8 +2174,11 @@ function renderSubstitutions() {
 
             totalAbsences++;
             const subTeacher = state.substitutions[state.day]?.[period]?.[teacher];
+            const statusObj = getSubStatusObj(state.day, period, teacher);
             if (subTeacher) {
                 resolvedCount++;
+                if (statusObj.status === 'accepted') acceptedCount++;
+                if (statusObj.status === 'disputed') disputedCount++;
             } else {
                 conflicts++;
             }
@@ -1602,7 +2186,8 @@ function renderSubstitutions() {
                 period,
                 absentTeacher: teacher,
                 baseTask,
-                subTeacher: subTeacher || null
+                subTeacher: subTeacher || null,
+                statusObj
             });
         });
     });
@@ -1638,6 +2223,8 @@ function renderSubstitutions() {
             <span class="reg-stat-pill">📋 Total: <b>${totalAbsences}</b></span>
             <span class="reg-stat-pill stat-pending">⚠ Pending: <b>${conflicts}</b></span>
             <span class="reg-stat-pill stat-covered">✓ Covered: <b>${resolvedCount} (${pct}%)</b></span>
+            ${acceptedCount > 0 ? `<span class="reg-stat-pill stat-covered">🔒 Accepted: <b>${acceptedCount}</b></span>` : ''}
+            ${disputedCount > 0 ? `<span class="reg-stat-pill stat-pending">⚑ Disputed: <b>${disputedCount}</b></span>` : ''}
         `;
     }
 
@@ -1656,6 +2243,9 @@ function renderSubstitutions() {
         return;
     }
 
+    const isCoord = hasCoordinatorPermissions();
+    const disputesEnabled = state.settings.allowDisputes !== false;
+
     let tableHtml = `
         <div class="sub-register-wrapper">
             <table class="sub-register-table">
@@ -1665,7 +2255,7 @@ function renderSubstitutions() {
                         <th>Class & Dept</th>
                         <th>Absent Teacher</th>
                         <th>Assigned Substitute</th>
-                        <th>Status</th>
+                        <th>Acceptance & Status</th>
                         <th style="text-align:right;">Actions</th>
                     </tr>
                 </thead>
@@ -1673,17 +2263,75 @@ function renderSubstitutions() {
     `;
 
     filteredRows.forEach(row => {
-        const { period, absentTeacher, baseTask, subTeacher } = row;
+        const { period, absentTeacher, baseTask, subTeacher, statusObj } = row;
         const taskInfo = parseTaskDetails(baseTask);
 
         if (subTeacher) {
             const affinity = evaluateTeacherAffinity(subTeacher, baseTask, period, state.day);
             const coPartners = getCoTeachingPartners(state.day, period, subTeacher);
             const isSplitSub = coPartners.length > 0;
+            const timerKey = `${state.day}::${period}::${absentTeacher}`;
+            const activeTimer = activeAcceptTimers.get(timerKey);
 
-            const statusBadge = isSplitSub
-                ? `<span class="reg-status-badge status-split" title="Split from co-teaching with ${coPartners.join(', ')}">👥 Split Sub</span>`
-                : `<span class="reg-status-badge status-covered">✓ Covered</span>`;
+            // Check whether current user can press Accept/Dispute for this row
+            const canTeacherAct = (state.currentRole !== 'teacher') || (state.activeTeacher === subTeacher) || isCoord;
+
+            let statusCellHtml = '';
+            if (activeTimer) {
+                statusCellHtml = `
+                    <button class="btn-accept-countdown" data-accept-timer="${timerKey}" onclick="cancelAcceptSub('${period}', '${absentTeacher}')" title="Click within 10 seconds to undo acceptance before server lock-in">
+                        ⏳ Confirming ${activeTimer.remaining}s • <u>Undo</u>
+                    </button>
+                `;
+            } else if (statusObj.status === 'accepted') {
+                statusCellHtml = `
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <span class="badge-accepted-locked" title="Accepted by ${statusObj.acceptedBy || subTeacher}. Locked across the board.">🔒 Accepted</span>
+                        ${isSplitSub ? `<span class="reg-status-badge status-split" title="Split from co-teaching">👥 Split</span>` : ''}
+                    </div>
+                `;
+            } else if (statusObj.status === 'disputed') {
+                statusCellHtml = `
+                    <div style="display:flex; flex-direction:column; align-items:flex-start; gap:3px;">
+                        <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+                            <span class="badge-disputed">⚑ Disputed</span>
+                            ${canTeacherAct ? `<button class="btn-accept-sub" onclick="startAcceptSubCountdown('${period}', '${absentTeacher}')">✓ Accept</button>` : ''}
+                        </div>
+                        <div class="dispute-reason-note" title="${statusObj.reason}">“${statusObj.reason}”</div>
+                    </div>
+                `;
+            } else {
+                const baseBadge = isSplitSub
+                    ? `<span class="reg-status-badge status-split" title="Split from co-teaching with ${coPartners.join(', ')}">👥 Split Sub</span>`
+                    : `<span class="reg-status-badge status-covered">✓ Assigned</span>`;
+
+                statusCellHtml = `
+                    <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+                        ${baseBadge}
+                        ${canTeacherAct ? `<button class="btn-accept-sub" onclick="startAcceptSubCountdown('${period}', '${absentTeacher}')" title="Accept substitution (10s undo timer before permanent lock)">✓ Accept</button>` : ''}
+                        ${(canTeacherAct && disputesEnabled) ? `<button class="btn-dispute-sub" onclick="openDisputeModal('${period}', '${absentTeacher}')" title="Dispute this substitution with an optional note">⚑ Dispute</button>` : ''}
+                    </div>
+                `;
+            }
+
+            // Build Actions column respecting lock-in permissions
+            let actionsHtml = '';
+            if (statusObj.status === 'accepted' && !isCoord) {
+                actionsHtml = `
+                    <div class="reg-actions-cell">
+                        <span style="font-size:11px; color:var(--text-secondary); font-weight:600;" title="Locked after 10s acceptance. Only Admin or Academic Coordinator can remove or reassign.">🔒 Locked</span>
+                    </div>
+                `;
+            } else {
+                actionsHtml = `
+                    <div class="reg-actions-cell">
+                        ${(statusObj.status === 'accepted' && isCoord) ? `<button class="btn-reg-reassign" style="color:var(--accent-orange);" onclick="revokeAcceptedSub('${period}', '${absentTeacher}')" title="Coordinator: Remove locked acceptance">🔓 Unlock</button>` : ''}
+                        ${(statusObj.status === 'disputed' && isCoord) ? `<button class="btn-reg-reassign" onclick="dismissDispute('${period}', '${absentTeacher}')" title="Coordinator: Dismiss dispute flag">Clear ⚑</button>` : ''}
+                        <button class="btn-reg-reassign" onclick="openBottomSheet('${period}', '${absentTeacher}')">Reassign</button>
+                        <button class="btn-reg-unassign" title="Unassign Substitute" onclick="unassignSubstitute('${period}', '${absentTeacher}')">✕</button>
+                    </div>
+                `;
+            }
 
             tableHtml += `
                 <tr class="reg-row-covered">
@@ -1697,13 +2345,8 @@ function renderSubstitutions() {
                         <strong style="color:var(--text-primary);">${subTeacher}</strong>
                         <span class="reg-affinity-tag" title="Score: ${affinity.score} pts • Load: ${affinity.teachingLoad}/${affinity.totalSlots} pds">${affinity.primaryBadge}</span>
                     </td>
-                    <td>${statusBadge}</td>
-                    <td>
-                        <div class="reg-actions-cell">
-                            <button class="btn-reg-reassign" onclick="openBottomSheet('${period}', '${absentTeacher}')">Reassign</button>
-                            <button class="btn-reg-unassign" title="Unassign Substitute" onclick="unassignSubstitute('${period}', '${absentTeacher}')">✕</button>
-                        </div>
-                    </td>
+                    <td>${statusCellHtml}</td>
+                    <td>${actionsHtml}</td>
                 </tr>
             `;
         } else {
@@ -1915,6 +2558,7 @@ function handleResetSchedule() {
     state.schedule[day] = JSON.parse(JSON.stringify(state.baseSchedule[day]));
     state.displaced[day] = [];
     state.substitutions[day] = {};
+    state.subStatus[day] = {};
 
     saveStateToStorage();
     updateUndoUI();
@@ -1923,6 +2567,12 @@ function handleResetSchedule() {
 }
 
 function openBottomSheet(period, targetTeacher) {
+    const existingStatus = getSubStatusObj(state.day, period, targetTeacher);
+    if (existingStatus.status === 'accepted' && !hasCoordinatorPermissions()) {
+        showToast(`🔒 Locked: Once accepted, only Admin or Academic Coordinator can modify this substitution.`, true);
+        return;
+    }
+
     const sheet = document.getElementById('bottom-sheet');
     const overlay = document.getElementById('sheet-overlay');
     const list = document.getElementById('sheet-teacher-list');
@@ -2015,7 +2665,14 @@ function clearRedoStacks() {
 
 function assignSubstitute(period, absentTeacher, subTeacher, targetPeriod = period) {
     closeBottomSheet();
+    const existingStatus = getSubStatusObj(state.day, period, absentTeacher);
+    if (existingStatus.status === 'accepted' && !hasCoordinatorPermissions()) {
+        showToast(`🔒 Locked: Once accepted, only Admin or Academic Coordinator can reassign this substitution.`, true);
+        return;
+    }
+
     clearRedoStacks();
+    clearSubStatusAndTimer(state.day, period, absentTeacher);
     
     if (!state.substitutions[state.day]) state.substitutions[state.day] = {};
     if (!state.substitutions[state.day][period]) state.substitutions[state.day][period] = {};
@@ -2091,7 +2748,14 @@ function assignSubstitute(period, absentTeacher, subTeacher, targetPeriod = peri
 window.assignSubstitute = assignSubstitute;
 
 function unassignSubstitute(period, absentTeacher) {
+    const existingStatus = getSubStatusObj(state.day, period, absentTeacher);
+    if (existingStatus.status === 'accepted' && !hasCoordinatorPermissions()) {
+        showToast(`🔒 Locked: Once accepted, only Admin or Academic Coordinator can unassign this substitution.`, true);
+        return;
+    }
+
     clearRedoStacks();
+    clearSubStatusAndTimer(state.day, period, absentTeacher);
     const currentSub = state.substitutions[state.day]?.[period]?.[absentTeacher];
     if (!currentSub) return;
     
@@ -2773,6 +3437,8 @@ function handleGlobalKeydown(e) {
         if (isFitGridMode) {
             toggleFitGridMode(false);
         }
+        closeOfficiatingModal();
+        closeDisputeModal();
         closeAutoResolveModal();
         closeCoTeachingModal();
         closeSplitModal();
@@ -2814,6 +3480,8 @@ function openSettingsModal() {
     if (detectCollisionsToggle) {
         detectCollisionsToggle.checked = state.settings.detectCollisions !== false;
     }
+
+    updateRolePermissionsUI();
 
     const currentTheme = localStorage.getItem('lfps_frontdesk_theme') || 'system';
     updateThemeSelectorUI(currentTheme);
