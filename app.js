@@ -638,6 +638,8 @@ function loadStateFromStorage() {
                 state.actionHistory = { grid: [], subs: [], redoGrid: [], redoSubs: [] };
             }
             
+            cleanupOrphanSubstitutions(state.day);
+            
             document.querySelectorAll('.day-btn').forEach(b => {
                 b.classList.toggle('active', b.dataset.day === state.day);
             });
@@ -1495,6 +1497,37 @@ function isActivelyCoTeaching(day, period, teacher) {
         return partnerCurrentTask === baseTask && !state.absentTeachers.has(partner);
     });
 }
+
+function getTeacherCoveringFor(t, period, day = state.day) {
+    const daySubs = state.substitutions[day]?.[period];
+    if (daySubs) {
+        for (const [absT, subT] of Object.entries(daySubs)) {
+            if (subT === t && state.absentTeachers.has(absT)) return absT;
+        }
+    }
+    const matchAction = [...(state.actionHistory?.grid || [])].reverse().find(a => 
+        (a.type === 'sub' && a.day === day && a.subTeacher === t && (a.targetPeriod || a.period) === period && state.absentTeachers.has(a.absentTeacher))
+    );
+    if (matchAction) return matchAction.absentTeacher;
+    return null;
+}
+
+function areTeachersCoTeachingPartners(day, period, t1, t2) {
+    if (t1 === t2) return true;
+    const origin1 = getTeacherCoveringFor(t1, period, day) || t1;
+    const origin2 = getTeacherCoveringFor(t2, period, day) || t2;
+    if (origin1 === origin2) return true;
+
+    const p1 = getCoTeachingPartners(day, period, origin1);
+    if (p1.includes(origin2)) return true;
+
+    const p2 = getCoTeachingPartners(day, period, origin2);
+    if (p2.includes(origin1)) return true;
+
+    return false;
+}
+window.getTeacherCoveringFor = getTeacherCoveringFor;
+window.areTeachersCoTeachingPartners = areTeachersCoTeachingPartners;
 
 // --- FIT-GRID VIEW (MOBILE LANDSCAPE & FULL-SCREEN FIT) ---
 function syncDayButtonsUI() {
@@ -2965,11 +2998,10 @@ function findConflicts() {
                     }
                 }
 
-                // Check if all assigned teachers are designated co-teachers
+                // Check if all assigned teachers are designated co-teachers (including active substitute partnerships)
                 const assignedTeachers = entries.map(e => e.teacher);
                 const isDesignatedCoTeaching = assignedTeachers.every(t => {
-                    const partners = getCoTeachingPartners(state.day, period, t);
-                    return assignedTeachers.every(ot => ot === t || partners.includes(ot));
+                    return assignedTeachers.every(ot => areTeachersCoTeachingPartners(state.day, period, t, ot));
                 });
 
                 if (isDesignatedCoTeaching) {
@@ -3011,8 +3043,7 @@ function findConflicts() {
         exactTaskMap.forEach((assignedTeachers, taskName) => {
             if (assignedTeachers.length > 1) {
                 const isDesignatedCoTeaching = assignedTeachers.every(t => {
-                    const partners = getCoTeachingPartners(state.day, period, t);
-                    return assignedTeachers.every(ot => ot === t || partners.includes(ot));
+                    return assignedTeachers.every(ot => areTeachersCoTeachingPartners(state.day, period, t, ot));
                 });
 
                 if (!isDesignatedCoTeaching) {
@@ -3528,6 +3559,7 @@ window.dismissDispute = dismissDispute;
 
 // --- RENDER FUNCTIONS ---
 function renderAll() {
+    cleanupOrphanSubstitutions(state.day);
     updateRolePermissionsUI();
     renderOfficiatingBanners();
     renderAbsentTray();
@@ -3610,8 +3642,12 @@ function renderAbsentTray() {
         `;
         el.addEventListener('click', (e) => {
             if (e.target.closest('.btn-sub-reason-help')) return;
-            if (isAbsent) state.absentTeachers.delete(teacher);
-            else state.absentTeachers.add(teacher);
+            if (isAbsent) {
+                state.absentTeachers.delete(teacher);
+                revertSubstitutionsForTeacher(teacher, state.day);
+            } else {
+                state.absentTeachers.add(teacher);
+            }
             saveStateToStorage();
             renderAll();
         });
@@ -3707,7 +3743,7 @@ function renderTableRoutine() {
             
             const task = state.schedule[state.day]?.[period]?.[teacher] || 'Free';
             const baseTask = state.baseSchedule[state.day]?.[period]?.[teacher];
-            const assignedSub = state.substitutions[state.day]?.[period]?.[teacher];
+            const assignedSub = isAbsent ? state.substitutions[state.day]?.[period]?.[teacher] : null;
             
             // Check if this teacher is covering for an absent colleague in THIS EXACT PERIOD
             let coveringFor = null;
@@ -3717,7 +3753,7 @@ function renderTableRoutine() {
                 // Check all periods for any substitution assigned to this teacher in 'period'
                 for (const [sPeriod, subMap] of Object.entries(daySubs)) {
                     for (const [absT, subT] of Object.entries(subMap)) {
-                        if (subT === teacher) {
+                        if (subT === teacher && state.absentTeachers.has(absT)) {
                             // Find corresponding action in actionHistory to match exact targetPeriod
                             const matchAction = [...state.actionHistory.grid].reverse().find(a => 
                                 (a.type === 'sub' && a.day === state.day && a.subTeacher === teacher && a.absentTeacher === absT)
@@ -4934,6 +4970,77 @@ function unassignSubstitute(period, absentTeacher) {
     renderAll();
 }
 window.unassignSubstitute = unassignSubstitute;
+
+function revertSubstitutionsForTeacher(teacher, day = state.day) {
+    if (!state.substitutions || !state.substitutions[day]) return;
+    
+    periods.forEach(period => {
+        const subTeacher = state.substitutions[day]?.[period]?.[teacher];
+        if (subTeacher) {
+            clearSubStatusAndTimer(day, period, teacher);
+            
+            const matchAction = [...(state.actionHistory?.grid || [])].reverse().find(a => 
+                (a.type === 'sub' && a.day === day && a.subTeacher === subTeacher && a.absentTeacher === teacher)
+            );
+            const targetPeriod = matchAction ? (matchAction.targetPeriod || matchAction.period) : period;
+            const previousTask = matchAction ? (matchAction.previousTaskForSub || 'Free') : (state.baseSchedule[day]?.[targetPeriod]?.[subTeacher] || 'Free');
+            
+            if (state.schedule[day] && state.schedule[day][targetPeriod]) {
+                state.schedule[day][targetPeriod][subTeacher] = previousTask;
+            }
+            
+            if (matchAction && matchAction.newlyDisplaced && state.displaced && state.displaced[day]) {
+                state.displaced[day] = state.displaced[day].filter(d => d.id !== matchAction.newlyDisplaced.id);
+            }
+            
+            delete state.substitutions[day][period][teacher];
+        }
+        
+        // Restore teacher's base task
+        if (state.baseSchedule[day]?.[period]?.[teacher] !== undefined && state.schedule[day]) {
+            state.schedule[day][period][teacher] = state.baseSchedule[day][period][teacher];
+        }
+    });
+}
+window.revertSubstitutionsForTeacher = revertSubstitutionsForTeacher;
+
+function cleanupOrphanSubstitutions(day = state.day) {
+    if (!state.substitutions || !state.substitutions[day]) return false;
+    let cleaned = false;
+    
+    const daySubs = state.substitutions[day];
+    for (const [period, subMap] of Object.entries(daySubs)) {
+        if (!subMap || typeof subMap !== 'object') continue;
+        for (const [absT, subT] of Object.entries(subMap)) {
+            if (!state.absentTeachers.has(absT)) {
+                cleaned = true;
+                clearSubStatusAndTimer(day, period, absT);
+                
+                const matchAction = [...(state.actionHistory?.grid || [])].reverse().find(a => 
+                    (a.type === 'sub' && a.day === day && a.subTeacher === subT && a.absentTeacher === absT)
+                );
+                const targetPeriod = matchAction ? (matchAction.targetPeriod || matchAction.period) : period;
+                const previousTask = matchAction ? (matchAction.previousTaskForSub || 'Free') : (state.baseSchedule[day]?.[targetPeriod]?.[subT] || 'Free');
+                
+                if (state.schedule[day] && state.schedule[day][targetPeriod]) {
+                    state.schedule[day][targetPeriod][subT] = previousTask;
+                }
+                
+                if (matchAction && matchAction.newlyDisplaced && state.displaced && state.displaced[day]) {
+                    state.displaced[day] = state.displaced[day].filter(d => d.id !== matchAction.newlyDisplaced.id);
+                }
+                
+                if (state.baseSchedule[day]?.[period]?.[absT] !== undefined && state.schedule[day]) {
+                    state.schedule[day][period][absT] = state.baseSchedule[day][period][absT];
+                }
+                
+                delete subMap[absT];
+            }
+        }
+    }
+    return cleaned;
+}
+window.cleanupOrphanSubstitutions = cleanupOrphanSubstitutions;
 
 // --- SMART SOLVER & MULTI-OPTION AUTO-RESOLVE ENGINE (MAX 3 SOLUTIONS) ---
 let pendingSplitProposals = [];

@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [v1.33.1] - 2026-10-14
+
+### Fixed
+- **Orphan Substitution Cleanup on Un-marking Absent Teachers**:
+  - Resolved bug where un-marking an absent teacher (toggling back to Present) left behind stale substitution records in `state.substitutions`, creating ghost substitutions on present teachers (e.g. Mr. S. A. Lakra appearing with coverage badges `↳ N. Horo`, `↳ K. Sanga`, `↳ A. Amira` while present).
+  - Added `revertSubstitutionsForTeacher(teacher, day)` to cleanly release all substitutes, restore substitute schedules to original tasks/free, restore returning teacher schedules, and resolve displacements when an absence is cancelled.
+  - Implemented self-healing `cleanupOrphanSubstitutions(day)` invoked on `loadStateFromStorage()`, `renderAll()`, and day switches to automatically sanitize any legacy or persisted orphan substitution records.
+- **Substitution-Aware Co-Teaching Conflict Detection**:
+  - Enhanced `findConflicts()` with `areTeachersCoTeachingPartners(day, period, t1, t2)` and `getTeacherCoveringFor(t, period, day)`.
+  - When a substitute teacher steps in to cover an absent co-teacher (e.g. covering Mr. S. A. Lakra in `KG A: HIN. KAV./GEET`), the conflict detection engine now recognizes that the substitute inherits the co-teaching partnership with the present partner (e.g. Ms. N. Horo).
+  - Suppressed 8 cascading false-positive duplicate class conflicts previously triggered across periods 2nd, 3rd, 4th, and 6th.
+- **Grid Rendering Guards for Present Teachers**:
+  - Guarded `assignedSub` in `renderTableRoutine()` with `isAbsent` so present teachers never render as `cell-covered` with substitute coverage tags.
+  - Guarded `coveringFor` in `renderTableRoutine()` to ensure colleagues only render as substituting for teachers who are actively present in `state.absentTeachers`.
+
+---
+
 ## [v1.33.0] - 2026-10-14
 
 ### Added
