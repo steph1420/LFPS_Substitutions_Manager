@@ -16,6 +16,21 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] Add `.error-jitter` CSS animation in `styles.css` with a 400ms side-by-side oscillation.
   - [ ] Provide haptic vibration feedback via `navigator.vibrate` on restoration failure or invalid drop.
 
+### BUG-02: Schedule Re-rendering & Stutter During Scrolling (Instant View Rendering)
+- **Status**: 🔴 Open / Investigated
+- **Reported Issue**:
+  - The schedule appears to re-render, hitch, or flicker each time the user scrolls horizontally or vertically.
+  - The schedule must be ready to view instantly with smooth 60/120fps hardware-accelerated momentum scrolling and zero repaint stutter.
+- **Root Causes & Performance Bottlenecks**:
+  - Heavy composite repainting caused by non-isolated `backdrop-filter`, multi-stop inset shadows, and sticky header/column reflows during scroll interactions.
+  - Viewport resize triggers firing on mobile scroll (address bar collapsing/expanding) causing layout recalibration.
+  - Absence of CSS containment (`contain: paint layout`) and hardware GPU acceleration (`will-change: transform`, `transform: translateZ(0)`).
+- **Remediation Plan**:
+  - [ ] Decouple table rendering from scroll and resize events (add strict debouncing to viewport observers).
+  - [ ] Add GPU composite layer promotion and CSS containment (`contain: content`, `will-change: transform`, `-webkit-overflow-scrolling: touch`) on `.table-scroll-container` and table rows.
+  - [ ] Optimize sticky header & frozen first-column CSS so scroll ticks do not invalidate the entire layout tree.
+  - [ ] Ensure the entire routine DOM is rendered once, fully cached, and instantly responsive without mid-scroll redraws.
+
 ---
 
 ## 🚀 Active / Next Priorities
@@ -25,11 +40,21 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - [ ] **Offline Indicator**: When disconnected, no internet, or endpoint unreachable, clearly display `⚪ Sheet Offline` or `⚠ Offline Mode` with last sync timestamp.
 - [ ] **Interactive Sync Details**: Tapping the status pill reveals connectivity diagnostics (endpoint URL, ping status, last successful fetch, manual re-sync button).
 
+### 2. Utopian Night Mode (Dark Glass Refraction Theme)
+- [ ] Add `utopian-night` theme as a dark/night counterpart to the Utopian Glass aesthetic under the `🪟 Glass Materials` family.
+- [ ] Aesthetic specification:
+  - Deep obsidian & translucent midnight-sapphire backdrop (`linear-gradient(145deg, #070d18, #0e1a2e)`).
+  - High-refraction frosted glass diffusion (`backdrop-filter: blur(28px) saturate(220%)`).
+  - Luminous iridescent cyan/neon edge highlights (`inset 0 1.2px 1px rgba(0, 229, 255, 0.45)`).
+  - Deep crystalline drop shadows, glowing cyan accents, and crisp high-contrast typography optimized for low-light environments.
+- [ ] Add theme option in Settings drawer under the Glass Materials category.
+- [ ] Register CSS variables in `styles.css` and wire into `updateThemeSelectorUI` in `app.js`.
+
 ---
 
 ## 🔮 Future Roadmap Items
 
-### 2. Simple Mode (Basic Manual Logic)
+### 3. Simple Mode (Basic Manual Logic)
 - [ ] Add a user-selectable **Simple Mode** toggle in Settings / Header.
 - [ ] Strips away cognitive overload: hides algorithmic solver bells, complex multi-candidate split proposals, and deep administrative panels.
 - [ ] Presents strictly the intuitive manual substitution logic:
@@ -38,7 +63,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   3. Pick substitute from simple available list
   4. Save / confirm.
 
-### 3. [CRITICAL CODE REVIEW] Technical Debt & Codebase Bloat Elimination
+### 4. [CRITICAL CODE REVIEW] Technical Debt & Codebase Bloat Elimination
 *Identified during the v1.34.0 architectural review. Flagged for a thorough future cleanup session:*
 - [ ] **Remove Dead Static Arrays (250+ Lines)**:
   - `masterTimetableLog` (`app.js` lines 289–490, 200 lines): Hardcoded normalized log array that is completely unused by the active application (only exported to `window.masterTimetableLog`).
