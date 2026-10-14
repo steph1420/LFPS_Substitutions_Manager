@@ -3512,9 +3512,9 @@ function renderTableRoutine() {
                     cellContent += `<span class="shared-badge" title="Co-teaching with ${coPartners.join(', ')}">👥</span>`;
                     cellTitle = `${teacher}: ${task} (Co-teaching with ${coPartners.join(', ')})`;
                 } else if (isCoSolo) {
-                    cellClasses.push('cell-shared');
-                    cellContent += `<span class="shared-badge shared-badge-solo" title="Solo - split from ${coPartners.join(', ')}">👥</span>`;
-                    cellTitle = `${teacher}: ${task} (Solo - split from ${coPartners.join(', ')})`;
+                    cellClasses.push('cell-shared', 'cell-shared-solo');
+                    cellContent += `<span class="shared-badge shared-badge-solo" title="Co-teaching with ${coPartners.join(', ')} (Partner split - covering solo)">👥</span>`;
+                    cellTitle = `${teacher}: ${task} (Co-teaching with ${coPartners.join(', ')} - partner split)`;
                 } else {
                     cellTitle = `${teacher}: ${task}`;
                 }

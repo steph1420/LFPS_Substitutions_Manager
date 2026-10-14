@@ -1803,6 +1803,10 @@ input:checked + .slider:before {
     opacity: 0.65;
 }
 
+.cell-shared-solo {
+    border-left: 3px solid rgba(142, 142, 147, 0.5) !important;
+}
+
 .cell-partner-highlight {
     outline: 2px solid #8b5cf6 !important;
     box-shadow: 0 0 14px rgba(139, 92, 246, 0.6) !important;
