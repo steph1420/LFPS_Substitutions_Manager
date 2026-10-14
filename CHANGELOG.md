@@ -18,6 +18,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - 100% mobile feature parity with secondary actions housed in a clean 3-dot (`⋮`) overflow menu.
 - **Simple Mode**:
   - Streamlined view option presenting strictly basic manual substitution logic.
+- **Utopian Glass Theme Complete Overhaul**:
+  - Transform the flat pastel-blue look into a true architectural glass aesthetic inspired by *Divergent* upper-city minimalist offices with crystalline top-edge sheen, iridescent prism refraction borders, deep frosted diffusion, and glowing cyan/ice-white ambient reflections.
+- **Theme Taxonomy & Sub-Category Variants**:
+  - Reorganize themes into logical Base Categories (Glass & Materials, Modern Minimalist, Dark/Night Modes) with dedicated, curated sub-category variants.
 
 ---
 

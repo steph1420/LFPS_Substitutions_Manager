@@ -140,6 +140,29 @@ const state = {
 27. **[FEATURE] Simple Mode (Basic Manual Mode):**
     *   **Requirement:** Provide an optional "Simple Mode" toggle that streamlines the interface for rapid morning substitution duty.
     *   **Scope:** Hides complex algorithmic solver proposals, multi-candidate split choices, and deep settings. Presents strictly the clean manual logic: select absent teacher &rarr; tap period cell &rarr; pick from eligible substitute list &rarr; confirm.
+28. **[THEME] Utopian Glass Theme Complete Overhaul ("Divergent Upper-City Architectural Glass"):**
+    *   **User Feedback & Critique:** Current theme renders as a flat pastel blue table without depth. It does not evoke the feeling of standing inside a *Divergent* upper-city futuristic corporate office with crystalline glass sheen.
+    *   **Engineering Specification:**
+        *   **Crystalline Sheen & Highlights:** Specular top edge line (`box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.95), inset 0 -1px 1px rgba(2, 132, 199, 0.1)`).
+        *   **Iridescent Prismatic Borders:** Dynamic chromatic refraction borders using multi-stop linear gradients (`border-image: linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(56,189,248,0.45) 50%, rgba(244,114,182,0.25) 100%) 1`).
+        *   **Deep Translucency & Frosted Luminescence:** Enhanced backdrop diffusion (`backdrop-filter: blur(28px) saturate(190%)`), ice-blue/cyan ambient floor glows, and crisp high-contrast slate typography (`#0f172a`).
+        *   **System-Wide Polish:** Ensure entire shell (header, roster avatars, routine grid cells, badges, limbo dock, and popovers) share the same unified architectural glass finish.
+29. **[THEME ENGINE] Theme Taxonomy Overhaul: Base Families & Sub-Category Variants:**
+    *   **Requirement:** Reorganize the flat theme selector into an organized hierarchy of **Base Theme Categories** with curated **Sub-Category Variants**:
+        *   **Family 1: Glass & Translucent Materials**
+            *   *Utopian Glass*: Divergent upper-city minimalist architectural glass, iridescent prism edges, cyan luminescence.
+            *   *Retro Glass*: Vintage tactile calculator keycaps, concave button physics, specular key reflections.
+            *   *Aero Frost*: Apple Liquid Glass / Windows Aero fluid frosted acrylic.
+            *   *Cyber Smoked Glass*: Dark smoked glass with neon refraction borders.
+        *   **Family 2: Modern Minimalist & Paper**
+            *   *Classic Light*: Pure Apple HIG light palette.
+            *   *Warm Sepia*: Editorial book paper, gentle cream tones for low eye strain.
+            *   *High-Contrast Studio*: Sharp black-on-white clarity for bright rooms & projectors.
+        *   **Family 3: Dark & Low-Light Modes**
+            *   *Classic Dark*: Balanced slate & graphite dark mode.
+            *   *Midnight OLED*: True deep black (`#000000`) for OLED power saving.
+            *   *Slate Nord*: Cool Arctic Scandinavian palette with muted icy tones.
+    *   **UI Implementation:** Segmented primary category pills in Settings revealing responsive nested variant swatches with instant live preview.
 
 ## 8. File Map & Project Directory
 *   `index.html`: Core markup, header controls, day segmented controller, grid view, substitutions conflict list, and iOS bottom sheet modal.
