@@ -107,6 +107,23 @@ const state = {
 20. **[GRID ERGONOMICS] Harmonize Grid Cell Sizes:**
     *   **Requirement:** Establish balanced, consistent, and harmonious column widths and row heights across the master timetable grid (`#routine-table`).
     *   **Details:** Columns currently flex unevenly depending on text content (e.g. `PLAYTIME / 2ND GOLDEN HOUR` vs `1st` or static `BREAK` `-`), producing irregular visual rhythm. Harmonize period column widths (e.g., standardized min-width/width constraints, consistent padding), lock teacher header cell widths, ensure uniform row heights across both Teacher View and Class View, and provide clean multi-line wrapping/truncation with tooltips so the grid maintains an architecturally uniform layout.
+21. **[COLLISION LOGIC] Shared / Co-Teaching Classes Appearing as Collisions (False-Positive Suppression):**
+    *   **Issue:** Legitimate shared sessions (such as combined sports, drill, games, or paired co-teaching classes where two teachers legitimately instruct the same section or combined sections like KG A + KG B) are triggering collision alerts.
+    *   **Resolution Strategy:** Update collision scanner (`detectCollisions`) to cross-reference co-teaching pairings and recognized shared multi-teacher allocations before flagging. If teachers are verified co-teachers or listed as joint instructors for that class slot, suppress the collision radar and preserve the co-teaching status.
+22. **[TERMINOLOGY] Replace "Collision" with School-Appropriate Terminology:**
+    *   **Context:** "Collision" sounds like vehicular/physics impact. In educational administration, standard industry terms include:
+        *   *Option A (Recommended)*: **"Schedule Conflict" / "Conflict"** (Universal, professional, standard across Apple Calendar, Google Calendar, and modern school management software).
+        *   *Option B*: **"Double-Booking" / "Double Booking"** (Direct and conversational for school administrators).
+        *   *Option C*: **"Timetable Clash" / "Clash"** (Common in British/Commonwealth academic routine management).
+    *   **Resolution Strategy:** Standardize terminology across headers, badges, counter pills, tooltips, and settings toggles.
+23. **[FEATURE] Mark Teacher Unavailable for Substitution (with Optional Remark):**
+    *   **Requirement:** Enable marking a teacher as "Unavailable for Substitution" (distinct from full absence). A teacher may be physically present in school but occupied with specialized non-classroom duties (e.g., bus duty, exam evaluation, parent-teacher meetings, administrative coordination, lab preparation, or sick bay duty).
+    *   **Workflow & Mechanics:**
+        *   Provide an actionable trigger (e.g. in Teacher roster, teacher action sheet, or substitution view).
+        *   Prompt for an optional remark/reason (e.g. "Parent Meeting", "Bus Duty", "Exam Correction").
+        *   Display a clear Apple HIG badge/pill on their row and cards (e.g. `⛔ Sub Unavailable: [Remark]`).
+        *   Exclude unavailable teachers from substitute candidate pools in both the manual substitute picker and Smart Auto-Resolve.
+        *   Persist availability status and remarks in `localStorage` under `state.subUnavailable[day][teacher]`.
 
 ## 8. File Map & Project Directory
 *   `index.html`: Core markup, header controls, day segmented controller, grid view, substitutions conflict list, and iOS bottom sheet modal.
