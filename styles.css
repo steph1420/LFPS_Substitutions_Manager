@@ -555,40 +555,35 @@ body {
 /* Small Screen / Portrait Mobile Responsive Header */
 @media (max-width: 580px) {
     .header-top {
-        gap: 8px;
+        gap: 6px;
     }
 
     .header-top h1 {
-        font-size: 19px;
+        font-size: 17px;
     }
 
     .header-controls {
         gap: 4px;
-        flex-shrink: 1;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        padding-bottom: 2px;
-    }
-
-    .header-controls::-webkit-scrollbar {
-        display: none;
+        flex-shrink: 0;
+        overflow: visible;
+        align-items: center;
     }
 
     .btn-primary .btn-text,
     .btn-secondary .btn-text,
     .btn-history .btn-text {
-        display: none; /* Iconify buttons on tight mobile screens */
+        display: none !important; /* Iconify buttons on tight mobile screens */
     }
 
     .btn-primary, .btn-secondary {
-        padding: 6px 10px;
-        font-size: 13px;
+        padding: 5px 8px;
+        font-size: 12px;
     }
 
     .btn-history {
-        padding: 5px 8px;
-        font-size: 13px;
+        padding: 4px 6px;
+        font-size: 12px;
+        min-width: 28px;
     }
 }
 
@@ -2343,8 +2338,8 @@ input:checked + .slider:before {
     color: var(--text-secondary);
 }
 
-/* Mobile vs Desktop Header Controls Responsiveness */
-@media (max-width: 639px) {
+/* Mobile vs Desktop Header Controls Responsiveness (Height-aware for Phone Landscape) */
+@media (max-width: 639px), (orientation: landscape) and (max-height: 500px) {
     .header-desktop-only {
         display: none !important;
     }
@@ -2353,12 +2348,297 @@ input:checked + .slider:before {
     }
 }
 
-@media (min-width: 640px) {
+@media (min-width: 640px) and (min-height: 501px) {
     .header-desktop-only {
         display: inline-flex !important;
     }
     .header-more-btn {
         display: none !important;
+    }
+}
+
+/* ==========================================================================
+   MOBILE HIGH-DENSITY GRID ARCHITECTURE (Portrait < 640px & Landscape < 500px)
+   Restores high information density so 7–8 teachers fit above the fold.
+   ========================================================================== */
+@media (max-width: 639px), (orientation: landscape) and (max-height: 500px) {
+    /* 1. Header & Controls Density */
+    .app-header {
+        padding: 6px 12px 4px !important;
+    }
+    .header-top {
+        margin-bottom: 4px !important;
+    }
+    .header-top h1 {
+        font-size: 16px !important;
+    }
+    .version-badge {
+        font-size: 9px !important;
+    }
+    .role-badge-btn {
+        padding: 2px 7px !important;
+        font-size: 11px !important;
+    }
+    .header-controls {
+        gap: 3px !important;
+    }
+    .btn-history {
+        padding: 3px 6px !important;
+        font-size: 12px !important;
+        min-width: 28px !important;
+    }
+
+    /* 2. Compact Day Reel */
+    .day-selector {
+        padding: 2px !important;
+        margin-bottom: 4px !important;
+    }
+    .day-btn {
+        padding: 3px 0 !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+    }
+
+    /* 3. Tab Section & Absence Tray */
+    .tab-section {
+        padding: 4px 6px 60px !important;
+    }
+    .absent-tray-container {
+        margin-bottom: 6px !important;
+        padding: 4px 8px !important;
+        border-radius: 8px !important;
+    }
+    .absent-tray-header {
+        margin-bottom: 3px !important;
+    }
+    .absent-tray-header h3 {
+        font-size: 11px !important;
+    }
+    .absent-tray {
+        gap: 8px !important;
+        padding-bottom: 2px !important;
+    }
+    .teacher-avatar {
+        min-width: 44px !important;
+    }
+    .teacher-avatar .avatar-circle {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 11px !important;
+        line-height: 28px !important;
+    }
+    .teacher-avatar .name {
+        font-size: 9.5px !important;
+        margin-top: 2px !important;
+        max-width: 58px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    .teacher-avatar .role-subtag {
+        font-size: 8px !important;
+    }
+    .avatar-sub-unavail-badge {
+        font-size: 8px !important;
+        padding: 1px 3px !important;
+    }
+
+    /* 4. Routine Header Controls */
+    .master-routine-container {
+        padding: 4px 6px !important;
+        margin-bottom: 8px !important;
+    }
+    .routine-header {
+        margin-bottom: 4px !important;
+    }
+    .routine-header h2 {
+        font-size: 14px !important;
+    }
+    .view-seg-btn {
+        padding: 3px 7px !important;
+        font-size: 10.5px !important;
+    }
+    .btn-fit-grid-toggle {
+        padding: 3px 6px !important;
+        font-size: 10px !important;
+    }
+
+    /* 5. HIGH-DENSITY SPREADSHEET TABLE */
+    .routine-table {
+        min-width: 780px !important;
+        font-size: 10.5px !important;
+        border-collapse: collapse !important;
+        border-spacing: 0 !important;
+    }
+    .routine-table th, 
+    .routine-table td {
+        padding: 3px 2px !important;
+        width: 86px !important;
+        min-width: 80px !important;
+        max-width: 92px !important;
+        height: 38px !important;
+        font-size: 10.5px !important;
+        line-height: 1.15 !important;
+        border-radius: 2px !important;
+    }
+    .routine-table th {
+        height: 32px !important;
+        min-height: 32px !important;
+        font-size: 9.5px !important;
+        padding: 2px 2px !important;
+    }
+    .period-sub-header {
+        font-size: 7.5px !important;
+    }
+
+    /* First Sticky Column (Teacher Name) */
+    .routine-table th:first-child,
+    .routine-table td:first-child {
+        width: 108px !important;
+        min-width: 108px !important;
+        max-width: 108px !important;
+        padding: 3px 6px !important;
+        font-size: 11px !important;
+        line-height: 1.15 !important;
+    }
+    /* Hide the verbose full-name sub on mobile to save vertical height */
+    .teacher-fullname-sub {
+        display: none !important;
+    }
+    /* Inline teacher badges */
+    .teacher-badges-container {
+        margin-top: 1px !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 1.5px !important;
+    }
+    .ct-badge-mini, .off-badge-mini {
+        font-size: 7.5px !important;
+        padding: 0.5px 3px !important;
+        border-radius: 3px !important;
+    }
+    .badge-sub-unavail-grid {
+        font-size: 8px !important;
+    }
+
+    /* Class Routine Table High-Density */
+    .class-routine-table th:first-child,
+    .class-routine-table td:first-child {
+        width: 96px !important;
+        min-width: 96px !important;
+        max-width: 96px !important;
+        padding: 4px 6px !important;
+        font-size: 11px !important;
+    }
+    .class-teacher-pill {
+        font-size: 8.5px !important;
+        padding: 1px 3px !important;
+    }
+    .class-sub-title {
+        font-size: 9.5px !important;
+    }
+
+    /* Theme Overrides for Mobile Compact Crispness */
+    [data-theme="utopian-glass"] .routine-table,
+    [data-theme="utopian-night"] .routine-table,
+    [data-theme="cyber-glass"] .routine-table {
+        border-collapse: collapse !important;
+        border-spacing: 0 !important;
+    }
+    [data-theme="utopian-glass"] .routine-table td:not(:first-child),
+    [data-theme="utopian-night"] .routine-table td:not(:first-child),
+    [data-theme="cyber-glass"] .routine-table td:not(:first-child) {
+        border-radius: 2px !important;
+    }
+
+    /* Table Scroll Container Viewport */
+    .table-scroll-container {
+        border-radius: 6px !important;
+        margin-bottom: 8px !important;
+    }
+}
+
+/* ==========================================================================
+   MOBILE LANDSCAPE DEDICATED OPTIMIZATION (Orientation Landscape & Height <= 500px)
+   Combines Header + Day Bar into a single 36px bar; table gets 280px+ space.
+   ========================================================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+    .app-header {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 100 !important;
+        padding: 2px 14px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+    }
+    .header-top {
+        margin-bottom: 0 !important;
+        flex-shrink: 0 !important;
+        gap: 6px !important;
+    }
+    .header-top h1 {
+        font-size: 14.5px !important;
+    }
+    .day-selector {
+        margin: 0 !important;
+        max-width: 320px !important;
+        padding: 1.5px !important;
+        flex-grow: 1 !important;
+    }
+    .day-btn {
+        padding: 2px 4px !important;
+        font-size: 10px !important;
+    }
+    .tab-section {
+        padding: 3px 8px 45px !important;
+    }
+    .absent-tray-container {
+        margin-bottom: 4px !important;
+        padding: 2px 8px !important;
+    }
+    .absent-tray-header {
+        display: none !important;
+    }
+    .absent-tray {
+        gap: 6px !important;
+        padding-bottom: 1px !important;
+    }
+    .teacher-avatar .avatar-circle {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 9.5px !important;
+        line-height: 24px !important;
+    }
+    .teacher-avatar .name {
+        font-size: 9px !important;
+        margin-top: 1px !important;
+        max-width: 52px !important;
+    }
+    .master-routine-container {
+        padding: 3px 6px !important;
+        margin-bottom: 6px !important;
+    }
+    .routine-header {
+        margin-bottom: 2px !important;
+    }
+    .routine-header h2 {
+        font-size: 13px !important;
+    }
+    .bottom-nav {
+        height: 36px !important;
+        padding: 2px 0 !important;
+    }
+    .nav-btn {
+        padding: 2px 0 !important;
+        font-size: 9px !important;
+    }
+    .nav-btn .icon {
+        font-size: 12px !important;
+    }
+    .table-scroll-container {
+        max-height: calc(100vh - 120px) !important;
     }
 }
 

@@ -17,6 +17,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.36.0] - 2026-10-15
+
+### Added
+- **Touch Device Long-Press for Substitution Availability**:
+  - Added a 500ms touch-and-hold listener with haptic vibration feedback (`navigator.vibrate(40)`) on teacher avatar cards (`.teacher-avatar`), enabling phone users to easily open the Substitution Availability modal (`#sub-avail-modal`) without needing right-click.
+  - Suppressed the standard short-tap absence toggle whenever a long-press triggers.
+  - Retained desktop right-click (`contextmenu`) intact for mouse users.
+- **Full Teacher Honorifics & Respectful Titles**:
+  - Preserved full respectful prefixes (`Mrs. S. Lakra`, `Ms. N. Horo`, `Mr. S. A. Lakra`) in `renderAbsentTray()`, attendance cards, and table displays.
+- **Undo/Redo History Reset Policy & Manual Purge**:
+  - Added auto-reset of `state.actionHistory` on day navigation, preventing cross-day undo contamination.
+  - Added a dedicated "🗑 Purge History" button (`#btn-purge-history`) in Settings under Application Info with instant toast confirmation.
+
+### Fixed
+- **High-Density Mobile Grid Architecture**:
+  - Reversed layout bloat on mobile screens: collapsed cell heights back to ~38px–40px (down from ~95px), allowing 7–8 teacher rows to fit above the fold.
+  - Compressed sticky teacher column to 108px with streamlined inline role badges (`.teacher-badges-container`) and hidden secondary subtitles on mobile.
+  - Tightened period columns to 86px width (min 80px, max 92px) with compact `3px 2px` padding and `border-collapse: collapse !important`.
+  - Scaled absence tray circle avatars to 28px × 28px, reducing overall tray height from 120px to ~48px.
+- **Mobile Landscape Viewport & Single-Bar Header**:
+  - Scoped desktop controls display to `@media (min-width: 640px) and (min-height: 501px)` to prevent phones in landscape (`height <= 500px`) from dumping all desktop buttons and overflowing.
+  - Consolidated header, app identity, and day selector into a unified, slim 36px bar in landscape, eliminating day-bar overlap over row 1 of the timetable.
+  - Reduced mobile landscape bottom navigation height to 36px, maximizing usable timetable grid area to 280px+ vertical height.
+
 ## [v1.35.0] - 2026-10-14
 
 ### Fixed

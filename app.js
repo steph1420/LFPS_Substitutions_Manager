@@ -739,11 +739,16 @@ function bindEvents() {
         btn.addEventListener('click', (e) => {
             const chosenDay = e.currentTarget.dataset.day;
             if (!chosenDay) return;
-            state.day = chosenDay;
-            selectedCell = null; 
-            syncDayButtonsUI();
-            saveStateToStorage();
-            renderAll();
+            if (chosenDay !== state.day) {
+                state.day = chosenDay;
+                // Auto-reset undo history on day switch to prevent cross-day action corruption
+                state.actionHistory = { grid: [], subs: [], redoGrid: [], redoSubs: [] };
+                selectedCell = null; 
+                syncDayButtonsUI();
+                saveStateToStorage();
+                updateUndoUI();
+                renderAll();
+            }
         });
     });
 
@@ -926,6 +931,13 @@ function bindEvents() {
         closeSettingsModal();
         generateSimulatedData(scenario);
         showToast(`Loaded test simulation: ${scenario}`);
+    });
+
+    safeBind('btn-purge-history', 'click', () => {
+        state.actionHistory = { grid: [], subs: [], redoGrid: [], redoSubs: [] };
+        saveStateToStorage();
+        updateUndoUI();
+        showToast('🗑 Action history buffer wiped clean.');
     });
     
     // Feature Overview Tour Modal
@@ -3752,7 +3764,7 @@ function renderAbsentTray() {
         else if (offCTSecs.length > 0) roleSubtag = `offCT ${offCTSecs.join(',')}`;
 
         const initials = staff?.initials || teacher.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '').slice(0, 2).toUpperCase();
-        const shortName = teacher.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
+        const displayName = teacher; // Preserves full respectful title (Mrs. S. Lakra, Mr. S. A. Lakra, etc.)
         const fullName = staff?.fullName || teacher;
 
         const isUnavailable = isTeacherSubUnavailable(teacher, state.day);
@@ -3770,14 +3782,40 @@ function renderAbsentTray() {
 
         const el = document.createElement('div');
         el.className = `teacher-avatar ${isAbsent ? 'absent' : ''} ${isUnavailable && !isAbsent ? 'sub-unavailable' : ''}`;
-        el.title = `${fullName} (${staff?.role || 'Teacher'}${staff?.additionalRole ? ' • ' + staff.additionalRole : ''})\nClick to toggle absent/present • Right-click for Sub-Availability`;
+        el.title = `${fullName} (${staff?.role || 'Teacher'}${staff?.additionalRole ? ' • ' + staff.additionalRole : ''})\nTap to toggle absent/present • Long-press / Right-click for Sub-Availability`;
         el.innerHTML = `
             <div class="avatar-circle">${initials}</div>
-            <span class="name" style="font-size:11px; margin-top:4px; font-weight:600;">${shortName}</span>
-            <span style="font-size:9px; color:var(--text-secondary); font-weight:600;">${roleSubtag}</span>
+            <span class="name" style="font-size:11px; margin-top:4px; font-weight:600;">${displayName}</span>
+            <span class="role-subtag" style="font-size:9px; color:var(--text-secondary); font-weight:600;">${roleSubtag}</span>
             ${unavailBadge}
         `;
+
+        // Mobile touch-hold (long-press) listener for Sub-Availability
+        let touchTimer = null;
+        let isLongPress = false;
+        el.addEventListener('touchstart', () => {
+            isLongPress = false;
+            touchTimer = setTimeout(() => {
+                isLongPress = true;
+                if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                    try { navigator.vibrate(40); } catch (_) {}
+                }
+                openSubAvailModal(teacher);
+            }, 500);
+        }, { passive: true });
+        el.addEventListener('touchend', () => {
+            if (touchTimer) clearTimeout(touchTimer);
+        });
+        el.addEventListener('touchmove', () => {
+            if (touchTimer) clearTimeout(touchTimer);
+        });
+
         el.addEventListener('click', (e) => {
+            if (isLongPress) {
+                isLongPress = false;
+                e.stopImmediatePropagation();
+                return;
+            }
             if (e.target.closest('.btn-sub-reason-help')) return;
             if (isAbsent) {
                 state.absentTeachers.delete(teacher);
@@ -3867,9 +3905,9 @@ function renderTableRoutine() {
         
         html += `<tr class="${isAbsent ? 'row-absent' : ''}">`;
         html += `<td class="teacher-cell" data-teacher="${teacher}" title="${staffInfo?.fullName || teacher} - ${staffInfo?.role || ''}">
-            <div style="font-weight:700;">${teacher}</div>
+            <div class="teacher-name-title" style="font-weight:700;">${teacher}</div>
             ${fullNameSub}
-            <div style="margin-top:3px; display:flex; flex-wrap:wrap; gap:2px;">${teacherBadges}</div>
+            <div class="teacher-badges-container" style="margin-top:2px; display:flex; flex-wrap:wrap; gap:2px;">${teacherBadges}</div>
         </td>`;
         
         periods.forEach(period => {
@@ -5639,22 +5677,28 @@ function updateUndoUI() {
     const activeRedo = getActiveRedoStack();
     
     if (undoBtn) {
-        if (activeUndo.length > 0) {
+        const count = activeUndo.length;
+        if (count > 0) {
             undoBtn.removeAttribute('disabled');
-            undoBtn.textContent = `↩ Undo (${activeUndo.length})`;
+            undoBtn.innerHTML = `<span class="btn-icon">↩</span><span class="btn-text"> Undo (${count})</span>`;
+            undoBtn.title = `Undo (${count}) (Cmd+Z)`;
         } else {
             undoBtn.setAttribute('disabled', 'true');
-            undoBtn.textContent = '↩ Undo';
+            undoBtn.innerHTML = `<span class="btn-icon">↩</span><span class="btn-text"> Undo</span>`;
+            undoBtn.title = 'Undo (Cmd+Z)';
         }
     }
 
     if (redoBtn) {
-        if (activeRedo.length > 0) {
+        const count = activeRedo.length;
+        if (count > 0) {
             redoBtn.removeAttribute('disabled');
-            redoBtn.textContent = `↪ Redo (${activeRedo.length})`;
+            redoBtn.innerHTML = `<span class="btn-icon">↪</span><span class="btn-text"> Redo (${count})</span>`;
+            redoBtn.title = `Redo (${count}) (Cmd+Shift+Z)`;
         } else {
             redoBtn.setAttribute('disabled', 'true');
-            redoBtn.textContent = '↪ Redo';
+            redoBtn.innerHTML = `<span class="btn-icon">↪</span><span class="btn-text"> Redo</span>`;
+            redoBtn.title = 'Redo';
         }
     }
 }

@@ -1,5 +1,5 @@
 # Front Desk PWA - Architecture & Developer Guide
-**Current Version:** v1.29
+**Current Version:** v1.36.0
 **Project Type:** Vanilla JS/HTML/CSS Offline-First PWA
 **Purpose:** School substitution management and daily timetable resolution.
 
@@ -457,3 +457,21 @@ To enable live synchronization from Google Sheets in future releases:
     *   `'dual_absence'`: Simulates `Mrs. S. Lakra` and `Ms. A. Amira` absent (multi-class substitution test).
     *   `'coordinator_contingency'`: Simulates `Mrs. R. Pahwa` (AC) and `Mrs. S. Lakra` (Asst AC) absent (Officiating AC delegation banner test).
     *   **Settings UI Integration:** Accessible directly via Settings > "Timetable Baseline & Mock Data Generator".
+
+### 11.7 High-Density Mobile Grid & Touch Ergonomics (v1.36.0)
+*   **Grid-First Mobile Identity:** Preserved master spreadsheet timetable grid as primary front-desk interface on mobile, rejecting bulky card lists in favor of a condensed high-density viewport.
+*   **Dimensional Calibration:**
+    *   Row height condensed from ~95px to ~38px–40px (`padding: 3px 2px`, hidden subtitle full names on mobile, compact badge pills).
+    *   Sticky teacher column width reduced to 108px (`min-width: 104px; max-width: 116px`).
+    *   Period columns reduced to 86px (`min-width: 80px; max-width: 92px`), fitting 4+ columns horizontally and 7–8 teacher rows above the fold.
+    *   Absence tray circle avatars scaled to 28px × 28px (tray total height ~48px).
+*   **Mobile Landscape Optimization:**
+    *   Desktop controls constrained to `@media (min-width: 640px) and (min-height: 501px)` to prevent phones in landscape from dumping all desktop buttons.
+    *   Unified header, title, and day selector into a single 36px bar in landscape (`padding: 2px 14px`), eliminating day-bar overlap over timetable row 1.
+    *   Compressed bottom navigation bar to 36px in landscape, unlocking 280px+ vertical grid real estate.
+*   **Touch Ergonomics & Honorifics:**
+    *   Implemented 500ms `touchstart` long-press with haptic vibration (`navigator.vibrate(40)`) on `.teacher-avatar` to open Substitution Availability modal (`#sub-avail-modal`) on phones without context menu emulation.
+    *   Preserved full respectful honorific titles (`Mrs. S. Lakra`, `Ms. N. Horo`, `Mr. S. A. Lakra`) across attendance trays and roster cards.
+*   **Action History Reset Policy:**
+    *   Added automatic history reset on day navigation to avoid cross-day undo contamination.
+    *   Added manual purge button (`#btn-purge-history`) in Settings under Application Info.

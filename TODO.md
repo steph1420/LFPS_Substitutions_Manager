@@ -20,6 +20,15 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] Promoted `.table-scroll-container` and sticky table cells to independent GPU composite layers using `transform: translateZ(0)` and `contain: paint layout`.
   - [x] Moved `backdrop-filter` from the scrolling container to `.master-routine-container`, eliminating continuous per-frame blur re-filtering during scroll.
 
+### BUG-03: High-Density Mobile Grid & Mobile Landscape Header Overlap (RESOLVED in v1.36.0)
+- **Status**: 🟢 Resolved (v1.36.0)
+- **Solution Delivered**:
+  - [x] Restored high-density spreadsheet grid on mobile viewports: reduced row heights from ~95px back to ~38px–40px, compressed sticky teacher column to 108px, tightened period columns to 86px (80px–92px range).
+  - [x] Fixed mobile landscape: prevented desktop button dump by scoping to `(min-height: 501px)`, consolidated header and day selector into a slim 36px bar, eliminating day bar overlapping row 1.
+  - [x] Implemented 500ms touch long-press with haptic vibration (`navigator.vibrate(40)`) on teacher cards to open Substitution Availability modal on touch devices.
+  - [x] Preserved full teacher honorifics (`Mrs. S. Lakra`, `Mr. S. A. Lakra`) across attendance trays and roster displays.
+  - [x] Implemented undo/redo history auto-reset on day navigation and manual history purge in Settings.
+
 ---
 
 ## 🚀 Active / Next Priorities
@@ -29,19 +38,18 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - [ ] **Offline Indicator**: When disconnected, no internet, or endpoint unreachable, clearly display `⚪ Sheet Offline` or `⚠ Offline Mode` with last sync timestamp.
 - [ ] **Interactive Sync Details**: Tapping the status pill reveals connectivity diagnostics (endpoint URL, ping status, last successful fetch, manual re-sync button).
 
-### 2. Teacher Roster Mobile Long-Press & Honorific Display
-- [ ] **Mobile Long-Press for Sub-Availability**:
-  - Phones cannot easily right-click. Add a 500ms touch-hold listener on teacher avatars (`.teacher-avatar`) with haptic buzz feedback to open the Substitution Availability modal (`#sub-avail-modal`) on mobile.
-  - Suppress standard click (absence toggle) when long-press triggers.
-  - Retain desktop right-click (`contextmenu`).
-- [ ] **Full Honorific Display**:
-  - Stop stripping honorific prefixes in `renderAbsentTray()`. Display names with their full respectful titles (e.g., `Mrs. S. Lakra`, `Ms. N. Horo`, `Mr. S. A. Lakra`) across roster cards and timetable views.
+### 2. Teacher Roster Mobile Long-Press & Honorific Display (RESOLVED in v1.36.0)
+- [x] **Mobile Long-Press for Sub-Availability**:
+  - Phones cannot easily right-click. Added 500ms touch-hold listener on teacher avatars (`.teacher-avatar`) with haptic buzz feedback to open Substitution Availability modal (`#sub-avail-modal`) on mobile.
+  - Suppressed standard click (absence toggle) when long-press triggers.
+  - Retained desktop right-click (`contextmenu`).
+- [x] **Full Honorific Display**:
+  - Preserved full respectful titles and honorific prefixes (e.g., `Mrs. S. Lakra`, `Ms. N. Horo`, `Mr. S. A. Lakra`) across attendance tray and roster cards.
 
-### 3. Undo/Redo History Reset Policy & Buffer Pruning
-- [ ] **Manual History Purge**: Add a "Clear Action History" button in Settings / Header context menu to wipe undo/redo stacks on demand.
-- [ ] **Auto-Reset Policy Options**:
-  - Option to clear history buffer when switching days (preventing accidental cross-day undos).
-  - Option to wipe history buffer when "Reset to Baseline" is executed.
+### 3. Undo/Redo History Reset Policy & Buffer Pruning (RESOLVED in v1.36.0)
+- [x] **Manual History Purge**: Added "Clear Action History" button (`#btn-purge-history`) in Settings under Application Info to wipe undo/redo stacks on demand.
+- [x] **Auto-Reset Policy Options**:
+  - Automatically resets action history buffer when switching days to prevent accidental cross-day undo contamination.
 - [ ] **Buffer Depth Limit**: Enforce a FIFO cap (e.g. maximum 30 actions) to prevent `localStorage` bloating over time.
 
 ---

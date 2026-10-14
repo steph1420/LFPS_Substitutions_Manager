@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.35.0">
+    <link rel="stylesheet" href="styles.css?v=1.36.0">
 </head>
 <body>
 
@@ -35,7 +35,7 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge">v1.35.0</span>
+                <span class="version-badge">v1.36.0</span>
                 <button id="role-badge-btn" class="role-badge-btn" title="Switch Active Role (Admin / AC / Asst AC / Teacher)">
                     <span id="role-badge-icon">🛡</span>
                     <span id="role-badge-text">Admin</span>
@@ -511,11 +511,18 @@
                 <div class="settings-group-title">Application Info</div>
                 <div class="settings-row">
                     <span class="settings-row-label">Version</span>
-                    <span class="settings-row-value">v1.35.0 (Timetable Schema 2.0)</span>
+                    <span class="settings-row-value">v1.36.0 (Timetable Schema 2.0)</span>
                 </div>
                 <div class="settings-row">
                     <span class="settings-row-label">Storage Engine</span>
                     <span class="settings-row-value">Offline-First LocalStorage</span>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Action History Buffer</span>
+                        <span class="settings-row-desc">Wipe accumulated undo/redo history stack.</span>
+                    </div>
+                    <button type="button" id="btn-purge-history" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; color:var(--accent-red);">🗑 Purge History</button>
                 </div>
             </div>
         </div>
@@ -910,6 +917,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=1.35.0"></script>
+    <script src="app.js?v=1.36.0"></script>
 </body>
 </html>
