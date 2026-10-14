@@ -2,6 +2,20 @@
 
 This tracker maintains active, upcoming, and future tasks for the **Front Desk PWA**.
 
+## 🐛 Critical Bug Tracker
+
+### BUG-01: Limbo Tray Drag Failure & Click-to-Restore Mechanism (CRITICAL)
+- **Status**: 🔴 Open / Investigated
+- **Reported Issue**:
+  1. **Drag Failure**: Users are unable to drag periods out of the Limbo tray (`#displaced-tray`). In standard mode, `div.draggable` is restricted by `state.isEditMode`, preventing drag interaction.
+  2. **Click-to-Restore to Original Cell**: When a subject in the Limbo tray is clicked, it should automatically attempt to restore itself back to its original cell (`item.ogTeacher` at `item.period`) if that cell is blank / free (or in any valid safe manner).
+  3. **Haptic & Visual Error Jitter**: If restoration or dragging fails (e.g., original cell is occupied or blocked), the item card should execute a side-by-side phone-style error jitter/shake animation (`@keyframes error-jitter`) paired with tactile device vibration (`navigator.vibrate([40, 60, 40])`).
+- **Remediation Plan**:
+  - [ ] Allow dragging directly from `#displaced-tray` with active drop targets across the master timetable grid.
+  - [ ] Implement `restoreLimboItem(item)`: verify target `(ogTeacher, period)` is `Free` / empty, remove from `state.displaced`, restore to schedule, register in undo stack, and re-render.
+  - [ ] Add `.error-jitter` CSS animation in `styles.css` with a 400ms side-by-side oscillation.
+  - [ ] Provide haptic vibration feedback via `navigator.vibrate` on restoration failure or invalid drop.
+
 ---
 
 ## 🚀 Active / Next Priorities
