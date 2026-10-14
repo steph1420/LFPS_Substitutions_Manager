@@ -29,6 +29,21 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - [ ] **Offline Indicator**: When disconnected, no internet, or endpoint unreachable, clearly display `⚪ Sheet Offline` or `⚠ Offline Mode` with last sync timestamp.
 - [ ] **Interactive Sync Details**: Tapping the status pill reveals connectivity diagnostics (endpoint URL, ping status, last successful fetch, manual re-sync button).
 
+### 2. Teacher Roster Mobile Long-Press & Honorific Display
+- [ ] **Mobile Long-Press for Sub-Availability**:
+  - Phones cannot easily right-click. Add a 500ms touch-hold listener on teacher avatars (`.teacher-avatar`) with haptic buzz feedback to open the Substitution Availability modal (`#sub-avail-modal`) on mobile.
+  - Suppress standard click (absence toggle) when long-press triggers.
+  - Retain desktop right-click (`contextmenu`).
+- [ ] **Full Honorific Display**:
+  - Stop stripping honorific prefixes in `renderAbsentTray()`. Display names with their full respectful titles (e.g., `Mrs. S. Lakra`, `Ms. N. Horo`, `Mr. S. A. Lakra`) across roster cards and timetable views.
+
+### 3. Undo/Redo History Reset Policy & Buffer Pruning
+- [ ] **Manual History Purge**: Add a "Clear Action History" button in Settings / Header context menu to wipe undo/redo stacks on demand.
+- [ ] **Auto-Reset Policy Options**:
+  - Option to clear history buffer when switching days (preventing accidental cross-day undos).
+  - Option to wipe history buffer when "Reset to Baseline" is executed.
+- [ ] **Buffer Depth Limit**: Enforce a FIFO cap (e.g. maximum 30 actions) to prevent `localStorage` bloating over time.
+
 ---
 
 ## 💡 Front-Desk High-Utility Feature Suggestions (Curated for Daily School Operations)
