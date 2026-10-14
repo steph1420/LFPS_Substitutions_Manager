@@ -575,11 +575,19 @@ body {
     margin-bottom: 25px;
 }
 
+.absent-tray-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.absent-tray-header h3,
 .absent-tray-container h3 {
     font-size: 14px;
     color: var(--text-secondary);
     text-transform: uppercase;
-    margin-bottom: 10px;
+    margin: 0;
 }
 
 .absent-tray {
@@ -943,18 +951,18 @@ input:checked + .slider:before {
     text-align: center;
     vertical-align: middle;
     box-sizing: border-box;
-    width: 122px;
-    min-width: 122px;
-    max-width: 122px;
+    width: 112px;
+    min-width: 104px;
+    max-width: 118px;
     overflow: hidden;
 }
 
 .routine-table th:first-child, .routine-table td:first-child {
     position: sticky;
     left: 0;
-    width: 140px !important;
-    min-width: 140px !important;
-    max-width: 140px !important;
+    width: 148px !important;
+    min-width: 148px !important;
+    max-width: 148px !important;
     background: var(--surface-color);
     font-weight: 600;
     z-index: 2;
@@ -973,8 +981,8 @@ input:checked + .slider:before {
     transition: all 0.2s ease;
     cursor: pointer;
     user-select: none;
-    height: 46px;
-    min-height: 46px;
+    height: 48px;
+    min-height: 48px;
     padding: 6px 4px;
     white-space: normal;
     line-height: 1.2;
@@ -988,13 +996,19 @@ input:checked + .slider:before {
 /* Static Break Column (Column 4 / Period 'BREAK') */
 .routine-table th[data-period="BREAK"],
 .routine-table td[data-period="BREAK"] {
-    width: 64px !important;
-    min-width: 64px !important;
-    max-width: 64px !important;
+    width: 58px !important;
+    min-width: 58px !important;
+    max-width: 58px !important;
     text-align: center;
     background: var(--static-cell-bg);
     color: var(--text-secondary);
     font-weight: 700;
+}
+
+.routine-table th[data-period="PLAYTIME / 2ND GOLDEN HOUR"] {
+    font-size: 10px;
+    line-height: 1.15;
+    padding: 4px 2px;
 }
 
 .routine-table tbody tr {
@@ -3325,4 +3339,250 @@ body.master-edit-mode .routine-table tbody td:hover:not(:first-child) {
     border-color: var(--accent-blue);
     color: var(--accent-blue);
     transform: translateY(-1px);
+}
+
+/* --- TEACHER SUB-AVAILABILITY & INTERACTIVE '?' REMARK STYLING --- */
+.btn-sub-avail-manage {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.btn-sub-avail-manage:hover {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: #ef4444;
+    transform: translateY(-1px);
+}
+
+/* Status Pill with ? Button */
+.sub-unavail-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(239, 68, 68, 0.14);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    user-select: none;
+    white-space: nowrap;
+}
+
+[data-theme="dark"] .sub-unavail-pill,
+[data-theme="midnight"] .sub-unavail-pill,
+[data-theme="slate-nord"] .sub-unavail-pill,
+[data-theme="retro-glass"] .sub-unavail-pill {
+    background: rgba(239, 68, 68, 0.22);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.45);
+}
+
+/* The distinct, visually identifiable '?' button */
+.btn-sub-reason-help {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 17px;
+    height: 17px;
+    min-width: 17px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: #ffffff !important;
+    font-size: 10.5px;
+    font-weight: 800;
+    line-height: 1;
+    border: none;
+    cursor: pointer;
+    margin-left: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: transform 0.15s ease, background-color 0.15s ease;
+    padding: 0;
+}
+
+.btn-sub-reason-help:hover {
+    background: #1d4ed8;
+    transform: scale(1.15);
+}
+
+.btn-sub-reason-help:active {
+    transform: scale(0.95);
+}
+
+/* Teacher Avatar Tray mini badge */
+.teacher-avatar.sub-unavailable .avatar-circle {
+    border-color: #f87171;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+}
+
+.avatar-sub-unavail-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9px;
+    font-weight: 700;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 6px;
+    padding: 1px 4px;
+    margin-top: 2px;
+    line-height: 1.2;
+}
+
+/* Master Grid Teacher Cell Mini Badge */
+.badge-sub-unavail-grid {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 9px;
+    font-weight: 700;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 4px;
+    padding: 1px 4px;
+}
+
+/* Floating Remark Popover */
+.sub-remark-popover {
+    position: fixed;
+    z-index: 2500;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.28), 0 8px 12px -6px rgba(0, 0, 0, 0.18);
+    padding: 12px 14px;
+    width: 260px;
+    max-width: 88vw;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.sub-remark-popover.hidden {
+    display: none !important;
+}
+
+.sub-remark-popover-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sub-remark-popover-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sub-remark-popover-close {
+    background: none;
+    border: none;
+    font-size: 16px;
+    line-height: 1;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.sub-remark-popover-close:hover {
+    background: var(--bg-color);
+    color: var(--text-primary);
+}
+
+.sub-remark-popover-body {
+    font-size: 12px;
+    color: var(--text-primary);
+}
+
+.sub-remark-popover-remark {
+    margin-top: 6px;
+    padding: 7px 9px;
+    background: var(--bg-color);
+    border-radius: 6px;
+    border-left: 3px solid #2563eb;
+    font-size: 11.5px;
+    color: var(--text-primary);
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+/* Bottom Sheet Unavailable Section */
+.sheet-unavailable-section {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-color);
+}
+
+.sheet-unavailable-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+}
+
+.sheet-unavailable-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    background: var(--bg-color);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+/* Quick Suggestion Chips */
+.remark-chips-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.remark-chip {
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 3px 9px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: all 0.15s ease;
+}
+
+.remark-chip:hover {
+    background: var(--accent-blue);
+    color: #ffffff !important;
+    border-color: var(--accent-blue);
+}
+
+.sub-avail-active-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    background: var(--bg-color);
+    border-radius: 6px;
+    font-size: 11.5px;
 }

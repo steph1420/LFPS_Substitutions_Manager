@@ -1,0 +1,156 @@
+# Changelog
+
+All notable changes to the **Little Flower Preparatory School (LFPS) Substitutions Manager & Front Desk PWA** will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [Unreleased]
+
+---
+
+## [v1.33.0] - 2026-10-14
+
+### Added
+- **Teacher Substitution Unavailability Engine**:
+  - Ability to designate present teachers as unavailable for substitution duties for the day.
+  - Dedicated **⛔ Sub-Availability** modal (`#sub-avail-modal`) with teacher selector, toggle switch, and optional custom remark input (up to 80 chars).
+  - One-tap quick suggestion chips for common school duties: `🚌 Bus Duty`, `📝 CBSE Evaluation`, `👥 Parent Meeting`, `📑 Exam Correction`, `🩺 Sick Bay`, and `🎪 Event Prep`.
+  - Right-click / contextmenu quick shortcut on any teacher avatar in the absent tray to immediately configure availability.
+  - Persistent state under `state.subUnavailable[day] = { [teacher]: remark }` saved to local storage.
+- **Interactive `?` Remark Popover**:
+  - Replaced raw inline remark text with a distinct, visually identifiable blue circular **`?`** button (`.btn-sub-reason-help`).
+  - Clicking `?` opens a floating popover (`#sub-remark-popover`) displaying teacher name and their exact reason (e.g. *"Bus Duty: Afternoon route 3 inspection"*), with polite fallback for blank remarks.
+  - Smooth click-away and close button dismissal.
+- **Dedicated Excluded Substitutes Section**:
+  - Bottom sheet substitution picker (`openBottomSheet`) now renders a dedicated **⛔ Unavailable for Substitution** section listing excluded teachers with their status pill and interactive `?` button.
+
+### Changed
+- **Terminology Transition ("Collision" → "Conflict")**:
+  - Transitioned terminology strictly from "Collision" to **"Conflict"** across the entire application.
+  - Header pill updated to `⚡ X Conflict(s)` with tooltip `Click to inspect conflicts`.
+  - Settings toggle updated to **Highlight Conflicts** (`#detect-collisions-toggle`).
+  - Master Routine Cell Inspector warning updated to `Warning: Section X conflict: ...`.
+  - Core engine function transitioned to `findConflicts()`, maintaining `findCollisions()` as a full backward-compatible alias.
+- **Grid Ergonomics & Period Column Harmonization**:
+  - Harmonized master routine table column dimensions: sticky first column (`th:first-child`, `td:first-child`) standardized to `148px` width.
+  - Period columns standardized to balanced `112px` (min `104px`, max `118px`).
+  - Break column standardized to compact `58px`.
+  - Wrapped and centered multi-line header text for `PLAYTIME / 2ND GOLDEN HOUR` to prevent warping adjacent columns.
+- **Smart Auto-Resolve Solver & Candidate Pool Exclusion**:
+  - Unavailable teachers are strictly excluded from substitute candidate pools across all 3 Auto-Resolve heuristic strategies (`subject-match`, `balanced-load`, `minimal-splits`).
+  - Excluded from manual substitution assignment in the bottom sheet.
+
+### Fixed
+- **Shared Class False-Positive Conflict Suppression**:
+  - Resolved false-positive conflicts on legitimate joint/shared classes (e.g. Tuesday G/PD Drill where Ms. A. Amira teaches `1ST DRILL PREP A`, Mrs. S. Bage teaches `2ND DRILL PREP B`, and Mr. S. A. Lakra teaches `DRILL PREP A + PREP B`).
+  - Enhanced `getCoTeachingPartners()` with ordinal prefix normalization (`1ST`, `2ND`, `3RD`, `4TH`).
+  - Enhanced `findConflicts()` with root subject extraction (`extractRootSubject`) and baseline verification (`allInBase`) ensuring planned shared classes are recognized as collaborative rather than conflicting.
+
+---
+
+## [v1.32.1] - 2026-10-14
+
+### Fixed
+- **Primary Button Contrast**: Resolved blue-on-blue invisible text on filled `.btn-primary` action buttons (`#btn-conflict-accept-cloud` in Cloud Conflict Dialog and `#btn-sync-now` in Settings Panel) by enforcing high-contrast white text (`color: #ffffff !important;`).
+- **Co-Teaching Solo Badge**: Clarified co-teaching split badge behavior to retain the exact same `👥 Co-teaching` badge (greyed out) with softened border when a teacher is covering solo after a partner is split/released.
+
+---
+
+## [v1.32.0] - 2026-10-14
+
+### Added
+- **Full 2-Way Google Sheets Cloud Integration**:
+  - Connected Front Desk to the deployed Google Apps Script Web App endpoint (`/exec`).
+  - **Pull (`doGet`)**: Streams master routine from the `OVERVIEW` tab as clean CSV directly into Front Desk with dynamic header detection across first 10 rows.
+  - **Push (`doPost`)**: Securely handles live updates without third-party dependencies.
+- **Google Sheets Tab Architecture**:
+  - 🟦 `Daily_Ledger` tab with Apple HIG blue headers, frozen header row, and `warningOnly` protection for real-time substitution audit logging.
+  - 🟧 `Baseline_Updates` tab with frozen header row and `warningOnly` protection for permanent master routine modifications.
+- **Automatic & Manual Cloud Push Pipeline**:
+  - Automatically posts accepted substitutions to `Daily_Ledger` upon 10-second countdown completion in `startAcceptSubCountdown()`.
+  - Automatically posts audited slot differences to `Baseline_Updates` when saving master routine revisions in `saveMasterBaseline()`.
+  - Added 1-tap **`☁ Push to Sheets`** in Daily Substitution Register and **`📤 Push Today's Ledger`** in Settings.
+
+---
+
+## [v1.31.0] - 2026-10-14
+
+### Added
+- **RFC 4180 State-Machine CSV Parser**: Pure zero-dependency lightweight parser (`parseCSV`) supporting escaped quotes (`""`), multi-line cells, comma preservation inside strings, and CR/LF cross-platform line breaks.
+- **Google Sheets Cloud Sync Engine**: Settings configuration for published web CSV link or Sheet ID with automatic URL normalization (`normalizeCSVUrl`).
+- **Cloud vs. Local Conflict Resolver Modal**: Compares incoming Google Sheets allocations against local `state.baseSchedule` via `calculateScheduleDiffs()`.
+- Interactive diff comparison list showing affected teacher count, days, and slot difference count with choices: **"✓ Accept Cloud Routine"** vs. **"Keep Local Changes"**.
+
+---
+
+## [v1.30.0] - 2026-10-14
+
+### Added
+- **Protected In-App Master Routine Editor**:
+  - Toggled via header lock button (`#master-lock-btn`).
+  - Interactive Cell Inspector modal (`#master-cell-modal`) with class section quick selector, curriculum-aware subject chips from official Excel pools, and co-teaching partner assignment.
+- **Apple HIG 4-Digit Passcode / PIN Pad Modal**:
+  - Secures Master Routine baseline editing behind an Apple-style circular numeric keypad (`0-9`, `⌫`) with animated indicator dots (`.pin-indicator-dots`) and tactile shake feedback.
+  - Configurable PIN (`state.settings.adminPin`, default `1234`) with instant update in Settings for Admin and AC roles.
+
+---
+
+## [v1.29.0] - 2026-10-13
+
+### Added
+- **Multi-Role Hierarchy & Permissions**: Support for `Admin`, `Academic Coordinator (AC)`, `Assistant AC`, and `Teacher` roles with live header badge and Settings role switcher.
+- **Assistant AC Parity**: Assistant AC holds identical permissions to the primary AC.
+- **Dual-Absence Officiating AC (`offAC`)**: Contingency banner automatically prompts assigning an `offAC` when both AC and Assistant AC are absent on the same day.
+- **Officiating Class Teacher (`offCT`)**: Prompts assignment of an officiating CT when any Class Teacher is absent.
+- **Teacher Substitution Acceptance Flow**: Interactive 10-second countdown timer (`⏳ Confirming 10s • Undo`) before permanent lock-in (`🔒 Accepted`).
+- **Role-Gated Substitution Dispute Engine**: Optional setting for substitute teachers to dispute assignments with a rationale note.
+
+---
+
+## [v1.28.0] - 2026-10-13
+
+### Added
+- **Inline Co-Teacher Release**: Actions (`Release`, `Free Day`, `↩ Rejoin`) located directly inline beside teacher names in `#co-teach-modal`.
+- **High-Density Daily Substitution Register**: Replaced cards with a compact, scannable table with summary stats (`Total`, `Pending`, `Covered %`), filter pills (`All`, `Pending`, `Covered`), and 1-click assignment controls.
+- **Expanded Fit-Grid View**: 1-tap `⛶ Fit Grid` mode scaling the timetable grid to 100% viewport width with sticky floating top bar for mobile landscape viewing.
+- **Priority Preference Matrix**: Subject, department cluster, section familiarity, and workload scoring engine ranking candidate substitutes.
+- **3-Option Smart Auto-Resolve Solver**:
+  - `Option 1: Subject Match (★ Best Academic Fit)`
+  - `Option 2: Balanced Load (⚖ Lightest Workload)`
+  - `Option 3: Minimal Splits (🛡 Preserve Co-Teaching)`
+
+---
+
+## [v1.26.0] - 2026-10-12
+
+### Added
+- **Smart Co-Teaching & Shared Badges**: Distinct purple `👥` badge for shared teaching allocations with partner cell breathing highlight.
+- **Direct Drag-to-Split**: Dragging onto either co-teacher splits them cleanly without displacing to Limbo.
+- **Option-Click (`Alt + Click`) Rapid Reset Engine**: Springy tactile bounce animation on reset; moved subjects safely returned to their origin.
+- **Themes**: Added Utopian Glass and Retro Glass full UI themes.
+
+---
+
+## [v1.24.0] - 2026-10-12
+
+### Added
+- **Collision Detection & Gentle Radar**: Animated pulsing amber radar ring (`@keyframes collisionBreathe`) on duplicate class section bookings.
+- **Settings Hub & Theme Selector**: 7 Apple-inspired palettes (Auto, Light, Sepia, Dark, Midnight OLED, Slate Nord, Retro Glass).
+- **History Segmented Control**: Stable `.history-btn-group` pill preventing rapid-click jumping loops.
+
+---
+
+## [v1.22.0] - 2026-10-11
+
+### Added
+- **Drag-to-Assign Substitutions on Master Grid**: Missing classes draggable directly onto teachers to assign substitutes with real-time green coverage highlights.
+- **Limbo Tray Displacement**: Busy teachers' classes displaced safely into a floating bottom tray.
+
+---
+
+## [v1.18.0] - 2026-10-11
+
+### Added
+- **Native Dark Mode & Apple Theme Tokens**: System preference auto-detection, manual theme switching, and tactile SVG vector icons.

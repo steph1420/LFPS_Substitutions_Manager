@@ -16,6 +16,7 @@ const state = {
     subStatus: {}, // day -> period -> absentTeacher -> { status: 'pending'|'accepted'|'disputed', acceptedBy, disputeReason }
     officiatingAC: {}, // day -> teacherName
     officiatingCT: {}, // day -> { section: teacherName }
+    subUnavailable: {}, // day -> { [teacherName]: remark }
     displaced: { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] },
     settings: {
         samePeriodLock: true,
@@ -514,6 +515,7 @@ function saveStateToStorage() {
         subStatus: state.subStatus,
         officiatingAC: state.officiatingAC,
         officiatingCT: state.officiatingCT,
+        subUnavailable: state.subUnavailable,
         displaced: state.displaced,
         absentTeachers: Array.from(state.absentTeachers), 
         settings: state.settings,
@@ -573,6 +575,7 @@ function loadStateFromStorage() {
             state.subStatus = parsed.subStatus || {};
             state.officiatingAC = parsed.officiatingAC || {};
             state.officiatingCT = parsed.officiatingCT || {};
+            state.subUnavailable = parsed.subUnavailable || {};
             state.displaced = parsed.displaced || { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] };
             state.absentTeachers = new Set(parsed.absentTeachers || []);
             state.settings = Object.assign({ 
@@ -985,13 +988,13 @@ function bindEvents() {
     });
 
     safeBind('collision-indicator', 'click', () => {
-        const collisions = findCollisions();
-        if (collisions.count > 0) {
+        const conflicts = findConflicts();
+        if (conflicts.count > 0) {
             const firstCell = document.querySelector('.cell-collision');
             if (firstCell) {
                 firstCell.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'center' });
             }
-            showToast(`Found ${collisions.count} collision(s): ${collisions.details.slice(0, 2).join('; ')}`, true);
+            showToast(`Found ${conflicts.count} conflict(s): ${conflicts.details.slice(0, 2).join('; ')}`, true);
         }
     });
 
@@ -1001,6 +1004,52 @@ function bindEvents() {
             const theme = btn.dataset.theme;
             setTheme(theme);
         });
+    });
+
+    // Sub-Availability Modal & Remark Popover Bindings
+    safeBind('btn-open-sub-avail-modal', 'click', () => openSubAvailModal());
+    safeBind('close-sub-avail-modal-btn', 'click', closeSubAvailModal);
+    safeBind('sub-avail-cancel-btn', 'click', closeSubAvailModal);
+    safeBind('sub-avail-overlay', 'click', closeSubAvailModal);
+    safeBind('sub-avail-save-btn', 'click', saveSubAvailModal);
+    safeBind('sub-remark-popover-close-btn', 'click', hideSubRemarkPopover);
+
+    safeBind('sub-avail-teacher-select', 'change', (e) => {
+        const targetTeacher = e.target.value;
+        const isUnavail = isTeacherSubUnavailable(targetTeacher, state.day);
+        const remark = getTeacherSubUnavailableRemark(targetTeacher, state.day);
+        const toggle = document.getElementById('sub-avail-toggle-input');
+        const remarkInput = document.getElementById('sub-avail-remark-input');
+        if (toggle) toggle.checked = isUnavail;
+        if (remarkInput) remarkInput.value = remark;
+    });
+
+    // Quick suggestion chips in sub-availability modal
+    document.querySelectorAll('#sub-avail-quick-chips .remark-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const remarkInput = document.getElementById('sub-avail-remark-input');
+            const toggle = document.getElementById('sub-avail-toggle-input');
+            if (remarkInput) {
+                remarkInput.value = chip.dataset.remark || '';
+            }
+            if (toggle) toggle.checked = true;
+        });
+    });
+
+    // Global listener for '?' help buttons and popover dismiss
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-sub-reason-help');
+        if (btn) {
+            e.stopPropagation();
+            e.preventDefault();
+            const teacher = btn.dataset.teacher;
+            const remark = btn.dataset.remark;
+            showSubRemarkPopover(teacher, remark, btn);
+            return;
+        }
+        if (!e.target.closest('#sub-remark-popover')) {
+            hideSubRemarkPopover();
+        }
     });
 
     window.addEventListener('keydown', handleGlobalKeydown);
@@ -1219,6 +1268,186 @@ function bindEvents() {
     }
 }
 
+// --- TEACHER SUB-AVAILABILITY & INTERACTIVE '?' REMARK ENGINE ---
+
+function isTeacherSubUnavailable(teacher, day = state.day) {
+    if (!state.subUnavailable || !state.subUnavailable[day]) return false;
+    return Object.prototype.hasOwnProperty.call(state.subUnavailable[day], teacher);
+}
+
+function getTeacherSubUnavailableRemark(teacher, day = state.day) {
+    if (!state.subUnavailable || !state.subUnavailable[day]) return '';
+    return state.subUnavailable[day][teacher] || '';
+}
+
+function setTeacherSubUnavailable(teacher, isUnavailable, remark = '', day = state.day) {
+    if (!state.subUnavailable) state.subUnavailable = {};
+    if (!state.subUnavailable[day]) state.subUnavailable[day] = {};
+
+    if (isUnavailable) {
+        state.subUnavailable[day][teacher] = (remark || '').trim();
+    } else {
+        delete state.subUnavailable[day][teacher];
+    }
+    saveStateToStorage();
+    renderAll();
+}
+
+function openSubAvailModal(teacherToSelect) {
+    const modal = document.getElementById('sub-avail-modal');
+    const overlay = document.getElementById('sub-avail-overlay');
+    const teacherSelect = document.getElementById('sub-avail-teacher-select');
+    const toggleInput = document.getElementById('sub-avail-toggle-input');
+    const remarkInput = document.getElementById('sub-avail-remark-input');
+
+    if (!modal || !overlay || !teacherSelect) return;
+
+    // Populate teacher select dropdown if needed
+    teacherSelect.innerHTML = '';
+    teachers.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t;
+        const staff = staffDirectory[t];
+        opt.textContent = `${t} (${staff?.role || 'Teacher'})`;
+        teacherSelect.appendChild(opt);
+    });
+
+    const targetTeacher = teacherToSelect || teacherSelect.value || teachers[0];
+    teacherSelect.value = targetTeacher;
+
+    const isUnavail = isTeacherSubUnavailable(targetTeacher, state.day);
+    const remark = getTeacherSubUnavailableRemark(targetTeacher, state.day);
+
+    if (toggleInput) toggleInput.checked = isUnavail;
+    if (remarkInput) remarkInput.value = remark;
+
+    updateSubAvailActiveListUI();
+
+    modal.classList.remove('hidden');
+    overlay.classList.add('active');
+}
+
+function closeSubAvailModal() {
+    const modal = document.getElementById('sub-avail-modal');
+    const overlay = document.getElementById('sub-avail-overlay');
+    if (modal) modal.classList.add('hidden');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function updateSubAvailActiveListUI() {
+    const listEl = document.getElementById('sub-avail-active-list');
+    const countEl = document.getElementById('sub-avail-count');
+    if (!listEl) return;
+
+    const dayUnavail = state.subUnavailable?.[state.day] || {};
+    const unavailTeachers = Object.keys(dayUnavail);
+
+    if (countEl) countEl.textContent = unavailTeachers.length;
+
+    if (unavailTeachers.length === 0) {
+        listEl.innerHTML = `<span style="font-size:11px; color:var(--text-tertiary); font-style:italic;">No teachers marked unavailable for ${state.day}.</span>`;
+        return;
+    }
+
+    listEl.innerHTML = '';
+    unavailTeachers.forEach(t => {
+        const remark = dayUnavail[t] || '';
+        const item = document.createElement('div');
+        item.className = 'sub-avail-active-item';
+        item.innerHTML = `
+            <div style="display:flex; align-items:center; gap:6px;">
+                <strong>${t}</strong>
+                <span class="sub-unavail-pill">⛔ Unavailable <button type="button" class="btn-sub-reason-help" data-teacher="${escapeHtml(t)}" data-remark="${escapeHtml(remark)}" title="Click to view remark">?</button></span>
+            </div>
+            <button type="button" class="btn-secondary" style="font-size:10px; padding:2px 6px;" onclick="event.stopPropagation(); removeTeacherSubUnavailable('${t}')">Remove</button>
+        `;
+        listEl.appendChild(item);
+    });
+}
+
+function removeTeacherSubUnavailable(teacher) {
+    setTeacherSubUnavailable(teacher, false, '', state.day);
+    updateSubAvailActiveListUI();
+    const currentSelect = document.getElementById('sub-avail-teacher-select')?.value;
+    if (currentSelect === teacher) {
+        const toggle = document.getElementById('sub-avail-toggle-input');
+        const remark = document.getElementById('sub-avail-remark-input');
+        if (toggle) toggle.checked = false;
+        if (remark) remark.value = '';
+    }
+}
+
+function saveSubAvailModal() {
+    const teacherSelect = document.getElementById('sub-avail-teacher-select');
+    const toggleInput = document.getElementById('sub-avail-toggle-input');
+    const remarkInput = document.getElementById('sub-avail-remark-input');
+
+    if (!teacherSelect || !toggleInput) return;
+
+    const teacher = teacherSelect.value;
+    const isUnavail = toggleInput.checked;
+    const remark = remarkInput ? remarkInput.value.trim() : '';
+
+    setTeacherSubUnavailable(teacher, isUnavail, remark, state.day);
+    showToast(isUnavail ? `⛔ Marked ${teacher} unavailable for substitution` : `✓ Set ${teacher} available for substitution`, true);
+    closeSubAvailModal();
+}
+
+function showSubRemarkPopover(teacher, remark, triggerEl) {
+    const popover = document.getElementById('sub-remark-popover');
+    const teacherEl = document.getElementById('popover-teacher-name');
+    const remarkEl = document.getElementById('popover-remark-text');
+
+    if (!popover || !teacherEl || !remarkEl) return;
+
+    teacherEl.textContent = teacher || 'Teacher';
+    const displayRemark = remark && remark.trim() !== '' ? remark.trim() : 'Marked unavailable for substitutions (no specific remark provided).';
+    remarkEl.textContent = `“${displayRemark}”`;
+
+    popover.classList.remove('hidden');
+
+    // Position relative to trigger element
+    if (triggerEl) {
+        const rect = triggerEl.getBoundingClientRect();
+        const popoverWidth = 260;
+        const popoverHeight = 120;
+        
+        let left = rect.left + window.scrollX - (popoverWidth / 2) + (rect.width / 2);
+        let top = rect.bottom + window.scrollY + 6;
+
+        // Keep within viewport horizontally
+        if (left + popoverWidth > window.innerWidth - 12) {
+            left = window.innerWidth - popoverWidth - 12;
+        }
+        if (left < 12) {
+            left = 12;
+        }
+
+        // If overflowing bottom, position above
+        if (rect.bottom + popoverHeight > window.innerHeight) {
+            top = rect.top + window.scrollY - popoverHeight - 6;
+        }
+
+        popover.style.left = `${Math.round(left)}px`;
+        popover.style.top = `${Math.round(top)}px`;
+    }
+}
+
+function hideSubRemarkPopover() {
+    const popover = document.getElementById('sub-remark-popover');
+    if (popover) popover.classList.add('hidden');
+}
+
+window.isTeacherSubUnavailable = isTeacherSubUnavailable;
+window.getTeacherSubUnavailableRemark = getTeacherSubUnavailableRemark;
+window.setTeacherSubUnavailable = setTeacherSubUnavailable;
+window.openSubAvailModal = openSubAvailModal;
+window.closeSubAvailModal = closeSubAvailModal;
+window.saveSubAvailModal = saveSubAvailModal;
+window.removeTeacherSubUnavailable = removeTeacherSubUnavailable;
+window.showSubRemarkPopover = showSubRemarkPopover;
+window.hideSubRemarkPopover = hideSubRemarkPopover;
+
 // --- CO-TEACHING COOPERATION ENGINE ---
 function getCoTeachingPartners(day, period, teacher) {
     const baseTask = state.baseSchedule[day]?.[period]?.[teacher];
@@ -1234,9 +1463,11 @@ function getCoTeachingPartners(day, period, teacher) {
             if (oClean === bClean) {
                 partners.push(otherT);
             } else {
-                // Support joint multi-class co-teaching (e.g. "GAMES KG A + KG B" with "GAMES KG A" or "GAMES KG B")
-                const bPrefix = bClean.split(' ')[0];
-                const oPrefix = oClean.split(' ')[0];
+                // Support joint multi-class co-teaching (e.g. "GAMES KG A + KG B" with "GAMES KG A", or "1ST DRILL PREP A" with "DRILL PREP A + PREP B")
+                const bNorm = bClean.replace(/^(1ST|2ND|3RD|4TH)\s+/i, '');
+                const oNorm = oClean.replace(/^(1ST|2ND|3RD|4TH)\s+/i, '');
+                const bPrefix = bNorm.split(' ')[0];
+                const oPrefix = oNorm.split(' ')[0];
                 if (bPrefix === oPrefix && (bClean.includes('+') || oClean.includes('+'))) {
                     const bSecs = extractClassSections(bClean);
                     const oSecs = extractClassSections(oClean);
@@ -2127,7 +2358,7 @@ function checkMasterCellCollision() {
     });
 
     if (conflicts.length > 0) {
-        warningText.textContent = `Warning: Section ${section} collision: ${conflicts.join(', ')}`;
+        warningText.textContent = `Warning: Section ${section} conflict: ${conflicts.join(', ')}`;
         warningEl.classList.remove('hidden');
     } else {
         warningEl.classList.add('hidden');
@@ -2669,8 +2900,25 @@ function extractClassSections(task) {
     return [...new Set(sections)];
 }
 
-// --- COLLISION DETECTION ENGINE ---
-function findCollisions() {
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function extractRootSubject(task) {
+    if (!task) return '';
+    return task.trim().toUpperCase()
+        .replace(/^(1ST|2ND|3RD|4TH)\s+/i, '')
+        .split(' ')[0];
+}
+
+// --- CONFLICT DETECTION ENGINE ---
+function findConflicts() {
     if (!state.settings || state.settings.detectCollisions === false) {
         return { count: 0, collisionCells: new Map(), details: [] };
     }
@@ -2704,7 +2952,7 @@ function findCollisions() {
             }
         });
 
-        // 1. Check Class Section Collisions
+        // 1. Check Class Section Conflicts
         sectionMap.forEach((entries, section) => {
             if (entries.length > 1) {
                 // Special exception: Monday G/PD parallel half-period rotation for KG A and KG B (ENG. REC. & GAMES)
@@ -2726,6 +2974,16 @@ function findCollisions() {
 
                 if (isDesignatedCoTeaching) {
                     return; // Legitimate co-teachers sharing this class
+                }
+
+                // Suppress false positives on baseline designated shared allocations with matching root subject
+                const allInBase = entries.every(e => {
+                    const base = (state.baseSchedule[state.day]?.[period]?.[e.teacher] || '').trim().toUpperCase();
+                    return base === e.task;
+                });
+                const rootSubjects = new Set(entries.map(e => extractRootSubject(e.task)));
+                if (allInBase && rootSubjects.size === 1) {
+                    return; // Legitimate baseline shared allocation
                 }
 
                 const uniqueTasks = new Set(entries.map(e => e.task));
@@ -2774,6 +3032,11 @@ function findCollisions() {
         collisionCells,
         details
     };
+}
+
+// Backward-compatible alias
+function findCollisions() {
+    return findConflicts();
 }
 
 // --- ROLES, OFFICIATING (offAC / offCT), 10s ACCEPTANCE & DISPUTE ENGINE ---
@@ -3274,19 +3537,23 @@ function renderAll() {
     renderCollisionIndicator();
 }
 
-function renderCollisionIndicator() {
+function renderConflictIndicator() {
     const indicator = document.getElementById('collision-indicator');
     const counterText = document.getElementById('collision-counter-text');
     if (!indicator || !counterText) return;
 
-    const collisions = findCollisions();
-    if (collisions.count > 0 && (!state.settings || state.settings.detectCollisions !== false)) {
+    const conflicts = findConflicts();
+    if (conflicts.count > 0 && (!state.settings || state.settings.detectCollisions !== false)) {
         indicator.classList.remove('hidden');
-        counterText.textContent = `${collisions.count} Collision${collisions.count > 1 ? 's' : ''}`;
-        indicator.title = collisions.details.slice(0, 3).join('\n');
+        counterText.textContent = `${conflicts.count} Conflict${conflicts.count > 1 ? 's' : ''}`;
+        indicator.title = `${conflicts.count} Schedule Conflict(s):\n` + conflicts.details.slice(0, 3).join('\n');
     } else {
         indicator.classList.add('hidden');
     }
+}
+
+function renderCollisionIndicator() {
+    renderConflictIndicator();
 }
 
 function renderAbsentTray() {
@@ -3319,19 +3586,38 @@ function renderAbsentTray() {
         const shortName = teacher.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
         const fullName = staff?.fullName || teacher;
 
+        const isUnavailable = isTeacherSubUnavailable(teacher, state.day);
+        const unavailRemark = getTeacherSubUnavailableRemark(teacher, state.day);
+
+        let unavailBadge = '';
+        if (isUnavailable && !isAbsent) {
+            unavailBadge = `
+                <span class="avatar-sub-unavail-badge" title="Unavailable for substitutions today">
+                    ⛔ Unavail
+                    <button type="button" class="btn-sub-reason-help" data-teacher="${escapeHtml(teacher)}" data-remark="${escapeHtml(unavailRemark)}" title="Click to view remark">?</button>
+                </span>
+            `;
+        }
+
         const el = document.createElement('div');
-        el.className = `teacher-avatar ${isAbsent ? 'absent' : ''}`;
-        el.title = `${fullName} (${staff?.role || 'Teacher'}${staff?.additionalRole ? ' • ' + staff.additionalRole : ''})\nClick to toggle absent/present`;
+        el.className = `teacher-avatar ${isAbsent ? 'absent' : ''} ${isUnavailable && !isAbsent ? 'sub-unavailable' : ''}`;
+        el.title = `${fullName} (${staff?.role || 'Teacher'}${staff?.additionalRole ? ' • ' + staff.additionalRole : ''})\nClick to toggle absent/present • Right-click for Sub-Availability`;
         el.innerHTML = `
             <div class="avatar-circle">${initials}</div>
             <span class="name" style="font-size:11px; margin-top:4px; font-weight:600;">${shortName}</span>
             <span style="font-size:9px; color:var(--text-secondary); font-weight:600;">${roleSubtag}</span>
+            ${unavailBadge}
         `;
-        el.addEventListener('click', () => {
+        el.addEventListener('click', (e) => {
+            if (e.target.closest('.btn-sub-reason-help')) return;
             if (isAbsent) state.absentTeachers.delete(teacher);
             else state.absentTeachers.add(teacher);
             saveStateToStorage();
             renderAll();
+        });
+        el.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            openSubAvailModal(teacher);
         });
         tray.appendChild(el);
     });
@@ -3360,7 +3646,7 @@ function renderTableRoutine() {
     }
 
     const hideAbsent = hideToggle.checked;
-    const collisions = findCollisions();
+    const conflicts = findConflicts();
     
     let html = '<thead><tr><th class="teacher-header-cell">Teacher Name</th>';
     periods.forEach((p, idx) => {
@@ -3382,6 +3668,8 @@ function renderTableRoutine() {
         const ctSec = classTeacherMap[teacher];
         const isOffAC = !isAbsent && state.officiatingAC?.[state.day] === teacher && state.absentTeachers.has(PRIMARY_AC) && state.absentTeachers.has(ASSISTANT_AC);
         const offCTSecs = !isAbsent ? getOfficiatingCTSectionsForTeacher(teacher, state.day) : [];
+        const isUnavailable = isTeacherSubUnavailable(teacher, state.day);
+        const unavailRemark = getTeacherSubUnavailableRemark(teacher, state.day);
 
         let teacherBadges = '';
         if (teacher === PRIMARY_AC) {
@@ -3398,6 +3686,9 @@ function renderTableRoutine() {
         offCTSecs.forEach(sec => {
             teacherBadges += `<span class="off-badge-mini">📋 offCT ${sec}</span>`;
         });
+        if (isUnavailable && !isAbsent) {
+            teacherBadges += `<span class="badge-sub-unavail-grid" title="Unavailable for substitution today">⛔ <button type="button" class="btn-sub-reason-help" data-teacher="${escapeHtml(teacher)}" data-remark="${escapeHtml(unavailRemark)}" title="Click to view remark">?</button></span>`;
+        }
 
         const fullNameSub = staffInfo?.fullName ? `<div class="teacher-fullname-sub" style="font-size:10px; color:var(--text-secondary); font-weight:normal; margin-top:1px;">${staffInfo.fullName}</div>` : '';
         
@@ -3542,13 +3833,13 @@ function renderTableRoutine() {
                 isDraggable = false;
             }
 
-            // Check Collision for this cell
+            // Check Conflict for this cell
             const cellKey = `${period}::${teacher}`;
-            const collisionInfo = collisions.collisionCells.get(cellKey);
-            if (collisionInfo) {
+            const conflictInfo = conflicts.collisionCells.get(cellKey);
+            if (conflictInfo) {
                 cellClasses.push('cell-collision');
-                cellTitle += `\n⚠ COLLISION: ${collisionInfo.reasons.join('; ')}`;
-                cellContent += `<span class="collision-badge" title="${collisionInfo.reasons.join('; ')}">⚠ Conflict</span>`;
+                cellTitle += `\n⚠ CONFLICT: ${conflictInfo.reasons.join('; ')}`;
+                cellContent += `<span class="collision-badge" title="${conflictInfo.reasons.join('; ')}">⚠ Conflict</span>`;
             }
 
             if (selectedCell && selectedCell.type === 'grid' && selectedCell.period === period && selectedCell.teacher === teacher) {
@@ -3583,7 +3874,7 @@ function renderTableRoutine() {
 }
 
 function renderClassRoutineTable(table) {
-    const collisions = findCollisions();
+    const conflicts = findConflicts();
     
     let html = '<thead><tr><th class="class-header-cell">Class</th>';
     periods.forEach((p, idx) => {
@@ -3724,7 +4015,7 @@ function renderClassRoutineTable(table) {
                 const tName = e.teacher;
                 if (tName && !e.isMissing) {
                     const cKey = `${period}::${tName}`;
-                    if (collisions.collisionCells.has(cKey)) {
+                    if (conflicts.collisionCells.has(cKey)) {
                         hasCollision = true;
                     }
                 }
@@ -4417,9 +4708,14 @@ function openBottomSheet(period, targetTeacher) {
     const available = [];
     const coTeachSplit = [];
     const busy = [];
+    const unavailable = [];
     
     teachers.forEach(t => {
         if (state.absentTeachers.has(t)) return;
+        if (isTeacherSubUnavailable(t, state.day)) {
+            unavailable.push({ name: t, remark: getTeacherSubUnavailableRemark(t, state.day) });
+            return;
+        }
         const currentTask = state.schedule[state.day]?.[period]?.[t];
         const affinity = evaluateTeacherAffinity(t, taskToCover, period, state.day);
         if (!currentTask || currentTask === 'Free') {
@@ -4469,6 +4765,26 @@ function openBottomSheet(period, targetTeacher) {
                 <span style="font-size:11px;">Displaces to Limbo</span>
             </div>`;
     });
+
+    if (unavailable.length > 0) {
+        let unavailHtml = `
+            <div class="sheet-unavailable-section">
+                <div class="sheet-unavailable-title">⛔ Unavailable for Substitution (${unavailable.length})</div>
+        `;
+        unavailable.forEach(u => {
+            unavailHtml += `
+                <div class="sheet-unavailable-row">
+                    <span style="font-weight:600; color:var(--text-secondary); font-size:13px;">${u.name}</span>
+                    <span class="sub-unavail-pill">
+                        ⛔ Unavailable
+                        <button type="button" class="btn-sub-reason-help" data-teacher="${escapeHtml(u.name)}" data-remark="${escapeHtml(u.remark)}" title="Click to view remark">?</button>
+                    </span>
+                </div>
+            `;
+        });
+        unavailHtml += `</div>`;
+        list.innerHTML += unavailHtml;
+    }
 
     sheet.classList.remove('hidden');
     overlay.classList.remove('hidden');
@@ -4674,6 +4990,7 @@ function generateStrategySolution(strategyKey, unresolvedList, day) {
 
         teachers.forEach(t => {
             if (state.absentTeachers.has(t) || t === absentTeacher) return;
+            if (isTeacherSubUnavailable(t, day)) return;
             const currentTask = simSchedule[period]?.[t];
             const isFree = (!currentTask || currentTask === 'Free');
 
@@ -5880,6 +6197,7 @@ function generateSimulatedData(options = 'pristine') {
     state.subStatus = {};
     state.officiatingAC = {};
     state.officiatingCT = {};
+    state.subUnavailable = {};
     state.displaced = { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] };
     state.absentTeachers = new Set();
 
@@ -5923,3 +6241,5 @@ window.keepLocalSchedule = keepLocalSchedule;
 window.normalizeCSVUrl = normalizeCSVUrl;
 window.parseTimetableFromCSV = parseTimetableFromCSV;
 window.calculateScheduleDiffs = calculateScheduleDiffs;
+window.findConflicts = findConflicts;
+window.findCollisions = findCollisions;
