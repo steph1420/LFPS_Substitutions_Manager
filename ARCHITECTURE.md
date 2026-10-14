@@ -132,37 +132,23 @@ const state = {
     *   **Offline Fallback:** When disconnected, network offline, or the cloud sheet is unreachable, clearly display `⚪ Sheet Offline` or `⚠ Offline Mode` with last sync timestamp and a manual reconnect/retry action.
     *   **Diagnostics:** Tapping the status indicator opens a concise connectivity diagnostic sheet (endpoint URL, ping status, last fetch time, pending sync queue).
 26. **[UI / UX] Viewport Rethinking & Commercial-Grade Adaptive Layout Engine (Desktop vs Mobile):**
-    *   **Desktop Ergonomics (Zero-Scroll Default View):** Even on desktop, the current default view requires scrolling down past headers and absent rosters to view the timetable. Redesign the viewport layout density so the primary routine grid and day operations fit above the fold without unnecessary vertical scrolling.
-    *   **Commercial SaaS Inspiration:** Take architectural inspiration from standard commercial productivity apps (Linear, Notion, Apple Calendar) on presentation adaptation between desktop and mobile.
-    *   **Full Mobile Feature Parity:** Teachers predominantly use mobile devices. Zero functionality will be removed or degraded on mobile.
-    *   **3-Dot Overflow Menu (`⋮`):** Infrequently accessed actions (e.g. Master reset, export, diagnostic tools, deep settings, procedural mock generator) tucked cleanly into a standard 3-dot overflow menu.
-    *   **Dynamic Screen Size Calculation Engine:** The UI dynamically calculates available viewport geometry (`window.innerWidth`, `window.innerHeight`, `visualViewport`, safe-area insets) and computes optimal presentation, typography scale, and touch boundaries while strictly guaranteeing 44-48px touch targets.
+    *   **Status:** Resolved in v1.34.0.
+    *   **Implementation:** Desktop layout reduced vertical overhead by 100px+ (zero-scroll default view), commercial mobile layout introduced 3-dot overflow menu (`#header-more-btn`) with 100% mobile feature parity, and `computeViewportLayout()` handles dynamic responsive screen adaptation.
 27. **[FEATURE] Simple Mode (Basic Manual Mode):**
     *   **Requirement:** Provide an optional "Simple Mode" toggle that streamlines the interface for rapid morning substitution duty.
     *   **Scope:** Hides complex algorithmic solver proposals, multi-candidate split choices, and deep settings. Presents strictly the clean manual logic: select absent teacher &rarr; tap period cell &rarr; pick from eligible substitute list &rarr; confirm.
 28. **[THEME] Utopian Glass Theme Complete Overhaul ("Divergent Upper-City Architectural Glass"):**
-    *   **User Feedback & Critique:** Current theme renders as a flat pastel blue table without depth. It does not evoke the feeling of standing inside a *Divergent* upper-city futuristic corporate office with crystalline glass sheen.
-    *   **Engineering Specification:**
-        *   **Crystalline Sheen & Highlights:** Specular top edge line (`box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.95), inset 0 -1px 1px rgba(2, 132, 199, 0.1)`).
-        *   **Iridescent Prismatic Borders:** Dynamic chromatic refraction borders using multi-stop linear gradients (`border-image: linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(56,189,248,0.45) 50%, rgba(244,114,182,0.25) 100%) 1`).
-        *   **Deep Translucency & Frosted Luminescence:** Enhanced backdrop diffusion (`backdrop-filter: blur(28px) saturate(190%)`), ice-blue/cyan ambient floor glows, and crisp high-contrast slate typography (`#0f172a`).
-        *   **System-Wide Polish:** Ensure entire shell (header, roster avatars, routine grid cells, badges, limbo dock, and popovers) share the same unified architectural glass finish.
+    *   **Status:** Resolved in v1.34.0.
+    *   **Implementation:** Rebuilt with luminous multi-stop radial ambient background, crystalline specular top-edge sheens, iridescent chromatic borders, heavy frosted diffusion (`backdrop-filter: blur(28px) saturate(210%)`), and glowing cyan reflections.
 29. **[THEME ENGINE] Theme Taxonomy Overhaul: Base Families & Sub-Category Variants:**
-    *   **Requirement:** Reorganize the flat theme selector into an organized hierarchy of **Base Theme Categories** with curated **Sub-Category Variants**:
-        *   **Family 1: Glass & Translucent Materials**
-            *   *Utopian Glass*: Divergent upper-city minimalist architectural glass, iridescent prism edges, cyan luminescence.
-            *   *Retro Glass*: Vintage tactile calculator keycaps, concave button physics, specular key reflections.
-            *   *Aero Frost*: Apple Liquid Glass / Windows Aero fluid frosted acrylic.
-            *   *Cyber Smoked Glass*: Dark smoked glass with neon refraction borders.
-        *   **Family 2: Modern Minimalist & Paper**
-            *   *Classic Light*: Pure Apple HIG light palette.
-            *   *Warm Sepia*: Editorial book paper, gentle cream tones for low eye strain.
-            *   *High-Contrast Studio*: Sharp black-on-white clarity for bright rooms & projectors.
-        *   **Family 3: Dark & Low-Light Modes**
-            *   *Classic Dark*: Balanced slate & graphite dark mode.
-            *   *Midnight OLED*: True deep black (`#000000`) for OLED power saving.
-            *   *Slate Nord*: Cool Arctic Scandinavian palette with muted icy tones.
-    *   **UI Implementation:** Segmented primary category pills in Settings revealing responsive nested variant swatches with instant live preview.
+    *   **Status:** Resolved in v1.34.0.
+    *   **Implementation:** Segmented primary category pills (`🪟 Glass Materials`, `☀️ Minimalist & Paper`, `🌙 Dark Modes`) revealing nested variant swatches with instant live preview.
+30. **[REFACTOR] Technical Debt & Codebase Bloat Elimination (Audit Findings):**
+    *   **Background:** Comprehensive codebase review identified accumulated bloat and dead code to be refactored thoroughly in a dedicated future session:
+        *   **Dead Data Arrays (250+ Lines):** `masterTimetableLog` (`app.js` lines 289–490, 200 lines) and `subjectsCatalog` (lines 136–186, 50 lines) are exported to `window` but completely unused by active application engines.
+        *   **Migration Consolidation:** Consolidate redundant period migration loops in `loadStateFromStorage()` for `substitutions` and `displaced` into a single polymorphic sanitizer function.
+        *   **Dual-Stack History Streamlining:** Eliminate array duplication between `state.actionHistory.grid` and `state.actionHistory.subs` using a unified tagged action stack with view-scoped filtering.
+        *   **CSS Theme Consolidation:** Unify scattered theme override blocks in `styles.css`.
 
 ## 8. File Map & Project Directory
 *   `index.html`: Core markup, header controls, day segmented controller, grid view, substitutions conflict list, and iOS bottom sheet modal.

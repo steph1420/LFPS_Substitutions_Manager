@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.33.1">
+    <link rel="stylesheet" href="styles.css?v=1.34.0">
 </head>
 <body>
 
@@ -35,7 +35,7 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge">v1.33.1</span>
+                <span class="version-badge">v1.34.0</span>
                 <button id="role-badge-btn" class="role-badge-btn" title="Switch Active Role (Admin / AC / Asst AC / Teacher)">
                     <span id="role-badge-icon">🛡</span>
                     <span id="role-badge-text">Admin</span>
@@ -50,10 +50,10 @@
                         <span class="btn-icon">↪</span><span class="btn-text"> Redo</span>
                     </button>
                 </div>
-                <button id="reset-schedule-btn" class="btn-secondary" title="Reset Schedule to Baseline">
+                <button id="reset-schedule-btn" class="btn-secondary header-desktop-only" title="Reset Schedule to Baseline">
                     <span class="btn-icon">↺</span><span class="btn-text"> Reset</span>
                 </button>
-                <div class="edit-btn-group" id="edit-btn-group" style="position:relative;">
+                <div class="edit-btn-group header-desktop-only" id="edit-btn-group" style="position:relative;">
                     <button id="edit-toggle-btn" class="btn-primary" title="Toggle Timetable Editing">
                         <span class="btn-icon">✎</span><span class="btn-text" id="edit-btn-label"> Edit Schedule</span>
                     </button>
@@ -61,13 +61,42 @@
                         <span id="master-lock-icon">🔒</span>
                     </button>
                 </div>
-                <button id="tour-btn" class="btn-icon-circle" aria-label="Feature Tour" title="App Features & Overview">💡</button>
+                <button id="tour-btn" class="btn-icon-circle header-desktop-only" aria-label="Feature Tour" title="App Features & Overview">💡</button>
                 <button id="settings-btn" class="settings-btn" aria-label="Settings" title="Settings">
                     <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                     </svg>
                 </button>
+                <!-- 3-Dot Overflow Menu for Mobile & Responsive Devices -->
+                <div class="header-more-wrapper" style="position:relative;">
+                    <button id="header-more-btn" class="btn-icon-circle header-more-btn" aria-label="More Actions" title="More Actions">
+                        <span style="font-size:16px; font-weight:bold; line-height:1;">⋮</span>
+                    </button>
+                    <div id="header-more-popover" class="header-more-popover hidden">
+                        <div class="more-popover-item" id="more-item-edit">
+                            <span class="more-icon">✎</span>
+                            <span class="more-text">Edit Routine</span>
+                            <span class="more-badge" id="more-lock-status">🔒 Locked</span>
+                        </div>
+                        <div class="more-popover-item" id="more-item-reset">
+                            <span class="more-icon">↺</span>
+                            <span class="more-text">Reset to Baseline</span>
+                        </div>
+                        <div class="more-popover-item" id="more-item-subavail">
+                            <span class="more-icon">⛔</span>
+                            <span class="more-text">Sub-Availability</span>
+                        </div>
+                        <div class="more-popover-item" id="more-item-fitgrid">
+                            <span class="more-icon">⛶</span>
+                            <span class="more-text">Toggle Fit-Grid View</span>
+                        </div>
+                        <div class="more-popover-item" id="more-item-tour">
+                            <span class="more-icon">💡</span>
+                            <span class="more-text">Features Tour</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -241,38 +270,67 @@
         <div class="settings-modal-body">
             <div class="settings-group">
                 <div class="settings-group-title">Appearance & Theme</div>
-                <div class="settings-theme-selector">
-                    <button class="theme-option-btn active" data-theme="system">
-                        <span class="theme-preview system-preview"></span>
-                        <span class="theme-name">Auto (System)</span>
-                    </button>
-                    <button class="theme-option-btn" data-theme="light">
-                        <span class="theme-preview light-preview"></span>
-                        <span class="theme-name">Classic Light</span>
-                    </button>
-                    <button class="theme-option-btn" data-theme="warm-sepia">
-                        <span class="theme-preview sepia-preview"></span>
-                        <span class="theme-name">Warm Sepia</span>
-                    </button>
-                    <button class="theme-option-btn" data-theme="dark">
-                        <span class="theme-preview dark-preview"></span>
-                        <span class="theme-name">Classic Dark</span>
-                    </button>
-                    <button class="theme-option-btn" data-theme="midnight">
-                        <span class="theme-preview midnight-preview"></span>
-                        <span class="theme-name">Midnight OLED</span>
-                    </button>
-                    <button class="theme-option-btn" data-theme="slate-nord">
-                        <span class="theme-preview nord-preview"></span>
-                        <span class="theme-name">Slate Nord</span>
+                
+                <!-- Theme Family Category Tabs -->
+                <div class="theme-category-tabs" id="theme-category-tabs">
+                    <button type="button" class="theme-cat-btn active" data-cat="glass">🪟 Glass Materials</button>
+                    <button type="button" class="theme-cat-btn" data-cat="minimal">☀️ Minimalist & Paper</button>
+                    <button type="button" class="theme-cat-btn" data-cat="dark">🌙 Dark Modes</button>
+                </div>
+
+                <!-- Category 1: Glass Materials Variants -->
+                <div class="theme-variant-grid active" data-cat-target="glass">
+                    <button class="theme-option-btn" data-theme="utopian-glass">
+                        <span class="theme-preview utopian-preview"></span>
+                        <span class="theme-name">💠 Utopian Glass</span>
                     </button>
                     <button class="theme-option-btn" data-theme="retro-glass">
                         <span class="theme-preview glass-preview"></span>
                         <span class="theme-name">✨ Retro Glass</span>
                     </button>
-                    <button class="theme-option-btn" data-theme="utopian-glass">
-                        <span class="theme-preview utopian-preview"></span>
-                        <span class="theme-name">💠 Utopian Glass</span>
+                    <button class="theme-option-btn" data-theme="aero-frost">
+                        <span class="theme-preview aero-preview"></span>
+                        <span class="theme-name">❄️ Aero Frost</span>
+                    </button>
+                    <button class="theme-option-btn" data-theme="cyber-glass">
+                        <span class="theme-preview cyber-preview"></span>
+                        <span class="theme-name">🌌 Cyber Glass</span>
+                    </button>
+                </div>
+
+                <!-- Category 2: Minimalist & Paper Variants -->
+                <div class="theme-variant-grid" data-cat-target="minimal">
+                    <button class="theme-option-btn" data-theme="system">
+                        <span class="theme-preview system-preview"></span>
+                        <span class="theme-name">📱 Auto (System)</span>
+                    </button>
+                    <button class="theme-option-btn" data-theme="light">
+                        <span class="theme-preview light-preview"></span>
+                        <span class="theme-name">⚪ Classic Light</span>
+                    </button>
+                    <button class="theme-option-btn" data-theme="warm-sepia">
+                        <span class="theme-preview sepia-preview"></span>
+                        <span class="theme-name">📜 Warm Sepia</span>
+                    </button>
+                    <button class="theme-option-btn" data-theme="high-contrast">
+                        <span class="theme-preview contrast-preview"></span>
+                        <span class="theme-name">🔲 High Contrast</span>
+                    </button>
+                </div>
+
+                <!-- Category 3: Dark Modes Variants -->
+                <div class="theme-variant-grid" data-cat-target="dark">
+                    <button class="theme-option-btn" data-theme="dark">
+                        <span class="theme-preview dark-preview"></span>
+                        <span class="theme-name">🌑 Classic Dark</span>
+                    </button>
+                    <button class="theme-option-btn" data-theme="midnight">
+                        <span class="theme-preview midnight-preview"></span>
+                        <span class="theme-name">⬛ Midnight OLED</span>
+                    </button>
+                    <button class="theme-option-btn" data-theme="slate-nord">
+                        <span class="theme-preview nord-preview"></span>
+                        <span class="theme-name">❄️ Slate Nord</span>
                     </button>
                 </div>
             </div>
@@ -449,7 +507,7 @@
                 <div class="settings-group-title">Application Info</div>
                 <div class="settings-row">
                     <span class="settings-row-label">Version</span>
-                    <span class="settings-row-value">v1.33.1 (Timetable Schema 2.0)</span>
+                    <span class="settings-row-value">v1.34.0 (Timetable Schema 2.0)</span>
                 </div>
                 <div class="settings-row">
                     <span class="settings-row-label">Storage Engine</span>
@@ -848,6 +906,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=1.33.1"></script>
+    <script src="app.js?v=1.34.0"></script>
 </body>
 </html>

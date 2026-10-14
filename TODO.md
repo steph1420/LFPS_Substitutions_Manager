@@ -11,49 +11,11 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - [ ] **Offline Indicator**: When disconnected, no internet, or endpoint unreachable, clearly display `⚪ Sheet Offline` or `⚠ Offline Mode` with last sync timestamp.
 - [ ] **Interactive Sync Details**: Tapping the status pill reveals connectivity diagnostics (endpoint URL, ping status, last successful fetch, manual re-sync button).
 
-### 2. UI Viewport Rethinking & Commercial-Grade Adaptive Layout
-- [ ] **Zero-Scroll Desktop Default View**:
-  - Restructure desktop layout density so the primary routine grid and controls fit above the fold without requiring vertical scrolling down.
-  - Streamline header height, compact the teacher absence tray into a clean horizontal rail or collapsible dock, and maximize master timetable grid viewport area.
-- [ ] **Commercial Mobile vs Desktop Adaptive Architecture**:
-  - Benchmark against top commercial productivity apps (Linear, Apple Calendar, Notion).
-  - **Full Mobile Parity**: Guarantee **100% functional parity on mobile** (since teachers predominantly use mobile phones). No feature removed or compromised.
-  - **3-Dot Overflow Menu (`⋮`)**: Move secondary/infrequently accessed actions (e.g., Master Baseline Reset, Export/Print, Advanced Settings, Theme switcher, Procedural generator) into a clean, tactile overflow menu.
-  - **Dynamic Viewport & Screen Calculation Engine**:
-    - Continuously evaluate available screen geometry (`window.innerWidth`, `window.innerHeight`, `window.visualViewport`, safe-area insets).
-    - Dynamically adapt layout density, font scaling, column constraints, and sticky boundaries.
-    - Guarantee touch operability with minimum 44×44px hit targets and high-contrast readability.
-
-### 3. Utopian Glass Theme Complete Overhaul ("Divergent Upper-City Aesthetic")
-- [ ] **True Architectural Glass Sheen & Depth**:
-  - Overhaul the current flat pastel-blue look into a surreal, pristine architectural glass aesthetic inspired by *Divergent* upper-city minimalist offices.
-  - Implement real glass optical traits: crystalline top-edge sheen (`inset 0 1px 1px rgba(255, 255, 255, 0.95)`), multi-stop iridescent prism borders (`linear-gradient(135deg, rgba(255,255,255,0.8), rgba(56,189,248,0.4), rgba(244,114,182,0.25))`), heavy frosted diffusion (`backdrop-filter: blur(28px) saturate(190%)`), and glowing cyan/ice-white ambient reflections.
-  - Extend seamless glassy materials across app header, teacher roster avatars, routine grid cells, badges, and floating limbo tray.
-
-### 4. Theme Sub-Category & Variant Hierarchy
-- [ ] **Base Theme Families & Curated Variants**:
-  - Group themes into logical **Base Categories** with dedicated **Sub-Category Variants**:
-    - **Glass & Translucent Materials**:
-      - *Utopian Glass*: Architectural Divergent upper-city minimalist glass, iridescent prism edge, cyan luminescence.
-      - *Retro Glass*: Tactile pocket calculator keycaps, concave button physics, vintage amber/violet accents.
-      - *Aero Frost*: Apple Liquid Glass / Windows Aero fluid frosted acrylic.
-      - *Cyber Smoked Glass*: Dark smoked glass with neon refraction borders.
-    - **Clean Minimalist & Paper**:
-      - *Classic Light*: Pure Apple HIG light palette.
-      - *Warm Sepia*: Editorial book paper, gentle cream tones for low eye strain.
-      - *High-Contrast Studio*: Sharp black-on-white clarity for bright rooms & projectors.
-    - **Dark & Night Modes**:
-      - *Classic Dark*: Balanced slate & graphite dark mode.
-      - *Midnight OLED*: True deep black (`#000000`) for OLED power saving.
-      - *Slate Nord*: Cool Arctic Scandinavian palette with muted icy tones.
-- [ ] **Settings Sub-Category Theme Selector UI**:
-  - Update Settings panel with segmented category pills (e.g. `🪟 Glass`, `☀️ Light`, `🌙 Dark`) revealing nested variant swatches for intuitive selection.
-
 ---
 
 ## 🔮 Future Roadmap Items
 
-### 3. Simple Mode (Basic Manual Logic)
+### 2. Simple Mode (Basic Manual Logic)
 - [ ] Add a user-selectable **Simple Mode** toggle in Settings / Header.
 - [ ] Strips away cognitive overload: hides algorithmic solver bells, complex multi-candidate split proposals, and deep administrative panels.
 - [ ] Presents strictly the intuitive manual substitution logic:
@@ -62,10 +24,28 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   3. Pick substitute from simple available list
   4. Save / confirm.
 
+### 3. [CRITICAL CODE REVIEW] Technical Debt & Codebase Bloat Elimination
+*Identified during the v1.34.0 architectural review. Flagged for a thorough future cleanup session:*
+- [ ] **Remove Dead Static Arrays (250+ Lines)**:
+  - `masterTimetableLog` (`app.js` lines 289–490, 200 lines): Hardcoded normalized log array that is completely unused by the active application (only exported to `window.masterTimetableLog`).
+  - `subjectsCatalog` (`app.js` lines 136–186, 50 lines): Static array exported to window, never utilized by the active routine or solver engines.
+- [ ] **Unified Migration Logic**:
+  - `migratePeriodNames()` is run on `schedule` and `baseSchedule`, but lines in `loadStateFromStorage()` duplicate the exact same period check on `substitutions` and `displaced`. Consolidate into a single polymorphic sanitizer function.
+- [ ] **Dual-Stack History Streamlining**:
+  - `state.actionHistory.grid` and `state.actionHistory.subs` currently duplicate every single substitution action into both stacks. Streamline into a single tagged action log with scoped filtering to eliminate memory duplication.
+- [ ] **CSS Theme Rule Consolidation**:
+  - Scattered theme overrides (e.g. `[data-theme="dark"]`, `[data-theme="midnight"]` rules repeating at lines 1090, 1180, 1598, 1836, 3383 in `styles.css`) should be consolidated into unified theme-specific component stylesheets.
+
 ---
 
 ## 📋 Completed Tasks (Recent)
 
+- [x] **v1.34.0 (2026-10-14)**:
+  - **Utopian Glass Complete Overhaul**: Full architectural Divergent upper-city transformation with multi-stop radial backdrop, crystalline top-edge sheen highlights, iridescent prismatic borders, deep frosted diffusion (`backdrop-filter: blur(28px)`), and ambient cyan reflections.
+  - **Theme Taxonomy & Sub-Category Variants**: Reorganized Settings Theme selector into 3 Base Families (`🪟 Glass Materials`, `☀️ Minimalist & Paper`, `🌙 Dark Modes`) with 11 curated variants including new `❄️ Aero Frost`, `🌌 Cyber Glass`, and `🔲 High Contrast`.
+  - **Desktop Zero-Scroll Layout**: Reduced vertical header and roster footprint by 100px+, giving the master routine full unobstructed above-the-fold visibility on desktop displays.
+  - **Commercial Mobile Layout with 3-Dot Overflow Menu (`⋮`)**: Preserved 100% mobile feature parity while tucking secondary actions (`Reset`, `Edit Routine`, `Sub-Availability`, `Fit Grid`, `Tour`) into a sleek Apple-style glass overflow dropdown.
+  - **Dynamic Viewport Engine (`computeViewportLayout`)**: Automatically measures screen geometry, assigns device datasets, and calculates table scroll container height.
 - [x] **v1.33.1 (2026-10-14)**:
   - Cleaned up orphan substitutions when un-marking absence (`revertSubstitutionsForTeacher` & self-healing `cleanupOrphanSubstitutions`).
   - Implemented substitution-aware co-teaching conflict detection (`areTeachersCoTeachingPartners`).

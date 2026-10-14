@@ -686,7 +686,20 @@ window.setTheme = setTheme;
 
 function updateThemeSelectorUI(activeTheme) {
     document.querySelectorAll('.theme-option-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.theme === activeTheme);
+        const isMatch = (btn.dataset.theme === activeTheme);
+        btn.classList.toggle('active', isMatch);
+        if (isMatch) {
+            const parentGrid = btn.closest('.theme-variant-grid');
+            if (parentGrid && parentGrid.dataset.catTarget) {
+                const cat = parentGrid.dataset.catTarget;
+                document.querySelectorAll('.theme-cat-btn').forEach(cBtn => {
+                    cBtn.classList.toggle('active', cBtn.dataset.cat === cat);
+                });
+                document.querySelectorAll('.theme-variant-grid').forEach(g => {
+                    g.classList.toggle('active', g.dataset.catTarget === cat);
+                });
+            }
+        }
     });
 }
 
@@ -1000,6 +1013,19 @@ function bindEvents() {
         }
     });
 
+    // Theme Family Category Tabs Switcher
+    document.querySelectorAll('.theme-cat-btn').forEach(catBtn => {
+        catBtn.addEventListener('click', (e) => {
+            const targetCat = e.currentTarget.dataset.cat;
+            if (!targetCat) return;
+            document.querySelectorAll('.theme-cat-btn').forEach(b => b.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            document.querySelectorAll('.theme-variant-grid').forEach(grid => {
+                grid.classList.toggle('active', grid.dataset.catTarget === targetCat);
+            });
+        });
+    });
+
     // Theme selector option buttons in Settings
     document.querySelectorAll('.theme-option-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1007,6 +1033,56 @@ function bindEvents() {
             setTheme(theme);
         });
     });
+
+    // 3-Dot Overflow Menu Handler (Mobile & Responsive)
+    const moreBtn = document.getElementById('header-more-btn');
+    const morePopover = document.getElementById('header-more-popover');
+    if (moreBtn && morePopover) {
+        moreBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            morePopover.classList.toggle('hidden');
+            const lockStatus = document.getElementById('more-lock-status');
+            if (lockStatus) {
+                lockStatus.textContent = state.isMasterEditMode ? '🔓 Editing' : (state.isMasterLocked !== false ? '🔒 Locked' : 'Unlocked');
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!morePopover.classList.contains('hidden') && !e.target.closest('#header-more-btn') && !e.target.closest('#header-more-popover')) {
+                morePopover.classList.add('hidden');
+            }
+        });
+
+        safeBind('more-item-edit', 'click', () => {
+            morePopover.classList.add('hidden');
+            const editBtn = document.getElementById('edit-toggle-btn');
+            if (editBtn) editBtn.click();
+        });
+
+        safeBind('more-item-reset', 'click', () => {
+            morePopover.classList.add('hidden');
+            const resetBtn = document.getElementById('reset-schedule-btn');
+            if (resetBtn) resetBtn.click();
+        });
+
+        safeBind('more-item-subavail', 'click', () => {
+            morePopover.classList.add('hidden');
+            const subAvailBtn = document.getElementById('btn-open-sub-avail-modal');
+            if (subAvailBtn) subAvailBtn.click();
+        });
+
+        safeBind('more-item-fitgrid', 'click', () => {
+            morePopover.classList.add('hidden');
+            const fitBtn = document.getElementById('fit-grid-btn');
+            if (fitBtn) fitBtn.click();
+        });
+
+        safeBind('more-item-tour', 'click', () => {
+            morePopover.classList.add('hidden');
+            const tourBtn = document.getElementById('tour-btn');
+            if (tourBtn) tourBtn.click();
+        });
+    }
 
     // Sub-Availability Modal & Remark Popover Bindings
     safeBind('btn-open-sub-avail-modal', 'click', () => openSubAvailModal());
@@ -3557,6 +3633,33 @@ function dismissDispute(period, absentTeacher) {
 }
 window.dismissDispute = dismissDispute;
 
+// --- DYNAMIC VIEWPORT & ADAPTIVE SCREEN CALCULATION ENGINE ---
+function computeViewportLayout() {
+    const vh = window.innerHeight;
+    const vw = window.innerWidth;
+    const isDesktop = vw >= 900;
+    if (document.body) {
+        document.body.dataset.device = isDesktop ? 'desktop' : 'mobile';
+    }
+
+    const tableContainer = document.querySelector('.table-scroll-container');
+    if (tableContainer && isDesktop) {
+        const headerEl = document.querySelector('.app-header');
+        const trayEl = document.querySelector('.absent-tray-container');
+        const routineHeaderEl = document.querySelector('.routine-header');
+        const hHeight = headerEl ? headerEl.offsetHeight : 80;
+        const tHeight = (trayEl && !trayEl.classList.contains('hidden')) ? trayEl.offsetHeight : 0;
+        const rhHeight = routineHeaderEl ? routineHeaderEl.offsetHeight : 40;
+        const availableHeight = Math.max(320, vh - hHeight - tHeight - rhHeight - 70);
+        tableContainer.style.maxHeight = `${availableHeight}px`;
+    } else if (tableContainer) {
+        tableContainer.style.maxHeight = '';
+    }
+}
+window.computeViewportLayout = computeViewportLayout;
+window.addEventListener('resize', computeViewportLayout);
+window.addEventListener('orientationchange', computeViewportLayout);
+
 // --- RENDER FUNCTIONS ---
 function renderAll() {
     cleanupOrphanSubstitutions(state.day);
@@ -3567,6 +3670,7 @@ function renderAll() {
     renderDisplacedTray();
     renderSubstitutions();
     renderCollisionIndicator();
+    computeViewportLayout();
 }
 
 function renderConflictIndicator() {

@@ -12,16 +12,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Live Cloud Sync Status Indicator**:
   - Live icon/pill showing the Google Sheet is active and syncing seamlessly.
   - Dedicated "Sheet Offline" indicator when disconnected or offline.
-- **UI Viewport Rethinking & Commercial-Grade Adaptive Layout**:
-  - Zero-scroll default desktop view ensuring master routine fits above the fold.
-  - Dynamic screen-size calculation engine adapting layout density between desktop and mobile.
-  - 100% mobile feature parity with secondary actions housed in a clean 3-dot (`⋮`) overflow menu.
 - **Simple Mode**:
   - Streamlined view option presenting strictly basic manual substitution logic.
-- **Utopian Glass Theme Complete Overhaul**:
-  - Transform the flat pastel-blue look into a true architectural glass aesthetic inspired by *Divergent* upper-city minimalist offices with crystalline top-edge sheen, iridescent prism refraction borders, deep frosted diffusion, and glowing cyan/ice-white ambient reflections.
-- **Theme Taxonomy & Sub-Category Variants**:
-  - Reorganize themes into logical Base Categories (Glass & Materials, Modern Minimalist, Dark/Night Modes) with dedicated, curated sub-category variants.
+- **Codebase Technical Debt & Bloat Elimination**:
+  - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
+
+---
+
+## [v1.34.0] - 2026-10-14
+
+### Added
+- **Utopian Glass Complete Overhaul (*Divergent Upper-City Aesthetic*)**:
+  - Transformed the flat pastel-blue theme into an ethereal, pristine architectural glass environment inspired by *Divergent* upper-city headquarters.
+  - Added multi-stop iridescent ambient gradients, specular top-edge sheen catches (`inset 0 1.5px 1px rgba(255, 255, 255, 0.95)`), chromatic refraction borders, deep frosted diffusion (`backdrop-filter: blur(28px) saturate(210%)`), and radiant cyan ambient reflections across table cells, headers, avatars, and docks.
+- **Theme Taxonomy & Sub-Category Variant Architecture**:
+  - Reorganized the flat theme selector in Settings into three **Base Families** with curated sub-category variants:
+    - **🪟 Glass Materials**: *Utopian Glass*, *Retro Glass*, *Aero Frost* (new), *Cyber Glass* (new).
+    - **☀️ Minimalist & Paper**: *Auto (System)*, *Classic Light*, *Warm Sepia*, *High Contrast* (new).
+    - **🌙 Dark Modes**: *Classic Dark*, *Midnight OLED*, *Slate Nord*.
+  - Added interactive category segmented tabs in Settings that dynamically filter and display the corresponding variant swatch grids.
+- **Desktop Zero-Scroll Viewport Layout**:
+  - Streamlined desktop layout hierarchy: reduced header vertical padding, compacted day selector, and optimized absent tray height, returning over 100px of vertical space to the master routine.
+  - Routine table now fits comfortably **above the fold** without requiring vertical scrolling down on desktop screens.
+- **Commercial Mobile Adaptive Layout with 3-Dot Overflow Menu (`⋮`)**:
+  - Preserved **100% mobile feature parity** for teachers while preventing header toolbar crowding on small screens.
+  - Tucked secondary administrative actions (`Reset to Baseline`, `Edit Schedule`, `Sub-Availability`, `Fit Grid`, and `Features Tour`) into a sleek Apple-style glass overflow dropdown (`#header-more-popover`).
+- **Dynamic Viewport Engine (`computeViewportLayout`)**:
+  - Automatically measures viewport dimensions, sets device datasets on `document.body`, and dynamically computes optimal table scroll container constraints on resize and orientation changes.
 
 ---
 
