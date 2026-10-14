@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Planned
+- **Live Cloud Sync Status Indicator**:
+  - Live icon/pill showing the Google Sheet is active and syncing seamlessly.
+  - Dedicated "Sheet Offline" indicator when disconnected or offline.
+- **UI Viewport Rethinking & Commercial-Grade Adaptive Layout**:
+  - Zero-scroll default desktop view ensuring master routine fits above the fold.
+  - Dynamic screen-size calculation engine adapting layout density between desktop and mobile.
+  - 100% mobile feature parity with secondary actions housed in a clean 3-dot (`⋮`) overflow menu.
+- **Simple Mode**:
+  - Streamlined view option presenting strictly basic manual substitution logic.
+
 ---
 
 ## [v1.33.1] - 2026-10-14

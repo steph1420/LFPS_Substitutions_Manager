@@ -125,9 +125,21 @@ const state = {
         *   Exclude unavailable teachers from substitute candidate pools in both the manual substitute picker and Smart Auto-Resolve.
         *   Persist availability status and remarks in `localStorage` under `state.subUnavailable[day][teacher]`.
 24. **[BUG] Blue Unlabelled Button in Cloud Conflict Modal & Settings Sync Row (Blue-on-Blue Text Invisibility):**
-    *   **Symptom:** In the *Cloud vs. Local Conflict Detected* modal dialog (`#btn-conflict-accept-cloud`) and the Settings panel sync row (`#btn-sync-now`), the action button renders as a blank, solid blue rounded rectangle with no readable label.
-    *   **Root Cause:** In `styles.css`, `.btn-primary` sets `color: var(--accent-blue)`. When the HTML template applies `background: var(--accent-blue)` to primary action buttons, the text is drawn in the identical blue shade as the background (`#007AFF` on `#007AFF`), rendering `✓ Accept Cloud Routine` and `Sync Routine` completely invisible.
-    *   **Fix Strategy:** Update `.btn-primary` and all accent-blue buttons in `styles.css` to enforce crisp white text (`color: #ffffff !important;`) and ensure seamless contrast across Light, Dark, Sepia, Midnight, and Retro Glass palettes.
+    *   **Status:** Resolved in v1.32.1.
+    *   **Fix Strategy:** Updated `.btn-primary` in `styles.css` to enforce crisp white text (`color: #ffffff !important;`).
+25. **[SYNC] Live Cloud Sync Status Icon (`☁ Live` vs `☁ Offline`):**
+    *   **Requirement:** When connected and live with the Google Sheets cloud endpoint, display a clear, real-time status icon indicating that the sheet is live and syncing seamlessly (e.g. `🟢 Cloud Live` with soft pulsating animation).
+    *   **Offline Fallback:** When disconnected, network offline, or the cloud sheet is unreachable, clearly display `⚪ Sheet Offline` or `⚠ Offline Mode` with last sync timestamp and a manual reconnect/retry action.
+    *   **Diagnostics:** Tapping the status indicator opens a concise connectivity diagnostic sheet (endpoint URL, ping status, last fetch time, pending sync queue).
+26. **[UI / UX] Viewport Rethinking & Commercial-Grade Adaptive Layout Engine (Desktop vs Mobile):**
+    *   **Desktop Ergonomics (Zero-Scroll Default View):** Even on desktop, the current default view requires scrolling down past headers and absent rosters to view the timetable. Redesign the viewport layout density so the primary routine grid and day operations fit above the fold without unnecessary vertical scrolling.
+    *   **Commercial SaaS Inspiration:** Take architectural inspiration from standard commercial productivity apps (Linear, Notion, Apple Calendar) on presentation adaptation between desktop and mobile.
+    *   **Full Mobile Feature Parity:** Teachers predominantly use mobile devices. Zero functionality will be removed or degraded on mobile.
+    *   **3-Dot Overflow Menu (`⋮`):** Infrequently accessed actions (e.g. Master reset, export, diagnostic tools, deep settings, procedural mock generator) tucked cleanly into a standard 3-dot overflow menu.
+    *   **Dynamic Screen Size Calculation Engine:** The UI dynamically calculates available viewport geometry (`window.innerWidth`, `window.innerHeight`, `visualViewport`, safe-area insets) and computes optimal presentation, typography scale, and touch boundaries while strictly guaranteeing 44-48px touch targets.
+27. **[FEATURE] Simple Mode (Basic Manual Mode):**
+    *   **Requirement:** Provide an optional "Simple Mode" toggle that streamlines the interface for rapid morning substitution duty.
+    *   **Scope:** Hides complex algorithmic solver proposals, multi-candidate split choices, and deep settings. Presents strictly the clean manual logic: select absent teacher &rarr; tap period cell &rarr; pick from eligible substitute list &rarr; confirm.
 
 ## 8. File Map & Project Directory
 *   `index.html`: Core markup, header controls, day segmented controller, grid view, substitutions conflict list, and iOS bottom sheet modal.
