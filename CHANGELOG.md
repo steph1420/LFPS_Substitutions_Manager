@@ -154,3 +154,126 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 - **Native Dark Mode & Apple Theme Tokens**: System preference auto-detection, manual theme switching, and tactile SVG vector icons.
+
+---
+
+## [v1.17.0] - 2026-10-11
+
+### Added
+- **Baseline Reset Button**: Added a dedicated `↺ Reset` button next to the Edit toggle. Instantly reverts the current day's working grid and substitutions back to the original `baseSchedule`.
+- **Reset Undo Integration**: Fully integrated the reset action into the dual-stack undo engine, capturing the entire wipe as a single snapshot that can be reversed with one click.
+
+### Changed
+- **Unrestricted Ghost Slide**: Removed `overflow: hidden;` from grid cells and extended the `ghostSlideOut` animation drop distance to `45px` (a full slot height), allowing the displaced class text to visibly drop *over* the cell below it.
+
+---
+
+## [v1.16.0] - 2026-10-11
+
+### Changed
+- **Inline Limbo Tray Flow**: Moved the Limbo Tray out of its floating overlay state and back into the standard document flow directly below the grid. It now gracefully expands (`grid-template-rows: 0fr` to `1fr`) pushing the page scroll boundary down without shifting the grid underneath the user's fingers.
+
+---
+
+## [v1.15.0] - 2026-10-11
+
+### Added
+- **Floating Limbo Dock (Initial Version)**: Replaced the static displaced tray with a glass-morphism dock that slides up from the bottom.
+- **Drag-Out Indicator**: Cells now instantly visually shrink to 95% scale and drop to 40% opacity (`cell-dragging`) the moment a drag is detected to confirm the grab.
+- **Swipe-to-Dismiss Bottom Sheet**: Added native iOS-style touch-drag-to-close physics to the bottom sheet grey handle (`deltaY > 80px`).
+
+### Fixed
+- **Mobile Ghost Clicks**: Locked down event propagation (`e.stopPropagation()`, `e.preventDefault()`) on the bottom sheet overlay to prevent taps from falling through and accidentally triggering the bottom navigation bar underneath.
+- **Dark Mode Animation Clash**: Removed hardcoded stark white backgrounds from the `flashRedOverwrite` animation, ensuring the soft pink ring respects dark mode inversion cleanly.
+
+---
+
+## [v1.14.0] - 2026-10-11
+
+### Added
+- **"Juicy" Overwrite Animations**: Overhauled UI feedback for copy-and-overwrite drag mechanics.
+  - Added a soft Apple `accent-pink` (`rgba(255, 45, 85)`) bounding ring that scales down, curves, and springs back out on cell drop (`flashRedOverwrite`).
+  - Added a translucent pink wash to the inner cell background that smoothly transitions back to default blue.
+- **Ghost Slide Physics**: Overwritten text now turns pink, drops behind the new text, and softly slides downward (`ghostSlideOut`) to visually communicate displacement.
+
+---
+
+[v1.13.0] - 2026-10-11
+Added
+Contextual Overwrite Animations: Grid drop behavior divided into two distinct visual feedback states. An empty drop triggers a standard pop-in, while overwriting an occupied class triggers an aggressive red flashing inset border (cell-displaced-flash) to signal displacement.
+
+Changed
+Targeted Tray Physics: Restricted the popIn animation to apply exclusively to the single newly displaced item entering the Limbo Tray, allowing existing tray items to remain static and shift via standard flexbox flow.
+
+[v1.12.0] - 2026-10-11
+Added
+Inline Displaced Indicator: Added a static, space-efficient red pulsing badge (#displaced-indicator) directly beside the "Master Routine" header to warn of displaced classes without consuming vertical real estate.
+
+Changed
+Tray Flow Restoration: Restored the Limbo Tray to the standard document flow beneath the grid, reverting it from a floating overlay to ensure it pushes the scroll boundary naturally.
+
+Removed
+Bulky Warning Bar: Eliminated the full-width displaced warning banner above the grid to prevent layout jumping upon error state activation.
+
+[v1.11.0] - 2026-10-11
+Changed
+Substitutions Tab Icon: Updated the bottom navigation icon for the Substitutions tab from a stressful warning symbol to a neutral swap/sync icon (🔄) to reflect its permanent dashboard identity and reduce false alarms.
+
+[v1.10.0] - 2026-10-11
+Added
+Smooth Expansion Wrapper: Encapsulated the Limbo Tray in a dynamic CSS Grid container (#limbo-wrapper) utilizing a 0fr to 1fr transition template.
+
+Fixed
+Layout Shifting: Eliminated the jerky vertical layout shift that previously forced the main table down when the dynamic warning bar and Limbo Tray appeared.
+
+[v1.9.0] - 2026-10-11
+Added
+Tactile Grid Drop Feedback: Applied a satisfying popIn animation (cell-just-dropped) to grid target cells immediately upon receiving a dropped class from another grid slot or the Limbo Tray.
+
+[v1.8.0] - 2026-10-11
+Added
+Top-Level Alert Positioning: Relocated the displaced classes warning banner to sit directly above the main grid for instant visibility, enhanced with an Apple-style pulsing red attention dot.
+
+Limbo Tray Animations: Replaced janky trajectory physics with fluid, iOS-style popIn animations for displaced items entering the Limbo Tray.
+
+[v1.7.0] - 2026-10-11
+Added
+The Limbo Tray (Displaced Classes): Engineered a dedicated holding area beneath the active grid to catch and temporarily store classes that are overwritten during manual grid manipulation.
+
+Bidirectional Reassignment: Enabled classes to be dragged or tapped directly out of the Limbo Tray and dropped back onto free slots on the active grid.
+
+[v1.6.0] - 2026-10-11
+Added
+Baseline Truth Architecture (state.baseSchedule): Separated the active working grid from the original master routine, allowing the memory engine to permanently track original class ownership for accurate absence detection regardless of manual shuffling.
+
+Persistent Substitutions Dashboard: Upgraded the temporary Resolver into a permanent command center featuring a Dual-State UI. Unassigned absences generate Pink action cards, and assigned coverages transition into permanent Green audit cards.
+
+Celebratory Empty States: Built "All Clear!" and "Fully Covered" UI screens to provide immediate visual confirmation when substitution tasks are complete.
+
+Batch Auto-Resolve Algorithm: Wired up a single-click resolution engine (✨ Auto-Resolve) that scans the uncorrupted baseline, identifies unassigned absences, hunts free teachers, and executes bulk assignments simultaneously.
+
+[v1.5.0] - 2026-10-10
+Added
+Native Smooth Edge-Scrolling: Built an animation-frame edge-scrolling engine triggering when dragging classes near the desktop viewport boundaries.
+
+Crash-Proof Local Storage: Enforced strict synchronous writes to localStorage (lfps_frontdesk_state) on every single interaction to guarantee zero data loss on browser crash or reload.
+
+Cache-Busting Initialization: Appended dynamic version tags (?v=1.5) to stylesheet and script sources to force immediate cache invalidation on mobile devices.
+
+Changed
+Movement Engine Rebuild (Copy & Overwrite): Stripped out the flawed swap logic. Dragging a class now strictly overwrites the target slot and completely frees the original slot, granting absolute manual control over the grid.
+
+Context-Aware Undo Engine: Divided the single history array into a dual-stack setup (actionHistory.grid and actionHistory.subs). The UI now accurately reverses drag-and-drop grid moves when on the Dashboard tab, and substitution assignments when on the Substitutions tab.
+
+---
+
+## [v1.0.0] - 2026-10-10
+
+### Added
+- **Initial Front Desk PWA Release**: Built the foundational vanilla JS/HTML/CSS offline-first application.
+- **Dual-State Baseline Architecture**: Implemented the immutable `baseSchedule` (master routine) versus the mutable `schedule` (active working grid).
+- **Copy-and-Overwrite Engine**: Engineered a custom HTML5 drag-and-drop system where dragging Class A onto Class B overwrites Class B instead of swapping them.
+- **Crash-Proof State Management**: Synced all state mutations (`day`, `schedule`, `substitutions`, `displaced`, `actionHistory`) synchronously to `localStorage` (`lfps_frontdesk_state`).
+- **Dual-Stack Context-Aware Undo**: Built an undo engine that dynamically tracks grid moves (`actionHistory.grid`) separately from substitute assignments (`actionHistory.subs`).
+- **Substitution Resolver Dashboard**: Built a dual-state card UI tracking unassigned absences (Pink) and assigned coverages (Green).
+- **Mock Data Generator**: Integrated `generateSimulatedData()` to populate initial teacher subjects across a 6-day `MON`-`SAT` cycle for testing.
