@@ -1,3 +1,5 @@
+const DEFAULT_SHEETS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwCoHv4fYmzdOJdredpQtSE3bcHUnS3gboWi5cUEQEprdBl0x8zjvR7wvl6ABpqN-p_IQ/exec';
+
 // --- STATE MANAGEMENT ---
 const state = {
     day: 'MON',
@@ -20,7 +22,10 @@ const state = {
         minimizeAlerts: false,
         detectCollisions: true,
         allowDisputes: true,
-        adminPin: '1234'
+        adminPin: '1234',
+        sheetsCsvUrl: DEFAULT_SHEETS_WEBAPP_URL,
+        lastCloudSync: null,
+        cloudLastModified: null
     },
     actionHistory: {
         grid: [], 
@@ -570,7 +575,19 @@ function loadStateFromStorage() {
             state.officiatingCT = parsed.officiatingCT || {};
             state.displaced = parsed.displaced || { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] };
             state.absentTeachers = new Set(parsed.absentTeachers || []);
-            state.settings = Object.assign({ samePeriodLock: true, minimizeAlerts: false, detectCollisions: true, allowDisputes: true, adminPin: '1234' }, parsed.settings);
+            state.settings = Object.assign({ 
+                samePeriodLock: true, 
+                minimizeAlerts: false, 
+                detectCollisions: true, 
+                allowDisputes: true, 
+                adminPin: '1234',
+                sheetsCsvUrl: DEFAULT_SHEETS_WEBAPP_URL,
+                lastCloudSync: null,
+                cloudLastModified: null
+            }, parsed.settings);
+            if (!state.settings.sheetsCsvUrl) {
+                state.settings.sheetsCsvUrl = DEFAULT_SHEETS_WEBAPP_URL;
+            }
             
             // Automatic migration of periods
             migratePeriodNames(state.schedule);
@@ -822,6 +839,37 @@ function bindEvents() {
             showToast('PIN must be exactly 4 digits.', true);
         }
     });
+
+    // Google Sheets Cloud Sync Settings & Buttons
+    safeBind('btn-save-sheets-url', 'click', () => {
+        const urlInput = document.getElementById('sheets-csv-url-input');
+        const rawUrl = urlInput ? urlInput.value.trim() : '';
+        const norm = normalizeCSVUrl(rawUrl);
+        state.settings.sheetsCsvUrl = norm;
+        if (urlInput && norm !== rawUrl) urlInput.value = norm;
+        saveStateToStorage();
+        updateCloudSyncUI();
+        showToast('✓ Saved Google Sheets CSV URL.');
+    });
+
+    safeBind('btn-sync-now', 'click', () => {
+        syncFromGoogleSheets(true);
+    });
+
+    safeBind('push-ledger-btn', 'click', () => {
+        pushSubstitutionsToCloud();
+    });
+
+    safeBind('btn-push-sheets', 'click', () => {
+        pushSubstitutionsToCloud();
+    });
+
+    // Cloud Conflict Modal Buttons
+    safeBind('close-cloud-conflict-btn', 'click', closeCloudConflictModal);
+    safeBind('cloud-conflict-overlay', 'click', closeCloudConflictModal);
+    safeBind('btn-conflict-cancel', 'click', closeCloudConflictModal);
+    safeBind('btn-conflict-accept-cloud', 'click', acceptCloudSchedule);
+    safeBind('btn-conflict-keep-local', 'click', keepLocalSchedule);
 
     safeBind('hide-absent-toggle', 'change', renderAll);
     
@@ -1881,8 +1929,31 @@ function saveMasterBaseline() {
         return;
     }
 
-    // Save previous baseline for undo safety
+    // Save previous baseline for undo safety and diff auditing
     const previousBaseline = JSON.parse(JSON.stringify(state.baseSchedule));
+
+    // Calculate audited baseline modifications
+    const baselineUpdates = [];
+    days.forEach(d => {
+        periods.forEach(p => {
+            if (p === 'BREAK' || p === 'BREAKFAST BREAK' || p === 'BREAKFAST') return;
+            teachers.forEach(t => {
+                const prevBase = previousBaseline[d]?.[p]?.[t] || 'Free';
+                const newBase = stagedMasterSchedule[d]?.[p]?.[t] || 'Free';
+                if (prevBase !== newBase) {
+                    baselineUpdates.push({
+                        day: d,
+                        period: p,
+                        teacher: t,
+                        previousTask: prevBase,
+                        newTask: newBase,
+                        coTeachingPartner: state.coTeachingPartners?.[d]?.[p]?.[t] || '',
+                        adminPinVerified: true
+                    });
+                }
+            });
+        });
+    });
 
     // Commit staged changes to baseSchedule
     state.baseSchedule = JSON.parse(JSON.stringify(stagedMasterSchedule));
@@ -1911,6 +1982,11 @@ function saveMasterBaseline() {
     updateMasterLockUI();
     renderAll();
     showToast('✓ Master Timetable Baseline saved successfully!');
+
+    // Automatically push audited baseline modifications to Google Sheets
+    if (baselineUpdates.length > 0) {
+        pushBaselineUpdatesToCloud(baselineUpdates);
+    }
 }
 
 function cancelMasterBaseline() {
@@ -2116,6 +2192,452 @@ function closeMasterCellModal() {
         overlay.classList.remove('active');
     }
 }
+
+// ==========================================================================
+// GOOGLE SHEETS PIPELINE, RFC 4180 CSV PARSER & CLOUD SYNC ENGINE
+// ==========================================================================
+
+let pendingCloudSchedule = null;
+let currentCloudDiffs = [];
+
+function parseCSV(text) {
+    if (!text || typeof text !== 'string') return [];
+    const result = [];
+    let row = [];
+    let cell = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (char === '"' && text[i+1] === '"') { 
+            cell += '"'; 
+            i++; // Handle escaped quotes
+        } else if (char === '"') { 
+            inQuotes = !inQuotes; // Toggle quote state
+        } else if (char === ',' && !inQuotes) { 
+            row.push(cell.trim()); 
+            cell = ''; // End of cell
+        } else if (char === '\n' && !inQuotes) { 
+            row.push(cell.trim()); 
+            result.push(row); 
+            row = []; 
+            cell = ''; // End of row
+        } else if (char !== '\r') { 
+            cell += char; 
+        }
+    }
+    if (cell.length > 0 || row.length > 0) {
+        row.push(cell.trim());
+        result.push(row);
+    }
+    return result;
+}
+window.parseCSV = parseCSV;
+
+function normalizeCSVUrl(input) {
+    if (!input) return '';
+    let url = input.trim();
+    // If user provided a standard Google Sheets sharing/editing link, convert to exported CSV targeting OVERVIEW
+    const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    if (match && !url.includes('pub?output=csv') && !url.includes('export?format=csv')) {
+        const sheetId = match[1];
+        // Target OVERVIEW tab via Google Visualization CSV export to guarantee reading master timetable log
+        url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=OVERVIEW`;
+    }
+    return url;
+}
+
+function parseTimetableFromCSV(csvRows) {
+    if (!csvRows || csvRows.length < 2) return null;
+
+    // Detect header layout dynamically across first 10 rows
+    let headerRowIdx = 0;
+    for (let r = 0; r < Math.min(10, csvRows.length); r++) {
+        const rowUpper = csvRows[r].map(c => (c || '').toString().trim().toUpperCase());
+        if (rowUpper.some(c => c.includes('DAY')) && (rowUpper.some(c => c.includes('PERIOD') || c.includes('PD')) || rowUpper.some(c => c.includes('TEACHER')))) {
+            headerRowIdx = r;
+            break;
+        }
+    }
+    const header = csvRows[headerRowIdx].map(h => (h || '').toString().trim().toUpperCase());
+    
+    const parsedSchedule = {
+        'MON': {}, 'TUE': {}, 'WED': {}, 'THU': {}, 'FRI': {}, 'SAT': {}
+    };
+
+    // Initialize blank schedule structure
+    days.forEach(d => {
+        periods.forEach(p => {
+            parsedSchedule[d][p] = {};
+            teachers.forEach(t => {
+                parsedSchedule[d][p][t] = (p === 'BREAK' ? '-' : 'Free');
+            });
+        });
+    });
+
+    // Check if CSV is normalized Log format: [Class, Day, Period, Subject, Teacher, ...]
+    const dayColIdx = header.findIndex(h => h.includes('DAY'));
+    const periodColIdx = header.findIndex(h => h.includes('PERIOD') || h.includes('PD'));
+    const teacherColIdx = header.findIndex(h => h.includes('TEACHER'));
+    const subjColIdx = header.findIndex(h => h.includes('SUBJECT') || h.includes('TASK') || h.includes('SUBJ'));
+    const classColIdx = header.findIndex(h => h.includes('CLASS') || h.includes('SEC'));
+
+    if (dayColIdx !== -1 && periodColIdx !== -1 && teacherColIdx !== -1 && subjColIdx !== -1) {
+        // Log/Table Format
+        for (let i = headerRowIdx + 1; i < csvRows.length; i++) {
+            const row = csvRows[i];
+            if (row.length <= Math.max(dayColIdx, periodColIdx, teacherColIdx, subjColIdx)) continue;
+
+            const rawDay = (row[dayColIdx] || '').trim().toUpperCase().replace(/\./g, '');
+            const rawPeriod = (row[periodColIdx] || '').trim();
+            const rawTeacher = (row[teacherColIdx] || '').trim();
+            const rawSubj = (row[subjColIdx] || '').trim();
+            const rawClass = classColIdx !== -1 ? (row[classColIdx] || '').trim() : '';
+
+            // Normalize day (e.g. MON, TUES -> TUE, FRI -> FRI)
+            let matchedDay = days.find(d => rawDay.startsWith(d));
+            if (!matchedDay && rawDay.startsWith('TUE')) matchedDay = 'TUE';
+            if (!matchedDay) continue;
+
+            // Normalize period
+            let matchedPeriod = periods.find(p => p.toLowerCase() === rawPeriod.toLowerCase());
+            if (!matchedPeriod) {
+                if (rawPeriod.includes('1')) matchedPeriod = '1st';
+                else if (rawPeriod.includes('2nd') || rawPeriod.includes('2')) matchedPeriod = '2nd';
+                else if (rawPeriod.includes('3')) matchedPeriod = '3rd';
+                else if (rawPeriod.includes('4')) matchedPeriod = '4th';
+                else if (rawPeriod.includes('5')) matchedPeriod = '5th';
+                else if (rawPeriod.includes('6')) matchedPeriod = '6th';
+                else if (rawPeriod.toUpperCase().includes('GOLDEN') || rawPeriod.toUpperCase().includes('G/PD')) matchedPeriod = 'G/PD';
+                else if (rawPeriod.toUpperCase().includes('PLAY')) matchedPeriod = 'PLAYTIME / 2ND GOLDEN HOUR';
+                else if (rawPeriod.toUpperCase().includes('BREAK')) matchedPeriod = 'BREAK';
+            }
+            if (!matchedPeriod || matchedPeriod === 'BREAK') continue;
+
+            // Match teacher name against known teachers
+            let matchedTeacher = teachers.find(t => t.toLowerCase() === rawTeacher.toLowerCase());
+            if (!matchedTeacher) {
+                matchedTeacher = teachers.find(t => {
+                    const last = t.split(' ').pop().toLowerCase();
+                    return rawTeacher.toLowerCase().includes(last);
+                });
+            }
+            if (!matchedTeacher) continue;
+
+            let taskString = rawSubj;
+            if (rawClass && !rawSubj.toUpperCase().includes(rawClass.toUpperCase())) {
+                taskString = `${rawSubj} ${rawClass}`;
+            }
+
+            const currentCell = parsedSchedule[matchedDay][matchedPeriod][matchedTeacher];
+            if (currentCell && currentCell !== 'Free' && currentCell !== '-') {
+                if (rawClass && !currentCell.includes(rawClass)) {
+                    taskString = `${currentCell} + ${rawClass}`;
+                }
+            }
+
+            parsedSchedule[matchedDay][matchedPeriod][matchedTeacher] = taskString;
+        }
+        return parsedSchedule;
+    }
+
+    // Fallback: Grid Matrix Format: Row per teacher, columns = periods
+    // Row 0 has periods: ['Teacher', 'G/PD', '1st', 'BREAK', ...]
+    const currentDay = state.day; // Default to active day if not specified in table
+    for (let r = 1; r < csvRows.length; r++) {
+        const row = csvRows[r];
+        if (row.length < 2) continue;
+        const rowTeacherRaw = row[0].trim();
+        const matchedTeacher = teachers.find(t => t.toLowerCase() === rowTeacherRaw.toLowerCase() || t.includes(rowTeacherRaw));
+        if (!matchedTeacher) continue;
+
+        for (let c = 1; c < row.length && c < header.length; c++) {
+            const colHeader = header[c];
+            const matchedPeriod = periods.find(p => colHeader.includes(p.toUpperCase()) || p.toUpperCase().includes(colHeader));
+            if (matchedPeriod && matchedPeriod !== 'BREAK') {
+                const cellTask = row[c].trim();
+                parsedSchedule[currentDay][matchedPeriod][matchedTeacher] = cellTask || 'Free';
+            }
+        }
+    }
+    return parsedSchedule;
+}
+
+function calculateScheduleDiffs(localBase, incomingCloud) {
+    const diffs = [];
+    days.forEach(d => {
+        periods.forEach(p => {
+            if (p === 'BREAK' || p === 'BREAKFAST BREAK' || p === 'BREAKFAST') return;
+            teachers.forEach(t => {
+                const localTask = localBase[d]?.[p]?.[t] || 'Free';
+                const cloudTask = incomingCloud[d]?.[p]?.[t] || 'Free';
+                if (localTask !== cloudTask) {
+                    diffs.push({
+                        day: d,
+                        period: p,
+                        teacher: t,
+                        localTask,
+                        cloudTask
+                    });
+                }
+            });
+        });
+    });
+    return diffs;
+}
+
+async function syncFromGoogleSheets(forcePrompt = false) {
+    const rawUrl = state.settings.sheetsCsvUrl || document.getElementById('sheets-csv-url-input')?.value || '';
+    const url = normalizeCSVUrl(rawUrl);
+
+    if (!url) {
+        showToast('Please enter a published Google Sheets CSV URL first.', true);
+        openSettingsModal();
+        const urlInput = document.getElementById('sheets-csv-url-input');
+        if (urlInput) urlInput.focus();
+        return;
+    }
+
+    const spinner = document.getElementById('sync-spinner');
+    if (spinner) spinner.classList.add('spinning');
+    showToast('☁ Fetching latest routine from Google Sheets...');
+
+    try {
+        const response = await fetch(url, { cache: 'no-cache' });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const csvText = await response.text();
+        const rows = parseCSV(csvText);
+
+        if (!rows || rows.length < 2) {
+            throw new Error('Google Sheet returned empty or invalid CSV data.');
+        }
+
+        const cloudSchedule = parseTimetableFromCSV(rows);
+        if (!cloudSchedule) {
+            throw new Error('Could not parse timetable structure from CSV.');
+        }
+
+        const diffs = calculateScheduleDiffs(state.baseSchedule, cloudSchedule);
+
+        if (spinner) spinner.classList.remove('spinning');
+
+        if (diffs.length === 0) {
+            state.settings.lastCloudSync = new Date().toISOString();
+            saveStateToStorage();
+            updateCloudSyncUI();
+            showToast('✓ Everything is up to date: Local timetable perfectly matches Cloud.');
+            return;
+        }
+
+        // If diffs exist, prompt the Cloud vs. Local Conflict Resolver modal
+        pendingCloudSchedule = cloudSchedule;
+        currentCloudDiffs = diffs;
+        openCloudConflictModal(diffs);
+
+    } catch (err) {
+        if (spinner) spinner.classList.remove('spinning');
+        showToast(`Cloud Sync Error: ${err.message}`, true);
+    }
+}
+window.syncFromGoogleSheets = syncFromGoogleSheets;
+
+function openCloudConflictModal(diffs) {
+    const modal = document.getElementById('cloud-conflict-modal');
+    const overlay = document.getElementById('cloud-conflict-overlay');
+    const summaryContainer = document.getElementById('cloud-diff-summary');
+    const diffContainer = document.getElementById('cloud-diff-container');
+
+    if (!modal || !overlay) return;
+
+    if (summaryContainer) {
+        const affectedTeachers = new Set(diffs.map(d => d.teacher)).size;
+        const affectedDays = new Set(diffs.map(d => d.day)).size;
+        summaryContainer.innerHTML = `
+            <span class="diff-summary-pill">⚡ ${diffs.length} Slot Differing</span>
+            <span class="diff-summary-pill">👨‍🏫 ${affectedTeachers} Teachers</span>
+            <span class="diff-summary-pill">📅 ${affectedDays} Days</span>
+        `;
+    }
+
+    if (diffContainer) {
+        diffContainer.innerHTML = diffs.map(d => `
+            <div class="diff-card">
+                <div class="diff-card-header">
+                    <span>${d.teacher}</span>
+                    <span style="opacity:0.8;">${d.day} • ${d.period}</span>
+                </div>
+                <div class="diff-values-row">
+                    <span class="diff-local-val" title="Local">${d.localTask}</span>
+                    <span style="color:var(--text-secondary);">→</span>
+                    <span class="diff-cloud-val" title="Cloud">${d.cloudTask}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    modal.classList.remove('hidden');
+    overlay.classList.add('active');
+}
+
+function closeCloudConflictModal() {
+    pendingCloudSchedule = null;
+    currentCloudDiffs = [];
+    const modal = document.getElementById('cloud-conflict-modal');
+    const overlay = document.getElementById('cloud-conflict-overlay');
+    if (modal && overlay) {
+        modal.classList.add('hidden');
+        overlay.classList.remove('active');
+    }
+}
+
+function acceptCloudSchedule() {
+    if (!pendingCloudSchedule) return;
+
+    // Apply cloud baseline to baseSchedule
+    state.baseSchedule = JSON.parse(JSON.stringify(pendingCloudSchedule));
+
+    // Synchronize working schedule
+    days.forEach(d => {
+        periods.forEach(p => {
+            if (p === 'BREAK' || p === 'BREAKFAST BREAK' || p === 'BREAKFAST') return;
+            teachers.forEach(t => {
+                state.schedule[d][p][t] = state.baseSchedule[d][p][t];
+            });
+        });
+    });
+
+    state.settings.lastCloudSync = new Date().toISOString();
+    saveStateToStorage();
+    closeCloudConflictModal();
+    updateCloudSyncUI();
+    renderAll();
+    showToast(`✓ Accepted Cloud Routine (${currentCloudDiffs.length} allocations updated from Google Sheets).`);
+}
+
+function keepLocalSchedule() {
+    state.settings.lastCloudSync = new Date().toISOString();
+    saveStateToStorage();
+    closeCloudConflictModal();
+    updateCloudSyncUI();
+    showToast('Preserved local modifications. Cloud changes ignored.');
+}
+
+function updateCloudSyncUI() {
+    const urlInput = document.getElementById('sheets-csv-url-input');
+    const syncTimeEl = document.getElementById('sync-last-time');
+
+    if (urlInput) {
+        urlInput.value = state.settings.sheetsCsvUrl || '';
+    }
+    const isWebApp = (state.settings.sheetsCsvUrl || '').includes('/exec');
+    if (syncTimeEl) {
+        if (state.settings.lastCloudSync) {
+            const d = new Date(state.settings.lastCloudSync);
+            const timeStr = `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            syncTimeEl.innerHTML = `${isWebApp ? '<span style="color:var(--accent-green); font-weight:700;">● 2-Way Connected</span> • ' : ''}Synced ${timeStr}`;
+        } else {
+            syncTimeEl.innerHTML = isWebApp 
+                ? '<span style="color:var(--accent-green); font-weight:700;">● 2-Way Ready</span> (Not Synced Yet)' 
+                : 'Local Baseline (Not Synced)';
+            syncTimeEl.style.color = 'var(--text-secondary)';
+        }
+    }
+}
+
+async function pushSubstitutionsToCloud(entries = null) {
+    const rawUrl = state.settings.sheetsCsvUrl || document.getElementById('sheets-csv-url-input')?.value || '';
+    if (!rawUrl || !rawUrl.includes('/exec')) {
+        showToast('Google Apps Script Web App URL required for cloud sync.', true);
+        return false;
+    }
+
+    if (!entries) {
+        entries = [];
+        const currentSubs = state.substitutions[state.day] || {};
+        Object.keys(currentSubs).forEach(period => {
+            Object.keys(currentSubs[period] || {}).forEach(absentTeacher => {
+                const assignedSub = currentSubs[period][absentTeacher];
+                const statusObj = getSubStatusObj(state.day, period, absentTeacher);
+                const disputeReason = statusObj.status === 'disputed' ? (statusObj.reason || '') : '';
+                entries.push({
+                    day: state.day,
+                    period: period,
+                    absentTeacher: absentTeacher,
+                    assignedSub: assignedSub,
+                    status: statusObj.status === 'accepted' ? 'Accepted' : (statusObj.status === 'disputed' ? 'Disputed' : 'Assigned'),
+                    note: disputeReason || `Covering ${state.baseSchedule[state.day]?.[period]?.[absentTeacher] || 'Class'}`
+                });
+            });
+        });
+    }
+
+    if (entries.length === 0) {
+        showToast('No substitutions assigned to push for today.');
+        return false;
+    }
+
+    const pushBtns = [document.getElementById('push-ledger-btn'), document.getElementById('btn-push-sheets')].filter(Boolean);
+    pushBtns.forEach(b => b.classList.add('spinning'));
+    showToast(`☁ Pushing ${entries.length} substitution record(s) to Google Sheets Daily_Ledger...`);
+
+    try {
+        const payload = {
+            action: 'logSubstitutions',
+            entries: entries
+        };
+        await fetch(rawUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'text/plain'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        pushBtns.forEach(b => b.classList.remove('spinning'));
+        state.settings.lastCloudSync = new Date().toISOString();
+        saveStateToStorage();
+        updateCloudSyncUI();
+        showToast(`✓ Successfully logged ${entries.length} substitution(s) to Daily_Ledger!`);
+        return true;
+    } catch (err) {
+        pushBtns.forEach(b => b.classList.remove('spinning'));
+        console.error('Push to cloud error:', err);
+        showToast(`Cloud Push Error: ${err.message}`, true);
+        return false;
+    }
+}
+window.pushSubstitutionsToCloud = pushSubstitutionsToCloud;
+
+async function pushBaselineUpdatesToCloud(updates) {
+    const rawUrl = state.settings.sheetsCsvUrl || document.getElementById('sheets-csv-url-input')?.value || '';
+    if (!rawUrl || !rawUrl.includes('/exec') || !updates || updates.length === 0) return false;
+
+    showToast(`☁ Logging ${updates.length} baseline modification(s) to Google Sheets...`);
+    try {
+        const payload = {
+            action: 'updateBaseline',
+            updates: updates
+        };
+        await fetch(rawUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'text/plain'
+            },
+            body: JSON.stringify(payload)
+        });
+        showToast(`✓ Saved & logged ${updates.length} modification(s) to Baseline_Updates!`);
+        return true;
+    } catch (err) {
+        console.error('Push baseline update error:', err);
+        return false;
+    }
+}
+window.pushBaselineUpdatesToCloud = pushBaselineUpdatesToCloud;
 
 
 function extractClassSection(task) {
@@ -2613,6 +3135,16 @@ function startAcceptSubCountdown(period, absentTeacher) {
             saveStateToStorage();
             renderAll();
             showToast(`🔒 Substitution (${period} • ${subTeacher}) accepted & reported across the board!`, true);
+
+            // Automatically push accepted substitution to Google Sheets Daily_Ledger
+            pushSubstitutionsToCloud([{
+                day: day,
+                period: period,
+                absentTeacher: absentTeacher,
+                assignedSub: subTeacher,
+                status: 'Accepted',
+                note: `Accepted by ${subTeacher}`
+            }]);
         }
     }, 1000);
 
@@ -4801,6 +5333,7 @@ function openSettingsModal() {
     }
 
     updateRolePermissionsUI();
+    updateCloudSyncUI();
 
     const currentTheme = localStorage.getItem('lfps_frontdesk_theme') || 'system';
     updateThemeSelectorUI(currentTheme);
@@ -5382,3 +5915,11 @@ window.cancelMasterBaseline = cancelMasterBaseline;
 window.closeMasterCellModal = closeMasterCellModal;
 window.applyMasterCellAllocation = applyMasterCellAllocation;
 window.clearMasterCellAllocation = clearMasterCellAllocation;
+window.syncFromGoogleSheets = syncFromGoogleSheets;
+window.openCloudConflictModal = openCloudConflictModal;
+window.closeCloudConflictModal = closeCloudConflictModal;
+window.acceptCloudSchedule = acceptCloudSchedule;
+window.keepLocalSchedule = keepLocalSchedule;
+window.normalizeCSVUrl = normalizeCSVUrl;
+window.parseTimetableFromCSV = parseTimetableFromCSV;
+window.calculateScheduleDiffs = calculateScheduleDiffs;

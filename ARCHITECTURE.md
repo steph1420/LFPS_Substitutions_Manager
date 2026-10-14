@@ -200,6 +200,21 @@ const state = {
         *   **Co-Teaching Allocation Partner**: Optional dropdown to pair a colleague for shared classes in 1-click.
         *   **Live Collision Scanner in Dialog**: Warns instantly (`#master-collision-warning`) if another teacher already teaches that class section in the period.
         *   **Atomic Baseline Commit**: Edits stage in an in-memory clone (`stagedMasterSchedule`) and commit cleanly into `state.baseSchedule` and `state.schedule` on Save, persisting to `localStorage`.
+*   **v1.32 Release (Full 2-Way Google Sheets Cloud Integration & Live Push Pipeline)**:
+    *   **Apps Script Web App Deployment**:
+        *   Connected to dedicated Google Apps Script endpoint (`https://script.google.com/macros/s/AKfycbwCoHv4fYmzdOJdredpQtSE3bcHUnS3gboWi5cUEQEprdBl0x8zjvR7wvl6ABpqN-p_IQ/exec`).
+        *   `doGet()`: Streams master routine from the `OVERVIEW` tab as clean CSV directly into Front Desk.
+        *   `doPost()`: Securely handles live updates without requiring third-party libraries, supporting both `action: 'logSubstitutions'` and `action: 'updateBaseline'`.
+    *   **Google Sheets Tab Architecture & Protection**:
+        *   Created 🟦 `Daily_Ledger` tab with Apple HIG blue headers, frozen header row, and `warningOnly` protection for real-time substitution audit logging.
+        *   Created 🟧 `Baseline_Updates` tab with frozen header row and `warningOnly` protection for permanent master routine modifications.
+    *   **Automatic & Manual Cloud Push Engines**:
+        *   **Automatic Substitution Logging**: When the 10-second acceptance countdown finishes in `startAcceptSubCountdown()`, the substitution is automatically posted to `Daily_Ledger`.
+        *   **Automatic Baseline Revision Logging**: When `saveMasterBaseline()` is saved with Admin PIN, an audited difference list is posted to `Baseline_Updates`.
+        *   **Manual 1-Tap Ledger Push**: Added **"☁ Push to Sheets"** button in Daily Substitution Register and **"📤 Push Today's Ledger"** in Settings.
+    *   **Dynamic Header Detection & Combined Class Parser**:
+        *   Upgraded `parseTimetableFromCSV()` with dynamic header detection scanning the first 10 rows for table banners/titles.
+        *   Added multi-class merger for combined sports/games/drill slots (e.g. `+ KG B`).
 
 ## 10. Appendix: Technical Specifications
 

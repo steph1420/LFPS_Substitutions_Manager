@@ -35,7 +35,7 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge">v1.30</span>
+                <span class="version-badge">v1.31</span>
                 <button id="role-badge-btn" class="role-badge-btn" title="Switch Active Role (Admin / AC / Asst AC / Teacher)">
                     <span id="role-badge-icon">🛡</span>
                     <span id="role-badge-text">Admin</span>
@@ -170,6 +170,10 @@
                         <p style="color: var(--text-secondary); font-size: 13px; margin-top: 2px;">High-density ledger of absent teacher classes, coverage status, and smart solver proposals.</p>
                     </div>
                     <div class="register-header-actions">
+                        <button id="push-ledger-btn" class="btn-ledger-cloud" title="Push today's substitutions to Google Sheets Daily_Ledger">
+                            <span class="sync-icon">☁</span>
+                            <span>Push to Sheets</span>
+                        </button>
                         <button id="auto-resolve-btn" class="btn-magic hidden">✨ Smart Auto-Resolve</button>
                     </div>
                 </div>
@@ -364,6 +368,36 @@
                         <input type="checkbox" id="same-period-lock-toggle" checked>
                         <span class="slider round"></span>
                     </label>
+                </div>
+            </div>
+
+            <!-- Google Sheets Cloud Sync & Master Source of Truth -->
+            <div class="settings-group" id="cloud-sync-settings-group">
+                <div class="settings-group-title">Google Sheets Cloud Sync (2-Way Live Sync)</div>
+                <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:10px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Google Apps Script Web App / Sheet URL</span>
+                        <span class="settings-row-desc">Sync master routine updates and automatically push daily substitution records back to Google Sheets.</span>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <input type="url" id="sheets-csv-url-input" class="apple-input" style="font-size:12px; flex:1;" placeholder="https://script.google.com/macros/s/.../exec">
+                        <button id="btn-save-sheets-url" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; white-space:nowrap;">Save URL</button>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px; flex-wrap:wrap; gap:8px;">
+                        <div id="cloud-sync-status-text" style="font-size:11px; color:var(--text-secondary);">
+                            Status: <span id="sync-last-time">Local Baseline (Not Synced)</span>
+                        </div>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <button id="btn-push-sheets" class="btn-secondary" style="font-size:12px; padding:6px 12px; font-weight:700; display:flex; align-items:center; gap:6px;" title="Push today's substitutions to Google Sheets Daily_Ledger">
+                                <span>📤</span>
+                                <span>Push Today's Ledger</span>
+                            </button>
+                            <button id="btn-sync-now" class="btn-primary" style="font-size:12px; padding:6px 14px; font-weight:700; background:var(--accent-blue); display:flex; align-items:center; gap:6px;">
+                                <span id="sync-spinner" class="sync-icon">☁</span>
+                                <span>Sync Routine</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -588,6 +622,42 @@
     </div>
     <div id="tour-overlay" class="overlay"></div>
 
+    <!-- Cloud Sync Conflict Resolver & Diff Preview Modal -->
+    <div id="cloud-conflict-modal" class="settings-modal cloud-conflict-modal hidden">
+        <div class="settings-modal-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:20px;">☁</span>
+                <h3>Cloud vs. Local Conflict Detected</h3>
+            </div>
+            <button id="close-cloud-conflict-btn" class="settings-close-btn" aria-label="Close Conflict Dialog">✕</button>
+        </div>
+        <div class="settings-modal-body">
+            <div style="font-size:13px; color:var(--text-secondary); line-height:1.4;">
+                The remote Google Sheet timetable has been updated since your last sync, but you also have local adjustments in this browser.
+            </div>
+
+            <!-- Summary Diff Badges -->
+            <div id="cloud-diff-summary" style="display:flex; gap:10px; margin-top:8px; flex-wrap:wrap;">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Detailed Scrollable Diff Container -->
+            <div class="cloud-diff-container" id="cloud-diff-container">
+                <!-- Populated by JS: Diff list with Day, Period, Teacher, Local vs Remote -->
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display:flex; gap:10px; justify-content:space-between; margin-top:12px; flex-wrap:wrap;">
+                <button id="btn-conflict-keep-local" class="btn-secondary" style="font-weight:600;">Keep Local Changes</button>
+                <div style="display:flex; gap:8px;">
+                    <button id="btn-conflict-cancel" class="btn-secondary">Cancel</button>
+                    <button id="btn-conflict-accept-cloud" class="btn-primary" style="background:var(--accent-blue); font-weight:700;">✓ Accept Cloud Routine</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="cloud-conflict-overlay" class="overlay"></div>
+
     <!-- 4-Digit Apple HIG Passcode / PIN Modal for Master Routine Protection -->
     <div id="pin-modal" class="settings-modal pin-modal hidden">
         <div class="settings-modal-header">
@@ -701,6 +771,6 @@
     </div>
     <div id="master-cell-overlay" class="overlay"></div>
 
-    <script src="app.js?v=1.30"></script>
+    <script src="app.js?v=1.31"></script>
 </body>
 </html>
