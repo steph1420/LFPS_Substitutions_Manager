@@ -184,6 +184,22 @@ const state = {
     *   **Admin/AC-Gated Substitution Dispute Engine**:
         *   Added `#admin-dispute-setting-row` (`Allow Substitution Disputes` toggle) in Settings, visible exclusively to `Admin`, `AC`, `Asst AC`, and `offAC`.
         *   When enabled, unaccepted substitutions show a **`⚑ Dispute`** button opening `#dispute-modal` with an optional reason text box (`#dispute-reason-input`), flagging the assignment as `⚑ Disputed` with the teacher's note displayed inline in the Daily Substitution Register.
+*   **v1.30 Release (Protected In-App Master Routine Editor & Apple HIG 4-Digit Passcode PIN Pad)**:
+    *   **4-Digit Passcode / PIN Pad Modal (`#pin-modal`)**:
+        *   Secures Master Routine baseline editing behind an Apple-style circular numeric keypad (`0-9`, `⌫`) with 4 animated indicator dots (`.pin-indicator-dots`) and tactile vibration/shake error animations (`pinShake`).
+        *   Configurable PIN (`state.settings.adminPin`, default `1234`) with instant update in Settings for Admin and AC roles.
+        *   Direct keyboard numeric input and `Escape` key support.
+    *   **In-App Master Routine Baseline Editor (`state.isMasterEditMode`)**:
+        *   Toggled via header lock button (`#master-lock-btn`) or `toggleMasterEditMode()`.
+        *   Displays an amber animated notice banner (`#master-edit-banner`) above the grid (`🛠 Master Routine Baseline Editing Mode Active`) with 1-click **✓ Save Baseline** and **Cancel** controls.
+        *   Hover crosshairs and cell borders switch to cell editing cursors (`cursor: cell`) with dashed amber outlines.
+    *   **Cell Inspector & Routine Allocation Modal (`#master-cell-modal`)**:
+        *   Clicking any cell in Master Edit mode opens the Allocation Inspector showing the teacher profile, target period, and day.
+        *   **Class Section Quick Selector**: Fast segment pills (`KG A`, `KG B`, `PREP A`, `PREP B`, `KG A + B`, `PREP A + B`) plus 1-tap "Mark Free".
+        *   **Curriculum-Aware Subject Chips**: Populates quick chips directly from the teacher's official Excel subject pool (`assignedSubjectPool`) alongside a custom search input.
+        *   **Co-Teaching Allocation Partner**: Optional dropdown to pair a colleague for shared classes in 1-click.
+        *   **Live Collision Scanner in Dialog**: Warns instantly (`#master-collision-warning`) if another teacher already teaches that class section in the period.
+        *   **Atomic Baseline Commit**: Edits stage in an in-memory clone (`stagedMasterSchedule`) and commit cleanly into `state.baseSchedule` and `state.schedule` on Save, persisting to `localStorage`.
 
 ## 10. Appendix: Technical Specifications
 

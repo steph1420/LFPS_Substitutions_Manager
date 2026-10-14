@@ -35,7 +35,7 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
-                <span class="version-badge">v1.29</span>
+                <span class="version-badge">v1.30</span>
                 <button id="role-badge-btn" class="role-badge-btn" title="Switch Active Role (Admin / AC / Asst AC / Teacher)">
                     <span id="role-badge-icon">🛡</span>
                     <span id="role-badge-text">Admin</span>
@@ -53,9 +53,14 @@
                 <button id="reset-schedule-btn" class="btn-secondary" title="Reset Schedule to Baseline">
                     <span class="btn-icon">↺</span><span class="btn-text"> Reset</span>
                 </button>
-                <button id="edit-toggle-btn" class="btn-primary" title="Toggle Timetable Editing">
-                    <span class="btn-icon">✎</span><span class="btn-text"> Edit Schedule</span>
-                </button>
+                <div class="edit-btn-group" id="edit-btn-group" style="position:relative;">
+                    <button id="edit-toggle-btn" class="btn-primary" title="Toggle Timetable Editing">
+                        <span class="btn-icon">✎</span><span class="btn-text" id="edit-btn-label"> Edit Schedule</span>
+                    </button>
+                    <button id="master-lock-btn" class="btn-secondary" style="padding: 0 9px; font-size: 13px;" title="Master Routine Baseline Locked (Click to enter PIN & edit master routine)">
+                        <span id="master-lock-icon">🔒</span>
+                    </button>
+                </div>
                 <button id="tour-btn" class="btn-icon-circle" aria-label="Feature Tour" title="App Features & Overview">💡</button>
                 <button id="settings-btn" class="settings-btn" aria-label="Settings" title="Settings">
                     <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -121,6 +126,21 @@
                             <span class="slider round"></span>
                             <span class="label-text">Hide Absent</span>
                         </label>
+                    </div>
+                </div>
+
+                <!-- Master Baseline Editing Notice Bar -->
+                <div id="master-edit-banner" class="master-edit-banner hidden">
+                    <div class="master-edit-banner-info">
+                        <span class="master-edit-pulse"></span>
+                        <div>
+                            <strong>🛠 Master Routine Baseline Editing Mode Active</strong>
+                            <div class="master-edit-subtext">Click any cell to edit subject, class section, or co-teaching partners. Changes will permanently update the school timetable baseline.</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button id="master-edit-save-btn" class="btn-primary" style="background: var(--accent-green); padding: 6px 14px; font-weight: 700;">✓ Save Baseline</button>
+                        <button id="master-edit-cancel-btn" class="btn-secondary" style="padding: 6px 12px;">Cancel</button>
                     </div>
                 </div>
                 
@@ -295,6 +315,16 @@
             <div class="settings-group">
                 <div class="settings-group-title">Preferences & Coordinator Controls</div>
                 <!-- Admin / AC / Asst AC / offAC Only Setting -->
+                <div class="settings-row" id="admin-pin-setting-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Admin Master Routine PIN <span class="admin-only-tag">Admin / AC Only</span></span>
+                        <span class="settings-row-desc">4-digit passcode required to unlock and edit the Master Timetable baseline.</span>
+                    </div>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <input type="password" id="admin-pin-input" maxlength="4" class="apple-input" style="width:70px; text-align:center; font-size:14px; letter-spacing:3px; padding:4px 8px;" placeholder="••••" value="1234">
+                        <button id="btn-save-pin" class="btn-secondary" style="font-size:11px; padding:6px 10px; font-weight:700;">Update</button>
+                    </div>
+                </div>
                 <div class="settings-row" id="admin-dispute-setting-row">
                     <div class="settings-row-info">
                         <span class="settings-row-label">Allow Substitution Disputes <span class="admin-only-tag">Admin / AC Only</span></span>
@@ -558,6 +588,119 @@
     </div>
     <div id="tour-overlay" class="overlay"></div>
 
-    <script src="app.js?v=1.29"></script>
+    <!-- 4-Digit Apple HIG Passcode / PIN Modal for Master Routine Protection -->
+    <div id="pin-modal" class="settings-modal pin-modal hidden">
+        <div class="settings-modal-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:20px;">🔐</span>
+                <h3 id="pin-modal-title">Admin Passcode Required</h3>
+            </div>
+            <button id="close-pin-modal-btn" class="settings-close-btn" aria-label="Close PIN Pad">✕</button>
+        </div>
+        <div class="settings-modal-body pin-modal-body">
+            <p id="pin-modal-subtext" style="font-size:13px; color:var(--text-secondary); text-align:center; margin:0 0 10px 0;">
+                Enter 4-digit PIN to unlock Master Routine editing.
+            </p>
+            
+            <!-- 4-dot Visual Indicator -->
+            <div class="pin-indicator-dots" id="pin-dots">
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+            </div>
+
+            <!-- Apple-Style Numeric Keypad -->
+            <div class="pin-keypad">
+                <button class="pin-key-btn" data-key="1">1</button>
+                <button class="pin-key-btn" data-key="2">2</button>
+                <button class="pin-key-btn" data-key="3">3</button>
+                <button class="pin-key-btn" data-key="4">4</button>
+                <button class="pin-key-btn" data-key="5">5</button>
+                <button class="pin-key-btn" data-key="6">6</button>
+                <button class="pin-key-btn" data-key="7">7</button>
+                <button class="pin-key-btn" data-key="8">8</button>
+                <button class="pin-key-btn" data-key="9">9</button>
+                <button class="pin-key-btn pin-key-blank" disabled></button>
+                <button class="pin-key-btn" data-key="0">0</button>
+                <button class="pin-key-btn pin-key-delete" data-key="delete" title="Backspace">⌫</button>
+            </div>
+            
+            <div id="pin-error-text" class="pin-error-text hidden">Incorrect PIN. Try again.</div>
+        </div>
+    </div>
+    <div id="pin-overlay" class="overlay"></div>
+
+    <!-- Master Timetable Cell Inspector & Allocation Editor Modal -->
+    <div id="master-cell-modal" class="settings-modal master-cell-modal hidden">
+        <div class="settings-modal-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:20px;">🛠</span>
+                <h3 id="master-cell-modal-title">Edit Routine Allocation</h3>
+            </div>
+            <button id="close-master-cell-modal-btn" class="settings-close-btn" aria-label="Close Allocation Editor">✕</button>
+        </div>
+        <div class="settings-modal-body">
+            <!-- Context Header -->
+            <div id="master-cell-context" class="master-cell-context-box">
+                <!-- Populated by JS: Teacher, Period, Day -->
+            </div>
+
+            <!-- Allocation Form -->
+            <div class="master-form-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <label style="font-size:12px; font-weight:700; color:var(--text-secondary); text-transform:uppercase;">Class Section</label>
+                    <button id="master-free-btn" class="btn-secondary" style="font-size:11px; padding:3px 8px;">Mark Free</button>
+                </div>
+                <div class="master-section-pills" id="master-section-selector">
+                    <button class="section-pill-btn" data-section="KG A">KG A</button>
+                    <button class="section-pill-btn" data-section="KG B">KG B</button>
+                    <button class="section-pill-btn" data-section="PREP A">PREP A</button>
+                    <button class="section-pill-btn" data-section="PREP B">PREP B</button>
+                    <button class="section-pill-btn" data-section="KG A + KG B">KG A + B</button>
+                    <button class="section-pill-btn" data-section="PREP A + PREP B">PREP A + B</button>
+                </div>
+            </div>
+
+            <div class="master-form-section">
+                <label style="font-size:12px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:6px; display:block;">Subject / Task</label>
+                <div style="position:relative; margin-bottom:8px;">
+                    <input type="text" id="master-subject-input" class="apple-input" placeholder="Search or type subject (e.g. ENG. REC., M. SC.)...">
+                </div>
+                <!-- Quick Filter Subject Chips -->
+                <div style="font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Teacher's Assigned Subjects:</div>
+                <div class="master-quick-subjects" id="master-quick-subjects">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Co-Teaching Partner Selector -->
+            <div class="master-form-section">
+                <label style="font-size:12px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:6px; display:block;">Co-Teaching Partner <span style="font-weight:400; font-size:11px;">(Optional)</span></label>
+                <select id="master-partner-select" class="apple-select" style="width:100%;">
+                    <option value="">None (Solo Class)</option>
+                    <!-- Populated by JS -->
+                </select>
+            </div>
+
+            <!-- Live Collision Preview Warning in Modal -->
+            <div id="master-collision-warning" class="master-collision-warning hidden">
+                <span style="font-size:16px;">⚠</span>
+                <span id="master-collision-text"></span>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display:flex; gap:10px; justify-content:space-between; margin-top:10px;">
+                <button id="master-cell-delete-btn" class="btn-secondary" style="color:var(--accent-pink);">Clear Slot</button>
+                <div style="display:flex; gap:8px;">
+                    <button id="master-cell-cancel-btn" class="btn-secondary">Cancel</button>
+                    <button id="master-cell-apply-btn" class="btn-primary" style="background:var(--accent-blue);">Apply Cell</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="master-cell-overlay" class="overlay"></div>
+
+    <script src="app.js?v=1.30"></script>
 </body>
 </html>

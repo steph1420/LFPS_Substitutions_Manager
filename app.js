@@ -2,6 +2,8 @@
 const state = {
     day: 'MON',
     isEditMode: false,
+    isMasterEditMode: false,
+    isMasterUnlocked: false,
     routineViewMode: 'teacher', // 'teacher' | 'class'
     currentRole: 'admin', // 'admin' | 'ac' | 'asst_ac' | 'teacher'
     activeTeacher: 'Mrs. R. Pahwa',
@@ -17,7 +19,8 @@ const state = {
         samePeriodLock: true,
         minimizeAlerts: false,
         detectCollisions: true,
-        allowDisputes: true
+        allowDisputes: true,
+        adminPin: '1234'
     },
     actionHistory: {
         grid: [], 
@@ -567,7 +570,7 @@ function loadStateFromStorage() {
             state.officiatingCT = parsed.officiatingCT || {};
             state.displaced = parsed.displaced || { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] };
             state.absentTeachers = new Set(parsed.absentTeachers || []);
-            state.settings = Object.assign({ samePeriodLock: true, minimizeAlerts: false, detectCollisions: true, allowDisputes: true }, parsed.settings);
+            state.settings = Object.assign({ samePeriodLock: true, minimizeAlerts: false, detectCollisions: true, allowDisputes: true, adminPin: '1234' }, parsed.settings);
             
             // Automatic migration of periods
             migratePeriodNames(state.schedule);
@@ -739,13 +742,86 @@ function bindEvents() {
     const editBtn = document.getElementById('edit-toggle-btn');
     if (editBtn) {
         editBtn.addEventListener('click', () => {
+            if (state.isMasterEditMode) {
+                // If currently in master edit mode, clicking this prompts to save baseline
+                saveMasterBaseline();
+                return;
+            }
             state.isEditMode = !state.isEditMode;
-            editBtn.textContent = state.isEditMode ? 'Save Schedule' : 'Edit Schedule';
-            editBtn.classList.toggle('save-mode', state.isEditMode);
             selectedCell = null; 
+            updateMasterLockUI();
             renderAll(); 
+            showToast(state.isEditMode ? 'Edit Schedule Mode enabled (Drag & drop to move tasks)' : 'Schedule saved.');
         });
     }
+
+    // Master Routine PIN lock button
+    safeBind('master-lock-btn', 'click', () => {
+        if (state.isMasterUnlocked) {
+            // Already unlocked -> toggle master editing mode
+            toggleMasterEditMode();
+        } else {
+            // Locked -> prompt 4-digit PIN
+            openPinModal('Admin Passcode Required', 'Enter 4-digit PIN to edit Master Routine baseline.', () => {
+                toggleMasterEditMode(true);
+            });
+        }
+    });
+
+    // Master Baseline Banner action buttons
+    safeBind('master-edit-save-btn', 'click', saveMasterBaseline);
+    safeBind('master-edit-cancel-btn', 'click', cancelMasterBaseline);
+
+    // PIN Modal bindings
+    safeBind('close-pin-modal-btn', 'click', closePinModal);
+    safeBind('pin-overlay', 'click', closePinModal);
+    document.querySelectorAll('.pin-key-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const key = btn.dataset.key;
+            if (key) handlePinKey(key);
+        });
+    });
+
+    // Master Cell Editor Modal bindings
+    safeBind('close-master-cell-modal-btn', 'click', closeMasterCellModal);
+    safeBind('master-cell-overlay', 'click', closeMasterCellModal);
+    safeBind('master-cell-cancel-btn', 'click', closeMasterCellModal);
+    safeBind('master-cell-apply-btn', 'click', applyMasterCellAllocation);
+    safeBind('master-cell-delete-btn', 'click', clearMasterCellAllocation);
+    safeBind('master-free-btn', 'click', () => {
+        const subjInput = document.getElementById('master-subject-input');
+        if (subjInput) subjInput.value = '';
+        document.querySelectorAll('.section-pill-btn').forEach(b => b.classList.remove('active'));
+        checkMasterCellCollision();
+    });
+
+    // Master Section Pills
+    document.querySelectorAll('.section-pill-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const isAlreadyActive = btn.classList.contains('active');
+            document.querySelectorAll('.section-pill-btn').forEach(b => b.classList.remove('active'));
+            if (!isAlreadyActive) {
+                btn.classList.add('active');
+            }
+            checkMasterCellCollision();
+        });
+    });
+
+    safeBind('master-subject-input', 'input', checkMasterCellCollision);
+    safeBind('master-partner-select', 'change', checkMasterCellCollision);
+
+    // Admin PIN Update in Settings
+    safeBind('btn-save-pin', 'click', () => {
+        const pinInput = document.getElementById('admin-pin-input');
+        const val = pinInput ? pinInput.value.trim() : '';
+        if (val.length === 4 && /^\d{4}$/.test(val)) {
+            state.settings.adminPin = val;
+            saveStateToStorage();
+            showToast('✓ Admin Master Routine PIN updated successfully!');
+        } else {
+            showToast('PIN must be exactly 4 digits.', true);
+        }
+    });
 
     safeBind('hide-absent-toggle', 'change', renderAll);
     
@@ -1627,6 +1703,421 @@ function resetDisplacedItemToOriginal(itemId) {
 }
 window.resetDisplacedItemToOriginal = resetDisplacedItemToOriginal;
 
+// ==========================================================================
+// MASTER ROUTINE BASELINE EDITOR & 4-DIGIT PIN PASSCODE ENGINE (APPLE HIG)
+// ==========================================================================
+
+let enteredPin = '';
+let pinSuccessCallback = null;
+let activeMasterCell = null; // { period, teacher, day }
+let stagedMasterSchedule = null; // In-memory working copy while in master edit mode
+
+function updateMasterLockUI() {
+    const lockBtn = document.getElementById('master-lock-btn');
+    const lockIcon = document.getElementById('master-lock-icon');
+    const editBtnLabel = document.getElementById('edit-btn-label');
+    const editBtn = document.getElementById('edit-toggle-btn');
+
+    if (!lockBtn || !lockIcon) return;
+
+    if (state.isMasterUnlocked) {
+        lockBtn.classList.add('unlocked');
+        lockIcon.textContent = '🔓';
+        lockBtn.title = 'Master Baseline Unlocked (Click to lock or switch modes)';
+    } else {
+        lockBtn.classList.remove('unlocked');
+        lockIcon.textContent = '🔒';
+        lockBtn.title = 'Master Baseline Locked (Click to enter PIN & edit master routine)';
+    }
+
+    if (state.isMasterEditMode) {
+        if (editBtn) {
+            editBtn.classList.add('save-mode');
+            editBtn.style.background = 'var(--accent-orange)';
+        }
+        if (editBtnLabel) editBtnLabel.textContent = ' 🛠 Master Edit';
+    } else if (state.isEditMode) {
+        if (editBtn) {
+            editBtn.classList.add('save-mode');
+            editBtn.style.background = '';
+        }
+        if (editBtnLabel) editBtnLabel.textContent = ' Save Schedule';
+    } else {
+        if (editBtn) {
+            editBtn.classList.remove('save-mode');
+            editBtn.style.background = '';
+        }
+        if (editBtnLabel) editBtnLabel.textContent = ' Edit Schedule';
+    }
+}
+
+function openPinModal(title = 'Admin Passcode Required', subtext = 'Enter 4-digit PIN to unlock Master Routine editing.', onSuccess = null) {
+    enteredPin = '';
+    pinSuccessCallback = onSuccess;
+
+    const modal = document.getElementById('pin-modal');
+    const overlay = document.getElementById('pin-overlay');
+    const titleEl = document.getElementById('pin-modal-title');
+    const subtextEl = document.getElementById('pin-modal-subtext');
+    const errEl = document.getElementById('pin-error-text');
+
+    if (titleEl) titleEl.textContent = title;
+    if (subtextEl) subtextEl.textContent = subtext;
+    if (errEl) errEl.classList.add('hidden');
+
+    renderPinDots();
+
+    if (modal && overlay) {
+        modal.classList.remove('hidden');
+        overlay.classList.add('active');
+    }
+}
+
+function closePinModal() {
+    enteredPin = '';
+    pinSuccessCallback = null;
+    const modal = document.getElementById('pin-modal');
+    const overlay = document.getElementById('pin-overlay');
+    if (modal && overlay) {
+        modal.classList.add('hidden');
+        overlay.classList.remove('active');
+    }
+}
+
+function renderPinDots() {
+    const dotsContainer = document.getElementById('pin-dots');
+    if (!dotsContainer) return;
+    const dots = dotsContainer.querySelectorAll('.pin-dot');
+    dots.forEach((dot, idx) => {
+        dot.classList.toggle('filled', idx < enteredPin.length);
+    });
+}
+
+function handlePinKey(key) {
+    const errEl = document.getElementById('pin-error-text');
+    if (errEl) errEl.classList.add('hidden');
+
+    if (key === 'delete') {
+        if (enteredPin.length > 0) {
+            enteredPin = enteredPin.slice(0, -1);
+            renderPinDots();
+        }
+        return;
+    }
+
+    if (enteredPin.length < 4) {
+        enteredPin += key;
+        renderPinDots();
+
+        if (enteredPin.length === 4) {
+            // Verify PIN
+            const currentPin = state.settings.adminPin || '1234';
+            if (enteredPin === currentPin) {
+                state.isMasterUnlocked = true;
+                updateMasterLockUI();
+                showToast('🔓 Passcode accepted: Master Baseline unlocked');
+                const cb = pinSuccessCallback;
+                closePinModal();
+                if (typeof cb === 'function') {
+                    cb();
+                } else {
+                    toggleMasterEditMode(true);
+                }
+            } else {
+                // Shake and error
+                if (errEl) {
+                    errEl.textContent = 'Incorrect PIN. Try again.';
+                    errEl.classList.remove('hidden');
+                }
+                const modal = document.getElementById('pin-modal');
+                if (modal) {
+                    modal.style.animation = 'pinShake 0.4s ease';
+                    setTimeout(() => { if (modal) modal.style.animation = ''; }, 450);
+                }
+                setTimeout(() => {
+                    enteredPin = '';
+                    renderPinDots();
+                }, 400);
+            }
+        }
+    }
+}
+
+function toggleMasterEditMode(forceState = null) {
+    if (!hasCoordinatorPermissions() && !state.isMasterUnlocked) {
+        showToast('Admin or Academic Coordinator role required to edit Master Routine.', true);
+        return;
+    }
+
+    if (!state.isMasterUnlocked) {
+        openPinModal('Admin Passcode Required', 'Enter 4-digit PIN to edit Master Routine baseline.', () => {
+            toggleMasterEditMode(true);
+        });
+        return;
+    }
+
+    const nextState = forceState !== null ? forceState : !state.isMasterEditMode;
+    state.isMasterEditMode = nextState;
+
+    if (state.isMasterEditMode) {
+        state.isEditMode = false; // Turn off daily dragging mode while editing master baseline
+        // Stage a deep clone of baseSchedule for atomic saving
+        stagedMasterSchedule = JSON.parse(JSON.stringify(state.baseSchedule));
+        showToast('🛠 Master Routine Editing Mode: Tap any cell to configure allocation.');
+    } else {
+        stagedMasterSchedule = null;
+        showToast('Exited Master Baseline editing mode.');
+    }
+
+    updateMasterLockUI();
+    renderAll();
+}
+
+function saveMasterBaseline() {
+    if (!stagedMasterSchedule) {
+        state.isMasterEditMode = false;
+        updateMasterLockUI();
+        renderAll();
+        return;
+    }
+
+    // Save previous baseline for undo safety
+    const previousBaseline = JSON.parse(JSON.stringify(state.baseSchedule));
+
+    // Commit staged changes to baseSchedule
+    state.baseSchedule = JSON.parse(JSON.stringify(stagedMasterSchedule));
+
+    // Also synchronize current day's active schedule for untouched cells
+    days.forEach(d => {
+        periods.forEach(p => {
+            if (p === 'BREAK' || p === 'BREAKFAST BREAK' || p === 'BREAKFAST') return;
+            teachers.forEach(t => {
+                const prevBase = previousBaseline[d]?.[p]?.[t];
+                const curSched = state.schedule[d]?.[p]?.[t];
+                const newBase = state.baseSchedule[d]?.[p]?.[t];
+                // If the working schedule cell was untouched (i.e. identical to previous base), update to new base
+                if (curSched === prevBase || !curSched) {
+                    if (!state.schedule[d]) state.schedule[d] = {};
+                    if (!state.schedule[d][p]) state.schedule[d][p] = {};
+                    state.schedule[d][p][t] = newBase;
+                }
+            });
+        });
+    });
+
+    state.isMasterEditMode = false;
+    stagedMasterSchedule = null;
+    saveStateToStorage();
+    updateMasterLockUI();
+    renderAll();
+    showToast('✓ Master Timetable Baseline saved successfully!');
+}
+
+function cancelMasterBaseline() {
+    state.isMasterEditMode = false;
+    stagedMasterSchedule = null;
+    updateMasterLockUI();
+    renderAll();
+    showToast('Cancelled Master Routine baseline modifications.');
+}
+
+// Master Cell Inspector & Allocation Modal
+function handleMasterCellClick(period, teacher) {
+    if (period === 'BREAK' || period === 'BREAKFAST BREAK' || period === 'BREAKFAST') {
+        showToast('The BREAK column is a fixed school break.');
+        return;
+    }
+
+    const day = state.day;
+    activeMasterCell = { period, teacher, day };
+
+    const targetSched = stagedMasterSchedule || state.baseSchedule;
+    const currentTask = targetSched[day]?.[period]?.[teacher] || 'Free';
+
+    // Populate Context Header
+    const contextEl = document.getElementById('master-cell-context');
+    if (contextEl) {
+        const staff = staffDirectory[teacher];
+        contextEl.innerHTML = `
+            <div>
+                <strong style="font-size:14px;">${teacher}</strong>
+                <div style="font-size:11px; color:var(--text-secondary);">${staff?.role || ''} • ${staff?.primaryClass ? 'CT ' + staff.primaryClass : ''}</div>
+            </div>
+            <div style="text-align:right;">
+                <span class="badge" style="background:var(--accent-blue); color:#fff; font-size:11px; font-weight:700;">${day} • ${period}</span>
+                <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">Current: <b>${currentTask}</b></div>
+            </div>
+        `;
+    }
+
+    // Parse existing task into section and subject
+    const parsed = parseTaskDetails(currentTask);
+    const existingSection = parsed.section || '';
+    let existingSubject = parsed.subjectPrefix || (currentTask === 'Free' ? '' : currentTask);
+
+    // Sync Section Pill selection
+    const sectionContainer = document.getElementById('master-section-selector');
+    if (sectionContainer) {
+        sectionContainer.querySelectorAll('.section-pill-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.section === existingSection);
+        });
+    }
+
+    // Sync Subject Input
+    const subjInput = document.getElementById('master-subject-input');
+    if (subjInput) {
+        subjInput.value = existingSubject;
+    }
+
+    // Populate Quick Subject Chips from Teacher's Subject Pool
+    const quickChips = document.getElementById('master-quick-subjects');
+    if (quickChips) {
+        const pool = staffDirectory[teacher]?.assignedSubjectPool || [];
+        if (pool.length > 0) {
+            quickChips.innerHTML = pool.map(s => `
+                <button type="button" class="quick-subj-chip" onclick="selectMasterQuickSubject('${s}')">${s}</button>
+            `).join('');
+        } else {
+            quickChips.innerHTML = `<span style="font-size:11px; color:var(--text-secondary); padding:4px;">No pool defined</span>`;
+        }
+    }
+
+    // Populate Co-Teaching Partner Selector
+    const partnerSelect = document.getElementById('master-partner-select');
+    if (partnerSelect) {
+        let partnersHtml = '<option value="">None (Solo Class)</option>';
+        const currentPartners = getCoTeachingPartners(day, period, teacher);
+        teachers.forEach(t => {
+            if (t !== teacher) {
+                const isSelected = currentPartners.includes(t);
+                const tSched = targetSched[day]?.[period]?.[t] || 'Free';
+                partnersHtml += `<option value="${t}" ${isSelected ? 'selected' : ''}>${t} (Currently: ${tSched})</option>`;
+            }
+        });
+        partnerSelect.innerHTML = partnersHtml;
+    }
+
+    checkMasterCellCollision();
+
+    const modal = document.getElementById('master-cell-modal');
+    const overlay = document.getElementById('master-cell-overlay');
+    if (modal && overlay) {
+        modal.classList.remove('hidden');
+        overlay.classList.add('active');
+    }
+}
+window.handleMasterCellClick = handleMasterCellClick;
+
+function selectMasterQuickSubject(subjectName) {
+    const subjInput = document.getElementById('master-subject-input');
+    if (subjInput) {
+        subjInput.value = subjectName;
+        checkMasterCellCollision();
+    }
+}
+window.selectMasterQuickSubject = selectMasterQuickSubject;
+
+function checkMasterCellCollision() {
+    if (!activeMasterCell) return;
+    const { period, teacher, day } = activeMasterCell;
+    const warningEl = document.getElementById('master-collision-warning');
+    const warningText = document.getElementById('master-collision-text');
+    if (!warningEl || !warningText) return;
+
+    // Get selected section
+    const activeSectionBtn = document.querySelector('.section-pill-btn.active');
+    const section = activeSectionBtn ? activeSectionBtn.dataset.section : '';
+    const partner = document.getElementById('master-partner-select')?.value || '';
+
+    if (!section) {
+        warningEl.classList.add('hidden');
+        return;
+    }
+
+    const targetSched = stagedMasterSchedule || state.baseSchedule;
+    const conflicts = [];
+
+    // Check if other teachers (other than active teacher and selected partner) teach this section in this period
+    teachers.forEach(t => {
+        if (t !== teacher && t !== partner) {
+            const task = targetSched[day]?.[period]?.[t];
+            if (task && task !== 'Free' && task !== '-') {
+                const secs = extractClassSections(task);
+                if (secs.some(s => section.includes(s) || s.includes(section))) {
+                    conflicts.push(`${t} is already assigned "${task}"`);
+                }
+            }
+        }
+    });
+
+    if (conflicts.length > 0) {
+        warningText.textContent = `Warning: Section ${section} collision: ${conflicts.join(', ')}`;
+        warningEl.classList.remove('hidden');
+    } else {
+        warningEl.classList.add('hidden');
+    }
+}
+
+function applyMasterCellAllocation() {
+    if (!activeMasterCell) return;
+    const { period, teacher, day } = activeMasterCell;
+    const targetSched = stagedMasterSchedule || state.baseSchedule;
+
+    const activeSectionBtn = document.querySelector('.section-pill-btn.active');
+    const section = activeSectionBtn ? activeSectionBtn.dataset.section : '';
+    const subject = document.getElementById('master-subject-input')?.value.trim() || '';
+    const partner = document.getElementById('master-partner-select')?.value || '';
+
+    let taskName = 'Free';
+    if (subject && section) {
+        taskName = `${subject} ${section}`;
+    } else if (subject) {
+        taskName = subject;
+    } else if (section) {
+        taskName = section;
+    }
+
+    if (!targetSched[day]) targetSched[day] = {};
+    if (!targetSched[day][period]) targetSched[day][period] = {};
+
+    targetSched[day][period][teacher] = taskName;
+
+    // If a partner was selected, assign them identical task for co-teaching
+    if (partner) {
+        targetSched[day][period][partner] = taskName;
+    }
+
+    closeMasterCellModal();
+    renderAll();
+    showToast(`Updated allocation for ${teacher}: ${taskName}`);
+}
+
+function clearMasterCellAllocation() {
+    if (!activeMasterCell) return;
+    const { period, teacher, day } = activeMasterCell;
+    const targetSched = stagedMasterSchedule || state.baseSchedule;
+
+    if (!targetSched[day]) targetSched[day] = {};
+    if (!targetSched[day][period]) targetSched[day][period] = {};
+
+    targetSched[day][period][teacher] = 'Free';
+
+    closeMasterCellModal();
+    renderAll();
+    showToast(`Cleared allocation for ${teacher} (${period}).`);
+}
+
+function closeMasterCellModal() {
+    activeMasterCell = null;
+    const modal = document.getElementById('master-cell-modal');
+    const overlay = document.getElementById('master-cell-overlay');
+    if (modal && overlay) {
+        modal.classList.add('hidden');
+        overlay.classList.remove('active');
+    }
+}
+
+
 function extractClassSection(task) {
     if (!task || task === 'Free' || task === '-' || task === '') return null;
     const clean = task.trim().toUpperCase();
@@ -1850,7 +2341,7 @@ function updateRolePermissionsUI() {
         }
     }
 
-    // Show/hide Admin/AC-only Dispute setting row
+    // Show/hide Admin/AC-only Dispute and PIN setting rows
     const isCoord = hasCoordinatorPermissions();
     if (disputeSettingRow) {
         disputeSettingRow.classList.toggle('hidden', !isCoord);
@@ -1858,6 +2349,17 @@ function updateRolePermissionsUI() {
     if (allowDisputesToggle) {
         allowDisputesToggle.checked = state.settings.allowDisputes !== false;
     }
+    const pinSettingRow = document.getElementById('admin-pin-setting-row');
+    if (pinSettingRow) {
+        pinSettingRow.classList.toggle('hidden', !isCoord);
+    }
+    const pinInput = document.getElementById('admin-pin-input');
+    if (pinInput) {
+        pinInput.value = state.settings.adminPin || '1234';
+    }
+
+    // Sync master lock icon
+    updateMasterLockUI();
 }
 
 function renderOfficiatingBanners() {
@@ -2313,6 +2815,13 @@ function renderTableRoutine() {
         b.classList.toggle('active', b.dataset.view === (state.routineViewMode || 'teacher'));
     });
 
+    // Sync Master Baseline Edit mode banner & body styling
+    const masterBanner = document.getElementById('master-edit-banner');
+    if (masterBanner) {
+        masterBanner.classList.toggle('hidden', !state.isMasterEditMode);
+    }
+    document.body.classList.toggle('master-edit-mode', !!state.isMasterEditMode);
+
     if (state.routineViewMode === 'class') {
         renderClassRoutineTable(table);
         return;
@@ -2527,7 +3036,11 @@ function renderTableRoutine() {
                 cellClasses.push('cell-just-reset');
             }
             
-            const dragAttrs = isDraggable ? `draggable="true"` : '';
+            const dragAttrs = isDraggable && !state.isMasterEditMode ? `draggable="true"` : '';
+            if (state.isMasterEditMode) {
+                clickHandler = `onclick="handleMasterCellClick('${period}', '${teacher}')"`;
+                cellTitle = `🛠 Click to edit baseline allocation for ${teacher} in ${period}`;
+            }
             
             html += `<td class="${cellClasses.join(' ')}" style="cursor:pointer;" title="${cellTitle}" data-period="${period}" data-teacher="${teacher}" ${clickHandler} ${dragAttrs}>${cellContent}</td>`;
         });
@@ -4221,10 +4734,15 @@ function redoLastAction() {
 window.redoLastAction = redoLastAction;
 
 function handleGlobalKeydown(e) {
+    const pinModal = document.getElementById('pin-modal');
+    const isPinOpen = pinModal && !pinModal.classList.contains('hidden');
+
     if (e.key === 'Escape') {
         if (isFitGridMode) {
             toggleFitGridMode(false);
         }
+        closePinModal();
+        closeMasterCellModal();
         closeOfficiatingModal();
         closeDisputeModal();
         closeAutoResolveModal();
@@ -4234,6 +4752,19 @@ function handleGlobalKeydown(e) {
         closeTourModal();
         closeBottomSheet();
         return;
+    }
+
+    // Direct numeric input when PIN modal is active
+    if (isPinOpen) {
+        if (/^[0-9]$/.test(e.key)) {
+            e.preventDefault();
+            handlePinKey(e.key);
+            return;
+        } else if (e.key === 'Backspace') {
+            e.preventDefault();
+            handlePinKey('delete');
+            return;
+        }
     }
     if ((e.metaKey || e.ctrlKey) && !e.altKey) {
         if (e.key === 'z' || e.key === 'Z') {
@@ -4843,3 +5374,11 @@ window.subjectAllocations = subjectAllocations;
 window.masterTimetableLog = masterTimetableLog;
 window.generateSimulatedData = generateSimulatedData;
 window.generateProceduralRoutine = generateProceduralRoutine;
+window.openPinModal = openPinModal;
+window.closePinModal = closePinModal;
+window.toggleMasterEditMode = toggleMasterEditMode;
+window.saveMasterBaseline = saveMasterBaseline;
+window.cancelMasterBaseline = cancelMasterBaseline;
+window.closeMasterCellModal = closeMasterCellModal;
+window.applyMasterCellAllocation = applyMasterCellAllocation;
+window.clearMasterCellAllocation = clearMasterCellAllocation;
