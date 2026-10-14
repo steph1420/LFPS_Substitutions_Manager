@@ -441,9 +441,14 @@ body {
     gap: 4px;
 }
 
-.btn-primary.save-mode {
-    background-color: var(--accent-blue);
-    color: #fff;
+.btn-primary.save-mode,
+.btn-primary[style*="background"],
+#btn-conflict-accept-cloud,
+#btn-sync-now,
+#master-edit-save-btn,
+#master-cell-apply-btn,
+#dispute-submit-btn {
+    color: #ffffff !important;
 }
 
 .btn-secondary {

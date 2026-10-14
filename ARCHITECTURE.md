@@ -124,6 +124,10 @@ const state = {
         *   Display a clear Apple HIG badge/pill on their row and cards (e.g. `⛔ Sub Unavailable: [Remark]`).
         *   Exclude unavailable teachers from substitute candidate pools in both the manual substitute picker and Smart Auto-Resolve.
         *   Persist availability status and remarks in `localStorage` under `state.subUnavailable[day][teacher]`.
+24. **[BUG] Blue Unlabelled Button in Cloud Conflict Modal & Settings Sync Row (Blue-on-Blue Text Invisibility):**
+    *   **Symptom:** In the *Cloud vs. Local Conflict Detected* modal dialog (`#btn-conflict-accept-cloud`) and the Settings panel sync row (`#btn-sync-now`), the action button renders as a blank, solid blue rounded rectangle with no readable label.
+    *   **Root Cause:** In `styles.css`, `.btn-primary` sets `color: var(--accent-blue)`. When the HTML template applies `background: var(--accent-blue)` to primary action buttons, the text is drawn in the identical blue shade as the background (`#007AFF` on `#007AFF`), rendering `✓ Accept Cloud Routine` and `Sync Routine` completely invisible.
+    *   **Fix Strategy:** Update `.btn-primary` and all accent-blue buttons in `styles.css` to enforce crisp white text (`color: #ffffff !important;`) and ensure seamless contrast across Light, Dark, Sepia, Midnight, and Retro Glass palettes.
 
 ## 8. File Map & Project Directory
 *   `index.html`: Core markup, header controls, day segmented controller, grid view, substitutions conflict list, and iOS bottom sheet modal.
