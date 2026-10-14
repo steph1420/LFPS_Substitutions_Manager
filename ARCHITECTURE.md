@@ -271,6 +271,24 @@ const state = {
         *   Strictly excluded unavailable teachers from substitute candidate lists in the bottom sheet and from the Smart Auto-Resolve solver across all 3 heuristic strategies.
     *   **Master Grid Harmonization**:
         *   Harmonized column widths across `#routine-table`: first sticky column `148px`, period columns `112px`, break column `58px`, with centered multi-line wrapping for `PLAYTIME / 2ND GOLDEN HOUR`.
+*   **v1.34 Release (Utopian Glass Aesthetics, Theme Sub-Categories & Adaptive Viewport Engine)**:
+    *   **Utopian Glass Visual Overhaul**: Full architectural Divergent upper-city glass sheen transformation with multi-stop radial backdrop, crystalline top-edge sheen highlights, iridescent prismatic borders, and deep frosted diffusion (`backdrop-filter: blur(28px)`).
+    *   **Theme Taxonomy Architecture**: Reorganized Settings Theme picker into 3 structured Base Families (`🪟 Glass Materials`, `☀️ Minimalist & Paper`, `🌙 Dark Modes`) with 11 curated variants.
+    *   **Commercial Mobile Overflow Menu (`⋮`)**: 100% mobile feature parity with secondary desktop controls tucked inside an Apple-style glass overflow dropdown.
+    *   **Zero-Scroll Desktop Layout**: Compacted header and roster footprint to display the entire master timetable above the fold without vertical scroll.
+*   **v1.35 Release (Limbo Tray Smart Restore, Haptic Jitter & Silk-Scroll Optimization)**:
+    *   **Limbo Smart Restore Engine (`handleDisplacedCardClick`)**:
+        *   Enabled direct drag-and-drop from Limbo tray across all application modes.
+        *   Implemented 1-tap smart restoration: checks if original `(ogTeacher, period)` is `Free` and restores it immediately.
+        *   Integrated complete undo/redo support (`restore_displaced`) across history stacks.
+    *   **Tactile Error Jitter Feedback (`triggerErrorJitter`)**:
+        *   Implemented `@keyframes errorJitter` (side-by-side horizontal oscillation with rotational tilt) and native haptic vibration (`navigator.vibrate([45, 55, 45])`) when restore or drag is blocked.
+    *   **GPU Hardware Compositing & Silk-Scroll Optimization**:
+        *   Decoupled table layout calculations by adding width-change guards to `window.resize`, preventing mobile address-bar collapse from triggering layout thrashing during scroll.
+        *   Promoted `.table-scroll-container` and sticky cells to independent GPU composite layers (`transform: translateZ(0)`, `contain: paint layout`, `-webkit-overflow-scrolling: touch`).
+        *   Moved `backdrop-filter` from the scrolling container to `.master-routine-container`.
+    *   **Utopian Night Mode (`utopian-night`)**:
+        *   Dark glass refraction theme featuring deep obsidian/midnight-sapphire backdrop (`linear-gradient(145deg, #03070f, #0a1930)`), 28px frosted diffusion, and radiant neon-cyan prismatic highlights.
 
 ## 10. Appendix: Technical Specifications
 

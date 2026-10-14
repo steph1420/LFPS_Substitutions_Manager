@@ -17,6 +17,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.35.0] - 2026-10-14
+
+### Fixed
+- **BUG-01 (Limbo Tray Drag & Smart Restore with Haptic Jitter)**:
+  - Enabled direct drag-and-drop from the Limbo tray (`#displaced-tray`) across all application modes (`div.draggable = true`).
+  - Implemented one-tap **Click-to-Restore**: tapping any displaced card immediately checks if its original source slot `(ogTeacher, period)` is `Free`, cleanly restoring the class and logging it to the action history.
+  - Implemented full **Undo/Redo Support** (`restore_displaced`) in `undoLastAction()` and `redoLastAction()`.
+  - Added phone-style side-by-side **Error Jitter** (`@keyframes errorJitter`) with emergency red glow and tactile vibration (`navigator.vibrate([45, 55, 45])`) whenever restoration is blocked by an occupied cell or invalid drop target.
+- **BUG-02 (Instant Viewport & Silk-Scroll Optimization)**:
+  - Promoted `.table-scroll-container` and sticky table column/cells to independent GPU composite layers (`transform: translateZ(0)`, `contain: paint layout`, `-webkit-overflow-scrolling: touch`).
+  - Added width-change guards and debouncing to `window.resize` observer so mobile vertical scrolling (address-bar collapse/expansion) never triggers table layout thrashing or synchronous reflows.
+  - Relocated heavy `backdrop-filter` from `.table-scroll-container` to `.master-routine-container`, eliminating continuous per-frame blur re-filtering during scroll.
+
+### Added
+- **Utopian Night Mode (`utopian-night`)**:
+  - Engineered dark glass refraction theme with deep obsidian/midnight-sapphire backdrop (`linear-gradient(145deg, #03070f, #0a1930)`), 28px frosted diffusion, and radiant neon-cyan prismatic edge highlights (`inset 0 1.2px 1px rgba(0, 229, 255, 0.45)`).
+  - Categorized under `🪟 Glass Materials` family in Settings alongside *Utopian Glass*, *Aero Frost*, and *Cyber Glass*.
+
 ---
 
 ## [v1.34.0] - 2026-10-14

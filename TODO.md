@@ -4,32 +4,21 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 
 ## 🐛 Critical Bug Tracker
 
-### BUG-01: Limbo Tray Drag Failure & Click-to-Restore Mechanism (CRITICAL)
-- **Status**: 🔴 Open / Investigated
-- **Reported Issue**:
-  1. **Drag Failure**: Users are unable to drag periods out of the Limbo tray (`#displaced-tray`). In standard mode, `div.draggable` is restricted by `state.isEditMode`, preventing drag interaction.
-  2. **Click-to-Restore to Original Cell**: When a subject in the Limbo tray is clicked, it should automatically attempt to restore itself back to its original cell (`item.ogTeacher` at `item.period`) if that cell is blank / free (or in any valid safe manner).
-  3. **Haptic & Visual Error Jitter**: If restoration or dragging fails (e.g., original cell is occupied or blocked), the item card should execute a side-by-side phone-style error jitter/shake animation (`@keyframes error-jitter`) paired with tactile device vibration (`navigator.vibrate([40, 60, 40])`).
-- **Remediation Plan**:
-  - [ ] Allow dragging directly from `#displaced-tray` with active drop targets across the master timetable grid.
-  - [ ] Implement `restoreLimboItem(item)`: verify target `(ogTeacher, period)` is `Free` / empty, remove from `state.displaced`, restore to schedule, register in undo stack, and re-render.
-  - [ ] Add `.error-jitter` CSS animation in `styles.css` with a 400ms side-by-side oscillation.
-  - [ ] Provide haptic vibration feedback via `navigator.vibrate` on restoration failure or invalid drop.
+## 🐛 Critical Bug Tracker
 
-### BUG-02: Schedule Re-rendering & Stutter During Scrolling (Instant View Rendering)
-- **Status**: 🔴 Open / Investigated
-- **Reported Issue**:
-  - The schedule appears to re-render, hitch, or flicker each time the user scrolls horizontally or vertically.
-  - The schedule must be ready to view instantly with smooth 60/120fps hardware-accelerated momentum scrolling and zero repaint stutter.
-- **Root Causes & Performance Bottlenecks**:
-  - Heavy composite repainting caused by non-isolated `backdrop-filter`, multi-stop inset shadows, and sticky header/column reflows during scroll interactions.
-  - Viewport resize triggers firing on mobile scroll (address bar collapsing/expanding) causing layout recalibration.
-  - Absence of CSS containment (`contain: paint layout`) and hardware GPU acceleration (`will-change: transform`, `transform: translateZ(0)`).
-- **Remediation Plan**:
-  - [ ] Decouple table rendering from scroll and resize events (add strict debouncing to viewport observers).
-  - [ ] Add GPU composite layer promotion and CSS containment (`contain: content`, `will-change: transform`, `-webkit-overflow-scrolling: touch`) on `.table-scroll-container` and table rows.
-  - [ ] Optimize sticky header & frozen first-column CSS so scroll ticks do not invalidate the entire layout tree.
-  - [ ] Ensure the entire routine DOM is rendered once, fully cached, and instantly responsive without mid-scroll redraws.
+### BUG-01: Limbo Tray Drag Failure & Click-to-Restore Mechanism (RESOLVED in v1.35.0)
+- **Status**: 🟢 Resolved (v1.35.0)
+- **Solution Delivered**:
+  - [x] Made displaced Limbo cards draggable in all views (`div.draggable = true`).
+  - [x] Implemented `handleDisplacedCardClick`: checks if `(item.ogTeacher, item.period)` is free and restores it cleanly with complete undo/redo integration (`restore_displaced`).
+  - [x] Added phone-style side-by-side error jitter animation (`@keyframes errorJitter`) with emergency red glow and native haptic vibration (`navigator.vibrate([45, 55, 45])`) whenever restore or drag is blocked.
+
+### BUG-02: Schedule Re-rendering & Stutter During Scrolling (RESOLVED in v1.35.0)
+- **Status**: 🟢 Resolved (v1.35.0)
+- **Solution Delivered**:
+  - [x] Decoupled table layout recalculations: added width-change guard and debouncing to `window.resize` observer so mobile vertical scrolling (URL bar collapse) never causes layout thrashing.
+  - [x] Promoted `.table-scroll-container` and sticky table cells to independent GPU composite layers using `transform: translateZ(0)` and `contain: paint layout`.
+  - [x] Moved `backdrop-filter` from the scrolling container to `.master-routine-container`, eliminating continuous per-frame blur re-filtering during scroll.
 
 ---
 
@@ -40,15 +29,37 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - [ ] **Offline Indicator**: When disconnected, no internet, or endpoint unreachable, clearly display `⚪ Sheet Offline` or `⚠ Offline Mode` with last sync timestamp.
 - [ ] **Interactive Sync Details**: Tapping the status pill reveals connectivity diagnostics (endpoint URL, ping status, last successful fetch, manual re-sync button).
 
-### 2. Utopian Night Mode (Dark Glass Refraction Theme)
-- [ ] Add `utopian-night` theme as a dark/night counterpart to the Utopian Glass aesthetic under the `🪟 Glass Materials` family.
-- [ ] Aesthetic specification:
-  - Deep obsidian & translucent midnight-sapphire backdrop (`linear-gradient(145deg, #070d18, #0e1a2e)`).
-  - High-refraction frosted glass diffusion (`backdrop-filter: blur(28px) saturate(220%)`).
-  - Luminous iridescent cyan/neon edge highlights (`inset 0 1.2px 1px rgba(0, 229, 255, 0.45)`).
-  - Deep crystalline drop shadows, glowing cyan accents, and crisp high-contrast typography optimized for low-light environments.
-- [ ] Add theme option in Settings drawer under the Glass Materials category.
-- [ ] Register CSS variables in `styles.css` and wire into `updateThemeSelectorUI` in `app.js`.
+---
+
+## 💡 Front-Desk High-Utility Feature Suggestions (Curated for Daily School Operations)
+
+### Suggestion 1: One-Tap WhatsApp & Clipboard Substitution Dispatcher
+- **Rationale**: Every morning, front desk staff have to manually notify 4–8 teachers of their substitution assignments.
+- **Feature**: A clean "Share Routine" button generating an auto-formatted message:
+  ```
+  📋 *LFPS Substitution Notice — Monday, Oct 14*
+  • Period 2: Mrs. R. Pahwa covering Prep A (English) for Mrs. S. Lakra
+  • Period 4: Ms. N. Horo covering KG B (Math) for Mrs. M. Midha
+  Please check in at Front Desk.
+  ```
+  Includes a 1-tap "Share via WhatsApp" (`whatsapp://send?text=...`) and "Copy Slip".
+
+### Suggestion 2: Teacher Substitution Workload & Fair Share Meter
+- **Rationale**: In real school administration, assigning the same free teacher multiple times in a week creates resentment and burnout.
+- **Feature**: Display a subtle weekly load counter next to candidate names in the substitute picker (e.g. `Mrs. Pahwa (Covered: 1 this week)` vs `Ms. Horo (Covered: 4 this week)`).
+- **Benefit**: Ensures equitable distribution across the staff directory.
+
+### Suggestion 3: Morning Quick-Absence Check-In Modal
+- **Rationale**: Tapping through the horizontal roster tray can be slow when 5 teachers call in sick before 8:00 AM.
+- **Feature**: A rapid multi-select checklist or quick-search popover where the front desk coordinator can check off absent teachers in 10 seconds before assembly.
+
+### Suggestion 4: Notice Board & Principal Print Layout (`@media print`)
+- **Rationale**: Many schools require a printed paper slip for the staff room bulletin board and the Principal's signature desk.
+- **Feature**: Clean print stylesheet formatting a compact, professional 1-page Substitution Sheet with date, absent teachers, assigned substitutes, room numbers, and signature lines.
+
+### Suggestion 5: Emergency Uncovered Period Alert Chime / Flash
+- **Rationale**: If Period 1 starts at 8:15 AM and an absent teacher's class has no substitute assigned by 8:10 AM, students are left unattended.
+- **Feature**: An urgent visual pulse or audio chime (`🚨 Period 1 Starting in 5m Uncovered!`) alerting the coordinator immediately.
 
 ---
 
@@ -79,6 +90,10 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 
 ## 📋 Completed Tasks (Recent)
 
+- [x] **v1.35.0 (2026-10-14)**:
+  - **BUG-01 (Limbo Tray Drag & Smart Restore with Haptic Jitter)**: Enabled direct drag-and-drop from Limbo tray across all application modes; implemented one-tap smart restoration to original teacher/period cell if free; built phone-style side-by-side error jitter animation (`@keyframes errorJitter`) with native tactile vibration (`navigator.vibrate([45, 55, 45])`) and full undo/redo integration (`restore_displaced`).
+  - **BUG-02 (Instant Viewport & Silk-Scroll Optimization)**: Promoted table scroll container and sticky cells to dedicated GPU composite layers (`transform: translateZ(0)`, `contain: paint layout`); decoupled viewport calculations with width-change guards to stop mobile address-bar scrolling from triggering layout thrashing; isolated `backdrop-filter` from the scrolling element.
+  - **Utopian Night Mode (`utopian-night`)**: Added dark glass refraction theme with deep obsidian/midnight-sapphire backdrop (`linear-gradient(145deg, #03070f, #0a1930)`), 28px frosted diffusion, and luminous neon-cyan edge highlights under `🪟 Glass Materials`.
 - [x] **v1.34.0 (2026-10-14)**:
   - **Utopian Glass Complete Overhaul**: Full architectural Divergent upper-city transformation with multi-stop radial backdrop, crystalline top-edge sheen highlights, iridescent prismatic borders, deep frosted diffusion (`backdrop-filter: blur(28px)`), and ambient cyan reflections.
   - **Theme Taxonomy & Sub-Category Variants**: Reorganized Settings Theme selector into 3 Base Families (`🪟 Glass Materials`, `☀️ Minimalist & Paper`, `🌙 Dark Modes`) with 11 curated variants including new `❄️ Aero Frost`, `🌌 Cyber Glass`, and `🔲 High Contrast`.

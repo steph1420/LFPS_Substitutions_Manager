@@ -1296,12 +1296,31 @@ function bindEvents() {
             document.querySelectorAll('.drag-over, .drag-over-sub').forEach(el => el.classList.remove('drag-over', 'drag-over-sub'));
             
             if (targetCell && targetCell.dataset.period && targetCell.dataset.teacher) {
-                if (draggedData.type === 'grid' && draggedData.period === targetCell.dataset.period && draggedData.teacher === targetCell.dataset.teacher) {
+                const tPeriod = targetCell.dataset.period;
+                const tTeacher = targetCell.dataset.teacher;
+
+                if (draggedData.type === 'grid' && draggedData.period === tPeriod && draggedData.teacher === tTeacher) {
                     draggedData = null;
                     document.querySelectorAll('.cell-dragging').forEach(el => el.classList.remove('cell-dragging'));
                     return;
                 }
-                executeMove(draggedData, { period: targetCell.dataset.period, teacher: targetCell.dataset.teacher });
+
+                if (draggedData.type === 'displaced') {
+                    if (tPeriod === 'BREAK' || tPeriod === 'BREAKFAST BREAK' || tPeriod === 'BREAKFAST') {
+                        triggerErrorJitter(draggedData.element, `Cannot drop class into Break.`);
+                        draggedData.wasDroppedSuccessfully = false;
+                        draggedData = null;
+                        document.querySelectorAll('.cell-dragging').forEach(el => el.classList.remove('cell-dragging'));
+                        return;
+                    }
+                    draggedData.wasDroppedSuccessfully = true;
+                    executeMove(draggedData, { period: tPeriod, teacher: tTeacher });
+                } else {
+                    executeMove(draggedData, { period: tPeriod, teacher: tTeacher });
+                }
+            } else if (draggedData.type === 'displaced') {
+                draggedData.wasDroppedSuccessfully = false;
+                triggerErrorJitter(draggedData.element, `Drop cancelled: drop onto a timetable cell.`);
             }
             draggedData = null;
             document.querySelectorAll('.cell-dragging').forEach(el => el.classList.remove('cell-dragging'));
@@ -3634,6 +3653,9 @@ function dismissDispute(period, absentTeacher) {
 window.dismissDispute = dismissDispute;
 
 // --- DYNAMIC VIEWPORT & ADAPTIVE SCREEN CALCULATION ENGINE ---
+let lastComputedWidth = 0;
+let viewportResizeTimer = null;
+
 function computeViewportLayout() {
     const vh = window.innerHeight;
     const vw = window.innerWidth;
@@ -3657,8 +3679,19 @@ function computeViewportLayout() {
     }
 }
 window.computeViewportLayout = computeViewportLayout;
-window.addEventListener('resize', computeViewportLayout);
-window.addEventListener('orientationchange', computeViewportLayout);
+
+// Debounce resize: mobile vertical scrolling changes innerHeight (collapsing URL bar)
+// but does NOT change innerWidth. Only recalibrate layout when width changes or on orientationchange.
+window.addEventListener('resize', () => {
+    const curW = window.innerWidth;
+    if (Math.abs(curW - lastComputedWidth) < 2) return;
+    lastComputedWidth = curW;
+    if (viewportResizeTimer) cancelAnimationFrame(viewportResizeTimer);
+    viewportResizeTimer = requestAnimationFrame(computeViewportLayout);
+});
+window.addEventListener('orientationchange', () => {
+    setTimeout(computeViewportLayout, 120);
+});
 
 // --- RENDER FUNCTIONS ---
 function renderAll() {
@@ -4239,28 +4272,41 @@ function renderDisplacedTray() {
             const div = document.createElement('div');
             // PopIn applies ONLY to newly displaced item. Rest just lay flat.
             div.className = `displaced-item ${isSelected ? 'selected' : ''} ${isNew ? 'item-newly-displaced' : ''}`;
-            div.draggable = state.isEditMode;
+            div.draggable = true;
             div.dataset.id = item.id;
+            div.title = `Click to restore to ${item.ogTeacher} (${item.period}) or drag onto any cell`;
             div.innerHTML = `
                 <span>${item.task}</span>
                 <span class="og-teacher">From: ${item.ogTeacher} (${item.period})</span>
             `;
             
-            if (state.isEditMode) {
-                div.onclick = () => handleDisplacedInteraction(item);
-                div.ondragstart = (e) => {
-                    draggedData = { type: 'displaced', item: item };
-                    e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain', '');
-                    scrollSpeed = 0;
-                    setTimeout(() => div.classList.add('cell-dragging'), 0);
+            div.onclick = (e) => {
+                e.stopPropagation();
+                handleDisplacedCardClick(item, div);
+            };
+
+            div.ondragstart = (e) => {
+                draggedData = { 
+                    type: 'displaced', 
+                    item: item, 
+                    element: div, 
+                    wasDroppedSuccessfully: false 
                 };
-                div.ondragend = () => { 
-                    draggedData = null; 
-                    scrollSpeed = 0; 
-                    div.classList.remove('cell-dragging');
-                };
-            }
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', '');
+                scrollSpeed = 0;
+                setTimeout(() => div.classList.add('cell-dragging'), 0);
+            };
+
+            div.ondragend = () => { 
+                if (draggedData && draggedData.type === 'displaced' && !draggedData.wasDroppedSuccessfully) {
+                    triggerErrorJitter(div, `Could not place ${item.task}. Drop onto an available grid cell.`);
+                }
+                draggedData = null; 
+                scrollSpeed = 0; 
+                div.classList.remove('cell-dragging');
+            };
+
             tray.appendChild(div);
         });
     } else {
@@ -4659,6 +4705,68 @@ function handleGridInteraction(period, teacher) {
         selectedCell = null;
     }
 }
+
+function triggerErrorJitter(element, message = null) {
+    if (element) {
+        element.classList.remove('error-jitter');
+        void element.offsetWidth; // Force DOM reflow to restart CSS animation
+        element.classList.add('error-jitter');
+        setTimeout(() => {
+            if (element) element.classList.remove('error-jitter');
+        }, 450);
+    }
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate([45, 55, 45]); } catch (_) {}
+    }
+    if (message) {
+        showToast(message, true);
+    }
+}
+window.triggerErrorJitter = triggerErrorJitter;
+
+function handleDisplacedCardClick(item, element) {
+    if (!item) return;
+
+    // If in edit mode and a grid cell was already selected, move to that cell
+    if (state.isEditMode && selectedCell && selectedCell.type === 'grid') {
+        executeMove({ type: 'displaced', item }, { period: selectedCell.period, teacher: selectedCell.teacher });
+        selectedCell = null;
+        return;
+    }
+
+    // Attempt to restore to original cell: item.ogTeacher at item.period
+    const targetPeriod = item.period;
+    const targetTeacher = item.ogTeacher;
+    const currentTask = state.schedule[state.day]?.[targetPeriod]?.[targetTeacher] || 'Free';
+
+    // 1. Is original cell blank/Free?
+    if (currentTask === 'Free' || !currentTask || currentTask.trim() === '') {
+        clearRedoStacks();
+        state.schedule[state.day][targetPeriod][targetTeacher] = item.task;
+        state.displaced[state.day] = (state.displaced[state.day] || []).filter(d => d.id !== item.id);
+
+        const activeStack = getActiveHistoryStack();
+        activeStack.push({
+            type: 'restore_displaced',
+            day: state.day,
+            item: item,
+            target: { period: targetPeriod, teacher: targetTeacher }
+        });
+
+        saveStateToStorage();
+        updateUndoUI();
+        showToast(`✓ Restored "${item.task}" to ${targetTeacher} (${targetPeriod}).`);
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            try { navigator.vibrate(25); } catch (_) {}
+        }
+        renderAll();
+        return;
+    }
+
+    // 2. Original cell is occupied -> error jitter + haptic vibration
+    triggerErrorJitter(element, `Cannot restore: ${targetTeacher}'s ${targetPeriod} is occupied by "${currentTask}". Drag onto another cell or clear it first.`);
+}
+window.handleDisplacedCardClick = handleDisplacedCardClick;
 
 function handleDisplacedInteraction(item) {
     if (!state.isEditMode) return;
@@ -5583,6 +5691,12 @@ function undoLastAction() {
             state.displaced[day] = state.displaced[day].filter(d => d.id !== newlyDisplaced.id);
         }
 
+    } else if (action.type === 'restore_displaced') {
+        const { day, item, target } = action;
+        state.schedule[day][target.period][target.teacher] = 'Free';
+        if (!state.displaced[day]) state.displaced[day] = [];
+        state.displaced[day].push(item);
+
     } else if (action.type === 'reset') {
         state.schedule[action.day] = action.prevSchedule;
         state.displaced[action.day] = action.prevDisplaced;
@@ -5696,6 +5810,12 @@ function redoLastAction() {
             state.displaced[day].push(newlyDisplaced);
         }
         state.actionHistory.grid.push(action);
+
+    } else if (action.type === 'restore_displaced') {
+        const { day, item, target } = action;
+        state.schedule[day][target.period][target.teacher] = item.task;
+        state.displaced[day] = (state.displaced[day] || []).filter(d => d.id !== item.id);
+        getActiveHistoryStack().push(action);
 
     } else if (action.type === 'sub') {
         const { period, targetPeriod = period, absentTeacher, subTeacher, previousSub, taskToCover, day, newlyDisplaced } = action;
