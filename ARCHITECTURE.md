@@ -236,6 +236,20 @@ const state = {
     *   **Dynamic Header Detection & Combined Class Parser**:
         *   Upgraded `parseTimetableFromCSV()` with dynamic header detection scanning the first 10 rows for table banners/titles.
         *   Added multi-class merger for combined sports/games/drill slots (e.g. `+ KG B`).
+*   **v1.33 Release (Conflict Terminology, Co-Teaching False-Positive Suppression & Teacher Sub-Availability)**:
+    *   **Terminology Transition ("Collision" → "Conflict")**:
+        *   Transitioned all UI labels, tooltips, indicators, and alerts strictly from "Collision" to "Conflict".
+        *   Standardized `findConflicts()` as the primary engine method while keeping `findCollisions()` as a backward-compatible alias.
+    *   **Shared / Co-Teaching False-Positive Conflict Suppression**:
+        *   Enhanced `getCoTeachingPartners()` with ordinal prefix normalization (`1ST`, `2ND`, `3RD`, `4TH`).
+        *   Enhanced `findConflicts()` with root subject normalization (`extractRootSubject()`) and baseline verification (`allInBase`) ensuring baseline shared slots (e.g., Tuesday G/PD joint Drill PREP A & PREP B) do not trigger false-positive warnings.
+    *   **Teacher Substitution Unavailability Engine**:
+        *   Added `state.subUnavailable[day] = { [teacher]: remark }` data model persisted in `localStorage`.
+        *   Added `#sub-avail-modal` with teacher selector, toggle switch, custom remark input, and quick chips (`Bus Duty`, `CBSE Evaluation`, `Parent Meeting`, `Exam Correction`, `Sick Bay`, `Event Prep`).
+        *   Replaced raw inline remark text with an interactive, visually distinct blue circular **`?`** button (`.btn-sub-reason-help`) triggering a floating popover (`#sub-remark-popover`).
+        *   Strictly excluded unavailable teachers from substitute candidate lists in the bottom sheet and from the Smart Auto-Resolve solver across all 3 heuristic strategies.
+    *   **Master Grid Harmonization**:
+        *   Harmonized column widths across `#routine-table`: first sticky column `148px`, period columns `112px`, break column `58px`, with centered multi-line wrapping for `PLAYTIME / 2ND GOLDEN HOUR`.
 
 ## 10. Appendix: Technical Specifications
 
