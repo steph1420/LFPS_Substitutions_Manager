@@ -657,12 +657,12 @@ function loadStateFromStorage() {
     return false;
 }
 
-// --- ROSTER COLOR CUSTOMIZER (TEMPORARY TUNING) ---
+// --- ROSTER COLOR CUSTOMIZER (USER-SELECTED DEFAULTS) ---
 const DEFAULT_ROSTER_COLORS = {
-    ct: '#af52de',
-    st: '#007aff',
-    coord: '#f59e0b',
-    absent: '#ff3b30'
+    ct: '#0284c7',    // Teal Sky / Cyan
+    st: '#007aff',    // iOS Blue
+    coord: '#8b5cf6', // Unified Purple for AC & A.AC
+    absent: '#ff3b30' // Crimson Red
 };
 
 function hexToRgba(hex, alpha = 1) {
@@ -706,9 +706,110 @@ function applyRosterColors(colors = {}) {
 }
 window.applyRosterColors = applyRosterColors;
 
+// --- ANDROID-STYLE DEVELOPER OPTIONS EASTER EGG ---
+let devTapCount = 0;
+let devTapTimeout = null;
+
+function updateDevModeVisibility() {
+    const isUnlocked = localStorage.getItem('lfps_dev_mode_unlocked') === 'true';
+    const devGroup = document.getElementById('roster-color-settings-group');
+    const devPill = document.getElementById('dev-mode-pill');
+    if (devGroup) {
+        devGroup.classList.toggle('hidden', !isUnlocked);
+    }
+    if (devPill) {
+        devPill.classList.toggle('hidden', !isUnlocked);
+    }
+}
+window.updateDevModeVisibility = updateDevModeVisibility;
+
+function handleVersionRowTap() {
+    clearTimeout(devTapTimeout);
+    devTapTimeout = setTimeout(() => { devTapCount = 0; }, 2500);
+
+    const isUnlocked = localStorage.getItem('lfps_dev_mode_unlocked') === 'true';
+    if (isUnlocked) {
+        showToast('Developer Options are already unlocked!');
+        const devGroup = document.getElementById('roster-color-settings-group');
+        if (devGroup) {
+            devGroup.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+    }
+
+    devTapCount++;
+    if (devTapCount >= 2 && devTapCount < 5) {
+        const remaining = 5 - devTapCount;
+        showToast(`You are now ${remaining} tap${remaining > 1 ? 's' : ''} away from Developer Options!`);
+    } else if (devTapCount >= 5) {
+        devTapCount = 0;
+        localStorage.setItem('lfps_dev_mode_unlocked', 'true');
+        if (navigator.vibrate) {
+            try { navigator.vibrate([50, 100, 50]); } catch (e) {}
+        }
+        showToast('🎉 Developer Options Unlocked!');
+        updateDevModeVisibility();
+        const devGroup = document.getElementById('roster-color-settings-group');
+        if (devGroup) {
+            devGroup.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+}
+window.handleVersionRowTap = handleVersionRowTap;
+
+function relockDevMode() {
+    localStorage.removeItem('lfps_dev_mode_unlocked');
+    updateDevModeVisibility();
+    showToast('🔒 Developer Options locked.');
+}
+window.relockDevMode = relockDevMode;
+
+// --- BROWSER FULLSCREEN HELPERS ---
+function isBrowserFullscreen() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+}
+
+function toggleBrowserFullscreen() {
+    const doc = document;
+    const docEl = document.documentElement;
+
+    if (!isBrowserFullscreen()) {
+        const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+        if (req) {
+            req.call(docEl).catch(err => {
+                console.warn('Fullscreen request failed:', err);
+                showToast('Fullscreen mode not permitted by browser.', true);
+            });
+        } else {
+            showToast('Fullscreen API is not supported on this device/browser.', true);
+        }
+    } else {
+        const exit = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
+        if (exit) {
+            exit.call(doc).catch(err => console.warn('Exit fullscreen failed:', err));
+        }
+    }
+}
+window.toggleBrowserFullscreen = toggleBrowserFullscreen;
+
+function updateFullscreenUI() {
+    const isFull = isBrowserFullscreen();
+    const btnLabel = document.getElementById('fullscreen-btn-label');
+    const btnIcon = document.getElementById('fullscreen-btn-icon');
+    const moreText = document.getElementById('more-fullscreen-text');
+    const moreIcon = document.getElementById('more-fullscreen-icon');
+
+    if (btnLabel) btnLabel.textContent = isFull ? 'Exit Fullscreen' : 'Enter Fullscreen';
+    if (btnIcon) btnIcon.textContent = isFull ? '↙' : '⛶';
+    if (moreText) moreText.textContent = isFull ? 'Exit Fullscreen' : 'Enter Fullscreen';
+    if (moreIcon) moreIcon.textContent = isFull ? '↙' : '⛶';
+}
+window.updateFullscreenUI = updateFullscreenUI;
+
 // --- THEME MANAGEMENT ---
 function initTheme() {
     applyRosterColors();
+    updateDevModeVisibility();
     const savedTheme = localStorage.getItem('lfps_frontdesk_theme') || 'system';
     applyTheme(savedTheme);
 
@@ -741,6 +842,23 @@ function setTheme(themeKey) {
 window.setTheme = setTheme;
 
 function updateThemeSelectorUI(activeTheme) {
+    // Quick pills
+    document.querySelectorAll('.theme-quick-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === activeTheme);
+    });
+
+    // More themes select dropdown
+    const select = document.getElementById('theme-more-select');
+    if (select) {
+        const optionExists = Array.from(select.options).some(opt => opt.value === activeTheme);
+        if (optionExists) {
+            select.value = activeTheme;
+        } else {
+            select.value = '';
+        }
+    }
+
+    // Grid buttons if present
     document.querySelectorAll('.theme-option-btn').forEach(btn => {
         const isMatch = (btn.dataset.theme === activeTheme);
         btn.classList.toggle('active', isMatch);
@@ -824,6 +942,10 @@ function bindEvents() {
     // Expanded Fit-Grid View (Mobile Landscape & Full-Width Fit)
     safeBind('fit-grid-btn', 'click', () => toggleFitGridMode(true));
     safeBind('exit-fit-grid-btn', 'click', () => toggleFitGridMode(false));
+    safeBind('fit-grid-edit-btn', 'click', () => {
+        const editBtn = document.getElementById('edit-toggle-btn');
+        if (editBtn) editBtn.click();
+    });
 
     // Daily Substitution Register Filter Tabs
     document.querySelectorAll('.reg-filter-btn').forEach(btn => {
@@ -1133,6 +1255,33 @@ function bindEvents() {
         });
     });
 
+    // Compact Layman Theme Selector Pills
+    document.querySelectorAll('.theme-quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const theme = btn.dataset.theme;
+            if (theme) setTheme(theme);
+        });
+    });
+
+    // More Themes Dropdown Selector
+    safeBind('theme-more-select', 'change', (e) => {
+        const theme = e.target.value;
+        if (theme) setTheme(theme);
+    });
+
+    // Browser Fullscreen Toggle Buttons
+    safeBind('btn-toggle-fullscreen', 'click', toggleBrowserFullscreen);
+    ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
+        document.addEventListener(evt, updateFullscreenUI);
+    });
+
+    // Android-Style Easter Egg Tap on Version Row & Re-lock Dev Options
+    safeBind('settings-version-row', 'click', handleVersionRowTap);
+    safeBind('btn-relock-dev', 'click', relockDevMode);
+
+    // Admin Master Routine PIN Change Flow
+    safeBind('btn-change-pin', 'click', openChangePinFlow);
+
     // 3-Dot Overflow Menu Handler (Mobile & Responsive)
     const moreBtn = document.getElementById('header-more-btn');
     const morePopover = document.getElementById('header-more-popover');
@@ -1142,8 +1291,18 @@ function bindEvents() {
             morePopover.classList.toggle('hidden');
             const lockStatus = document.getElementById('more-lock-status');
             if (lockStatus) {
-                lockStatus.textContent = state.isMasterEditMode ? '🔓 Editing' : (state.isMasterLocked !== false ? '🔒 Locked' : 'Unlocked');
+                if (state.isMasterEditMode) {
+                    lockStatus.textContent = '🛠 Master Editing';
+                    lockStatus.className = 'more-badge badge-master-editing';
+                } else if (state.isEditMode) {
+                    lockStatus.textContent = '● In Edit Mode';
+                    lockStatus.className = 'more-badge badge-active-editing';
+                } else {
+                    lockStatus.textContent = state.isMasterUnlocked ? '🔓 Unlocked' : '🔒 Locked';
+                    lockStatus.className = 'more-badge';
+                }
             }
+            updateFullscreenUI();
         });
 
         document.addEventListener('click', (e) => {
@@ -1162,6 +1321,11 @@ function bindEvents() {
             morePopover.classList.add('hidden');
             const resetBtn = document.getElementById('reset-schedule-btn');
             if (resetBtn) resetBtn.click();
+        });
+
+        safeBind('more-item-fullscreen', 'click', () => {
+            morePopover.classList.add('hidden');
+            toggleBrowserFullscreen();
         });
 
         safeBind('more-item-subavail', 'click', () => {
@@ -2215,6 +2379,7 @@ window.resetDisplacedItemToOriginal = resetDisplacedItemToOriginal;
 
 let enteredPin = '';
 let pinSuccessCallback = null;
+let pinModalMode = 'verify'; // 'verify' or 'capture'
 let activeMasterCell = null; // { period, teacher, day }
 let stagedMasterSchedule = null; // In-memory working copy while in master edit mode
 
@@ -2222,44 +2387,112 @@ function updateMasterLockUI() {
     const lockBtn = document.getElementById('master-lock-btn');
     const lockIcon = document.getElementById('master-lock-icon');
     const editBtnLabel = document.getElementById('edit-btn-label');
+    const editBtnIcon = document.getElementById('edit-btn-icon');
     const editBtn = document.getElementById('edit-toggle-btn');
 
-    if (!lockBtn || !lockIcon) return;
+    // 3-Dot popover items
+    const moreEditText = document.getElementById('more-item-edit-text');
+    const moreEditIcon = document.getElementById('more-item-edit-icon');
+    const moreLockStatus = document.getElementById('more-lock-status');
 
-    if (state.isMasterUnlocked) {
-        lockBtn.classList.add('unlocked');
-        lockIcon.textContent = '🔓';
-        lockBtn.title = 'Master Baseline Unlocked (Click to lock or switch modes)';
-    } else {
-        lockBtn.classList.remove('unlocked');
-        lockIcon.textContent = '🔒';
-        lockBtn.title = 'Master Baseline Locked (Click to enter PIN & edit master routine)';
+    // Fit-grid sticky bar items
+    const fitGridEditBtn = document.getElementById('fit-grid-edit-btn');
+    const fitGridEditIcon = document.getElementById('fit-grid-edit-icon');
+    const fitGridEditLabel = document.getElementById('fit-grid-edit-label');
+
+    if (lockBtn && lockIcon) {
+        if (state.isMasterUnlocked) {
+            lockBtn.classList.add('unlocked');
+            lockIcon.textContent = '🔓';
+            lockBtn.title = 'Master Baseline Unlocked (Click to lock or switch modes)';
+        } else {
+            lockBtn.classList.remove('unlocked');
+            lockIcon.textContent = '🔒';
+            lockBtn.title = 'Master Baseline Locked (Click to enter PIN & edit master routine)';
+        }
     }
 
     if (state.isMasterEditMode) {
+        // Main Edit Button
         if (editBtn) {
-            editBtn.classList.add('save-mode');
-            editBtn.style.background = 'var(--accent-orange)';
+            editBtn.classList.remove('save-mode');
+            editBtn.classList.add('master-save-mode');
+            editBtn.style.background = '';
         }
-        if (editBtnLabel) editBtnLabel.textContent = ' 🛠 Master Edit';
+        if (editBtnLabel) editBtnLabel.textContent = ' 🛠 Master Save';
+        if (editBtnIcon) editBtnIcon.textContent = '🛠';
+
+        // 3-Dot Overflow Menu
+        if (moreEditText) moreEditText.textContent = 'Save Master Routine';
+        if (moreEditIcon) moreEditIcon.textContent = '🛠';
+        if (moreLockStatus) {
+            moreLockStatus.textContent = '🛠 Master Editing';
+            moreLockStatus.className = 'more-badge badge-master-editing';
+        }
+
+        // Fit Grid Sticky Bar Button
+        if (fitGridEditBtn) {
+            fitGridEditBtn.className = 'btn-fit-edit active-master';
+        }
+        if (fitGridEditIcon) fitGridEditIcon.textContent = '🛠';
+        if (fitGridEditLabel) fitGridEditLabel.textContent = 'Save Master';
+
     } else if (state.isEditMode) {
+        // Main Edit Button
         if (editBtn) {
+            editBtn.classList.remove('master-save-mode');
             editBtn.classList.add('save-mode');
             editBtn.style.background = '';
         }
-        if (editBtnLabel) editBtnLabel.textContent = ' Save Schedule';
+        if (editBtnLabel) editBtnLabel.textContent = ' ✓ Done Editing';
+        if (editBtnIcon) editBtnIcon.textContent = '✓';
+
+        // 3-Dot Overflow Menu
+        if (moreEditText) moreEditText.textContent = 'Done Editing (Save)';
+        if (moreEditIcon) moreEditIcon.textContent = '✓';
+        if (moreLockStatus) {
+            moreLockStatus.textContent = '● In Edit Mode';
+            moreLockStatus.className = 'more-badge badge-active-editing';
+        }
+
+        // Fit Grid Sticky Bar Button
+        if (fitGridEditBtn) {
+            fitGridEditBtn.className = 'btn-fit-edit active-editing';
+        }
+        if (fitGridEditIcon) fitGridEditIcon.textContent = '✓';
+        if (fitGridEditLabel) fitGridEditLabel.textContent = 'Done Editing';
+
     } else {
+        // Main Edit Button
         if (editBtn) {
-            editBtn.classList.remove('save-mode');
+            editBtn.classList.remove('save-mode', 'master-save-mode');
             editBtn.style.background = '';
         }
         if (editBtnLabel) editBtnLabel.textContent = ' Edit Schedule';
+        if (editBtnIcon) editBtnIcon.textContent = '✎';
+
+        // 3-Dot Overflow Menu
+        if (moreEditText) moreEditText.textContent = 'Edit Schedule';
+        if (moreEditIcon) moreEditIcon.textContent = '✎';
+        if (moreLockStatus) {
+            moreLockStatus.textContent = state.isMasterUnlocked ? '🔓 Unlocked' : '🔒 Locked';
+            moreLockStatus.className = 'more-badge';
+        }
+
+        // Fit Grid Sticky Bar Button
+        if (fitGridEditBtn) {
+            fitGridEditBtn.className = 'btn-fit-edit';
+        }
+        if (fitGridEditIcon) fitGridEditIcon.textContent = '✎';
+        if (fitGridEditLabel) fitGridEditLabel.textContent = 'Edit Schedule';
     }
 }
+window.updateMasterLockUI = updateMasterLockUI;
 
-function openPinModal(title = 'Admin Passcode Required', subtext = 'Enter 4-digit PIN to unlock Master Routine editing.', onSuccess = null) {
+function openPinModal(title = 'Admin Passcode Required', subtext = 'Enter 4-digit PIN to unlock Master Routine editing.', onSuccess = null, mode = 'verify') {
     enteredPin = '';
     pinSuccessCallback = onSuccess;
+    pinModalMode = mode;
 
     const modal = document.getElementById('pin-modal');
     const overlay = document.getElementById('pin-overlay');
@@ -2316,6 +2549,16 @@ function handlePinKey(key) {
         renderPinDots();
 
         if (enteredPin.length === 4) {
+            if (pinModalMode === 'capture') {
+                const capturedPin = enteredPin;
+                const cb = pinSuccessCallback;
+                closePinModal();
+                if (typeof cb === 'function') {
+                    cb(capturedPin);
+                }
+                return;
+            }
+
             // Verify PIN
             const currentPin = state.settings.adminPin || '1234';
             if (enteredPin === currentPin) {
@@ -2348,6 +2591,27 @@ function handlePinKey(key) {
         }
     }
 }
+
+function openChangePinFlow() {
+    openPinModal('Verify Current PIN', 'Enter your current 4-digit PIN to authorize changing it.', () => {
+        setTimeout(() => {
+            openPinModal('Set New 4-Digit PIN', 'Enter the new 4-digit PIN for Master Routine access.', (newPin) => {
+                setTimeout(() => {
+                    openPinModal('Confirm New PIN', 'Re-enter the new 4-digit PIN to confirm.', (confirmPin) => {
+                        if (newPin === confirmPin) {
+                            state.settings.adminPin = newPin;
+                            saveStateToStorage();
+                            showToast('✓ Admin Master Routine PIN updated successfully!');
+                        } else {
+                            showToast('PIN confirmation did not match. PIN was not changed.', true);
+                        }
+                    }, 'capture');
+                }, 300);
+            }, 'capture');
+        }, 300);
+    }, 'verify');
+}
+window.openChangePinFlow = openChangePinFlow;
 
 function toggleMasterEditMode(forceState = null) {
     if (!hasCoordinatorPermissions() && !state.isMasterUnlocked) {

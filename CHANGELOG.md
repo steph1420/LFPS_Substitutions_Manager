@@ -17,6 +17,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.38.0] - 2026-10-15
+
+### Added
+- **Locked-in User-Selected Roster Color Palette**:
+  - Class Teachers (CT): Calm Teal Sky / Cyan (`#0284c7` / `rgba(2, 132, 199, 0.14)`).
+  - Subject Teachers (ST): iOS Blue (`#007aff` / `rgba(0, 122, 255, 0.14)`).
+  - Coordinator Badges (`AC` & `A.AC`): Unified Purple (`#8b5cf6`).
+  - Absent State: Crimson Red (`#ff3b30` / `rgba(255, 59, 48, 0.16)`).
+- **Android-Style Developer Options Easter Egg**:
+  - Tapping the "Version" row in Settings 5 times triggers haptic vibration (`navigator.vibrate([50, 100, 50])`), tap countdown toasts, and reveals the Developer Options group (`#roster-color-settings-group`) with a visible `[ 🛠 Dev Unlocked ]` pill and 1-tap "Lock" control.
+- **1-Tap Browser Fullscreen API (`toggleBrowserFullscreen`)**:
+  - Added Fullscreen toggle to 3-dot overflow menu and Settings panel with cross-browser support (`requestFullscreen` / `webkitRequestFullscreen`), automatically hiding URL bar and navigation headers.
+- **Fit-Grid In-Place Editing**:
+  - Added "Edit Schedule" button inside `#fit-grid-sticky-bar`, allowing direct timetable edits without exiting Fit-Grid view.
+  - Widened first column to 15% (min 80px) with 700 font weight for crisp teacher name legibility.
+
+### Changed
+- **Mobile Edit Button Brought Outside**:
+  - Removed `header-desktop-only` restriction from `.edit-btn-group`, positioning the Edit button directly in the mobile header next to Undo/Redo.
+  - Responsive typography allows compact text on standard phones and graceful icon-only collapse under 360px.
+- **Synchronized Edit State across Header, Fit-Grid & 3-Dot Menu**:
+  - When edit mode is active, `#edit-toggle-btn` displays `✓ Done Editing` with vibrant green highlight (`save-mode`).
+  - In 3-dot overflow menu, dynamically updates from `Edit Routine` to `Done Editing (Save)` with an emerald `● In Edit Mode` badge, eliminating ambiguity.
+- **Settings Menu Decluttering (Layman & Boomer Ergonomics)**:
+  - Reorganized sections in intuitive flow: Role & Identity $\to$ Cloud Sync $\to$ Preferences & Protection $\to$ Appearance & Display $\to$ Baseline Tools $\to$ Application Info.
+  - Collapsed 12-card theme selector into 3 quick pills (`☀️ Light`, `🌙 Dark`, `💠 Utopian`) + a clean `More Themes...` dropdown.
+- **Admin PIN Privacy & Interactive 3-Step Change Flow**:
+  - Removed plaintext/dotted password input from Settings; replaced with masked `••••` and a `[ 🔑 Change PIN ]` button.
+  - Launches secure Apple HIG keypad workflow: Verify Current PIN $\to$ Set New 4-digit PIN $\to$ Confirm New PIN.
+
 ## [v1.37.1] - 2026-10-15
 
 ### Added

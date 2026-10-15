@@ -25,11 +25,11 @@
     --handle-color: #c7c7cc;
 
     /* Dynamic Roster Blob & Badge Colors (Tuning Customizer) */
-    --blob-ct-color: #af52de;
-    --blob-ct-bg: rgba(175, 82, 222, 0.14);
+    --blob-ct-color: #0284c7;
+    --blob-ct-bg: rgba(2, 132, 199, 0.14);
     --blob-st-color: #007aff;
     --blob-st-bg: rgba(0, 122, 255, 0.14);
-    --badge-coord-bg: #f59e0b;
+    --badge-coord-bg: #8b5cf6;
     --blob-absent-color: #ff3b30;
     --blob-absent-bg: rgba(255, 59, 48, 0.16);
     --toast-bg: #333333;
@@ -578,10 +578,15 @@ body {
         align-items: center;
     }
 
-    .btn-primary .btn-text,
     .btn-secondary .btn-text,
     .btn-history .btn-text {
-        display: none !important; /* Iconify buttons on tight mobile screens */
+        display: none !important; /* Iconify secondary buttons on mobile screens */
+    }
+
+    #edit-toggle-btn .btn-text {
+        display: inline !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
     }
 
     .btn-primary, .btn-secondary {
@@ -593,6 +598,12 @@ body {
         padding: 4px 6px;
         font-size: 12px;
         min-width: 28px;
+    }
+}
+
+@media (max-width: 359px) {
+    #edit-toggle-btn .btn-text {
+        display: none !important; /* Icon only on ultra narrow screens */
     }
 }
 
@@ -2490,6 +2501,81 @@ input:checked + .slider:before {
     border-radius: 8px;
     background: var(--segment-bg);
     color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.more-badge.badge-active-editing {
+    background: rgba(52, 199, 89, 0.2) !important;
+    color: #34c759 !important;
+    border: 1px solid rgba(52, 199, 89, 0.45) !important;
+    font-weight: 700 !important;
+}
+
+.more-badge.badge-master-editing {
+    background: rgba(255, 149, 0, 0.2) !important;
+    color: #ff9500 !important;
+    border: 1px solid rgba(255, 149, 0, 0.45) !important;
+    font-weight: 700 !important;
+}
+
+/* Compact Layman Theme Selector */
+.compact-theme-selector {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.quick-theme-pills {
+    display: flex;
+    gap: 4px;
+    background: var(--segment-bg);
+    padding: 3px;
+    border-radius: 8px;
+}
+
+.theme-quick-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.theme-quick-btn:hover {
+    color: var(--text-primary);
+}
+
+.theme-quick-btn.active {
+    background: var(--surface-color);
+    color: var(--text-primary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+
+.theme-more-select {
+    font-size: 12px !important;
+    padding: 6px 10px !important;
+    min-width: 140px;
+    flex: 1;
+}
+
+/* Developer Options Pill */
+.dev-badge-pill {
+    font-size: 9px;
+    font-weight: 700;
+    background: rgba(139, 92, 246, 0.18);
+    color: #8b5cf6;
+    padding: 2px 7px;
+    border-radius: 10px;
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: inline-block;
 }
 
 /* Mobile vs Desktop Header Controls Responsiveness (Height-aware for Phone Landscape) */
@@ -3131,6 +3217,50 @@ input:checked + .slider:before {
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
+.fit-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-fit-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--surface-color);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: transform 0.15s ease, opacity 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-fit-edit:hover {
+    background: var(--segment-bg);
+}
+
+.btn-fit-edit:active {
+    transform: scale(0.96);
+}
+
+.btn-fit-edit.active-editing {
+    background: var(--accent-green, #34c759) !important;
+    color: #ffffff !important;
+    border-color: var(--accent-green, #34c759) !important;
+    box-shadow: 0 2px 8px rgba(52, 199, 89, 0.4) !important;
+}
+
+.btn-fit-edit.active-master {
+    background: var(--accent-orange, #ff9500) !important;
+    color: #ffffff !important;
+    border-color: var(--accent-orange, #ff9500) !important;
+    box-shadow: 0 2px 8px rgba(255, 149, 0, 0.4) !important;
+}
+
 .btn-exit-fit {
     display: inline-flex;
     align-items: center;
@@ -3197,9 +3327,13 @@ body.fit-grid-mode .routine-table td {
 
 body.fit-grid-mode .routine-table th:first-child,
 body.fit-grid-mode .routine-table td:first-child {
-    width: 13% !important;
-    font-size: clamp(8.5px, 1.1vw, 11px) !important;
+    width: 15% !important;
+    min-width: 80px !important;
+    font-size: clamp(9px, 1.1vw, 11.5px) !important;
+    font-weight: 700 !important;
     padding: 3px 4px !important;
+    white-space: normal !important;
+    word-break: break-word !important;
 }
 
 body.fit-grid-mode .cell-class-tag {
@@ -4030,6 +4164,20 @@ body.fit-grid-mode .shared-badge {
     background: rgba(52, 199, 89, 0.15);
     color: var(--accent-green);
     border-color: var(--accent-green);
+}
+
+#edit-toggle-btn.save-mode {
+    background: var(--accent-green, #34c759) !important;
+    border-color: var(--accent-green, #34c759) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(52, 199, 89, 0.4) !important;
+}
+
+#edit-toggle-btn.master-save-mode {
+    background: var(--accent-orange, #ff9500) !important;
+    border-color: var(--accent-orange, #ff9500) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(255, 149, 0, 0.4) !important;
 }
 
 /* Master Baseline Editing Notice Bar */

@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.37.1">
+    <link rel="stylesheet" href="styles.css?v=1.38.0">
 </head>
 <body>
 
@@ -25,6 +25,9 @@
             </div>
         </div>
         <div class="fit-bar-right">
+            <button id="fit-grid-edit-btn" class="btn-fit-edit" title="Toggle Timetable Editing">
+                <span id="fit-grid-edit-icon">✎</span> <span id="fit-grid-edit-label">Edit Schedule</span>
+            </button>
             <button id="exit-fit-grid-btn" class="btn-exit-fit" title="Exit Fit-Grid View (Esc)">
                 <span>↙ Back to Normal</span>
             </button>
@@ -48,9 +51,9 @@
                 <button id="reset-schedule-btn" class="btn-secondary header-desktop-only" title="Reset Schedule to Baseline">
                     <span class="btn-icon">↺</span><span class="btn-text"> Reset</span>
                 </button>
-                <div class="edit-btn-group header-desktop-only" id="edit-btn-group" style="position:relative;">
+                <div class="edit-btn-group" id="edit-btn-group" style="position:relative;">
                     <button id="edit-toggle-btn" class="btn-primary" title="Toggle Timetable Editing">
-                        <span class="btn-icon">✎</span><span class="btn-text" id="edit-btn-label"> Edit Schedule</span>
+                        <span class="btn-icon" id="edit-btn-icon">✎</span><span class="btn-text" id="edit-btn-label"> Edit Schedule</span>
                     </button>
                     <button id="master-lock-btn" class="btn-secondary" style="padding: 0 9px; font-size: 13px;" title="Master Routine Baseline Locked (Click to enter PIN & edit master routine)">
                         <span id="master-lock-icon">🔒</span>
@@ -70,20 +73,24 @@
                     </button>
                     <div id="header-more-popover" class="header-more-popover hidden">
                         <div class="more-popover-item" id="more-item-edit">
-                            <span class="more-icon">✎</span>
-                            <span class="more-text">Edit Routine</span>
+                            <span class="more-icon" id="more-item-edit-icon">✎</span>
+                            <span class="more-text" id="more-item-edit-text">Edit Routine</span>
                             <span class="more-badge" id="more-lock-status">🔒 Locked</span>
                         </div>
                         <div class="more-popover-item" id="more-item-reset">
                             <span class="more-icon">↺</span>
                             <span class="more-text">Reset to Baseline</span>
                         </div>
+                        <div class="more-popover-item" id="more-item-fullscreen">
+                            <span class="more-icon" id="more-fullscreen-icon">⛶</span>
+                            <span class="more-text" id="more-fullscreen-text">Enter Fullscreen</span>
+                        </div>
                         <div class="more-popover-item" id="more-item-subavail">
                             <span class="more-icon">⛔</span>
                             <span class="more-text">Sub-Availability</span>
                         </div>
                         <div class="more-popover-item" id="more-item-fitgrid">
-                            <span class="more-icon">⛶</span>
+                            <span class="more-icon">📊</span>
                             <span class="more-text">Toggle Fit-Grid View</span>
                         </div>
                         <div class="more-popover-item" id="more-item-tour">
@@ -269,150 +276,7 @@
             <button id="close-settings-btn" class="settings-close-btn" aria-label="Close Settings">✕</button>
         </div>
         <div class="settings-modal-body">
-            <div class="settings-group">
-                <div class="settings-group-title">Appearance & Theme</div>
-                
-                <!-- Theme Family Category Tabs -->
-                <div class="theme-category-tabs" id="theme-category-tabs">
-                    <button type="button" class="theme-cat-btn active" data-cat="glass">🪟 Glass Materials</button>
-                    <button type="button" class="theme-cat-btn" data-cat="minimal">☀️ Minimalist & Paper</button>
-                    <button type="button" class="theme-cat-btn" data-cat="dark">🌙 Dark Modes</button>
-                </div>
-
-                <!-- Category 1: Glass Materials Variants -->
-                <div class="theme-variant-grid active" data-cat-target="glass">
-                    <button class="theme-option-btn" data-theme="utopian-glass">
-                        <span class="theme-preview utopian-preview"></span>
-                        <span class="theme-name">💠 Utopian Glass</span>
-                    </button>
-                    <button class="theme-option-btn" data-theme="utopian-night">
-                        <span class="theme-preview utopian-night-preview"></span>
-                        <span class="theme-name">🌃 Utopian Night</span>
-                    </button>
-                    <button class="theme-option-btn" data-theme="retro-glass">
-                        <span class="theme-preview glass-preview"></span>
-                        <span class="theme-name">✨ Retro Glass</span>
-                    </button>
-                    <button class="theme-option-btn" data-theme="aero-frost">
-                        <span class="theme-preview aero-preview"></span>
-                        <span class="theme-name">❄️ Aero Frost</span>
-                    </button>
-                    <button class="theme-option-btn" data-theme="cyber-glass">
-                        <span class="theme-preview cyber-preview"></span>
-                        <span class="theme-name">🌌 Cyber Glass</span>
-                    </button>
-                </div>
-
-                <!-- Category 2: Minimalist & Paper Variants -->
-                <div class="theme-variant-grid" data-cat-target="minimal">
-                    <button class="theme-option-btn" data-theme="system">
-                        <span class="theme-preview system-preview"></span>
-                        <span class="theme-name">📱 Auto (System)</span>
-                    </button>
-                    <button class="theme-option-btn" data-theme="light">
-                        <span class="theme-preview light-preview"></span>
-                        <span class="theme-name">⚪ Classic Light</span>
-                    </button>
-                    <button class="theme-option-btn" data-theme="warm-sepia">
-                        <span class="theme-preview sepia-preview"></span>
-                        <span class="theme-name">📜 Warm Sepia</span>
-                    </button>
-                    <button class="theme-option-btn" data-theme="high-contrast">
-                        <span class="theme-preview contrast-preview"></span>
-                        <span class="theme-name">🔲 High Contrast</span>
-                    </button>
-                </div>
-
-                <!-- Category 3: Dark Modes Variants -->
-                <div class="theme-variant-grid" data-cat-target="dark">
-                    <button class="theme-option-btn" data-theme="dark">
-                        <span class="theme-preview dark-preview"></span>
-                        <span class="theme-name">🌑 Classic Dark</span>
-                    </button>
-                    <button class="theme-option-btn" data-theme="midnight">
-                        <span class="theme-preview midnight-preview"></span>
-                        <span class="theme-name">⬛ Midnight OLED</span>
-                    </button>
-                    <button class="theme-option-btn" data-theme="slate-nord">
-                        <span class="theme-preview nord-preview"></span>
-                        <span class="theme-name">❄️ Slate Nord</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Temporary Roster & Blob Color Customizer -->
-            <div class="settings-group" id="roster-color-settings-group">
-                <div class="settings-group-title" style="display:flex; justify-content:space-between; align-items:center;">
-                    <span>🎨 Roster Blob & Badge Colors (Preview/Tuning)</span>
-                    <button type="button" id="btn-reset-roster-colors" class="btn-text-only" style="font-size:11px; font-weight:700; color:var(--accent-blue); background:none; border:none; cursor:pointer;">Reset Defaults</button>
-                </div>
-                
-                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Class Teacher (CT) Blob</span>
-                        <span class="settings-row-desc">Ring and tint for Class Teachers (non-red).</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <input type="color" id="color-picker-ct" value="#af52de" class="color-picker-input">
-                        <div class="color-preset-pills">
-                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#af52de" style="background:#af52de;" title="Royal Violet"></button>
-                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#d97706" style="background:#d97706;" title="Warm Amber"></button>
-                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#0284c7" style="background:#0284c7;" title="Teal Sky"></button>
-                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#10b981" style="background:#10b981;" title="Emerald"></button>
-                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#6366f1" style="background:#6366f1;" title="Indigo"></button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Subject Teacher (ST) Blob</span>
-                        <span class="settings-row-desc">Ring and tint for Subject & 2nd/3rd Teachers.</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <input type="color" id="color-picker-st" value="#007aff" class="color-picker-input">
-                        <div class="color-preset-pills">
-                            <button type="button" class="color-pill-btn" data-target="st" data-color="#007aff" style="background:#007aff;" title="iOS Blue"></button>
-                            <button type="button" class="color-pill-btn" data-target="st" data-color="#06b6d4" style="background:#06b6d4;" title="Cyan"></button>
-                            <button type="button" class="color-pill-btn" data-target="st" data-color="#059669" style="background:#059669;" title="Sea Green"></button>
-                            <button type="button" class="color-pill-btn" data-target="st" data-color="#64748b" style="background:#64748b;" title="Slate"></button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Coordinator Badges (AC & AAC)</span>
-                        <span class="settings-row-desc">Unified matching color for AC and AAC corner badges.</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <input type="color" id="color-picker-coord" value="#f59e0b" class="color-picker-input">
-                        <div class="color-preset-pills">
-                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#f59e0b" style="background:#f59e0b;" title="Amber Gold"></button>
-                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#8b5cf6" style="background:#8b5cf6;" title="Violet"></button>
-                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#0284c7" style="background:#0284c7;" title="Cobalt"></button>
-                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#1e293b" style="background:#1e293b;" title="Obsidian"></button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Absent Alert Color</span>
-                        <span class="settings-row-desc">Ring and fill when teacher is marked absent.</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <input type="color" id="color-picker-absent" value="#ff3b30" class="color-picker-input">
-                        <div class="color-preset-pills">
-                            <button type="button" class="color-pill-btn" data-target="absent" data-color="#ff3b30" style="background:#ff3b30;" title="Crimson"></button>
-                            <button type="button" class="color-pill-btn" data-target="absent" data-color="#e11d48" style="background:#e11d48;" title="Rose"></button>
-                            <button type="button" class="color-pill-btn" data-target="absent" data-color="#dc2626" style="background:#dc2626;" title="Red"></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Role Hierarchy & Active Identity Selector -->
+            <!-- 1. Access Role & Identity -->
             <div class="settings-group">
                 <div class="settings-group-title">Access Role & Identity</div>
                 <div class="role-selector-grid" id="settings-role-grid">
@@ -456,17 +320,48 @@
                 </div>
             </div>
 
+            <!-- 2. Google Sheets Cloud Sync & Master Source of Truth -->
+            <div class="settings-group" id="cloud-sync-settings-group">
+                <div class="settings-group-title">Google Sheets Cloud Sync (2-Way Live Sync)</div>
+                <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:10px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Google Apps Script Web App / Sheet URL</span>
+                        <span class="settings-row-desc">Sync master routine updates and automatically push daily substitution records back to Google Sheets.</span>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <input type="url" id="sheets-csv-url-input" class="apple-input" style="font-size:12px; flex:1;" placeholder="https://script.google.com/macros/s/.../exec">
+                        <button id="btn-save-sheets-url" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; white-space:nowrap;">Save URL</button>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px; flex-wrap:wrap; gap:8px;">
+                        <div id="cloud-sync-status-text" style="font-size:11px; color:var(--text-secondary);">
+                            Status: <span id="sync-last-time">Local Baseline (Not Synced)</span>
+                        </div>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <button id="btn-push-sheets" class="btn-secondary" style="font-size:12px; padding:6px 12px; font-weight:700; display:flex; align-items:center; gap:6px;" title="Push today's substitutions to Google Sheets Daily_Ledger">
+                                <span>📤</span>
+                                <span>Push Today's Ledger</span>
+                            </button>
+                            <button id="btn-sync-now" class="btn-primary" style="font-size:12px; padding:6px 14px; font-weight:700; background:var(--accent-blue); color:#ffffff; display:flex; align-items:center; gap:6px;">
+                                <span id="sync-spinner" class="sync-icon">☁</span>
+                                <span>Sync Routine</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Preferences & Routine Protections -->
             <div class="settings-group">
-                <div class="settings-group-title">Preferences & Coordinator Controls</div>
-                <!-- Admin / AC / Asst AC / offAC Only Setting -->
+                <div class="settings-group-title">Preferences & Routine Protections</div>
+                <!-- Admin PIN Security & Masking -->
                 <div class="settings-row" id="admin-pin-setting-row">
                     <div class="settings-row-info">
                         <span class="settings-row-label">Admin Master Routine PIN <span class="admin-only-tag">Admin / AC Only</span></span>
-                        <span class="settings-row-desc">4-digit passcode required to unlock and edit the Master Timetable baseline.</span>
+                        <span class="settings-row-desc">Protected 4-digit passcode required to unlock and edit the Master Timetable baseline.</span>
                     </div>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <input type="password" id="admin-pin-input" maxlength="4" class="apple-input" style="width:70px; text-align:center; font-size:14px; letter-spacing:3px; padding:4px 8px;" placeholder="••••" value="1234">
-                        <button id="btn-save-pin" class="btn-secondary" style="font-size:11px; padding:6px 10px; font-weight:700;">Update</button>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <span style="font-family:monospace; font-size:15px; letter-spacing:3px; color:var(--text-secondary); background:var(--bg-color); padding:4px 10px; border-radius:6px; border:1px solid var(--border-color);">••••</span>
+                        <button id="btn-change-pin" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; white-space:nowrap;">🔑 Change PIN</button>
                     </div>
                 </div>
                 <div class="settings-row" id="admin-dispute-setting-row">
@@ -511,37 +406,122 @@
                 </div>
             </div>
 
-            <!-- Google Sheets Cloud Sync & Master Source of Truth -->
-            <div class="settings-group" id="cloud-sync-settings-group">
-                <div class="settings-group-title">Google Sheets Cloud Sync (2-Way Live Sync)</div>
-                <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:10px;">
+            <!-- 4. Appearance & Display (Compact Theme Pills + Fullscreen) -->
+            <div class="settings-group">
+                <div class="settings-group-title">Appearance & Display</div>
+                <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:8px;">
                     <div class="settings-row-info">
-                        <span class="settings-row-label">Google Apps Script Web App / Sheet URL</span>
-                        <span class="settings-row-desc">Sync master routine updates and automatically push daily substitution records back to Google Sheets.</span>
+                        <span class="settings-row-label">Interface Theme</span>
+                        <span class="settings-row-desc">Select your preferred color scheme or match system defaults.</span>
                     </div>
-                    <div style="display:flex; gap:6px;">
-                        <input type="url" id="sheets-csv-url-input" class="apple-input" style="font-size:12px; flex:1;" placeholder="https://script.google.com/macros/s/.../exec">
-                        <button id="btn-save-sheets-url" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; white-space:nowrap;">Save URL</button>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px; flex-wrap:wrap; gap:8px;">
-                        <div id="cloud-sync-status-text" style="font-size:11px; color:var(--text-secondary);">
-                            Status: <span id="sync-last-time">Local Baseline (Not Synced)</span>
+                    <div class="compact-theme-selector">
+                        <div class="quick-theme-pills">
+                            <button type="button" class="theme-quick-btn" data-theme="light">☀️ Light</button>
+                            <button type="button" class="theme-quick-btn" data-theme="dark">🌙 Dark</button>
+                            <button type="button" class="theme-quick-btn" data-theme="utopian-glass">💠 Utopian</button>
                         </div>
-                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                            <button id="btn-push-sheets" class="btn-secondary" style="font-size:12px; padding:6px 12px; font-weight:700; display:flex; align-items:center; gap:6px;" title="Push today's substitutions to Google Sheets Daily_Ledger">
-                                <span>📤</span>
-                                <span>Push Today's Ledger</span>
-                            </button>
-                            <button id="btn-sync-now" class="btn-primary" style="font-size:12px; padding:6px 14px; font-weight:700; background:var(--accent-blue); color:#ffffff; display:flex; align-items:center; gap:6px;">
-                                <span id="sync-spinner" class="sync-icon">☁</span>
-                                <span>Sync Routine</span>
-                            </button>
+                        <select id="theme-more-select" class="apple-select theme-more-select">
+                            <option value="">More Themes...</option>
+                            <option value="system">📱 Auto (Match System)</option>
+                            <option value="utopian-night">🌃 Utopian Night</option>
+                            <option value="retro-glass">✨ Retro Glass</option>
+                            <option value="aero-frost">❄️ Aero Frost</option>
+                            <option value="cyber-glass">🌌 Cyber Glass</option>
+                            <option value="warm-sepia">📜 Warm Sepia</option>
+                            <option value="high-contrast">🔲 High Contrast</option>
+                            <option value="midnight">⬛ Midnight OLED</option>
+                            <option value="slate-nord">❄️ Slate Nord</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Browser Fullscreen Mode</span>
+                        <span class="settings-row-desc">Hide browser URL bar and tab headers for maximum grid space.</span>
+                    </div>
+                    <button id="btn-toggle-fullscreen" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                        <span id="fullscreen-btn-icon">⛶</span>
+                        <span id="fullscreen-btn-label">Enter Fullscreen</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 5. Developer Options: Roster Blob & Badge Colors (Hidden Behind 5-Tap Easter Egg) -->
+            <div class="settings-group hidden" id="roster-color-settings-group">
+                <div class="settings-group-title" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>🛠 Developer Options (Roster Color Palette)</span>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" id="btn-reset-roster-colors" class="btn-text-only" style="font-size:11px; font-weight:700; color:var(--accent-blue); background:none; border:none; cursor:pointer;">Reset Defaults</button>
+                        <button type="button" id="btn-relock-dev" class="btn-text-only" style="font-size:11px; font-weight:600; color:var(--text-secondary); background:none; border:none; cursor:pointer;" title="Re-lock Developer Options">🔒 Lock</button>
+                    </div>
+                </div>
+                
+                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Class Teacher (CT) Blob</span>
+                        <span class="settings-row-desc">Ring and tint for Class Teachers (Teal Sky `#0284c7`).</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <input type="color" id="color-picker-ct" value="#0284c7" class="color-picker-input">
+                        <div class="color-preset-pills">
+                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#0284c7" style="background:#0284c7;" title="Teal Sky (Active)"></button>
+                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#0ea5e9" style="background:#0ea5e9;" title="Sky Blue"></button>
+                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#af52de" style="background:#af52de;" title="Royal Violet"></button>
+                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#10b981" style="background:#10b981;" title="Emerald"></button>
+                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#6366f1" style="background:#6366f1;" title="Indigo"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Subject Teacher (ST) Blob</span>
+                        <span class="settings-row-desc">Ring and tint for Subject & 2nd/3rd Teachers (`#007aff`).</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <input type="color" id="color-picker-st" value="#007aff" class="color-picker-input">
+                        <div class="color-preset-pills">
+                            <button type="button" class="color-pill-btn" data-target="st" data-color="#007aff" style="background:#007aff;" title="iOS Blue (Active)"></button>
+                            <button type="button" class="color-pill-btn" data-target="st" data-color="#06b6d4" style="background:#06b6d4;" title="Cyan"></button>
+                            <button type="button" class="color-pill-btn" data-target="st" data-color="#059669" style="background:#059669;" title="Sea Green"></button>
+                            <button type="button" class="color-pill-btn" data-target="st" data-color="#64748b" style="background:#64748b;" title="Slate"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Coordinator Badges (AC & AAC)</span>
+                        <span class="settings-row-desc">Unified matching badge color for AC & Assistant AC (`#8b5cf6`).</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <input type="color" id="color-picker-coord" value="#8b5cf6" class="color-picker-input">
+                        <div class="color-preset-pills">
+                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#8b5cf6" style="background:#8b5cf6;" title="Purple (Active)"></button>
+                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#f59e0b" style="background:#f59e0b;" title="Amber Gold"></button>
+                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#0284c7" style="background:#0284c7;" title="Cobalt"></button>
+                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#1e293b" style="background:#1e293b;" title="Obsidian"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Absent Alert Color</span>
+                        <span class="settings-row-desc">Ring and fill when teacher is marked absent (`#ff3b30`).</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <input type="color" id="color-picker-absent" value="#ff3b30" class="color-picker-input">
+                        <div class="color-preset-pills">
+                            <button type="button" class="color-pill-btn" data-target="absent" data-color="#ff3b30" style="background:#ff3b30;" title="Crimson"></button>
+                            <button type="button" class="color-pill-btn" data-target="absent" data-color="#e11d48" style="background:#e11d48;" title="Rose"></button>
+                            <button type="button" class="color-pill-btn" data-target="absent" data-color="#dc2626" style="background:#dc2626;" title="Red"></button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Timetable Baseline & Mock Data Generator -->
+            <!-- 6. Timetable Baseline & Mock Data Generator -->
             <div class="settings-group">
                 <div class="settings-group-title">Timetable Baseline & Mock Data Generator</div>
                 <div class="settings-row">
@@ -569,6 +549,7 @@
                 </div>
             </div>
 
+            <!-- 7. Explore & Learn -->
             <div class="settings-group">
                 <div class="settings-group-title">Explore & Learn</div>
                 <div class="settings-row" style="cursor: pointer;" id="settings-open-tour-row">
@@ -580,11 +561,15 @@
                 </div>
             </div>
 
+            <!-- 8. Application Info (With Android-Style 5-Tap Developer Easter Egg) -->
             <div class="settings-group">
                 <div class="settings-group-title">Application Info</div>
-                <div class="settings-row">
+                <div class="settings-row" id="settings-version-row" style="cursor:pointer; user-select:none;" title="Tap 5 times to unlock Developer Options">
                     <span class="settings-row-label">Version</span>
-                    <span class="settings-row-value">v1.37.1 (Timetable Schema 2.0)</span>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span class="settings-row-value" id="settings-version-val">v1.38.0 (Timetable Schema 2.0)</span>
+                        <span id="dev-mode-pill" class="dev-badge-pill hidden">🛠 Dev Unlocked</span>
+                    </div>
                 </div>
                 <div class="settings-row">
                     <span class="settings-row-label">Storage Engine</span>
