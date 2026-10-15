@@ -1168,7 +1168,7 @@ function bindEvents() {
     safeBind('close-co-teach-modal-btn', 'click', closeCoTeachingModal);
     safeBind('co-teach-overlay', 'click', closeCoTeachingModal);
 
-    // Officiating Role Picker Modal (offAC & offCT)
+    // Officiating Role Picker Modal (Off. AC & Off. CT.)
     safeBind('close-officiating-modal-btn', 'click', closeOfficiatingModal);
     safeBind('officiating-overlay', 'click', closeOfficiatingModal);
 
@@ -3685,7 +3685,7 @@ function findCollisions() {
     return findConflicts();
 }
 
-// --- ROLES, OFFICIATING (offAC / offCT), 10s ACCEPTANCE & DISPUTE ENGINE ---
+// --- ROLES, OFFICIATING (Off. AC / Off. CT.), 10s ACCEPTANCE & DISPUTE ENGINE ---
 
 function hasCoordinatorPermissions() {
     if (state.currentRole === 'admin' || state.currentRole === 'ac' || state.currentRole === 'asst_ac') {
@@ -3837,7 +3837,7 @@ function renderOfficiatingBanners() {
         }
     }
 
-    // 2. Officiating Class Teacher (offCT) Strip when any CT is marked absent
+    // 2. Officiating Class Teacher (Off. CT.) Strip when any CT is marked absent
     if (ctStrip) {
         const absentCTs = teachers.filter(t => state.absentTeachers.has(t) && classTeacherMap[t]);
         if (absentCTs.length > 0) {
@@ -3853,14 +3853,14 @@ function renderOfficiatingBanners() {
                     html += `
                         <div class="off-ct-chip assigned" onclick="openOfficiatingModal('ct', '${section}', '${absentCT}')" title="Click to change Officiating Class Teacher for ${section}">
                             <span>🏫 <b>${section}</b> (${shortAbsent}) → 📋 <b>${validOffCT}</b></span>
-                            <span style="margin-left:4px; opacity:0.75; font-weight:700;" title="Remove offCT" onclick="event.stopPropagation(); clearOfficiatingAssignment('ct', '${section}')">✕</span>
+                            <span style="margin-left:4px; opacity:0.75; font-weight:700;" title="Remove Off. CT." onclick="event.stopPropagation(); clearOfficiatingAssignment('ct', '${section}')">✕</span>
                         </div>
                     `;
                 } else {
                     html += `
                         <div class="off-ct-chip" onclick="openOfficiatingModal('ct', '${section}', '${absentCT}')" title="Assign Officiating Class Teacher for Class ${section}">
                             <span>⚠ CT <b>${section}</b> (${shortAbsent})</span>
-                            <span style="text-decoration:underline; margin-left:3px;">+ Assign offCT</span>
+                            <span style="text-decoration:underline; margin-left:3px;">+ Assign Off. CT.</span>
                         </div>
                     `;
                 }
@@ -3886,8 +3886,8 @@ function openOfficiatingModal(type, section = null, absentCT = null) {
         if (titleEl) titleEl.textContent = '⚡ Assign Officiating AC (offAC)';
         if (subtitleEl) subtitleEl.textContent = `Both ${PRIMARY_AC} (AC) and ${ASSISTANT_AC} (Asst AC) are absent on ${state.day}. Select a present teacher to inherit Academic Coordinator permissions for the day.`;
     } else {
-        if (titleEl) titleEl.textContent = `🏫 Assign Officiating CT (Class ${section})`;
-        if (subtitleEl) subtitleEl.textContent = `${absentCT} (Class Teacher of ${section}) is absent on ${state.day}. Select a present teacher to serve as Officiating Class Teacher (offCT) for ${section}.`;
+        if (titleEl) titleEl.textContent = `🏫 Assign Officiating Class Teacher (Class ${section})`;
+        if (subtitleEl) subtitleEl.textContent = `${absentCT} (Class Teacher of ${section}) is absent on ${state.day}. Select a present teacher to serve as Officiating Class Teacher (Off. CT.) for ${section}.`;
     }
 
     const preferredOffCT = (type === 'ct' && section && classTeams[section]) ? classTeams[section].preferredOffCT : null;
@@ -3957,7 +3957,7 @@ function selectOfficiatingTeacher(teacherName) {
         if (!state.officiatingCT) state.officiatingCT = {};
         if (!state.officiatingCT[day]) state.officiatingCT[day] = {};
         state.officiatingCT[day][section] = teacherName;
-        showToast(`Assigned ${teacherName} as Officiating CT (offCT) for Class ${section}`);
+        showToast(`Assigned ${teacherName} as Officiating Class Teacher (Off. CT.) for Class ${section}`);
     }
 
     closeOfficiatingModal();
@@ -4456,7 +4456,7 @@ function renderTableRoutine() {
             teacherBadges += `<span class="off-badge-mini">⚡ offAC</span>`;
         }
         offCTSecs.forEach(sec => {
-            teacherBadges += `<span class="off-badge-mini">📋 offCT ${sec}</span>`;
+            teacherBadges += `<span class="off-badge-mini">📋 Off. CT. ${sec}</span>`;
         });
         if (isUnavailable && !isAbsent) {
             teacherBadges += `<span class="badge-sub-unavail-grid" title="Unavailable for substitution today">⛔ <button type="button" class="btn-sub-reason-help" data-teacher="${escapeHtml(teacher)}" data-remark="${escapeHtml(unavailRemark)}" title="Click to view remark">?</button></span>`;
@@ -4671,7 +4671,7 @@ function renderClassRoutineTable(table) {
             const ctShort = ctName.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
             if (isCTAbsent && offCT) {
                 const offCTShort = offCT.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
-                teamSubtext = `<span style="color:var(--accent-pink);">CT ${ctShort} (Abs)</span> • <span style="color:var(--accent-orange); font-weight:700;">⚡ offCT: ${offCTShort}</span>`;
+                teamSubtext = `<span style="color:var(--accent-pink);">CT ${ctShort} (Abs)</span> • <span style="color:var(--accent-orange); font-weight:700;">⚡ Off. CT.: ${offCTShort}</span>`;
             } else if (isCTAbsent) {
                 teamSubtext = `<span style="color:var(--accent-pink);">CT ${ctShort} (Absent)</span>`;
             } else {

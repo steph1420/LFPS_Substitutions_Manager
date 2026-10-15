@@ -2,6 +2,10 @@
 
 This tracker maintains active, upcoming, and future tasks for the **Front Desk PWA**.
 
+> [!IMPORTANT]
+> **Terminology Standard**: Do NOT use the informal term `offCT`. Always use **Officiating Class Teacher**, abbreviated as **Off. CT.**. Similarly, use **Officiating AC**, abbreviated as **Off. AC**.
+
+
 ## 🐛 Critical Bug & Performance Tracker
 
 ### BUG-04: Fit-Grid Portrait Mode Screen Overflow & Cell Height Distortion (RESOLVED in v1.40.0)
@@ -115,7 +119,20 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - [ ] **Reset Button History Purge Shortcut**:
   - Add desktop right-click (`contextmenu`) and mobile 500ms touch long-press with haptic vibration (`navigator.vibrate([40, 50])`) on the schedule **Reset Button** (`#reset-day-btn`) to reveal quick action: `🗑 Purge Action History (Clear Undo Buffer)` without resetting the actual routine schedule.
 
-### Job Bundle 5: Hidden Settings, Cross-Period Policy & Cloud Uniformity
+### Job Bundle 5: Hidden Settings, Cross-Period Policy, Acceptance Timer & Notification Center
+- [ ] **Free Dispute by Default & Hidden Acceptance Countdown Timer**:
+  - **Free Dispute by Default**: Disable the 10-second acceptance countdown timer and permanent lock-in (`Locked: Accepted substitutions cannot be disputed.`). Substitutions are free to dispute at any point without time lock-in restrictions.
+  - **Relocate to Developer Options (Hidden Settings)**:
+    - Add an Enable/Disable toggle for the Acceptance Countdown Timer (default: `false` / disabled).
+    - Add a Countdown Duration selector dropdown (`5s`, `10s`, `30s`, `60s`) that activates when the timer is enabled.
+- [ ] **Header Notification Center (`🔔` Icon with Live Notice Badge)**:
+  - Add an Apple-style notification bell icon (`🔔`) in the top navigation header with an active unread notice counter/badge.
+  - Tapping opens an interactive Notification Center / slide-over popover sheet displaying:
+    - **Dispute Notices**: Live flags when a teacher disputes a substitution (e.g. `⚑ Mrs. R. Pahwa disputed Period 3 assignment ("Lab setup required")`) with 1-tap `[ Reassign ]` and `[ Clear Flag ]` buttons.
+    - **Clashes & Conflicts**: Real-time warnings for teacher timetable collisions or duplicate room bookings.
+    - **Displaced Teacher Alerts**: Unassigned displaced teachers in Limbo.
+    - **Officiating Role Alerts**: Reminders to designate an Officiating Class Teacher (Off. CT.) or Officiating AC (Off. AC) when staff are absent.
+    - **Cloud Sync Notices**: Offline warnings or successful cloud sync reports.
 - [ ] **Cross-Period Substitution Policy in Hidden Settings**:
   - **Default**: Substitutions across different periods remain **locked by default** (`samePeriodLock: true`).
   - **Hidden Setting**: Relocate the "Same-Period Lock" toggle into "🛠 Developer Options" (hidden behind 5-tap Easter egg in Application Info) to declutter the main Settings for layman front desk staff.
@@ -129,6 +146,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - [ ] **Cloud-Synced Global Settings (Unified Across Every Viewer)**:
   - Push / fetch config via Google Sheets / Apps Script (`Config` / `Metadata` tab).
   - Synchronizes roster color palette, locked undo button style, and preferences so every staff device loads the exact same uniform configuration.
+
 
 ### Job Bundle 6: Performance Engine & Keep-Warm Pre-Rendering (PERF-01)
 - [ ] **Instant Offscreen Pre-rendering on Load**: Construct and composite the full Master Routine table DOM offscreen during initial page load (`requestIdleCallback`) before user scrolls down.
