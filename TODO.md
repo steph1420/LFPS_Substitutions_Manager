@@ -69,6 +69,26 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - Single-touch common chips: `Sick / Medical`, `Official Duty`, `Parent Meeting`, `Exam Duty`.
   - Immediate tactile feedback: updates avatar badge instantly without complex modal transitions.
 
+### Job Bundle 3: Mobile Undo/Redo Button Recognisability & Cloud-Synced Global Settings
+- [ ] **Mobile Undo/Redo Icon Recognition**:
+  - **Problem**: When screen width shrinks on phones, the `↩` / `↪` icon alone is not sufficiently recognizable to non-tech staff.
+  - **Solution**:
+    - Add a style selector in **Developer Options (Hidden Settings)** with live preview swatches:
+      1. **Curved Arrows** (`↩ Undo` / `↪ Redo`)
+      2. **Circular Arrows** (`↺ Undo` / `↻ Redo`)
+      3. **Apple/Android High-Contrast SVG Vector Icons** (crisp geometric strokes)
+      4. **Micro-Text Pills** (`[ UNDO ]` / `[ REDO ]` high-density typography)
+    - Allow selecting, testing, and locking one preferred design across all screen breakpoints.
+- [ ] **Cloud-Synced Global Settings (Unified Across Every Viewer)**:
+  - **Problem**: Local adjustments (chosen roster palette, locked undo button style, dispute policies) currently live only in one browser's `localStorage`. New or other staff devices don't inherit them automatically.
+  - **Solution**:
+    - Add a `Push Configuration to Cloud` / `Fetch Cloud Configuration` mechanism via the Google Apps Script endpoint or Google Sheet `Config` / `Metadata` tab.
+    - Synchronizes:
+      - Roster color scheme (`--blob-ct-color`, `--blob-st-color`, `--badge-coord-bg`, etc.)
+      - Undo button visual icon style
+      - Default layout & collision preferences
+    - When any new or returning device loads the PWA, it fetches this cloud config so every phone, tablet, and PC shares an identical, cohesive look.
+
 ### 1. Cloud Sync Status Indicator (`☁ Live` vs `☁ Offline`)
 - [ ] **Live Indicator**: Add a prominent yet elegant status badge/icon in the header/settings indicating the cloud Google Sheet is connected and syncing seamlessly (e.g., `🟢 Cloud Live` or `☁ Live` with a soft green pulse).
 - [ ] **Offline Indicator**: When disconnected, no internet, or endpoint unreachable, clearly display `⚪ Sheet Offline` or `⚠ Offline Mode` with last sync timestamp.
