@@ -81,6 +81,11 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
       3. **Apple/Android High-Contrast SVG Vector Icons** (crisp geometric strokes)
       4. **Micro-Text Pills** (`[ UNDO ]` / `[ REDO ]` high-density typography)
     - Allow selecting, testing, and locking one preferred design across all screen breakpoints.
+- [ ] **Reset Button Context Action (Purge History Shortcut)**:
+  - **Problem**: Accessing "Clear Action History" currently requires digging into Settings > Application Info.
+  - **Solution**:
+    - Add desktop right-click (`contextmenu`) and mobile 500ms touch long-press with haptic vibration (`navigator.vibrate([40, 50])`) on the schedule **Reset Button** (`#reset-day-btn`).
+    - Reveals a quick micro-popover / sheet option: `🗑 Purge Action History (Clear Undo Buffer)` without resetting the actual routine schedule.
 - [ ] **Cloud-Synced Global Settings (Unified Across Every Viewer)**:
   - **Problem**: Local adjustments (chosen roster palette, locked undo button style, dispute policies) currently live only in one browser's `localStorage`. New or other staff devices don't inherit them automatically.
   - **Solution**:
@@ -104,10 +109,11 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - [x] **Full Honorific Display**:
   - Preserved full respectful titles and honorific prefixes (e.g., `Mrs. S. Lakra`, `Ms. N. Horo`, `Mr. S. A. Lakra`) across attendance tray and roster cards.
 
-### 3. Undo/Redo History Reset Policy & Buffer Pruning (RESOLVED in v1.36.0)
-- [x] **Manual History Purge**: Added "Clear Action History" button (`#btn-purge-history`) in Settings under Application Info to wipe undo/redo stacks on demand.
+### 3. Undo/Redo History Reset Policy & Buffer Pruning
+- [x] **Manual History Purge**: Added "Clear Action History" button (`#btn-purge-history`) in Settings under Application Info to wipe undo/redo stacks on demand (v1.36.0).
 - [x] **Auto-Reset Policy Options**:
-  - Automatically resets action history buffer when switching days to prevent accidental cross-day undo contamination.
+  - Automatically resets action history buffer when switching days to prevent accidental cross-day undo contamination (v1.36.0).
+- [ ] **Direct Reset Button Shortcut**: Right-click (desktop) or 500ms long-press (mobile) on `#reset-day-btn` to reveal immediate option to purge undo/redo history buffer.
 - [ ] **Buffer Depth Limit**: Enforce a FIFO cap (e.g. maximum 30 actions) to prevent `localStorage` bloating over time.
 
 ---
