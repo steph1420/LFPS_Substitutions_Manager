@@ -139,6 +139,9 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     3. **Apple/Android High-Contrast SVG Vector Icons** (crisp geometric strokes)
     4. **Micro-Text Pills** (`[ UNDO ]` / `[ REDO ]` high-density typography)
   - Allow selecting, testing, and locking one preferred design across all screen breakpoints.
+- [ ] **Concise, High-Density Toast Messages (Microcopy Streamlining)**:
+  - Audit and streamline all `showToast` calls across `app.js` to eliminate verbose, long sentences.
+  - Transform wordy messages into crisp, glanceable mobile notifications (e.g. `Edit Schedule Mode enabled (Drag & drop to move tasks)` $\to$ `✎ Edit Mode On`, `Reset schedule to official pristine 2026–2027 routine` $\to$ `↺ Reset to Baseline`, `🗑 Action history buffer wiped clean` $\to$ `🗑 History Cleared`, `⛶ Fit-Grid Active. Rotate device to landscape for full widescreen view!` $\to$ `⛶ Fit-Grid On (Rotate for wide)`).
 - [ ] **Cloud-Synced Global Settings (Unified Across Every Viewer)**:
   - Push / fetch config via Google Sheets / Apps Script (`Config` / `Metadata` tab).
   - Synchronizes roster color palette, locked undo button style, and preferences so every staff device loads the exact same uniform configuration.
