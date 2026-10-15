@@ -29,6 +29,16 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] Preserved full teacher honorifics (`Mrs. S. Lakra`, `Mr. S. A. Lakra`) across attendance trays and roster displays.
   - [x] Implemented undo/redo history auto-reset on day navigation and manual history purge in Settings.
 
+### FEAT-04: Header Space Reclaim, Color-Coded Blobs, Roster Splitters & Stacked Cell Architecture (RESOLVED in v1.37.0)
+- **Status**: 🟢 Resolved (v1.37.0)
+- **Solution Delivered**:
+  - [x] **Header Decluttering**: Removed redundant `#role-badge-btn` (`🛡 Admin`) from the header top row and relocated `.version-badge` below the Limbo tray in `.grid-status-footer`, freeing ~140px of header space.
+  - [x] **Mark Absence Roster**: Sorted Class Teachers first. Replaced text role subtags with color-coded circular blobs: **Pink for CTs**, **Blue for STs**, with corner badges for Coordinators (`AC` for Mrs. R. Pahwa, `A.AC` for Mrs. S. Lakra).
+  - [x] **Subtle Splitters**: Added 1px gradient vertical dividers (`.roster-splitter`) between teacher avatars matching bottom nav styling.
+  - [x] **Narrowed Teacher Column**: Compressed to **78px on mobile** and **120px on desktop**.
+  - [x] **Stacked Cell Architecture**: Vertically separated Class Name (`.cell-class-tag`) on top and Subject (`.cell-subject-name`) below for both desktop and mobile, reducing cell width to **54px on mobile**.
+  - [x] **Role Accuracy**: Corrected `Mr. S. A. Lakra` from "3rd Teacher / Support" to strictly "3rd Teacher" (Blue ST blob).
+
 ---
 
 ## 🚀 Active / Next Priorities

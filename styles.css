@@ -702,16 +702,123 @@ body {
     color: var(--accent-blue);
     box-shadow: var(--shadow-soft);
     position: relative;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Color-Coded Teacher Blobs: CT (Pink) vs ST (Blue) */
+.avatar-circle.blob-ct {
+    background: rgba(255, 45, 85, 0.12) !important;
+    border: 2px solid var(--accent-pink) !important;
+    color: var(--accent-pink) !important;
+}
+
+.avatar-circle.blob-st {
+    background: rgba(0, 122, 255, 0.12) !important;
+    border: 2px solid var(--accent-blue) !important;
+    color: var(--accent-blue) !important;
+}
+
+/* Corner Badges on Blobs (AC, Asst AC, Officiating) */
+.blob-corner-badge {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    font-size: 7.5px;
+    font-weight: 800;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+    z-index: 2;
+}
+
+.blob-corner-badge.badge-ac {
+    background: #f59e0b;
+    color: #ffffff;
+}
+
+.blob-corner-badge.badge-asst-ac {
+    background: #8b5cf6;
+    color: #ffffff;
+}
+
+.blob-corner-badge.badge-off-ac {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+/* Subtle Splitter Line between Teacher Cards in Absent Tray */
+.roster-splitter {
+    width: 1px;
+    height: 28px;
+    background: linear-gradient(to bottom, transparent, var(--border-color) 20%, var(--border-color) 80%, transparent);
+    opacity: 0.7;
+    align-self: center;
+    flex-shrink: 0;
 }
 
 .teacher-avatar.absent .avatar-circle {
-    border-color: var(--accent-red);
-    color: var(--accent-red);
-    background-color: var(--bg-missing);
+    border-color: var(--accent-red) !important;
+    color: var(--accent-red) !important;
+    background-color: var(--bg-missing) !important;
 }
 
 .teacher-avatar.absent span.name {
     color: var(--text-secondary);
+}
+
+/* Vertical Stacking for Period Cells: Class on top, Subject below */
+.cell-task-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5px;
+    width: 100%;
+    line-height: 1.12;
+    overflow: hidden;
+}
+
+.cell-class-tag {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.cell-subject-name {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--accent-blue);
+    opacity: 0.95;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+/* Grid Status Footer */
+.grid-status-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px 2px;
+    font-size: 10.5px;
+    color: var(--text-secondary);
+    opacity: 0.8;
+    margin-top: 4px;
+    user-select: none;
+}
+
+.grid-status-dot {
+    font-size: 6px;
+    opacity: 0.5;
 }
 
 /* Master Routine Header */
@@ -1017,7 +1124,7 @@ input:checked + .slider:before {
 
 .routine-table {
     width: 100%;
-    min-width: 1180px;
+    min-width: 960px;
     border-collapse: collapse;
     font-size: 12px;
     table-layout: fixed;
@@ -1026,28 +1133,28 @@ input:checked + .slider:before {
 
 .routine-table th, .routine-table td {
     border: 1px solid var(--border-color);
-    padding: 6px 4px;
+    padding: 5px 3px;
     text-align: center;
     vertical-align: middle;
     box-sizing: border-box;
-    width: 112px;
-    min-width: 104px;
-    max-width: 118px;
+    width: 92px;
+    min-width: 82px;
+    max-width: 98px;
     overflow: hidden;
 }
 
 .routine-table th:first-child, .routine-table td:first-child {
     position: sticky;
     left: 0;
-    width: 148px !important;
-    min-width: 148px !important;
-    max-width: 148px !important;
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
     background: var(--surface-color);
     font-weight: 600;
     z-index: 2;
     border-right: 2px solid var(--border-color);
     text-align: left;
-    padding: 8px 10px;
+    padding: 6px 8px;
     transform: translateZ(0);
 }
 
@@ -2465,41 +2572,51 @@ input:checked + .slider:before {
 
     /* 5. HIGH-DENSITY SPREADSHEET TABLE */
     .routine-table {
-        min-width: 780px !important;
-        font-size: 10.5px !important;
+        min-width: 550px !important;
+        font-size: 10px !important;
         border-collapse: collapse !important;
         border-spacing: 0 !important;
     }
     .routine-table th, 
     .routine-table td {
-        padding: 3px 2px !important;
-        width: 86px !important;
-        min-width: 80px !important;
-        max-width: 92px !important;
+        padding: 2px 1.5px !important;
+        width: 54px !important;
+        min-width: 50px !important;
+        max-width: 58px !important;
         height: 38px !important;
-        font-size: 10.5px !important;
-        line-height: 1.15 !important;
+        font-size: 10px !important;
+        line-height: 1.1 !important;
         border-radius: 2px !important;
     }
     .routine-table th {
-        height: 32px !important;
-        min-height: 32px !important;
-        font-size: 9.5px !important;
-        padding: 2px 2px !important;
+        height: 30px !important;
+        min-height: 30px !important;
+        font-size: 9px !important;
+        padding: 2px 1px !important;
     }
     .period-sub-header {
+        font-size: 7px !important;
+    }
+
+    /* Period cell stacked elements */
+    .cell-class-tag {
+        font-size: 8.5px !important;
+        font-weight: 800 !important;
+    }
+    .cell-subject-name {
         font-size: 7.5px !important;
+        font-weight: 600 !important;
     }
 
     /* First Sticky Column (Teacher Name) */
     .routine-table th:first-child,
     .routine-table td:first-child {
-        width: 108px !important;
-        min-width: 108px !important;
-        max-width: 108px !important;
-        padding: 3px 6px !important;
-        font-size: 11px !important;
-        line-height: 1.15 !important;
+        width: 78px !important;
+        min-width: 76px !important;
+        max-width: 82px !important;
+        padding: 2px 4px !important;
+        font-size: 10px !important;
+        line-height: 1.12 !important;
     }
     /* Hide the verbose full-name sub on mobile to save vertical height */
     .teacher-fullname-sub {
@@ -2610,6 +2727,15 @@ input:checked + .slider:before {
         height: 24px !important;
         font-size: 9.5px !important;
         line-height: 24px !important;
+    }
+    .teacher-avatar .blob-corner-badge {
+        font-size: 5.5px !important;
+        padding: 0.5px 2px !important;
+        bottom: -2px !important;
+        right: -2px !important;
+    }
+    .roster-splitter {
+        height: 18px !important;
     }
     .teacher-avatar .name {
         font-size: 9px !important;
@@ -3013,24 +3139,32 @@ body.fit-grid-mode .routine-table {
 
 body.fit-grid-mode .routine-table th,
 body.fit-grid-mode .routine-table td {
-    padding: 5px 3px !important;
-    font-size: clamp(9px, 1.05vw, 12px) !important;
+    padding: 3px 1.5px !important;
+    font-size: clamp(8px, 1vw, 11px) !important;
     white-space: normal !important;
     word-break: break-word;
-    line-height: 1.15 !important;
+    line-height: 1.1 !important;
     height: auto !important;
     min-width: 0 !important;
 }
 
 body.fit-grid-mode .routine-table th:first-child,
 body.fit-grid-mode .routine-table td:first-child {
-    width: 11% !important;
-    font-size: clamp(9px, 1.1vw, 12px) !important;
-    padding-left: 5px !important;
+    width: 13% !important;
+    font-size: clamp(8.5px, 1.1vw, 11px) !important;
+    padding: 3px 4px !important;
+}
+
+body.fit-grid-mode .cell-class-tag {
+    font-size: clamp(7.5px, 0.95vw, 10px) !important;
+}
+
+body.fit-grid-mode .cell-subject-name {
+    font-size: clamp(7px, 0.85vw, 9.5px) !important;
 }
 
 body.fit-grid-mode .shared-badge {
-    font-size: 9px !important;
+    font-size: 8px !important;
     padding: 1px 2px !important;
     bottom: 1px;
     right: 1px;

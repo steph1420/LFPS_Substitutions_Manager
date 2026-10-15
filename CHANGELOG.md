@@ -17,6 +17,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.37.0] - 2026-10-15
+
+### Added
+- **Color-Coded Teacher Blobs (Pink CTs & Blue STs)**:
+  - Redesigned the Mark Absence Panel avatars into high-clarity color-coded circular blobs:
+    - **Pink Blobs** for Class Teachers (`Mrs. S. Lakra`, `Mrs. M. Midha`, `Mrs. R. Pahwa`, `Mrs. R. Narayan`).
+    - **Blue Blobs** for Subject Teachers, 2nd Teachers, and 3rd Teachers (`Ms. N. Horo`, `Ms. K. Sanga`, `Ms. A. Amira`, `Mrs. S. Bage`, `Mr. S. A. Lakra`).
+  - Added lower-right corner badges on the circular blobs for school leaders:
+    - `AC` badge for Academic Coordinator (`Mrs. R. Pahwa`).
+    - `A.AC` badge for Assistant Academic Coordinator (`Mrs. S. Lakra`).
+    - `⚡` badge for Officiating AC when active.
+- **Subtle Vertical Splitters (`.roster-splitter`)**:
+  - Inserted 1px translucent vertical gradient dividers between each teacher avatar card in the Mark Absence tray, matching the hardware-segmented aesthetics of the bottom navigation bar.
+- **Vertical Class/Subject Cell Stacking Architecture**:
+  - Replaced inline task strings like `PREP B (MATH)` with vertically stacked layout: Class Name (`.cell-class-tag`) on top, Subject (`.cell-subject-name`) below.
+  - Slashes period column width from 86px down to **54px on mobile** and **92px on desktop**, fitting 5–6 full periods on mobile portrait and eliminating text overflow.
+- **Grid Status Footer**:
+  - Relocated `.version-badge` from the congested header into a subtle footer strip below `#limbo-wrapper`.
+
+### Changed
+- **Header Space Reclaim**:
+  - Removed redundant `#role-badge-btn` (`🛡 Admin`) from the header top bar, saving ~90px of horizontal space. Role switching and permission status remain cleanly housed within Settings.
+- **Teacher Column Narrowing**:
+  - Compressed sticky teacher column to **78px on mobile** (down from 108px) and **120px on desktop** (down from 148px).
+- **Class Teachers Priority Order**:
+  - Enforced strict priority ordering across both the Mark Absence tray and the Timetable Matrix so Class Teachers always render first.
+- **Role Accuracy**:
+  - Updated `Mr. S. A. Lakra` from "3rd Teacher / Support" to strictly "3rd Teacher".
+
 ## [v1.36.0] - 2026-10-15
 
 ### Added

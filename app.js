@@ -123,11 +123,11 @@ const staffDirectory = {
     "Mr. S. A. Lakra": {
         fullName: "Mr. Stephen Ashish Lakra",
         abbr: "Mr. S. A. Lakra",
-        role: "3rd Teacher / Support",
+        role: "3rd Teacher",
         primaryClass: "KG A",
         periodsTaught: 14,
         initials: "AL",
-        department: "Games, Drill & Music Support",
+        department: "Games, Drill & Music",
         assignedSubjectPool: ["GAMES", "HIN. KAV./GEET", "DRILL", "SING.", "GK"]
     }
 };
@@ -427,24 +427,24 @@ const masterTimetableLog = [
     { class: "PREP B", day: "FRI.", period: "1st", subject: "HT", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
     { class: "KG B", day: "FRI.", period: "4th", subject: "DR.", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
     { class: "KG B", day: "FRI.", period: "5th", subject: "CR.", teacherAbbr: "Mrs. S. Bage", fullName: "Mrs. Suman Bage", role: "2nd Teacher" },
-    { class: "KG A", day: "MON.", period: "G/PD", subject: "GAMES", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "KG B", day: "MON.", period: "G/PD", subject: "GAMES", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "KG A", day: "MON.", period: "2nd", subject: "HIN. KAV./GEET", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "KG B", day: "MON.", period: "3rd", subject: "HIN. KAV./GEET", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "PREP A", day: "MON.", period: "4th", subject: "HIN. KAV./GEET", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "PREP B", day: "MON.", period: "6th", subject: "HIN. KAV./GEET", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "PREP A", day: "TUES.", period: "G/PD", subject: "1ST DRILL", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "PREP B", day: "TUES.", period: "G/PD", subject: "2ND DRILL", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "KG A", day: "WED.", period: "2nd", subject: "SING.", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "KG B", day: "WED.", period: "5th", subject: "SING.", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "KG A", day: "THU.", period: "G/PD", subject: "DRILL", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "KG B", day: "THU.", period: "G/PD", subject: "DRILL", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "KG A", day: "THU.", period: "2nd", subject: "GK", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "KG B", day: "THU.", period: "6th", subject: "GK", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "PREP A", day: "FRI.", period: "G/PD", subject: "GAMES", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "PREP B", day: "FRI.", period: "G/PD", subject: "GAMES", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "PREP A", day: "FRI.", period: "3rd", subject: "SING.", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" },
-    { class: "PREP B", day: "FRI.", period: "6th", subject: "SING.", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher / Support" }
+    { class: "KG A", day: "MON.", period: "G/PD", subject: "GAMES", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "KG B", day: "MON.", period: "G/PD", subject: "GAMES", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "KG A", day: "MON.", period: "2nd", subject: "HIN. KAV./GEET", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "KG B", day: "MON.", period: "3rd", subject: "HIN. KAV./GEET", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "PREP A", day: "MON.", period: "4th", subject: "HIN. KAV./GEET", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "PREP B", day: "MON.", period: "6th", subject: "HIN. KAV./GEET", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "PREP A", day: "TUES.", period: "G/PD", subject: "1ST DRILL", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "PREP B", day: "TUES.", period: "G/PD", subject: "2ND DRILL", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "KG A", day: "WED.", period: "2nd", subject: "SING.", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "KG B", day: "WED.", period: "5th", subject: "SING.", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "KG A", day: "THU.", period: "G/PD", subject: "DRILL", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "KG B", day: "THU.", period: "G/PD", subject: "DRILL", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "KG A", day: "THU.", period: "2nd", subject: "GK", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "KG B", day: "THU.", period: "6th", subject: "GK", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "PREP A", day: "FRI.", period: "G/PD", subject: "GAMES", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "PREP B", day: "FRI.", period: "G/PD", subject: "GAMES", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "PREP A", day: "FRI.", period: "3rd", subject: "SING.", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" },
+    { class: "PREP B", day: "FRI.", period: "6th", subject: "SING.", teacherAbbr: "Mr. S. A. Lakra", fullName: "Mr. Stephen Ashish Lakra", role: "3rd Teacher" }
 ];
 
 const classTeacherMap = {
@@ -3737,31 +3737,66 @@ function renderCollisionIndicator() {
     renderConflictIndicator();
 }
 
+function formatTaskCellContent(task) {
+    if (!task || task === 'Free' || task === '-') return task;
+    
+    // Check if task contains a known class section: KG A, KG B, PREP A, PREP B
+    const classRegex = /\b(KG\s*[AB]|PREP\s*[AB])\b/i;
+    const match = task.match(classRegex);
+    
+    if (match) {
+        const classSection = match[1].toUpperCase().replace(/\s+/, ' ');
+        // Extract subject by removing the class section, parentheses, dashes, or extra punctuation
+        let subject = task.replace(classRegex, '').replace(/[\(\)\[\]\-]/g, '').trim();
+        subject = subject.replace(/\s+/g, ' ');
+        if (!subject) {
+            return `<div class="cell-task-block"><span class="cell-class-tag">${escapeHtml(classSection)}</span></div>`;
+        }
+        return `
+            <div class="cell-task-block">
+                <span class="cell-class-tag">${escapeHtml(classSection)}</span>
+                <span class="cell-subject-name">${escapeHtml(subject)}</span>
+            </div>
+        `;
+    }
+    
+    return `<div class="cell-task-block"><span class="cell-subject-name">${escapeHtml(task)}</span></div>`;
+}
+window.formatTaskCellContent = formatTaskCellContent;
+
 function renderAbsentTray() {
     const tray = document.getElementById('teacher-roster');
     if(!tray) return;
     tray.innerHTML = '';
     
-    teachers.forEach(teacher => {
+    // Explicit priority sort: Class Teachers (CT) first, then Subject Teachers (ST)
+    const sortedTeachers = [...teachers].sort((a, b) => {
+        const aIsCT = !!classTeacherMap[a];
+        const bIsCT = !!classTeacherMap[b];
+        if (aIsCT && !bIsCT) return -1;
+        if (!aIsCT && bIsCT) return 1;
+        return teachers.indexOf(a) - teachers.indexOf(b);
+    });
+    
+    sortedTeachers.forEach((teacher, idx) => {
         const isAbsent = state.absentTeachers.has(teacher);
         const staff = staffDirectory[teacher];
         const ctSec = classTeacherMap[teacher];
+        const isCT = !!ctSec;
         const isOffAC = !isAbsent && state.officiatingAC?.[state.day] === teacher && state.absentTeachers.has(PRIMARY_AC) && state.absentTeachers.has(ASSISTANT_AC);
-        const offCTSecs = !isAbsent ? getOfficiatingCTSectionsForTeacher(teacher, state.day) : [];
 
-        let roleSubtag = '';
-        if (ctSec) {
-            roleSubtag = `CT ${ctSec}`;
-        } else if (staff?.role === '2nd Teacher') {
-            roleSubtag = `2nd ${staff.classSection || ''}`;
-        } else if (staff?.role === '3rd Teacher / Support') {
-            roleSubtag = `Support`;
+        // Subtly color code: CTs get Pink blob, STs get Blue blob
+        const blobClass = isCT ? 'blob-ct' : 'blob-st';
+
+        // Corner badge on lower right: AC for primary AC, A.AC for assistant AC, offAC for officiating
+        let cornerBadge = '';
+        if (isOffAC) {
+            cornerBadge = `<span class="blob-corner-badge badge-off-ac" title="Officiating AC">⚡</span>`;
+        } else if (teacher === PRIMARY_AC) {
+            cornerBadge = `<span class="blob-corner-badge badge-ac" title="Academic Coordinator">AC</span>`;
+        } else if (teacher === ASSISTANT_AC) {
+            cornerBadge = `<span class="blob-corner-badge badge-asst-ac" title="Asst. Academic Coordinator">A.AC</span>`;
         }
-
-        if (teacher === PRIMARY_AC) roleSubtag = `AC • ${roleSubtag}`;
-        else if (teacher === ASSISTANT_AC) roleSubtag = `Asst AC • ${roleSubtag}`;
-        if (isOffAC) roleSubtag = `⚡ offAC`;
-        else if (offCTSecs.length > 0) roleSubtag = `offCT ${offCTSecs.join(',')}`;
 
         const initials = staff?.initials || teacher.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '').slice(0, 2).toUpperCase();
         const displayName = teacher; // Preserves full respectful title (Mrs. S. Lakra, Mr. S. A. Lakra, etc.)
@@ -3780,13 +3815,23 @@ function renderAbsentTray() {
             `;
         }
 
+        // Insert subtle vertical gradient splitter line between teacher names (just like bottom tabs)
+        if (idx > 0) {
+            const splitter = document.createElement('div');
+            splitter.className = 'roster-splitter';
+            splitter.setAttribute('aria-hidden', 'true');
+            tray.appendChild(splitter);
+        }
+
         const el = document.createElement('div');
         el.className = `teacher-avatar ${isAbsent ? 'absent' : ''} ${isUnavailable && !isAbsent ? 'sub-unavailable' : ''}`;
-        el.title = `${fullName} (${staff?.role || 'Teacher'}${staff?.additionalRole ? ' • ' + staff.additionalRole : ''})\nTap to toggle absent/present • Long-press / Right-click for Sub-Availability`;
+        el.title = `${fullName} (${staff?.role || (isCT ? 'Class Teacher' : 'Teacher')}${staff?.additionalRole ? ' • ' + staff.additionalRole : ''})\nTap to toggle absent/present • Long-press / Right-click for Sub-Availability`;
         el.innerHTML = `
-            <div class="avatar-circle">${initials}</div>
-            <span class="name" style="font-size:11px; margin-top:4px; font-weight:600;">${displayName}</span>
-            <span class="role-subtag" style="font-size:9px; color:var(--text-secondary); font-weight:600;">${roleSubtag}</span>
+            <div class="avatar-circle ${blobClass}">
+                ${initials}
+                ${cornerBadge}
+            </div>
+            <span class="name" style="font-size:11px; margin-top:3px; font-weight:600;">${displayName}</span>
             ${unavailBadge}
         `;
 
@@ -3871,7 +3916,15 @@ function renderTableRoutine() {
     });
     html += '</tr></thead><tbody>';
     
-    teachers.forEach(teacher => {
+    const sortedRoutineTeachers = [...teachers].sort((a, b) => {
+        const aIsCT = !!classTeacherMap[a];
+        const bIsCT = !!classTeacherMap[b];
+        if (aIsCT && !bIsCT) return -1;
+        if (!aIsCT && bIsCT) return 1;
+        return teachers.indexOf(a) - teachers.indexOf(b);
+    });
+    
+    sortedRoutineTeachers.forEach(teacher => {
         const isAbsent = state.absentTeachers.has(teacher);
         if (isAbsent && hideAbsent) return;
 
@@ -3957,7 +4010,7 @@ function renderTableRoutine() {
                 cellClasses.push('cell-missing');
                 cellContent = `
                     <div class="cell-missing-content">
-                        <span>⚠ ${baseTask}</span>
+                        <div class="missing-task">${formatTaskCellContent(baseTask)}</div>
                         <span class="missing-hint">Drag to Sub</span>
                     </div>
                 `;
@@ -3974,7 +4027,7 @@ function renderTableRoutine() {
                 const subShort = assignedSub.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
                 cellContent = `
                     <div class="cell-covered-content">
-                        <span class="covered-task">${baseTask}</span>
+                        <div class="covered-task">${formatTaskCellContent(baseTask)}</div>
                         <span class="covered-by-tag">${statusIcon}${subShort}</span>
                     </div>
                 `;
@@ -3992,7 +4045,7 @@ function renderTableRoutine() {
                 const covShort = coveringFor.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
                 cellContent = `
                     <div class="cell-sub-content">
-                        <span class="sub-task">${task}</span>
+                        <div class="sub-task">${formatTaskCellContent(task)}</div>
                         <span class="sub-badge">${statusBadgePrefix}Sub (${covShort})</span>
                     </div>
                 `;
@@ -4002,7 +4055,7 @@ function renderTableRoutine() {
 
             } else if (task !== 'Free') {
                 cellClasses.push('cell-assigned');
-                cellContent = task;
+                cellContent = formatTaskCellContent(task);
 
                 const coPartners = getCoTeachingPartners(state.day, period, teacher);
                 const hasCoPartners = coPartners.length > 0;

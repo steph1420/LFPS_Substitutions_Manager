@@ -1,5 +1,5 @@
 # Front Desk PWA - Architecture & Developer Guide
-**Current Version:** v1.36.0
+**Current Version:** v1.37.0
 **Project Type:** Vanilla JS/HTML/CSS Offline-First PWA
 **Purpose:** School substitution management and daily timetable resolution.
 
@@ -475,3 +475,21 @@ To enable live synchronization from Google Sheets in future releases:
 *   **Action History Reset Policy:**
     *   Added automatic history reset on day navigation to avoid cross-day undo contamination.
     *   Added manual purge button (`#btn-purge-history`) in Settings under Application Info.
+
+### 11.8 Header Decluttering, Color-Coded Roster Blobs & Stacked Cell Architecture (v1.37.0)
+*   **Header Space Reclaim:**
+    *   Removed redundant `#role-badge-btn` (`🛡 Admin`) from the header top row; role management remains fully supported inside Settings.
+    *   Relocated `.version-badge` below `#limbo-wrapper` into `.grid-status-footer`, freeing ~140px of header width for zero-scroll phone layouts.
+*   **Color-Coded Teacher Blobs & Hardware Splitters:**
+    *   Class Teachers (CT) rendered with distinct **Pink blobs** (`.avatar-circle.blob-ct`).
+    *   Subject Teachers (ST, 2nd & 3rd Teachers) rendered with **Blue blobs** (`.avatar-circle.blob-st`).
+    *   School leadership badges positioned in the lower-right corner of the circular blob (`AC` for `Mrs. R. Pahwa`, `A.AC` for `Mrs. S. Lakra`, `⚡` for officiating AC).
+    *   Subtle 1px gradient vertical dividers (`.roster-splitter`) added between teacher cards.
+    *   Teacher role subtext removed from the card to slash panel vertical height by 35%+.
+*   **Stacked Cell Anatomy (`formatTaskCellContent`):**
+    *   Replaced horizontal strings (e.g. `PREP B (MATH)`) with stacked block: `.cell-class-tag` on line 1, `.cell-subject-name` on line 2.
+    *   Compressed period columns to **54px on mobile** and **92px on desktop**, allowing 5–6 full periods to display simultaneously in mobile portrait view.
+    *   Compressed sticky teacher column to **78px on mobile** and **120px on desktop**.
+*   **Strict Class Teacher Priority Sorting:**
+    *   Roster and timetable matrix sort Class Teachers first (`Mrs. S. Lakra`, `Mrs. M. Midha`, `Mrs. R. Pahwa`, `Mrs. R. Narayan`), followed by Subject Teachers.
+    *   `Mr. S. A. Lakra` classified strictly as "3rd Teacher" with Blue ST blob.
