@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.37.0">
+    <link rel="stylesheet" href="styles.css?v=1.37.1">
 </head>
 <body>
 
@@ -189,7 +189,7 @@
                 </div>
 
                 <div class="grid-status-footer">
-                    <span class="version-badge">v1.37.0</span>
+                    <span class="version-badge">v1.37.1</span>
                     <span class="grid-status-dot">●</span>
                     <span class="grid-status-label">LFPS Front Desk Offline-First</span>
                 </div>
@@ -337,6 +337,78 @@
                         <span class="theme-preview nord-preview"></span>
                         <span class="theme-name">❄️ Slate Nord</span>
                     </button>
+                </div>
+            </div>
+
+            <!-- Temporary Roster & Blob Color Customizer -->
+            <div class="settings-group" id="roster-color-settings-group">
+                <div class="settings-group-title" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>🎨 Roster Blob & Badge Colors (Preview/Tuning)</span>
+                    <button type="button" id="btn-reset-roster-colors" class="btn-text-only" style="font-size:11px; font-weight:700; color:var(--accent-blue); background:none; border:none; cursor:pointer;">Reset Defaults</button>
+                </div>
+                
+                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Class Teacher (CT) Blob</span>
+                        <span class="settings-row-desc">Ring and tint for Class Teachers (non-red).</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <input type="color" id="color-picker-ct" value="#af52de" class="color-picker-input">
+                        <div class="color-preset-pills">
+                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#af52de" style="background:#af52de;" title="Royal Violet"></button>
+                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#d97706" style="background:#d97706;" title="Warm Amber"></button>
+                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#0284c7" style="background:#0284c7;" title="Teal Sky"></button>
+                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#10b981" style="background:#10b981;" title="Emerald"></button>
+                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#6366f1" style="background:#6366f1;" title="Indigo"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Subject Teacher (ST) Blob</span>
+                        <span class="settings-row-desc">Ring and tint for Subject & 2nd/3rd Teachers.</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <input type="color" id="color-picker-st" value="#007aff" class="color-picker-input">
+                        <div class="color-preset-pills">
+                            <button type="button" class="color-pill-btn" data-target="st" data-color="#007aff" style="background:#007aff;" title="iOS Blue"></button>
+                            <button type="button" class="color-pill-btn" data-target="st" data-color="#06b6d4" style="background:#06b6d4;" title="Cyan"></button>
+                            <button type="button" class="color-pill-btn" data-target="st" data-color="#059669" style="background:#059669;" title="Sea Green"></button>
+                            <button type="button" class="color-pill-btn" data-target="st" data-color="#64748b" style="background:#64748b;" title="Slate"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Coordinator Badges (AC & AAC)</span>
+                        <span class="settings-row-desc">Unified matching color for AC and AAC corner badges.</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <input type="color" id="color-picker-coord" value="#f59e0b" class="color-picker-input">
+                        <div class="color-preset-pills">
+                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#f59e0b" style="background:#f59e0b;" title="Amber Gold"></button>
+                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#8b5cf6" style="background:#8b5cf6;" title="Violet"></button>
+                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#0284c7" style="background:#0284c7;" title="Cobalt"></button>
+                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#1e293b" style="background:#1e293b;" title="Obsidian"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Absent Alert Color</span>
+                        <span class="settings-row-desc">Ring and fill when teacher is marked absent.</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <input type="color" id="color-picker-absent" value="#ff3b30" class="color-picker-input">
+                        <div class="color-preset-pills">
+                            <button type="button" class="color-pill-btn" data-target="absent" data-color="#ff3b30" style="background:#ff3b30;" title="Crimson"></button>
+                            <button type="button" class="color-pill-btn" data-target="absent" data-color="#e11d48" style="background:#e11d48;" title="Rose"></button>
+                            <button type="button" class="color-pill-btn" data-target="absent" data-color="#dc2626" style="background:#dc2626;" title="Red"></button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -512,7 +584,7 @@
                 <div class="settings-group-title">Application Info</div>
                 <div class="settings-row">
                     <span class="settings-row-label">Version</span>
-                    <span class="settings-row-value">v1.37.0 (Timetable Schema 2.0)</span>
+                    <span class="settings-row-value">v1.37.1 (Timetable Schema 2.0)</span>
                 </div>
                 <div class="settings-row">
                     <span class="settings-row-label">Storage Engine</span>
@@ -918,6 +990,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=1.37.0"></script>
+    <script src="app.js?v=1.37.1"></script>
 </body>
 </html>

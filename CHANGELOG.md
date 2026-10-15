@@ -17,6 +17,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.37.1] - 2026-10-15
+
+### Added
+- **Temporary Interactive Roster Color Customizer**:
+  - Added a dedicated tuning panel in Settings under "🎨 Roster Blob & Badge Colors" allowing live color selection for:
+    - Class Teacher (CT) Blobs (default updated to Royal Violet `#af52de`).
+    - Subject Teacher (ST) Blobs (default iOS Blue `#007aff`).
+    - Coordinator Badges (AC & AAC) (default Amber Gold `#f59e0b`).
+    - Absent State Rings & Fills (default Crimson `#ff3b30`).
+  - Equipped with full HTML5 color pickers, quick-select preset swatches, real-time live preview across the app, and a 1-tap "Reset Defaults" button.
+- **Unified Coordinator Badges**:
+  - Matched AC (`Mrs. R. Pahwa`) and Assistant AC (`Mrs. S. Lakra`) badges to the exact same background color, eliminating visual hierarchy discrepancy.
+
+### Fixed
+- **Class Teacher vs. Absent Color Clash**:
+  - Replaced the previous pink CT accent (`#ff2d55`), which visually collided with absent red (`#ff3b30`), with calm, non-obnoxious **Royal Violet** (`#af52de` / `rgba(175, 82, 222, 0.14)`).
+
 ## [v1.37.0] - 2026-10-15
 
 ### Added

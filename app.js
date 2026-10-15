@@ -26,7 +26,13 @@ const state = {
         adminPin: '1234',
         sheetsCsvUrl: DEFAULT_SHEETS_WEBAPP_URL,
         lastCloudSync: null,
-        cloudLastModified: null
+        cloudLastModified: null,
+        rosterColors: {
+            ct: '#af52de',
+            st: '#007aff',
+            coord: '#f59e0b',
+            absent: '#ff3b30'
+        }
     },
     actionHistory: {
         grid: [], 
@@ -651,8 +657,58 @@ function loadStateFromStorage() {
     return false;
 }
 
+// --- ROSTER COLOR CUSTOMIZER (TEMPORARY TUNING) ---
+const DEFAULT_ROSTER_COLORS = {
+    ct: '#af52de',
+    st: '#007aff',
+    coord: '#f59e0b',
+    absent: '#ff3b30'
+};
+
+function hexToRgba(hex, alpha = 1) {
+    if (!hex || typeof hex !== 'string') return `rgba(0, 0, 0, ${alpha})`;
+    let c = hex.replace('#', '');
+    if (c.length === 3) c = c.split('').map(x => x + x).join('');
+    const num = parseInt(c, 16);
+    if (isNaN(num)) return `rgba(0, 0, 0, ${alpha})`;
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function applyRosterColors(colors = {}) {
+    if (!state.settings) state.settings = {};
+    if (!state.settings.rosterColors) state.settings.rosterColors = Object.assign({}, DEFAULT_ROSTER_COLORS);
+    if (colors && Object.keys(colors).length > 0) {
+        Object.assign(state.settings.rosterColors, colors);
+    }
+    const current = state.settings.rosterColors;
+    const root = document.documentElement;
+
+    root.style.setProperty('--blob-ct-color', current.ct || DEFAULT_ROSTER_COLORS.ct);
+    root.style.setProperty('--blob-ct-bg', hexToRgba(current.ct || DEFAULT_ROSTER_COLORS.ct, 0.14));
+    root.style.setProperty('--blob-st-color', current.st || DEFAULT_ROSTER_COLORS.st);
+    root.style.setProperty('--blob-st-bg', hexToRgba(current.st || DEFAULT_ROSTER_COLORS.st, 0.14));
+    root.style.setProperty('--badge-coord-bg', current.coord || DEFAULT_ROSTER_COLORS.coord);
+    root.style.setProperty('--blob-absent-color', current.absent || DEFAULT_ROSTER_COLORS.absent);
+    root.style.setProperty('--blob-absent-bg', hexToRgba(current.absent || DEFAULT_ROSTER_COLORS.absent, 0.16));
+
+    // Sync input color pickers if present in DOM
+    const pCT = document.getElementById('color-picker-ct');
+    const pST = document.getElementById('color-picker-st');
+    const pCoord = document.getElementById('color-picker-coord');
+    const pAbsent = document.getElementById('color-picker-absent');
+    if (pCT) pCT.value = current.ct || DEFAULT_ROSTER_COLORS.ct;
+    if (pST) pST.value = current.st || DEFAULT_ROSTER_COLORS.st;
+    if (pCoord) pCoord.value = current.coord || DEFAULT_ROSTER_COLORS.coord;
+    if (pAbsent) pAbsent.value = current.absent || DEFAULT_ROSTER_COLORS.absent;
+}
+window.applyRosterColors = applyRosterColors;
+
 // --- THEME MANAGEMENT ---
 function initTheme() {
+    applyRosterColors();
     const savedTheme = localStorage.getItem('lfps_frontdesk_theme') || 'system';
     applyTheme(savedTheme);
 
@@ -938,6 +994,37 @@ function bindEvents() {
         saveStateToStorage();
         updateUndoUI();
         showToast('🗑 Action history buffer wiped clean.');
+    });
+
+    // Temporary Roster Color Customizer Event Listeners
+    ['ct', 'st', 'coord', 'absent'].forEach(key => {
+        const picker = document.getElementById(`color-picker-${key}`);
+        if (picker) {
+            const updateColor = (val) => {
+                applyRosterColors({ [key]: val });
+                saveStateToStorage();
+            };
+            picker.addEventListener('input', (e) => updateColor(e.target.value));
+            picker.addEventListener('change', (e) => updateColor(e.target.value));
+        }
+    });
+
+    document.querySelectorAll('.color-pill-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.dataset.target;
+            const color = btn.dataset.color;
+            if (target && color) {
+                applyRosterColors({ [target]: color });
+                saveStateToStorage();
+            }
+        });
+    });
+
+    safeBind('btn-reset-roster-colors', 'click', () => {
+        state.settings.rosterColors = Object.assign({}, DEFAULT_ROSTER_COLORS);
+        applyRosterColors(DEFAULT_ROSTER_COLORS);
+        saveStateToStorage();
+        showToast('Reset roster blob & badge colors to defaults.');
     });
     
     // Feature Overview Tour Modal
@@ -6082,6 +6169,7 @@ function openSettingsModal() {
 
     const currentTheme = localStorage.getItem('lfps_frontdesk_theme') || 'system';
     updateThemeSelectorUI(currentTheme);
+    applyRosterColors();
 
     if (modal) modal.classList.remove('hidden');
     if (overlay) overlay.classList.add('active');

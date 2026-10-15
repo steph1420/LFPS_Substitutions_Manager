@@ -23,6 +23,15 @@
     --tray-bg: #f9f9f9;
     --static-cell-bg: #f9f9f9;
     --handle-color: #c7c7cc;
+
+    /* Dynamic Roster Blob & Badge Colors (Tuning Customizer) */
+    --blob-ct-color: #af52de;
+    --blob-ct-bg: rgba(175, 82, 222, 0.14);
+    --blob-st-color: #007aff;
+    --blob-st-bg: rgba(0, 122, 255, 0.14);
+    --badge-coord-bg: #f59e0b;
+    --blob-absent-color: #ff3b30;
+    --blob-absent-bg: rgba(255, 59, 48, 0.16);
     --toast-bg: #333333;
     --drag-over-bg: #d1ffd6;
     
@@ -705,20 +714,20 @@ body {
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Color-Coded Teacher Blobs: CT (Pink) vs ST (Blue) */
+/* Color-Coded Teacher Blobs: CT (Royal Violet default) vs ST (Blue default) */
 .avatar-circle.blob-ct {
-    background: rgba(255, 45, 85, 0.12) !important;
-    border: 2px solid var(--accent-pink) !important;
-    color: var(--accent-pink) !important;
+    background: var(--blob-ct-bg, rgba(175, 82, 222, 0.14)) !important;
+    border: 2px solid var(--blob-ct-color, #af52de) !important;
+    color: var(--blob-ct-color, #af52de) !important;
 }
 
 .avatar-circle.blob-st {
-    background: rgba(0, 122, 255, 0.12) !important;
-    border: 2px solid var(--accent-blue) !important;
-    color: var(--accent-blue) !important;
+    background: var(--blob-st-bg, rgba(0, 122, 255, 0.14)) !important;
+    border: 2px solid var(--blob-st-color, #007aff) !important;
+    color: var(--blob-st-color, #007aff) !important;
 }
 
-/* Corner Badges on Blobs (AC, Asst AC, Officiating) */
+/* Corner Badges on Blobs: AC and AAC have UNIFIED matching color */
 .blob-corner-badge {
     position: absolute;
     bottom: -3px;
@@ -735,19 +744,15 @@ body {
     z-index: 2;
 }
 
-.blob-corner-badge.badge-ac {
-    background: #f59e0b;
-    color: #ffffff;
-}
-
+.blob-corner-badge.badge-ac,
 .blob-corner-badge.badge-asst-ac {
-    background: #8b5cf6;
-    color: #ffffff;
+    background: var(--badge-coord-bg, #f59e0b) !important;
+    color: #ffffff !important;
 }
 
 .blob-corner-badge.badge-off-ac {
-    background: #ef4444;
-    color: #ffffff;
+    background: #ef4444 !important;
+    color: #ffffff !important;
 }
 
 /* Subtle Splitter Line between Teacher Cards in Absent Tray */
@@ -761,13 +766,55 @@ body {
 }
 
 .teacher-avatar.absent .avatar-circle {
-    border-color: var(--accent-red) !important;
-    color: var(--accent-red) !important;
-    background-color: var(--bg-missing) !important;
+    border-color: var(--blob-absent-color, var(--accent-red)) !important;
+    color: var(--blob-absent-color, var(--accent-red)) !important;
+    background-color: var(--blob-absent-bg, var(--bg-missing)) !important;
 }
 
 .teacher-avatar.absent span.name {
     color: var(--text-secondary);
+}
+
+/* --- TEMPORARY ROSTER COLOR CUSTOMIZER STYLES --- */
+.color-picker-input {
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    background: none;
+    appearance: none;
+    -webkit-appearance: none;
+    flex-shrink: 0;
+}
+.color-picker-input::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+.color-picker-input::-webkit-color-swatch {
+    border: none;
+    border-radius: 50%;
+}
+.color-preset-pills {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.color-pill-btn {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    padding: 0;
+    flex-shrink: 0;
+}
+.color-pill-btn:hover {
+    transform: scale(1.18);
+    border-color: #ffffff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 
 /* Vertical Stacking for Period Cells: Class on top, Subject below */
