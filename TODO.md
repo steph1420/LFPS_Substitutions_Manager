@@ -4,16 +4,21 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 
 ## 🐛 Critical Bug & Performance Tracker
 
-### BUG-04: Fit-Grid Portrait Mode Screen Overflow & Cell Height Distortion
-- **Status**: 🔴 Open
-- **Reported**: When "Fit Grid" is enabled while in mobile portrait orientation, the grid bleeds past the viewport screen boundary horizontally, and cells become excessively tall vertically.
-- **Root Cause**:
-  - Fit-Grid was originally designed for mobile landscape viewports where wide horizontal aspect ratio comfortably fits 10 columns (Teacher + 9 periods).
-  - In portrait mode (360px–430px wide), squishing 10 columns forces columns to ~35px–40px, causing subject titles to wrap into many vertical lines, exploding cell heights, or causing horizontal table overflow beyond viewport boundaries.
-- **Target Solution**:
-  - [ ] **Orientation-Aware Auto-Guard**: If Fit Grid is triggered in portrait mode, automatically adapt layout (e.g. ultra-compact micro-abbreviations, font-scaling, strict line-clamping / ellipsis with `white-space: nowrap`) or prompt the user with a gentle toast to rotate to landscape for optimal viewing.
-  - [ ] **Strict Cell Height Cap**: In portrait Fit-Grid mode, enforce `max-height: 48px`, `overflow: hidden`, and compact stacked micro-tags so cells never expand into huge vertical blocks.
-  - [ ] **Prevent Horizontal Spill**: Ensure container has `width: 100vw; max-width: 100%; overflow-x: clip;` so no elements bleed past mobile screen boundaries.
+### BUG-04: Fit-Grid Portrait Mode Screen Overflow & Cell Height Distortion (RESOLVED in v1.40.0)
+- **Status**: 🟢 Resolved (v1.40.0)
+- **Solution Delivered**:
+  - [x] **Strict Cell Height Cap**: In portrait Fit-Grid mode, enforced `height: 38px !important; max-height: 44px !important; overflow: hidden !important;`, single-line `white-space: nowrap !important; text-overflow: ellipsis !important;` for `.cell-class-tag` and `.cell-subject-name`, completely stopping cells from stretching vertically into giant blocks.
+  - [x] **Prevent Horizontal Spill**: Enforced `width: 100vw !important; max-width: 100vw !important; overflow-x: hidden !important; box-sizing: border-box !important;` on body, content container, and routine table so no elements ever bleed past mobile screen boundaries.
+  - [x] **Adaptive Column Proportions**: Reduced sticky column width to 16% (min 58px) in portrait and dynamically preserved full multi-line layout on landscape viewports (`@media (orientation: landscape)`).
+  - [x] **Orientation Guidance**: Triggered friendly toast guidance when toggling Fit-Grid in portrait mode.
+
+### BUG-05: Sticky Teacher Column Translucency Clashes with Scrolling Period Cells (RESOLVED in v1.40.0)
+- **Status**: 🟢 Resolved (v1.40.0)
+- **Solution Delivered**:
+  - [x] Added `--surface-opaque` variable across all light, dark, and glass theme presets.
+  - [x] Enforced 100% solid, fully opaque background on `.routine-table th:first-child`, `.routine-table td:first-child`, `.class-header-cell`, and `.class-name-cell` across all theme modes.
+  - [x] Enforced `opacity: 1 !important` and opaque background on `.row-absent td:first-child` so absent teacher cells never become 60% translucent.
+  - [x] Retained tactile separation divider and elevated box-shadow (`box-shadow: 3px 0 8px rgba(0,0,0,0.08)`) with `z-index: 10` (and `z-index: 15` for header intersection) so passing period cards are cleanly occluded underneath with zero visual text collision.
 
 ### PERF-01: Master Routine Initial Render Stutter & In-Memory Pre-Render ("Keep-Warm" Engine)
 - **Status**: 🔴 Open
@@ -23,13 +28,6 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] **In-Memory DOM "Keep-Warm" Cache**: Keep the rendered routine table alive in memory. Avoid destroying and rebuilding `table.innerHTML` from scratch during routine refreshes or tab transitions; use targeted DOM node reconciliation (patch only modified cells).
   - [ ] **Periodic Background Sync & Selective Diff Patching**: Keep routine rendered and run background poll for Google Sheet cloud updates, selectively updating only cells with actual diffs (`calculateScheduleDiffs`), eliminating full-table redraw lag.
   - [ ] **Compositor & Layer Optimization**: Keep `contain: paint layout` and GPU layer promotion (`transform: translateZ(0)`) warm so scrolling onto the table has zero frame drops.
-
-### BUG-05: Sticky Teacher Column Translucency Clashes with Scrolling Period Cells on Narrow Screens
-- **Status**: 🔴 Open
-- **Reported**: On narrow screens when horizontal scrolling begins, period cells pass underneath the sticky first column (Teacher Names). Because the column background is translucent (especially in glass and translucent themes), period numbers, subject text, and cell borders bleed through behind teacher names, causing visual text collision and unreadable clutter.
-- **Target Solution**:
-  - [ ] Enforce 100% solid, fully opaque background on `.routine-table th:first-child`, `.routine-table td:first-child`, `.class-header-cell`, and `.class-name-cell` across all theme modes (using theme-specific solid hex or opaque variables e.g. `--surface-opaque`).
-  - [ ] Retain subtle drop-shadow or border divider (`border-right: 2px solid var(--border-color); box-shadow: 3px 0 8px rgba(0,0,0,0.08)`) so sticky separation remains tactile and crisp without letting background text bleed through.
 
 ### BUG-01: Limbo Tray Drag Failure & Click-to-Restore Mechanism (RESOLVED in v1.35.0)
 - **Status**: 🟢 Resolved (v1.35.0)
@@ -96,19 +94,13 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] **Custom Remark Input**: Enter key or "Apply" button saves custom duties (`Lab setup`, `Principal meeting`, etc.) with instant toast confirmation.
   - [x] **Layman / Boomer Usability**: Giant touch targets, zero complex dropdown flows, instant visual status indicators (`🟢 Available` vs `⛔ Unavailable`).
 
-### Job Bundle 3: Mobile Grid Visual Stability & Core Fixes (Immediate Priority)
-- [ ] **Sticky Teacher Column Opaque Backing (BUG-05)**:
-  - Eliminate visual text collision on narrow screens when period cells scroll underneath the sticky first column.
-  - Enforce 100% solid, fully opaque background for `.routine-table th:first-child`, `.routine-table td:first-child`, `.class-header-cell`, and `.class-name-cell` across all themes and dark modes so passing cards never bleed through teacher names.
-- [ ] **Icon-Only Expand Button ("Remove text fit grid")**:
-  - Replace verbose `⛶ Fit Grid` label with a clean, high-density icon button `⛶` (labeled/tooltip "Expand / Fit Grid").
-  - Frees ~65px of header width on narrow mobile viewports.
-- [ ] **Hide Absent Toggle Knob Overshoot Fix**:
-  - **Problem**: When `.toggle-switch` pill compresses horizontally on narrow portrait screens, static `translateX(16px)` causes the white knob to overshoot and spill past the right border.
-  - **Solution**: Add `flex-shrink: 0` and switch travel to responsive `calc(100% - 18px - 3px)` so the knob stays flush within pill boundaries.
-- [ ] **Fit-Grid Portrait Refinement (BUG-04)**:
-  - **Screen Overflow**: Enforce `width: 100vw; max-width: 100%; overflow-x: clip;` so 10-column Fit Grid never bleeds offscreen on mobile portrait.
-  - **Cell Height Distortion**: Prevent excessive row stretching by enforcing `max-height: 48px`, `overflow: hidden`, single-line abbreviations with ellipsis, and compact stacked tags in portrait mode.
+### FEAT-09: Mobile Grid Visual Stability & Core Fixes (RESOLVED in v1.40.0)
+- **Status**: 🟢 Resolved (v1.40.0)
+- **Solution Delivered**:
+  - [x] **Sticky Teacher Column Opaque Backing (BUG-05)**: Added `--surface-opaque` across all themes and enforced 100% solid, fully opaque backgrounds on `.routine-table th:first-child`, `.routine-table td:first-child`, `.class-header-cell`, and `.class-name-cell` so passing period cards never bleed through teacher names.
+  - [x] **Icon-Only Expand Button**: Removed verbose "Fit Grid" text, leaving only the crisp Apple-style `⛶` icon button (`.btn-fit-grid`), immediately freeing ~65px width in the routine header.
+  - [x] **Hide Absent Toggle Knob Overshoot Fix**: Enforced `flex-shrink: 0` on `.toggle-switch` and `.slider`, plus bounded translation so the white knob never spills past the pill boundary when squished in portrait mode.
+  - [x] **Fit-Grid Portrait Refinement (BUG-04)**: Enforced `max-width: 100vw; overflow-x: hidden; box-sizing: border-box;` to stop horizontal screen spill, and capped cell heights to `height: 38px; max-height: 44px; overflow: hidden;` with text ellipsis in mobile portrait so cells never stretch into giant blocks. Added orientation prompt when toggling in portrait.
 
 ### Job Bundle 4: Routine Header Ergonomics & In-Situ Grid Absences
 - [ ] **Pinned View vs. Scrollable Controls Header Bar**:

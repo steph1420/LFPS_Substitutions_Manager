@@ -2057,7 +2057,13 @@ function toggleFitGridMode(enable) {
     }
     syncDayButtonsUI();
     if (isFitGridMode) {
-        showToast('Fit-Grid View enabled. Tap "Back to Normal" or press Esc to exit.');
+        const isPortrait = window.innerHeight > window.innerWidth && window.innerWidth < 650;
+        if (isPortrait) {
+            showToast('⛶ Fit-Grid Active. Rotate device to landscape for full widescreen view!');
+        } else {
+            showToast('⛶ Fit-Grid View enabled. Tap "Back to Normal" or press Esc to exit.');
+        }
+        if (navigator.vibrate) try { navigator.vibrate(35); } catch (_) {}
     }
 }
 window.toggleFitGridMode = toggleFitGridMode;

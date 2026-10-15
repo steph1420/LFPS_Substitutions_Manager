@@ -17,6 +17,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.40.0] - 2026-10-15
+
+### Fixed
+- **Sticky Teacher Column Translucency Clashes (`BUG-05`)**:
+  - Enforced 100% solid opaque background (`--surface-opaque`) on `.routine-table th:first-child`, `.routine-table td:first-child`, `.class-header-cell`, and `.class-name-cell` across all theme modes (classic light, warm sepia, dark, midnight OLED, slate nord, retro glass, and utopian glass).
+  - Fixed absent teacher row opacity leak: ensured `.row-absent td:first-child` retains solid 100% opacity with red text so passing cards sliding underneath never bleed through teacher names.
+- **Hide Absent Toggle Knob Overshoot**:
+  - Enforced `flex-shrink: 0` on `.toggle-switch` and `.slider` to prevent horizontal squishing on narrow portrait screens.
+  - Aligned knob translation flush with the pill boundary with smooth cubic-bezier easing.
+- **Fit-Grid Portrait Overflow & Cell Height Distortion (`BUG-04`)**:
+  - Prevented table and containers from bleeding past portrait viewport boundaries with strict `max-width: 100vw; overflow-x: hidden; box-sizing: border-box;`.
+  - Enforced strict cell height cap (`height: 38px; max-height: 44px; overflow: hidden;`) with single-line text ellipsis in portrait Fit-Grid mode, stopping cells from vertically ballooning into giant multi-line blocks.
+  - Dynamically adapts column proportions and provides friendly orientation toast guidance.
+
+### Changed
+- **Icon-Only Expand Button**:
+  - Removed verbose "Fit Grid" text from `#fit-grid-btn`, leaving a clean, high-density Apple-style icon button (`⛶`), immediately reclaiming ~65px width in the routine header.
+
 ## [v1.39.0] - 2026-10-15
  
 ### Added
