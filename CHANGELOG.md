@@ -17,6 +17,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.39.0] - 2026-10-15
+ 
+### Added
+- **Rapid 1-Tap Substitution-Availability Card (Boomer / Layman Ergonomics)**:
+  - Completely redesigned `#sub-avail-modal` into a lightning-fast dual-view action sheet tailored for front desk staff.
+  - **Quick Single-Teacher Action Mode**:
+    - Triggered automatically when long-pressing (500ms on touch) or right-clicking any teacher's avatar in the Mark Absence tray.
+    - Prominently showcases teacher name, assigned role, and live availability pill (`🟢 Available` / `⛔ Unavailable: Reason`).
+    - Massive 1-tap action button (`[ ⛔ Mark Unavailable Today ]` or `[ ✓ Set Back to Available ]`).
+    - 6 auto-saving duty chips (`🚌 Bus Duty`, `📝 CBSE Duty`, `👥 Parent Meet`, `📑 Exam Duty`, `🩺 Sick Bay`, `🎪 Event Duty`) that instantly apply the remark, save state, buzz haptics, and dismiss the modal in a single tap.
+    - Custom remark input supporting Enter key submission for special situations.
+  - **All-Staff Quick-Checklist Mode**:
+    - Accessible via tray button (`⛔ Sub-Availability`) or 3-dot overflow menu.
+    - Displays all 9 teachers with instantaneous 1-tap status buttons (`✓ Available` vs `⛔ Duty`), completely eliminating cumbersome dropdown search menus.
+    - Each row includes a quick `✏` edit button to drill down into the single-teacher action sheet.
+- **Fluid View Switcher**:
+  - Segmented control toggles between `⚡ Quick Action` and `📋 All Staff (N)`.
+  - Dynamic footer toggle link (`📋 View All Staff (9)` / `⚡ Quick Action`) for frictionless navigation.
+
 ## [v1.38.0] - 2026-10-15
 
 ### Added

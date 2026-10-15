@@ -1347,35 +1347,38 @@ function bindEvents() {
         });
     }
 
-    // Sub-Availability Modal & Remark Popover Bindings
-    safeBind('btn-open-sub-avail-modal', 'click', () => openSubAvailModal());
+    // Sub-Availability Rapid 1-Tap Modal & Remark Popover Bindings (Job Bundle 2)
+    safeBind('btn-open-sub-avail-modal', 'click', () => openSubAvailModal(null, 'all'));
     safeBind('close-sub-avail-modal-btn', 'click', closeSubAvailModal);
-    safeBind('sub-avail-cancel-btn', 'click', closeSubAvailModal);
+    safeBind('sub-avail-done-btn', 'click', closeSubAvailModal);
     safeBind('sub-avail-overlay', 'click', closeSubAvailModal);
-    safeBind('sub-avail-save-btn', 'click', saveSubAvailModal);
-    safeBind('sub-remark-popover-close-btn', 'click', hideSubRemarkPopover);
-
-    safeBind('sub-avail-teacher-select', 'change', (e) => {
-        const targetTeacher = e.target.value;
-        const isUnavail = isTeacherSubUnavailable(targetTeacher, state.day);
-        const remark = getTeacherSubUnavailableRemark(targetTeacher, state.day);
-        const toggle = document.getElementById('sub-avail-toggle-input');
-        const remarkInput = document.getElementById('sub-avail-remark-input');
-        if (toggle) toggle.checked = isUnavail;
-        if (remarkInput) remarkInput.value = remark;
+    safeBind('sub-avail-tab-single', 'click', () => switchSubAvailView('single'));
+    safeBind('sub-avail-tab-all', 'click', () => switchSubAvailView('all'));
+    safeBind('sub-avail-toggle-view-link', 'click', () => {
+        switchSubAvailView(currentSubAvailView === 'single' ? 'all' : 'single');
     });
+    safeBind('sub-avail-main-action-btn', 'click', handleSubAvailMainAction);
+    safeBind('sub-avail-apply-custom-btn', 'click', handleSubAvailCustomApply);
 
-    // Quick suggestion chips in sub-availability modal
-    document.querySelectorAll('#sub-avail-quick-chips .remark-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            const remarkInput = document.getElementById('sub-avail-remark-input');
-            const toggle = document.getElementById('sub-avail-toggle-input');
-            if (remarkInput) {
-                remarkInput.value = chip.dataset.remark || '';
+    const customRemarkInput = document.getElementById('sub-avail-custom-input');
+    if (customRemarkInput) {
+        customRemarkInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSubAvailCustomApply();
             }
-            if (toggle) toggle.checked = true;
+        });
+    }
+
+    // Fast 1-Tap duty chips (Auto-saves on tap)
+    document.querySelectorAll('#sub-avail-fast-chips .sub-fast-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const remark = chip.dataset.remark || chip.textContent.trim();
+            handleSubAvailQuickDuty(remark);
         });
     });
+
+    safeBind('sub-remark-popover-close-btn', 'click', hideSubRemarkPopover);
 
     // Global listener for '?' help buttons and popover dismiss
     document.addEventListener('click', (e) => {
@@ -1653,36 +1656,25 @@ function setTeacherSubUnavailable(teacher, isUnavailable, remark = '', day = sta
     renderAll();
 }
 
-function openSubAvailModal(teacherToSelect) {
+let currentSubAvailTeacher = null;
+let currentSubAvailView = 'single'; // 'single' or 'all'
+
+function openSubAvailModal(teacherToSelect = null, viewMode = null) {
     const modal = document.getElementById('sub-avail-modal');
     const overlay = document.getElementById('sub-avail-overlay');
-    const teacherSelect = document.getElementById('sub-avail-teacher-select');
-    const toggleInput = document.getElementById('sub-avail-toggle-input');
-    const remarkInput = document.getElementById('sub-avail-remark-input');
+    if (!modal || !overlay) return;
 
-    if (!modal || !overlay || !teacherSelect) return;
+    if (teacherToSelect) {
+        currentSubAvailTeacher = teacherToSelect;
+        currentSubAvailView = viewMode || 'single';
+    } else {
+        currentSubAvailView = viewMode || 'all';
+        if (!currentSubAvailTeacher || !teachers.includes(currentSubAvailTeacher)) {
+            currentSubAvailTeacher = teachers[0];
+        }
+    }
 
-    // Populate teacher select dropdown if needed
-    teacherSelect.innerHTML = '';
-    teachers.forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = t;
-        const staff = staffDirectory[t];
-        opt.textContent = `${t} (${staff?.role || 'Teacher'})`;
-        teacherSelect.appendChild(opt);
-    });
-
-    const targetTeacher = teacherToSelect || teacherSelect.value || teachers[0];
-    teacherSelect.value = targetTeacher;
-
-    const isUnavail = isTeacherSubUnavailable(targetTeacher, state.day);
-    const remark = getTeacherSubUnavailableRemark(targetTeacher, state.day);
-
-    if (toggleInput) toggleInput.checked = isUnavail;
-    if (remarkInput) remarkInput.value = remark;
-
-    updateSubAvailActiveListUI();
-
+    renderSubAvailUI();
     modal.classList.remove('hidden');
     overlay.classList.add('active');
 }
@@ -1694,62 +1686,221 @@ function closeSubAvailModal() {
     if (overlay) overlay.classList.remove('active');
 }
 
-function updateSubAvailActiveListUI() {
-    const listEl = document.getElementById('sub-avail-active-list');
-    const countEl = document.getElementById('sub-avail-count');
-    if (!listEl) return;
+function switchSubAvailView(view) {
+    currentSubAvailView = view;
+    renderSubAvailUI();
+}
 
-    const dayUnavail = state.subUnavailable?.[state.day] || {};
-    const unavailTeachers = Object.keys(dayUnavail);
+function renderSubAvailUI() {
+    const day = state.day;
+    const dayUnavail = state.subUnavailable?.[day] || {};
+    const unavailCount = Object.keys(dayUnavail).length;
 
-    if (countEl) countEl.textContent = unavailTeachers.length;
+    // View mode containers
+    const singleView = document.getElementById('sub-avail-single-view');
+    const allView = document.getElementById('sub-avail-all-view');
+    const tabSingle = document.getElementById('sub-avail-tab-single');
+    const tabAll = document.getElementById('sub-avail-tab-all');
+    const rosterCountEl = document.getElementById('sub-avail-roster-count');
+    const toggleLink = document.getElementById('sub-avail-toggle-view-link');
 
-    if (unavailTeachers.length === 0) {
-        listEl.innerHTML = `<span style="font-size:11px; color:var(--text-tertiary); font-style:italic;">No teachers marked unavailable for ${state.day}.</span>`;
-        return;
+    if (rosterCountEl) rosterCountEl.textContent = unavailCount;
+
+    if (currentSubAvailView === 'all') {
+        if (singleView) singleView.classList.add('hidden');
+        if (allView) allView.classList.remove('hidden');
+        if (tabSingle) {
+            tabSingle.classList.remove('active');
+            tabSingle.style.background = 'transparent';
+            tabSingle.style.color = 'var(--text-secondary)';
+        }
+        if (tabAll) {
+            tabAll.classList.add('active');
+            tabAll.style.background = 'var(--surface-color)';
+            tabAll.style.color = 'var(--text-primary)';
+        }
+        if (toggleLink) toggleLink.textContent = `⚡ Quick Action (${currentSubAvailTeacher || 'Teacher'})`;
+        renderSubAvailRosterList();
+    } else {
+        if (singleView) singleView.classList.remove('hidden');
+        if (allView) allView.classList.add('hidden');
+        if (tabSingle) {
+            tabSingle.classList.add('active');
+            tabSingle.style.background = 'var(--surface-color)';
+            tabSingle.style.color = 'var(--text-primary)';
+        }
+        if (tabAll) {
+            tabAll.classList.remove('active');
+            tabAll.style.background = 'transparent';
+            tabAll.style.color = 'var(--text-secondary)';
+        }
+        if (toggleLink) toggleLink.textContent = `📋 View All Staff (${teachers.length})`;
+        renderSubAvailSingleTeacher();
+    }
+}
+
+function renderSubAvailSingleTeacher() {
+    const teacher = currentSubAvailTeacher || teachers[0];
+    const day = state.day;
+    const isUnavail = isTeacherSubUnavailable(teacher, day);
+    const remark = getTeacherSubUnavailableRemark(teacher, day);
+    const staff = staffDirectory[teacher] || {};
+
+    const nameEl = document.getElementById('sub-avail-teacher-name');
+    const roleEl = document.getElementById('sub-avail-teacher-role');
+    const statusPill = document.getElementById('sub-avail-status-pill');
+    const statusIcon = document.getElementById('sub-avail-status-icon');
+    const statusText = document.getElementById('sub-avail-status-text');
+    const mainBtn = document.getElementById('sub-avail-main-action-btn');
+    const actionIcon = document.getElementById('sub-avail-action-icon');
+    const actionLabel = document.getElementById('sub-avail-action-label');
+    const customInput = document.getElementById('sub-avail-custom-input');
+
+    if (nameEl) nameEl.textContent = teacher;
+    if (roleEl) roleEl.textContent = `${staff.role || 'Teacher'} ${staff.assignedClass ? '• ' + staff.assignedClass : ''}`;
+
+    if (isUnavail) {
+        if (statusPill) {
+            statusPill.className = 'sub-avail-status-pill unavailable';
+        }
+        if (statusIcon) statusIcon.textContent = '⛔';
+        if (statusText) statusText.textContent = `Unavailable: ${remark || 'Duty'}`;
+
+        if (mainBtn) {
+            mainBtn.className = 'sub-avail-big-action-btn mark-avail';
+        }
+        if (actionIcon) actionIcon.textContent = '✓';
+        if (actionLabel) actionLabel.textContent = 'Set Back to Available';
+    } else {
+        if (statusPill) {
+            statusPill.className = 'sub-avail-status-pill available';
+        }
+        if (statusIcon) statusIcon.textContent = '🟢';
+        if (statusText) statusText.textContent = 'Available for Substitution';
+
+        if (mainBtn) {
+            mainBtn.className = 'sub-avail-big-action-btn mark-unavail';
+        }
+        if (actionIcon) actionIcon.textContent = '⛔';
+        if (actionLabel) actionLabel.textContent = 'Mark Unavailable Today';
     }
 
-    listEl.innerHTML = '';
-    unavailTeachers.forEach(t => {
-        const remark = dayUnavail[t] || '';
-        const item = document.createElement('div');
-        item.className = 'sub-avail-active-item';
-        item.innerHTML = `
-            <div style="display:flex; align-items:center; gap:6px;">
-                <strong>${t}</strong>
-                <span class="sub-unavail-pill">⛔ Unavailable <button type="button" class="btn-sub-reason-help" data-teacher="${escapeHtml(t)}" data-remark="${escapeHtml(remark)}" title="Click to view remark">?</button></span>
+    if (customInput) customInput.value = isUnavail ? remark : '';
+}
+
+function renderSubAvailRosterList() {
+    const listContainer = document.getElementById('sub-avail-all-roster-list');
+    if (!listContainer) return;
+    listContainer.innerHTML = '';
+
+    const day = state.day;
+
+    teachers.forEach(t => {
+        const staff = staffDirectory[t] || {};
+        const isUnavail = isTeacherSubUnavailable(t, day);
+        const remark = getTeacherSubUnavailableRemark(t, day);
+
+        const row = document.createElement('div');
+        row.className = 'sub-avail-roster-row';
+
+        const leftDiv = document.createElement('div');
+        leftDiv.className = 'sub-roster-left';
+        leftDiv.innerHTML = `
+            <div>
+                <div class="sub-roster-name">${t}</div>
+                <div class="sub-roster-role">${staff.role || 'Teacher'} ${staff.assignedClass ? '• ' + staff.assignedClass : ''}</div>
             </div>
-            <button type="button" class="btn-secondary" style="font-size:10px; padding:2px 6px;" onclick="event.stopPropagation(); removeTeacherSubUnavailable('${t}')">Remove</button>
         `;
-        listEl.appendChild(item);
+        leftDiv.addEventListener('click', () => {
+            currentSubAvailTeacher = t;
+            switchSubAvailView('single');
+        });
+
+        const rightDiv = document.createElement('div');
+        rightDiv.style.display = 'flex';
+        rightDiv.style.alignItems = 'center';
+        rightDiv.style.gap = '6px';
+
+        const toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.className = `sub-roster-toggle-btn ${isUnavail ? 'is-unavail' : 'is-avail'}`;
+        toggleBtn.textContent = isUnavail ? `⛔ ${remark || 'Unavailable'}` : '✓ Available';
+        toggleBtn.title = isUnavail ? 'Click to make Available' : 'Click to make Unavailable';
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (isUnavail) {
+                setTeacherSubUnavailable(t, false, '', day);
+                showToast(`✓ ${t} is now available for substitution`);
+            } else {
+                setTeacherSubUnavailable(t, true, 'Unavailable', day);
+                showToast(`⛔ Marked ${t} unavailable for substitution`);
+            }
+            if (navigator.vibrate) try { navigator.vibrate(35); } catch (_) {}
+            renderSubAvailUI();
+        });
+
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'btn-text-only';
+        editBtn.style.fontSize = '13px';
+        editBtn.style.padding = '3px 6px';
+        editBtn.style.color = 'var(--text-secondary)';
+        editBtn.style.cursor = 'pointer';
+        editBtn.title = 'Customize Reason';
+        editBtn.textContent = '✏';
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            currentSubAvailTeacher = t;
+            switchSubAvailView('single');
+        });
+
+        rightDiv.appendChild(toggleBtn);
+        rightDiv.appendChild(editBtn);
+
+        row.appendChild(leftDiv);
+        row.appendChild(rightDiv);
+        listContainer.appendChild(row);
     });
 }
 
-function removeTeacherSubUnavailable(teacher) {
-    setTeacherSubUnavailable(teacher, false, '', state.day);
-    updateSubAvailActiveListUI();
-    const currentSelect = document.getElementById('sub-avail-teacher-select')?.value;
-    if (currentSelect === teacher) {
-        const toggle = document.getElementById('sub-avail-toggle-input');
-        const remark = document.getElementById('sub-avail-remark-input');
-        if (toggle) toggle.checked = false;
-        if (remark) remark.value = '';
+function handleSubAvailMainAction() {
+    const teacher = currentSubAvailTeacher;
+    if (!teacher) return;
+    const day = state.day;
+    const isUnavail = isTeacherSubUnavailable(teacher, day);
+
+    if (isUnavail) {
+        setTeacherSubUnavailable(teacher, false, '', day);
+        showToast(`✓ ${teacher} is now available for substitution`);
+    } else {
+        setTeacherSubUnavailable(teacher, true, 'Unavailable', day);
+        showToast(`⛔ Marked ${teacher} unavailable for substitution`);
     }
+    if (navigator.vibrate) try { navigator.vibrate(40); } catch (_) {}
+    closeSubAvailModal();
 }
 
-function saveSubAvailModal() {
-    const teacherSelect = document.getElementById('sub-avail-teacher-select');
-    const toggleInput = document.getElementById('sub-avail-toggle-input');
-    const remarkInput = document.getElementById('sub-avail-remark-input');
+function handleSubAvailQuickDuty(remark) {
+    const teacher = currentSubAvailTeacher;
+    if (!teacher || !remark) return;
+    const day = state.day;
 
-    if (!teacherSelect || !toggleInput) return;
+    setTeacherSubUnavailable(teacher, true, remark, day);
+    showToast(`⛔ ${teacher} unavailable: ${remark}`);
+    if (navigator.vibrate) try { navigator.vibrate([40, 50, 40]); } catch (_) {}
+    closeSubAvailModal();
+}
 
-    const teacher = teacherSelect.value;
-    const isUnavail = toggleInput.checked;
-    const remark = remarkInput ? remarkInput.value.trim() : '';
+function handleSubAvailCustomApply() {
+    const teacher = currentSubAvailTeacher;
+    if (!teacher) return;
+    const input = document.getElementById('sub-avail-custom-input');
+    const remark = input ? input.value.trim() : '';
+    const day = state.day;
 
-    setTeacherSubUnavailable(teacher, isUnavail, remark, state.day);
-    showToast(isUnavail ? `⛔ Marked ${teacher} unavailable for substitution` : `✓ Set ${teacher} available for substitution`, true);
+    setTeacherSubUnavailable(teacher, true, remark || 'Unavailable', day);
+    showToast(`⛔ ${teacher} unavailable: ${remark || 'Unavailable'}`);
+    if (navigator.vibrate) try { navigator.vibrate(40); } catch (_) {}
     closeSubAvailModal();
 }
 

@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.38.0">
+    <link rel="stylesheet" href="styles.css?v=1.39.0">
 </head>
 <body>
 
@@ -196,7 +196,7 @@
                 </div>
 
                 <div class="grid-status-footer">
-                    <span class="version-badge">v1.37.1</span>
+                    <span class="version-badge">v1.39.0</span>
                     <span class="grid-status-dot">●</span>
                     <span class="grid-status-label">LFPS Front Desk Offline-First</span>
                 </div>
@@ -567,7 +567,7 @@
                 <div class="settings-row" id="settings-version-row" style="cursor:pointer; user-select:none;" title="Tap 5 times to unlock Developer Options">
                     <span class="settings-row-label">Version</span>
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <span class="settings-row-value" id="settings-version-val">v1.38.0 (Timetable Schema 2.0)</span>
+                        <span class="settings-row-value" id="settings-version-val">v1.39.0 (Timetable Schema 2.0)</span>
                         <span id="dev-mode-pill" class="dev-badge-pill hidden">🛠 Dev Unlocked</span>
                     </div>
                 </div>
@@ -903,61 +903,91 @@
     </div>
     <div id="master-cell-overlay" class="overlay"></div>
 
-    <!-- Teacher Substitution Availability Modal -->
+    <!-- Rapid 1-Tap Substitution Availability Modal (Layman / Boomer Ergonomics) -->
     <div id="sub-avail-modal" class="settings-modal sub-avail-modal hidden">
         <div class="settings-modal-header">
-            <h3>Teacher Sub-Availability</h3>
-            <button id="close-sub-avail-modal-btn" class="settings-close-btn">&times;</button>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:18px;">⛔</span>
+                <h3 id="sub-avail-modal-title">Sub-Availability</h3>
+            </div>
+            <button id="close-sub-avail-modal-btn" class="settings-close-btn" aria-label="Close">&times;</button>
         </div>
-        <div class="settings-modal-body" style="padding:16px 20px;">
-            <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px; line-height:1.4;">
-                Mark a teacher unavailable to take substitution periods today (e.g. Bus Duty, CBSE Evaluation, Medical Room, Parent Consultation).
-            </p>
 
-            <div class="master-form-section" style="margin-bottom:14px;">
-                <label style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:6px; display:block;">Select Teacher</label>
-                <select id="sub-avail-teacher-select" class="apple-select" style="width:100%;">
-                    <!-- Populated dynamically -->
-                </select>
+        <div class="settings-modal-body" style="padding:14px 16px;">
+            <!-- View Mode Switcher Pills -->
+            <div class="sub-avail-view-switcher" style="display:flex; gap:6px; margin-bottom:12px; background:var(--segment-bg); padding:3px; border-radius:8px;">
+                <button type="button" id="sub-avail-tab-single" class="sub-avail-tab-btn active" style="flex:1; border:none; padding:6px 10px; font-size:12px; font-weight:700; border-radius:6px; background:var(--surface-color); color:var(--text-primary); cursor:pointer;">
+                    ⚡ Quick Action
+                </button>
+                <button type="button" id="sub-avail-tab-all" class="sub-avail-tab-btn" style="flex:1; border:none; padding:6px 10px; font-size:12px; font-weight:700; border-radius:6px; background:transparent; color:var(--text-secondary); cursor:pointer;">
+                    📋 All Staff (<span id="sub-avail-roster-count">0</span>)
+                </button>
             </div>
 
-            <div class="settings-row" style="padding:10px 0; border-top:1px solid var(--border-color); border-bottom:1px solid var(--border-color); margin-bottom:14px;">
-                <div class="settings-row-info">
-                    <span class="settings-row-label" style="font-size:13px; font-weight:600;">Unavailable for Substitutions</span>
-                    <span class="settings-row-desc" style="font-size:11px;">Excludes this teacher from substitute candidate pools and Auto-Resolve.</span>
+            <!-- VIEW 1: SINGLE TEACHER RAPID 1-TAP ACTION CARD -->
+            <div id="sub-avail-single-view">
+                <!-- Teacher Identity Banner -->
+                <div class="sub-avail-teacher-hero">
+                    <div class="sub-avail-hero-info">
+                        <div id="sub-avail-teacher-name" class="sub-avail-hero-name">Mrs. S. Lakra</div>
+                        <div id="sub-avail-teacher-role" class="sub-avail-hero-role">Class Teacher (KG A)</div>
+                    </div>
+                    <div id="sub-avail-status-pill" class="sub-avail-status-pill available">
+                        <span id="sub-avail-status-icon">🟢</span>
+                        <span id="sub-avail-status-text">Available</span>
+                    </div>
                 </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="sub-avail-toggle-input">
-                    <span class="slider round"></span>
-                </label>
-            </div>
 
-            <div id="sub-avail-remark-container" class="master-form-section" style="margin-bottom:14px;">
-                <label style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:6px; display:block;">Optional Remark / Reason</label>
-                <input type="text" id="sub-avail-remark-input" class="apple-input" placeholder="e.g. Bus Duty, CBSE Evaluation, Sick Bay..." maxlength="80" style="width:100%;">
-                
-                <div style="font-size:11px; font-weight:600; color:var(--text-secondary); margin-top:8px; margin-bottom:4px;">Quick Suggestions:</div>
-                <div class="remark-chips-group" id="sub-avail-quick-chips">
-                    <button type="button" class="remark-chip" data-remark="Bus Duty">🚌 Bus Duty</button>
-                    <button type="button" class="remark-chip" data-remark="CBSE Evaluation">📝 CBSE Evaluation</button>
-                    <button type="button" class="remark-chip" data-remark="Parent Meeting">👥 Parent Meeting</button>
-                    <button type="button" class="remark-chip" data-remark="Exam Correction">📑 Exam Correction</button>
-                    <button type="button" class="remark-chip" data-remark="Sick Bay / Medical">🩺 Sick Bay</button>
-                    <button type="button" class="remark-chip" data-remark="Event Prep">🎪 Event Prep</button>
+                <!-- Instant 1-Tap Toggle Action Button (Massive Touch Target) -->
+                <div style="margin:12px 0;">
+                    <button type="button" id="sub-avail-main-action-btn" class="sub-avail-big-action-btn mark-unavail">
+                        <span id="sub-avail-action-icon">⛔</span>
+                        <span id="sub-avail-action-label">Mark Unavailable Today</span>
+                    </button>
+                </div>
+
+                <!-- 1-Tap Quick Common Duty Chips (Auto-saves immediately on tap!) -->
+                <div class="sub-avail-reasons-section">
+                    <div class="sub-avail-section-label">
+                        <span>⚡ 1-Tap Quick Duties <span style="font-weight:400; font-size:10.5px; text-transform:none; color:var(--text-secondary);">(Tapping instantly sets & saves)</span>:</span>
+                    </div>
+                    <div class="sub-avail-fast-chips" id="sub-avail-fast-chips">
+                        <button type="button" class="sub-fast-chip" data-remark="Bus Duty">🚌 Bus Duty</button>
+                        <button type="button" class="sub-fast-chip" data-remark="CBSE Evaluation">📝 CBSE Duty</button>
+                        <button type="button" class="sub-fast-chip" data-remark="Parent Meeting">👥 Parent Meet</button>
+                        <button type="button" class="sub-fast-chip" data-remark="Exam Duty">📑 Exam Duty</button>
+                        <button type="button" class="sub-fast-chip" data-remark="Sick Bay / Medical">🩺 Sick Bay</button>
+                        <button type="button" class="sub-fast-chip" data-remark="Event / Assembly">🎪 Event Duty</button>
+                    </div>
+                </div>
+
+                <!-- Custom Note Input for Special Instructions -->
+                <div class="sub-avail-custom-reason" style="margin-top:12px;">
+                    <div class="sub-avail-section-label">Custom Remark (Optional):</div>
+                    <div style="display:flex; gap:6px; margin-top:4px;">
+                        <input type="text" id="sub-avail-custom-input" class="apple-input" placeholder="e.g. Lab setup, Principal meeting..." maxlength="60" style="flex:1; font-size:12px;">
+                        <button type="button" id="sub-avail-apply-custom-btn" class="btn-secondary" style="font-size:11.5px; font-weight:700; padding:6px 12px; white-space:nowrap;">Apply</button>
+                    </div>
                 </div>
             </div>
 
-            <!-- List of currently unavailable teachers today -->
-            <div id="sub-avail-active-list-container" style="margin-top:14px; padding-top:10px; border-top:1px solid var(--border-color);">
-                <div style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:8px;">Currently Unavailable Today (<span id="sub-avail-count">0</span>)</div>
-                <div id="sub-avail-active-list" style="display:flex; flex-direction:column; gap:6px; max-height:140px; overflow-y:auto;">
-                    <!-- Populated dynamically -->
+            <!-- VIEW 2: ALL-STAFF HIGH-DENSITY RAPID CHECKLIST -->
+            <div id="sub-avail-all-view" class="hidden">
+                <p style="font-size:11.5px; color:var(--text-secondary); margin-bottom:10px; line-height:1.35;">
+                    Tap any teacher to instantly toggle between Available and Unavailable.
+                </p>
+                <div id="sub-avail-all-roster-list" class="sub-avail-roster-list">
+                    <!-- Populated dynamically: 9 staff cards with 1-tap toggle buttons -->
                 </div>
             </div>
 
-            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
-                <button type="button" id="sub-avail-cancel-btn" class="btn-secondary">Close</button>
-                <button type="button" id="sub-avail-save-btn" class="btn-primary" style="background:var(--accent-blue);">Save Availability</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; border-top:1px solid var(--border-color); padding-top:12px;">
+                <button type="button" id="sub-avail-toggle-view-link" class="btn-text-only" style="font-size:11.5px; font-weight:700; color:var(--accent-blue); background:none; border:none; cursor:pointer;">
+                    📋 View All Staff (9)
+                </button>
+                <button type="button" id="sub-avail-done-btn" class="btn-primary" style="font-size:12px; padding:6px 18px; font-weight:700;">
+                    ✓ Done
+                </button>
             </div>
         </div>
     </div>
@@ -975,6 +1005,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=1.37.1"></script>
+    <script src="app.js?v=1.39.0"></script>
 </body>
 </html>

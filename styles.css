@@ -4765,3 +4765,211 @@ body.master-edit-mode .routine-table tbody td:hover:not(:first-child) {
     border-radius: 6px;
     font-size: 11.5px;
 }
+
+/* ==========================================================================
+   RAPID 1-TAP SUB-AVAILABILITY ACTION CARD & ALL-STAFF CHECKLIST (BUNDLE 2)
+   ========================================================================== */
+.sub-avail-modal {
+    max-width: 440px !important;
+    width: 92% !important;
+    border-radius: var(--radius-lg) !important;
+}
+
+.sub-avail-tab-btn.active {
+    background: var(--surface-color) !important;
+    color: var(--text-primary) !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.sub-avail-teacher-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-color);
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.sub-avail-hero-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.sub-avail-hero-role {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.sub-avail-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.sub-avail-status-pill.available {
+    background: rgba(52, 199, 89, 0.14);
+    color: var(--accent-green, #34c759);
+    border: 1px solid rgba(52, 199, 89, 0.35);
+}
+
+.sub-avail-status-pill.unavailable {
+    background: rgba(255, 59, 48, 0.14);
+    color: var(--accent-red, #ff3b30);
+    border: 1px solid rgba(255, 59, 48, 0.35);
+}
+
+/* Big 1-Tap Action Button */
+.sub-avail-big-action-btn {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sub-avail-big-action-btn.mark-unavail {
+    background: var(--accent-red, #ff3b30);
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(255, 59, 48, 0.32);
+}
+
+.sub-avail-big-action-btn.mark-avail {
+    background: var(--accent-green, #34c759);
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(52, 199, 89, 0.32);
+}
+
+.sub-avail-big-action-btn:active {
+    transform: scale(0.97);
+}
+
+.sub-avail-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 6px;
+}
+
+.sub-avail-fast-chips {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 7px;
+}
+
+.sub-fast-chip {
+    padding: 9px 10px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.sub-fast-chip:hover {
+    background: var(--accent-blue);
+    color: #ffffff !important;
+    border-color: var(--accent-blue);
+    transform: translateY(-1px);
+}
+
+.sub-fast-chip:active {
+    transform: scale(0.96);
+}
+
+/* Full Roster List Items */
+.sub-avail-roster-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 290px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.sub-avail-roster-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-color);
+    padding: 8px 10px;
+    border-radius: 9px;
+    border: 1px solid var(--border-color);
+    transition: background 0.15s ease;
+}
+
+.sub-avail-roster-row:hover {
+    background: var(--surface-color);
+}
+
+.sub-roster-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.sub-roster-name {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.sub-roster-role {
+    font-size: 10px;
+    color: var(--text-secondary);
+}
+
+.sub-roster-toggle-btn {
+    padding: 5px 11px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.12s ease;
+}
+
+.sub-roster-toggle-btn.is-avail {
+    background: rgba(52, 199, 89, 0.15);
+    color: var(--accent-green, #34c759);
+    border: 1px solid rgba(52, 199, 89, 0.35);
+}
+
+.sub-roster-toggle-btn.is-unavail {
+    background: rgba(255, 59, 48, 0.15);
+    color: var(--accent-red, #ff3b30);
+    border: 1px solid rgba(255, 59, 48, 0.35);
+}
+
+.sub-roster-toggle-btn:active {
+    transform: scale(0.95);
+}

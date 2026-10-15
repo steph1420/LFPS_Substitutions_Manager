@@ -61,13 +61,15 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 
 ## 🚀 Active / Next Priorities
 
-### Job Bundle 2: Rapid 1-Tap Substitution-Availability Card Redesign (Layman / Boomer Ergonomics)
-- [ ] **Problem**: The current Sub-Availability modal (`#sub-avail-modal`) feels like an elaborate setup for something that should be lightning-fast to mark.
-- [ ] **Solution**:
-  - Replace elaborate popup with a rapid 1-tap bottom sheet / micro-card on teacher card long-press:
-    `[ ⛔ Mark Unavailable ]  [ ✏ Quick Reason ]  [ ✓ Clear / Available ]`
-  - Single-touch common chips: `Sick / Medical`, `Official Duty`, `Parent Meeting`, `Exam Duty`.
-  - Immediate tactile feedback: updates avatar badge instantly without complex modal transitions.
+### FEAT-07: Rapid 1-Tap Substitution-Availability Card Redesign (RESOLVED in v1.39.0)
+- **Status**: 🟢 Resolved (v1.39.0)
+- **Solution Delivered**:
+  - [x] **Dual-Mode Ergonomic Card**: Replaced cumbersome form modal with a high-speed Dual-Mode Action Card:
+    - **Mode 1 (Quick Action)**: Opened via long-press/right-click on any teacher avatar card. Displays teacher identity, large 1-tap toggle button (`[ ⛔ Mark Unavailable Today ]` vs `[ ✓ Set Back to Available ]`), and 6 auto-saving duty chips.
+    - **Mode 2 (All Staff Checklist)**: Opened via tray button or 3-dot menu. Shows all 9 teachers with instantaneous 1-tap status pills, eliminating all dropdown search menus.
+  - [x] **1-Tap Instant Duty Chips**: Tapping any quick duty chip (`🚌 Bus Duty`, `📝 CBSE Duty`, `👥 Parent Meet`, `📑 Exam Duty`, `🩺 Sick Bay`, `🎪 Event Duty`) immediately saves status, triggers tactile haptic feedback (`navigator.vibrate([40, 50, 40])`), and closes the modal.
+  - [x] **Custom Remark Input**: Enter key or "Apply" button saves custom duties (`Lab setup`, `Principal meeting`, etc.) with instant toast confirmation.
+  - [x] **Layman / Boomer Usability**: Giant touch targets, zero complex dropdown flows, instant visual status indicators (`🟢 Available` vs `⛔ Unavailable`).
 
 ### Job Bundle 3: Mobile Undo/Redo Button Recognisability & Cloud-Synced Global Settings
 - [ ] **Mobile Undo/Redo Icon Recognition**:
