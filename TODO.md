@@ -96,62 +96,52 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] **Custom Remark Input**: Enter key or "Apply" button saves custom duties (`Lab setup`, `Principal meeting`, etc.) with instant toast confirmation.
   - [x] **Layman / Boomer Usability**: Giant touch targets, zero complex dropdown flows, instant visual status indicators (`🟢 Available` vs `⛔ Unavailable`).
 
-### Job Bundle 3: Mobile Undo/Redo Button Recognisability & Cloud-Synced Global Settings
-- [ ] **Mobile Undo/Redo Icon Recognition**:
-  - **Problem**: When screen width shrinks on phones, the `↩` / `↪` icon alone is not sufficiently recognizable to non-tech staff.
-  - **Solution**:
-    - Add a style selector in **Developer Options (Hidden Settings)** with live preview swatches:
-      1. **Curved Arrows** (`↩ Undo` / `↪ Redo`)
-      2. **Circular Arrows** (`↺ Undo` / `↻ Redo`)
-      3. **Apple/Android High-Contrast SVG Vector Icons** (crisp geometric strokes)
-      4. **Micro-Text Pills** (`[ UNDO ]` / `[ REDO ]` high-density typography)
-    - Allow selecting, testing, and locking one preferred design across all screen breakpoints.
-- [ ] **Reset Button Context Action (Purge History Shortcut)**:
-  - **Problem**: Accessing "Clear Action History" currently requires digging into Settings > Application Info.
-  - **Solution**:
-    - Add desktop right-click (`contextmenu`) and mobile 500ms touch long-press with haptic vibration (`navigator.vibrate([40, 50])`) on the schedule **Reset Button** (`#reset-day-btn`).
-    - Reveals a quick micro-popover / sheet option: `🗑 Purge Action History (Clear Undo Buffer)` without resetting the actual routine schedule.
-- [ ] **Cloud-Synced Global Settings (Unified Across Every Viewer)**:
-  - **Problem**: Local adjustments (chosen roster palette, locked undo button style, dispute policies) currently live only in one browser's `localStorage`. New or other staff devices don't inherit them automatically.
-  - **Solution**:
-    - Add a `Push Configuration to Cloud` / `Fetch Cloud Configuration` mechanism via the Google Apps Script endpoint or Google Sheet `Config` / `Metadata` tab.
-    - Synchronizes:
-      - Roster color scheme (`--blob-ct-color`, `--blob-st-color`, `--badge-coord-bg`, etc.)
-      - Undo button visual icon style
-      - Default layout & collision preferences
-    - When any new or returning device loads the PWA, it fetches this cloud config so every phone, tablet, and PC shares an identical, cohesive look.
-
-### Job Bundle 4: Grid In-Situ Absence, Fit-Grid Portrait Engine & Routine Header Streamlining
+### Job Bundle 3: Mobile Grid Visual Stability & Core Fixes (Immediate Priority)
+- [ ] **Sticky Teacher Column Opaque Backing (BUG-05)**:
+  - Eliminate visual text collision on narrow screens when period cells scroll underneath the sticky first column.
+  - Enforce 100% solid, fully opaque background for `.routine-table th:first-child`, `.routine-table td:first-child`, `.class-header-cell`, and `.class-name-cell` across all themes and dark modes so passing cards never bleed through teacher names.
 - [ ] **Icon-Only Expand Button ("Remove text fit grid")**:
   - Replace verbose `⛶ Fit Grid` label with a clean, high-density icon button `⛶` (labeled/tooltip "Expand / Fit Grid").
   - Frees ~65px of header width on narrow mobile viewports.
 - [ ] **Hide Absent Toggle Knob Overshoot Fix**:
-  - **Problem**: When the `.toggle-switch` pill compresses horizontally on narrow portrait screens, the static `transform: translateX(16px)` causes the white knob to overshoot and spill past the right border of the pill.
-  - **Solution**:
-    - Add `flex-shrink: 0` so the slider never squishes under 36px.
-    - Switch translation to responsive `calc(100% - 18px - 3px)` (or dynamic pill-width bounding) so the knob travels strictly flush within the pill boundaries regardless of container width.
-- [ ] **Pinned vs. Scrollable Routine Header Bar**:
-  - Implement a two-zone header layout:
-    - **Pinned Left Zone**: Pinned Teachers/Classes view selector with a subtle, identifiable vertical splitter (`border-right: 1px solid var(--border-color)`).
-    - **Scrollable Right Zone**: Horizontal smooth scroll container (`overflow-x: auto; -webkit-overflow-scrolling: touch`) housing Expand (`⛶`), Hide Absent toggle, Displaced pill, and Conflict counter. Never squishes or drops buttons offscreen.
-- [ ] **Teacher / Classes Toggle as Compact Dropdown (User Suggestion)**:
-  - **Evaluation**: Transforming the segmented 2-button bar (`[ 👨‍🏫 Teachers ] [ 🏫 Classes ]`) into an Apple-style compact dropdown select (`👨‍🏫 Teachers ▾`) saves ~60px of horizontal space, creating ample room for Expand and Hide Absent.
-- [ ] **Sticky Teacher Column Opaque Backing (BUG-05)**:
-  - Eliminate visual text collision on narrow screens when period cells scroll underneath the sticky first column.
-  - Enforce 100% solid, fully opaque background for `.routine-table th:first-child`, `.routine-table td:first-child`, `.class-header-cell`, and `.class-name-cell` across all themes and dark modes so passing cards never bleed through teacher names.
-- [ ] **Day Selector Position**:
-  - Keep day selector bar in its current position directly below header and above Mark Absences (deferred for later review).
-- [ ] **Mark Teacher Absent via Long-Press on Master Grid Teacher Column (FEAT-08)**:
-  - **Problem**: When reviewing the Master Routine grid, users must scroll all the way back up to the top attendance tray to toggle a teacher absent.
-  - **Solution**:
-    - Add 500ms touch long-press (mobile) and right-click (desktop) with native haptic vibration (`navigator.vibrate([45, 60])`) directly on any teacher name cell in the leftmost sticky column (`.sticky-col` / `.teacher-header-cell`).
-    - Opens a rapid action popover / bottom sheet:
-      `[ 🔴 Mark Absent ]  [ 🟢 Mark Present ]  [ ⛔ Sub-Availability ]`
-    - Instantly synchronizes with `state.absentTeachers`, updates grid row styles, and reflects in the top Mark Absence tray.
+  - **Problem**: When `.toggle-switch` pill compresses horizontally on narrow portrait screens, static `translateX(16px)` causes the white knob to overshoot and spill past the right border.
+  - **Solution**: Add `flex-shrink: 0` and switch travel to responsive `calc(100% - 18px - 3px)` so the knob stays flush within pill boundaries.
 - [ ] **Fit-Grid Portrait Refinement (BUG-04)**:
   - **Screen Overflow**: Enforce `width: 100vw; max-width: 100%; overflow-x: clip;` so 10-column Fit Grid never bleeds offscreen on mobile portrait.
   - **Cell Height Distortion**: Prevent excessive row stretching by enforcing `max-height: 48px`, `overflow: hidden`, single-line abbreviations with ellipsis, and compact stacked tags in portrait mode.
-  - **Orientation-Aware Prompt**: Suggest rotating to landscape for optimal multi-period viewing while ensuring portrait mode remains clean and readable.
+
+### Job Bundle 4: Routine Header Ergonomics & In-Situ Grid Absences
+- [ ] **Pinned View vs. Scrollable Controls Header Bar**:
+  - Implement a two-zone header layout:
+    - **Pinned Left Zone**: Pinned Teachers/Classes view selector with a subtle, identifiable vertical splitter (`border-right: 1px solid var(--border-color)`).
+    - **Scrollable Right Zone**: Horizontal smooth scroll container (`overflow-x: auto; -webkit-overflow-scrolling: touch`) housing Expand (`⛶`), Hide Absent toggle, Displaced pill, and Conflict counter. Never squishes or drops buttons offscreen.
+- [ ] **Teachers / Classes View Mode Compact Dropdown**:
+  - Transform segmented 2-button bar (`[ 👨‍🏫 Teachers ] [ 🏫 Classes ]`) into an Apple-style compact dropdown select (`👨‍🏫 Teachers ▾`), saving ~60px of horizontal space.
+- [ ] **Mark Teacher Absent via Long-Press on Master Grid Teacher Column (FEAT-08)**:
+  - Add 500ms touch long-press (mobile) and right-click (desktop) with native haptic vibration (`navigator.vibrate([45, 60])`) directly on any teacher name cell in the leftmost sticky column (`.sticky-col` / `.teacher-header-cell`).
+  - Opens rapid action popover / bottom sheet: `[ 🔴 Mark Absent ]  [ 🟢 Mark Present ]  [ ⛔ Sub-Availability ]` and immediately updates both grid row and top Mark Absence tray.
+- [ ] **Reset Button History Purge Shortcut**:
+  - Add desktop right-click (`contextmenu`) and mobile 500ms touch long-press with haptic vibration (`navigator.vibrate([40, 50])`) on the schedule **Reset Button** (`#reset-day-btn`) to reveal quick action: `🗑 Purge Action History (Clear Undo Buffer)` without resetting the actual routine schedule.
+
+### Job Bundle 5: Hidden Settings, Cross-Period Policy & Cloud Uniformity
+- [ ] **Cross-Period Substitution Policy in Hidden Settings**:
+  - **Default**: Substitutions across different periods remain **locked by default** (`samePeriodLock: true`).
+  - **Hidden Setting**: Relocate the "Same-Period Lock" toggle into "🛠 Developer Options" (hidden behind 5-tap Easter egg in Application Info) to declutter the main Settings for layman front desk staff.
+- [ ] **Mobile Undo/Redo Icon Recognition**:
+  - Add style selector in **Developer Options (Hidden Settings)** with live preview swatches:
+    1. **Curved Arrows** (`↩ Undo` / `↪ Redo`)
+    2. **Circular Arrows** (`↺ Undo` / `↻ Redo`)
+    3. **Apple/Android High-Contrast SVG Vector Icons** (crisp geometric strokes)
+    4. **Micro-Text Pills** (`[ UNDO ]` / `[ REDO ]` high-density typography)
+  - Allow selecting, testing, and locking one preferred design across all screen breakpoints.
+- [ ] **Cloud-Synced Global Settings (Unified Across Every Viewer)**:
+  - Push / fetch config via Google Sheets / Apps Script (`Config` / `Metadata` tab).
+  - Synchronizes roster color palette, locked undo button style, and preferences so every staff device loads the exact same uniform configuration.
+
+### Job Bundle 6: Performance Engine & Keep-Warm Pre-Rendering (PERF-01)
+- [ ] **Instant Offscreen Pre-rendering on Load**: Construct and composite the full Master Routine table DOM offscreen during initial page load (`requestIdleCallback`) before user scrolls down.
+- [ ] **In-Memory DOM "Keep-Warm" Cache**: Keep rendered table elements alive in memory; avoid destructive `innerHTML` rebuilds on tab switches.
+- [ ] **Selective Diff Patching**: When polling Google Sheets for background updates, selectively patch only cells with actual diffs (`calculateScheduleDiffs`), eliminating full-table redraw lag.
 
 ### 1. Cloud Sync Status Indicator (`☁ Live` vs `☁ Offline`)
 - [ ] **Live Indicator**: Add a prominent yet elegant status badge/icon in the header/settings indicating the cloud Google Sheet is connected and syncing seamlessly (e.g., `🟢 Cloud Live` or `☁ Live` with a soft green pulse).
