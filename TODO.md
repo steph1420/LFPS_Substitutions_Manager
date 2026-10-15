@@ -106,18 +106,14 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] **Hide Absent Toggle Knob Overshoot Fix**: Enforced `flex-shrink: 0` on `.toggle-switch` and `.slider`, plus bounded translation so the white knob never spills past the pill boundary when squished in portrait mode.
   - [x] **Fit-Grid Portrait Refinement (BUG-04)**: Enforced `max-width: 100vw; overflow-x: hidden; box-sizing: border-box;` to stop horizontal screen spill, and capped cell heights to `height: 38px; max-height: 44px; overflow: hidden;` with text ellipsis in mobile portrait so cells never stretch into giant blocks. Added orientation prompt when toggling in portrait.
 
-### Job Bundle 4: Routine Header Ergonomics & In-Situ Grid Absences
-- [ ] **Pinned View vs. Scrollable Controls Header Bar**:
-  - Implement a two-zone header layout:
-    - **Pinned Left Zone**: Pinned Teachers/Classes view selector with a subtle, identifiable vertical splitter (`border-right: 1px solid var(--border-color)`).
-    - **Scrollable Right Zone**: Horizontal smooth scroll container (`overflow-x: auto; -webkit-overflow-scrolling: touch`) housing Expand (`⛶`), Hide Absent toggle, Displaced pill, and Conflict counter. Never squishes or drops buttons offscreen.
-- [ ] **Teachers / Classes View Mode Compact Dropdown**:
-  - Transform segmented 2-button bar (`[ 👨‍🏫 Teachers ] [ 🏫 Classes ]`) into an Apple-style compact dropdown select (`👨‍🏫 Teachers ▾`), saving ~60px of horizontal space.
-- [ ] **Mark Teacher Absent via Long-Press on Master Grid Teacher Column (FEAT-08)**:
-  - Add 500ms touch long-press (mobile) and right-click (desktop) with native haptic vibration (`navigator.vibrate([45, 60])`) directly on any teacher name cell in the leftmost sticky column (`.sticky-col` / `.teacher-header-cell`).
-  - Opens rapid action popover / bottom sheet: `[ 🔴 Mark Absent ]  [ 🟢 Mark Present ]  [ ⛔ Sub-Availability ]` and immediately updates both grid row and top Mark Absence tray.
-- [ ] **Reset Button History Purge Shortcut**:
-  - Add desktop right-click (`contextmenu`) and mobile 500ms touch long-press with haptic vibration (`navigator.vibrate([40, 50])`) on the schedule **Reset Button** (`#reset-day-btn`) to reveal quick action: `🗑 Purge Action History (Clear Undo Buffer)` without resetting the actual routine schedule.
+### FEAT-10: Routine Header Ergonomics, In-Situ Grid Absences & History Purge (RESOLVED in v1.41.0)
+- **Status**: 🟢 Resolved (v1.41.0)
+- **Solution Delivered**:
+  - [x] **Pinned View vs. Scrollable Controls Header Bar**: Built two-zone routine header layout with pinned left dropdown and 1px vertical divider (`.routine-header-pinned`), plus horizontal smooth-scroll container (`.routine-header-scrollable`) for `⛶` Expand, `Hide Absent` toggle, and badges.
+  - [x] **Compact View Mode Dropdown**: Converted segmented buttons into space-saving Apple-style dropdown (`#routine-view-select`, `👨‍🏫 Teachers ▾` vs `🏫 Classes`), saving ~60px horizontal space on mobile.
+  - [x] **Mark Teacher Absent via Long-Press on Grid (FEAT-08)**: 500ms touch-hold and right-click on any `.teacher-cell` in `.routine-table` triggers haptic vibration and launches `#teacher-quick-action-modal` to mark Absent/Present in-situ, view sub-availability, or assign Off. CT.
+  - [x] **Reset Button History Purge Shortcut**: 500ms touch-hold and right-click on `#reset-schedule-btn` and `#more-item-reset` reveals `#history-purge-modal` to wipe undo/redo buffers without altering the schedule.
+  - [x] **Absent Teacher Subject & Missing Cell Visibility in Utopian Night & Glass Themes**: Enforced deep crimson glass background and luminous red borders on `.cell-missing`, and bright red text on `.row-absent .cell-subject-name` and `.cell-missing .cell-subject-name` across all themes.
 
 ### Job Bundle 5: Hidden Settings, Cross-Period Policy, Acceptance Timer & Notification Center
 - [ ] **Free Dispute by Default & Hidden Acceptance Countdown Timer**:

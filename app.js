@@ -927,11 +927,22 @@ function bindEvents() {
     });
 
     // Master Routine View Switcher (Teacher View vs Class View)
+    safeBind('routine-view-select', 'change', (e) => {
+        const chosenView = e.target.value;
+        if (!chosenView) return;
+        state.routineViewMode = chosenView;
+        selectedCell = null;
+        saveStateToStorage();
+        renderTableRoutine();
+    });
+
     document.querySelectorAll('.view-seg-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const chosenView = e.currentTarget.dataset.view;
             if (!chosenView) return;
             state.routineViewMode = chosenView;
+            const viewSelect = document.getElementById('routine-view-select');
+            if (viewSelect) viewSelect.value = chosenView;
             document.querySelectorAll('.view-seg-btn').forEach(b => b.classList.toggle('active', b.dataset.view === chosenView));
             selectedCell = null;
             saveStateToStorage();
@@ -1380,6 +1391,47 @@ function bindEvents() {
 
     safeBind('sub-remark-popover-close-btn', 'click', hideSubRemarkPopover);
 
+    // In-Situ Teacher Quick Action Modal (FEAT-08)
+    safeBind('close-quick-action-btn', 'click', closeTeacherQuickActionModal);
+    safeBind('teacher-quick-action-overlay', 'click', closeTeacherQuickActionModal);
+    safeBind('quick-action-absence-btn', 'click', () => {
+        if (!pendingQuickActionTeacher) return;
+        const teacher = pendingQuickActionTeacher;
+        const isAbsent = state.absentTeachers.has(teacher);
+        if (isAbsent) {
+            state.absentTeachers.delete(teacher);
+            revertSubstitutionsForTeacher(teacher, state.day);
+            showToast(`${teacher} marked Present`);
+        } else {
+            state.absentTeachers.add(teacher);
+            showToast(`${teacher} marked Absent for ${state.day}`);
+        }
+        saveStateToStorage();
+        closeTeacherQuickActionModal();
+        renderAll();
+    });
+    safeBind('quick-action-subavail-btn', 'click', () => {
+        const teacher = pendingQuickActionTeacher;
+        closeTeacherQuickActionModal();
+        if (teacher) openSubAvailModal(teacher, 'single');
+    });
+    safeBind('quick-action-offct-btn', 'click', () => {
+        const teacher = pendingQuickActionTeacher;
+        const sec = teacher ? classTeacherMap[teacher] : null;
+        closeTeacherQuickActionModal();
+        if (teacher && sec) openOfficiatingModal('ct', sec, teacher);
+    });
+
+    // Reset Button History Purge Shortcut Modal
+    safeBind('close-history-purge-btn', 'click', closeHistoryPurgeModal);
+    safeBind('history-purge-cancel-btn', 'click', closeHistoryPurgeModal);
+    safeBind('history-purge-overlay', 'click', closeHistoryPurgeModal);
+    safeBind('history-purge-confirm-btn', 'click', confirmPurgeActionHistory);
+
+    // Bind Long-press & Right-click to Reset Buttons
+    bindResetButtonLongPress(document.getElementById('reset-schedule-btn'));
+    bindResetButtonLongPress(document.getElementById('more-item-reset'));
+
     // Global listener for '?' help buttons and popover dismiss
     document.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn-sub-reason-help');
@@ -1654,6 +1706,138 @@ function setTeacherSubUnavailable(teacher, isUnavailable, remark = '', day = sta
     }
     saveStateToStorage();
     renderAll();
+}
+
+// --- IN-SITU GRID TEACHER QUICK ACTION MODAL (FEAT-08) ---
+let pendingQuickActionTeacher = null;
+
+function openTeacherQuickActionModal(teacher) {
+    if (!teacher) return;
+    pendingQuickActionTeacher = teacher;
+
+    const modal = document.getElementById('teacher-quick-action-modal');
+    const overlay = document.getElementById('teacher-quick-action-overlay');
+    if (!modal || !overlay) return;
+
+    const staff = staffDirectory[teacher];
+    const ctSec = classTeacherMap[teacher];
+    const isCT = !!ctSec;
+    const isAbsent = state.absentTeachers.has(teacher);
+
+    const avatarEl = document.getElementById('quick-action-avatar');
+    const nameEl = document.getElementById('quick-action-name');
+    const subtextEl = document.getElementById('quick-action-subtext');
+    const absenceBtn = document.getElementById('quick-action-absence-btn');
+    const absenceIcon = document.getElementById('quick-action-absence-icon');
+    const absenceText = document.getElementById('quick-action-absence-text');
+    const offctBtn = document.getElementById('quick-action-offct-btn');
+
+    if (avatarEl) {
+        const initials = staff?.initials || teacher.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '').slice(0, 2).toUpperCase();
+        avatarEl.textContent = initials;
+        avatarEl.className = `avatar-circle ${isCT ? 'blob-ct' : 'blob-st'}`;
+    }
+
+    if (nameEl) nameEl.textContent = teacher;
+    if (subtextEl) {
+        const role = staff?.role || (isCT ? `Class Teacher (${ctSec})` : 'Subject Teacher');
+        subtextEl.textContent = `${staff?.fullName || teacher} • ${role}`;
+    }
+
+    if (absenceBtn && absenceIcon && absenceText) {
+        if (isAbsent) {
+            absenceBtn.style.background = 'var(--accent-green)';
+            absenceIcon.textContent = '🟢';
+            absenceText.textContent = 'Mark Present Today';
+        } else {
+            absenceBtn.style.background = 'var(--accent-red)';
+            absenceIcon.textContent = '🔴';
+            absenceText.textContent = 'Mark Absent Today';
+        }
+    }
+
+    if (offctBtn) {
+        if (isAbsent && isCT) {
+            offctBtn.classList.remove('hidden');
+            const spanText = offctBtn.querySelector('span:last-child');
+            if (spanText) spanText.textContent = `Assign Off. CT. for Class ${ctSec}`;
+        } else {
+            offctBtn.classList.add('hidden');
+        }
+    }
+
+    modal.classList.remove('hidden');
+    overlay.classList.add('active');
+}
+window.openTeacherQuickActionModal = openTeacherQuickActionModal;
+
+function closeTeacherQuickActionModal() {
+    const modal = document.getElementById('teacher-quick-action-modal');
+    const overlay = document.getElementById('teacher-quick-action-overlay');
+    if (modal) modal.classList.add('hidden');
+    if (overlay) overlay.classList.remove('active');
+    pendingQuickActionTeacher = null;
+}
+window.closeTeacherQuickActionModal = closeTeacherQuickActionModal;
+
+// --- RESET BUTTON HISTORY PURGE SHORTCUT MODAL ---
+function openHistoryPurgeModal() {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate([40, 50]); } catch (_) {}
+    }
+    const modal = document.getElementById('history-purge-modal');
+    const overlay = document.getElementById('history-purge-overlay');
+    if (modal) modal.classList.remove('hidden');
+    if (overlay) overlay.classList.add('active');
+}
+window.openHistoryPurgeModal = openHistoryPurgeModal;
+
+function closeHistoryPurgeModal() {
+    const modal = document.getElementById('history-purge-modal');
+    const overlay = document.getElementById('history-purge-overlay');
+    if (modal) modal.classList.add('hidden');
+    if (overlay) overlay.classList.remove('active');
+}
+window.closeHistoryPurgeModal = closeHistoryPurgeModal;
+
+function confirmPurgeActionHistory() {
+    state.actionHistory = { grid: [], subs: [], redoGrid: [], redoSubs: [] };
+    saveStateToStorage();
+    updateUndoUI();
+    closeHistoryPurgeModal();
+    showToast('🗑 Action history buffer wiped clean.');
+}
+window.confirmPurgeActionHistory = confirmPurgeActionHistory;
+
+function bindResetButtonLongPress(el) {
+    if (!el) return;
+    let touchTimer = null;
+    let isLongPress = false;
+
+    el.addEventListener('touchstart', () => {
+        isLongPress = false;
+        touchTimer = setTimeout(() => {
+            isLongPress = true;
+            openHistoryPurgeModal();
+        }, 500);
+    }, { passive: true });
+
+    el.addEventListener('touchend', (e) => {
+        if (touchTimer) clearTimeout(touchTimer);
+        if (isLongPress) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+        }
+    });
+
+    el.addEventListener('touchmove', () => {
+        if (touchTimer) clearTimeout(touchTimer);
+    });
+
+    el.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        openHistoryPurgeModal();
+    });
 }
 
 let currentSubAvailTeacher = null;
@@ -4392,7 +4576,11 @@ function renderTableRoutine() {
     const hideToggle = document.getElementById('hide-absent-toggle');
     if(!table || !hideToggle) return;
     
-    // Sync view switcher buttons
+    // Sync view switcher buttons and dropdown
+    const viewSelect = document.getElementById('routine-view-select');
+    if (viewSelect) {
+        viewSelect.value = state.routineViewMode || 'teacher';
+    }
     document.querySelectorAll('.view-seg-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.view === (state.routineViewMode || 'teacher'));
     });
@@ -4643,6 +4831,46 @@ function renderTableRoutine() {
     });
     html += '</tbody>';
     table.innerHTML = html;
+
+    // Attach in-situ long-press & right-click actions on teacher cells (FEAT-08)
+    table.querySelectorAll('.teacher-cell').forEach(cell => {
+        const teacher = cell.dataset.teacher;
+        if (!teacher) return;
+
+        let touchTimer = null;
+        let isLongPress = false;
+
+        cell.addEventListener('touchstart', () => {
+            isLongPress = false;
+            touchTimer = setTimeout(() => {
+                isLongPress = true;
+                if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                    try { navigator.vibrate([45, 60]); } catch (_) {}
+                }
+                openTeacherQuickActionModal(teacher);
+            }, 500);
+        }, { passive: true });
+
+        cell.addEventListener('touchend', (e) => {
+            if (touchTimer) clearTimeout(touchTimer);
+            if (isLongPress) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+        });
+
+        cell.addEventListener('touchmove', () => {
+            if (touchTimer) clearTimeout(touchTimer);
+        });
+
+        cell.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                try { navigator.vibrate(40); } catch (_) {}
+            }
+            openTeacherQuickActionModal(teacher);
+        });
+    });
 }
 
 function renderClassRoutineTable(table) {

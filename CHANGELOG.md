@@ -17,6 +17,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.41.0] - 2026-10-15
+
+### Added
+- **In-Situ Grid Teacher Quick Action Modal (`FEAT-08`)**:
+  - Touch-hold (500ms on mobile) and right-click (desktop) with tactile haptic vibration (`navigator.vibrate([45, 60])`) directly on any teacher's name cell in the leftmost routine table column.
+  - Launches an instant iOS-style Action Sheet (`#teacher-quick-action-modal`):
+    - 1-tap `[ 🔴 Mark Absent Today ]` or `[ 🟢 Mark Present Today ]` toggling attendance directly without scrolling back up to the top attendance tray.
+    - 1-tap `[ ⛔ Sub-Availability & Duties ]` linking directly into the teacher's rapid availability card.
+    - Contextual `[ 🏫 Assign Off. CT. ]` shortcut if an absent teacher is a designated Class Teacher.
+- **Reset Button History Purge Shortcut**:
+  - Touch-hold (500ms) or right-click on the schedule Reset button (`#reset-schedule-btn` and `#more-item-reset`) opens a dedicated confirmation modal (`#history-purge-modal`).
+  - Purges all undo/redo action history buffers from memory on demand without resetting the day's timetable schedule or absences.
+
+### Changed
+- **Two-Zone Routine Header Bar (Pinned View Selector & Scrollable Controls)**:
+  - Re-architected `.routine-header` into two distinct ergonomic zones:
+    - **Pinned Left Zone (`.routine-header-pinned`)**: Compact Apple-style dropdown selector (`#routine-view-select`, `👨‍🏫 Teachers ▾` vs `🏫 Classes`), bordered on the right with a subtle vertical divider (`1px solid var(--border-color)`).
+    - **Scrollable Right Zone (`.routine-header-scrollable`)**: Horizontal smooth scroll container (`overflow-x: auto; -webkit-overflow-scrolling: touch`) housing `⛶` Expand, `Hide Absent` toggle switch, and conflict/displaced badges. Eliminates button compression and layout jumps on narrow portrait screens.
+
+### Fixed
+- **Absent Teacher Subject & Missing Cell Visibility in Utopian Night & Glass Themes**:
+  - Enforced deep crimson glass background (`linear-gradient(135deg, rgba(239, 68, 68, 0.32) 0%, rgba(153, 27, 27, 0.22) 100%)`) with luminous red border (`1.5px solid rgba(239, 68, 68, 0.75)`) and soft red glow on `.cell-missing` in `utopian-night` and `cyber-glass`.
+  - Enforced bright red text (`#f87171` in dark themes, `var(--accent-red)` universally) on `.row-absent .cell-subject-name` and `.cell-missing .cell-subject-name` so absent teachers' subjects are unmistakably identifiable across all themes.
+
 ## [v1.40.0] - 2026-10-15
 
 ### Fixed

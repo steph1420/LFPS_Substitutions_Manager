@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.40.0">
+    <link rel="stylesheet" href="styles.css?v=1.41.0">
 </head>
 <body>
 
@@ -138,22 +138,19 @@
 
             <div class="master-routine-container">
                 <div class="routine-header">
-                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                        <h2>Master Routine</h2>
-                        <div class="routine-view-segmented" id="routine-view-toggle">
-                            <button class="view-seg-btn active" id="view-mode-teacher-btn" data-view="teacher" title="View Master Teacher Routine">👨‍🏫 Teachers</button>
-                            <button class="view-seg-btn" id="view-mode-class-btn" data-view="class" title="View Routine by Class (KG A, KG B, PREP A, PREP B)">🏫 Classes</button>
-                        </div>
-                        <div id="displaced-indicator" class="displaced-indicator hidden">
-                            <span class="pulse-dot"></span>
-                            <span class="text">Displaced</span>
-                        </div>
-                        <div id="collision-indicator" class="collision-indicator hidden" title="Click to inspect conflicts">
-                            <span class="pulse-amber-dot"></span>
-                            <span id="collision-counter-text" class="text">0 Conflicts</span>
+                    <!-- Zone 1 (Pinned Left): Dropdown View Selector with Divider -->
+                    <div class="routine-header-pinned">
+                        <div class="routine-view-dropdown-wrapper">
+                            <select id="routine-view-select" class="routine-view-dropdown" aria-label="Select Routine View">
+                                <option value="teacher" selected>👨‍🏫 Teachers</option>
+                                <option value="class">🏫 Classes</option>
+                            </select>
+                            <span class="dropdown-chevron">▾</span>
                         </div>
                     </div>
-                    <div class="routine-header-actions" style="display: flex; align-items: center; gap: 12px;">
+
+                    <!-- Zone 2 (Scrollable Right): Horizontal Scrolling Controls -->
+                    <div class="routine-header-scrollable">
                         <button id="fit-grid-btn" class="btn-fit-grid" title="Expand Grid to fit screen width (Ideal for Landscape)" aria-label="Expand Grid">
                             <span>⛶</span>
                         </button>
@@ -162,6 +159,14 @@
                             <span class="slider round"></span>
                             <span class="label-text">Hide Absent</span>
                         </label>
+                        <div id="displaced-indicator" class="displaced-indicator hidden">
+                            <span class="pulse-dot"></span>
+                            <span class="text">Displaced</span>
+                        </div>
+                        <div id="collision-indicator" class="collision-indicator hidden" title="Click to inspect conflicts">
+                            <span class="pulse-amber-dot"></span>
+                            <span id="collision-counter-text" class="text">0 Conflicts</span>
+                        </div>
                     </div>
                 </div>
 
@@ -196,7 +201,7 @@
                 </div>
 
                 <div class="grid-status-footer">
-                    <span class="version-badge">v1.40.0</span>
+                    <span class="version-badge">v1.41.0</span>
                     <span class="grid-status-dot">●</span>
                     <span class="grid-status-label">LFPS Front Desk Offline-First</span>
                 </div>
@@ -567,7 +572,7 @@
                 <div class="settings-row" id="settings-version-row" style="cursor:pointer; user-select:none;" title="Tap 5 times to unlock Developer Options">
                     <span class="settings-row-label">Version</span>
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <span class="settings-row-value" id="settings-version-val">v1.40.0 (Timetable Schema 2.0)</span>
+                        <span class="settings-row-value" id="settings-version-val">v1.41.0 (Timetable Schema 2.0)</span>
                         <span id="dev-mode-pill" class="dev-badge-pill hidden">🛠 Dev Unlocked</span>
                     </div>
                 </div>
@@ -1005,6 +1010,59 @@
         </div>
     </div>
 
-    <script src="app.js?v=1.40.0"></script>
+    <!-- In-Situ Grid Teacher Quick Action Modal (FEAT-08) -->
+    <div id="teacher-quick-action-modal" class="settings-modal teacher-quick-action-modal hidden">
+        <div class="settings-modal-header" style="padding: 14px 16px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div id="quick-action-avatar" class="avatar-circle blob-st" style="width: 38px; height: 38px; font-size: 13px;">--</div>
+                <div>
+                    <h3 id="quick-action-name" style="margin: 0; font-size: 15px;">Teacher</h3>
+                    <div id="quick-action-subtext" style="font-size: 11.5px; color: var(--text-secondary);">Role</div>
+                </div>
+            </div>
+            <button id="close-quick-action-btn" class="settings-close-btn" aria-label="Close">✕</button>
+        </div>
+        <div class="settings-modal-body" style="padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+            <button type="button" id="quick-action-absence-btn" class="btn-primary" style="padding: 12px 14px; border-radius: 10px; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; border: none; transition: transform 0.15s ease;">
+                <span id="quick-action-absence-icon">🔴</span>
+                <span id="quick-action-absence-text">Mark Absent Today</span>
+            </button>
+            <button type="button" id="quick-action-subavail-btn" class="btn-secondary" style="padding: 10px 14px; border-radius: 10px; font-weight: 600; font-size: 12.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span>⛔</span>
+                <span>Sub-Availability & Duties</span>
+            </button>
+            <button type="button" id="quick-action-offct-btn" class="btn-secondary hidden" style="padding: 10px 14px; border-radius: 10px; font-weight: 600; font-size: 12.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span>🏫</span>
+                <span>Assign Officiating Class Teacher (Off. CT.)</span>
+            </button>
+        </div>
+    </div>
+    <div id="teacher-quick-action-overlay" class="overlay"></div>
+
+    <!-- History Purge Modal (Shortcut from Reset Button Long-Press / Right-Click) -->
+    <div id="history-purge-modal" class="settings-modal history-purge-modal hidden">
+        <div class="settings-modal-header" style="padding: 14px 16px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 18px;">🗑</span>
+                <h3 style="margin: 0; font-size: 15px;">Purge Action History</h3>
+            </div>
+            <button id="close-history-purge-btn" class="settings-close-btn" aria-label="Close">✕</button>
+        </div>
+        <div class="settings-modal-body" style="padding: 16px; font-size: 13px; line-height: 1.4; color: var(--text-secondary);">
+            <p style="margin: 0 0 12px 0; color: var(--text-primary); font-weight: 600;">
+                Clear all cached undo and redo steps from memory?
+            </p>
+            <p style="margin: 0; font-size: 12px;">
+                This resets your action history buffer without modifying the schedule, substitutions, or marked absences.
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px;">
+                <button type="button" id="history-purge-cancel-btn" class="btn-secondary" style="padding: 8px 14px;">Cancel</button>
+                <button type="button" id="history-purge-confirm-btn" class="btn-primary" style="background: var(--accent-red); padding: 8px 16px; font-weight: 700;">🗑 Purge History</button>
+            </div>
+        </div>
+    </div>
+    <div id="history-purge-overlay" class="overlay"></div>
+
+    <script src="app.js?v=1.41.0"></script>
 </body>
 </html>
