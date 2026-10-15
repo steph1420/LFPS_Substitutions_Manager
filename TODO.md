@@ -114,7 +114,24 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
       - Default layout & collision preferences
     - When any new or returning device loads the PWA, it fetches this cloud config so every phone, tablet, and PC shares an identical, cohesive look.
 
-### Job Bundle 4: Grid In-Situ Absence Ergonomics & Fit-Grid Portrait Engine
+### Job Bundle 4: Grid In-Situ Absence, Fit-Grid Portrait Engine & Routine Header Streamlining
+- [ ] **Icon-Only Expand Button ("Remove text fit grid")**:
+  - Replace verbose `⛶ Fit Grid` label with a clean, high-density icon button `⛶` (labeled/tooltip "Expand / Fit Grid").
+  - Frees ~65px of header width on narrow mobile viewports.
+- [ ] **Hide Absent Toggle Knob Overshoot Fix**:
+  - **Problem**: When the `.toggle-switch` pill compresses horizontally on narrow portrait screens, the static `transform: translateX(16px)` causes the white knob to overshoot and spill past the right border of the pill.
+  - **Solution**:
+    - Add `flex-shrink: 0` so the slider never squishes under 36px.
+    - Switch translation to responsive `calc(100% - 18px - 3px)` (or dynamic pill-width bounding) so the knob travels strictly flush within the pill boundaries regardless of container width.
+- [ ] **Pinned vs. Scrollable Routine Header Bar**:
+  - Implement a two-zone header layout:
+    - **Pinned Left Zone**: Pinned Teachers/Classes view selector with a subtle, identifiable vertical splitter (`border-right: 1px solid var(--border-color)`).
+    - **Scrollable Right Zone**: Horizontal smooth scroll container (`overflow-x: auto; -webkit-overflow-scrolling: touch`) housing Expand (`⛶`), Hide Absent toggle, Displaced pill, and Conflict counter. Never squishes or drops buttons offscreen.
+- [ ] **Teacher / Classes Toggle as Compact Dropdown (User Suggestion)**:
+  - **Evaluation**: Transforming the segmented 2-button bar (`[ 👨‍🏫 Teachers ] [ 🏫 Classes ]`) into an Apple-style compact dropdown select (`👨‍🏫 Teachers ▾`) saves ~60px of horizontal space, creating ample room for Expand and Hide Absent.
+- [ ] **Day Selector Relocation to Just Above Grid (User Suggestion)**:
+  - **Evaluation**: Moving the day selector pills (`MON`–`SAT`) directly above the Master Routine grid (between Mark Absences and the table, or integrated into the grid controls) provides immediate visual proximity to the schedule being inspected.
+  - **Design Consideration**: Since teacher absences are day-specific, ensure changing days while above the grid also smoothly synchronizes the top Mark Absence tray, or tuck both under the unified day state.
 - [ ] **Mark Teacher Absent via Long-Press on Master Grid Teacher Column (FEAT-08)**:
   - **Problem**: When reviewing the Master Routine grid, users must scroll all the way back up to the top attendance tray to toggle a teacher absent.
   - **Solution**:
