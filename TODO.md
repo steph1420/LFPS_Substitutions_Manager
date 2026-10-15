@@ -24,6 +24,13 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] **Periodic Background Sync & Selective Diff Patching**: Keep routine rendered and run background poll for Google Sheet cloud updates, selectively updating only cells with actual diffs (`calculateScheduleDiffs`), eliminating full-table redraw lag.
   - [ ] **Compositor & Layer Optimization**: Keep `contain: paint layout` and GPU layer promotion (`transform: translateZ(0)`) warm so scrolling onto the table has zero frame drops.
 
+### BUG-05: Sticky Teacher Column Translucency Clashes with Scrolling Period Cells on Narrow Screens
+- **Status**: 🔴 Open
+- **Reported**: On narrow screens when horizontal scrolling begins, period cells pass underneath the sticky first column (Teacher Names). Because the column background is translucent (especially in glass and translucent themes), period numbers, subject text, and cell borders bleed through behind teacher names, causing visual text collision and unreadable clutter.
+- **Target Solution**:
+  - [ ] Enforce 100% solid, fully opaque background on `.routine-table th:first-child`, `.routine-table td:first-child`, `.class-header-cell`, and `.class-name-cell` across all theme modes (using theme-specific solid hex or opaque variables e.g. `--surface-opaque`).
+  - [ ] Retain subtle drop-shadow or border divider (`border-right: 2px solid var(--border-color); box-shadow: 3px 0 8px rgba(0,0,0,0.08)`) so sticky separation remains tactile and crisp without letting background text bleed through.
+
 ### BUG-01: Limbo Tray Drag Failure & Click-to-Restore Mechanism (RESOLVED in v1.35.0)
 - **Status**: 🟢 Resolved (v1.35.0)
 - **Solution Delivered**:
@@ -129,9 +136,11 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - **Scrollable Right Zone**: Horizontal smooth scroll container (`overflow-x: auto; -webkit-overflow-scrolling: touch`) housing Expand (`⛶`), Hide Absent toggle, Displaced pill, and Conflict counter. Never squishes or drops buttons offscreen.
 - [ ] **Teacher / Classes Toggle as Compact Dropdown (User Suggestion)**:
   - **Evaluation**: Transforming the segmented 2-button bar (`[ 👨‍🏫 Teachers ] [ 🏫 Classes ]`) into an Apple-style compact dropdown select (`👨‍🏫 Teachers ▾`) saves ~60px of horizontal space, creating ample room for Expand and Hide Absent.
-- [ ] **Day Selector Relocation to Just Above Grid (User Suggestion)**:
-  - **Evaluation**: Moving the day selector pills (`MON`–`SAT`) directly above the Master Routine grid (between Mark Absences and the table, or integrated into the grid controls) provides immediate visual proximity to the schedule being inspected.
-  - **Design Consideration**: Since teacher absences are day-specific, ensure changing days while above the grid also smoothly synchronizes the top Mark Absence tray, or tuck both under the unified day state.
+- [ ] **Sticky Teacher Column Opaque Backing (BUG-05)**:
+  - Eliminate visual text collision on narrow screens when period cells scroll underneath the sticky first column.
+  - Enforce 100% solid, fully opaque background for `.routine-table th:first-child`, `.routine-table td:first-child`, `.class-header-cell`, and `.class-name-cell` across all themes and dark modes so passing cards never bleed through teacher names.
+- [ ] **Day Selector Position**:
+  - Keep day selector bar in its current position directly below header and above Mark Absences (deferred for later review).
 - [ ] **Mark Teacher Absent via Long-Press on Master Grid Teacher Column (FEAT-08)**:
   - **Problem**: When reviewing the Master Routine grid, users must scroll all the way back up to the top attendance tray to toggle a teacher absent.
   - **Solution**:
