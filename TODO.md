@@ -2,9 +2,27 @@
 
 This tracker maintains active, upcoming, and future tasks for the **Front Desk PWA**.
 
-## 🐛 Critical Bug Tracker
+## 🐛 Critical Bug & Performance Tracker
 
-## 🐛 Critical Bug Tracker
+### BUG-04: Fit-Grid Portrait Mode Screen Overflow & Cell Height Distortion
+- **Status**: 🔴 Open
+- **Reported**: When "Fit Grid" is enabled while in mobile portrait orientation, the grid bleeds past the viewport screen boundary horizontally, and cells become excessively tall vertically.
+- **Root Cause**:
+  - Fit-Grid was originally designed for mobile landscape viewports where wide horizontal aspect ratio comfortably fits 10 columns (Teacher + 9 periods).
+  - In portrait mode (360px–430px wide), squishing 10 columns forces columns to ~35px–40px, causing subject titles to wrap into many vertical lines, exploding cell heights, or causing horizontal table overflow beyond viewport boundaries.
+- **Target Solution**:
+  - [ ] **Orientation-Aware Auto-Guard**: If Fit Grid is triggered in portrait mode, automatically adapt layout (e.g. ultra-compact micro-abbreviations, font-scaling, strict line-clamping / ellipsis with `white-space: nowrap`) or prompt the user with a gentle toast to rotate to landscape for optimal viewing.
+  - [ ] **Strict Cell Height Cap**: In portrait Fit-Grid mode, enforce `max-height: 48px`, `overflow: hidden`, and compact stacked micro-tags so cells never expand into huge vertical blocks.
+  - [ ] **Prevent Horizontal Spill**: Ensure container has `width: 100vw; max-width: 100%; overflow-x: clip;` so no elements bleed past mobile screen boundaries.
+
+### PERF-01: Master Routine Initial Render Stutter & In-Memory Pre-Render ("Keep-Warm" Engine)
+- **Status**: 🔴 Open
+- **Reported**: The Master Routine table draws noticeably slow / stutters when the page is first loaded and scrolled down into view.
+- **Target Solution**:
+  - [ ] **Instant Offscreen Pre-rendering on Load**: Instead of waiting for first scroll or deferred triggers, immediately construct and render the full Master Routine table DOM tree into memory during initial app boot (or via `requestIdleCallback`) before user scrolls.
+  - [ ] **In-Memory DOM "Keep-Warm" Cache**: Keep the rendered routine table alive in memory. Avoid destroying and rebuilding `table.innerHTML` from scratch during routine refreshes or tab transitions; use targeted DOM node reconciliation (patch only modified cells).
+  - [ ] **Periodic Background Sync & Selective Diff Patching**: Keep routine rendered and run background poll for Google Sheet cloud updates, selectively updating only cells with actual diffs (`calculateScheduleDiffs`), eliminating full-table redraw lag.
+  - [ ] **Compositor & Layer Optimization**: Keep `contain: paint layout` and GPU layer promotion (`transform: translateZ(0)`) warm so scrolling onto the table has zero frame drops.
 
 ### BUG-01: Limbo Tray Drag Failure & Click-to-Restore Mechanism (RESOLVED in v1.35.0)
 - **Status**: 🟢 Resolved (v1.35.0)
@@ -95,6 +113,19 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
       - Undo button visual icon style
       - Default layout & collision preferences
     - When any new or returning device loads the PWA, it fetches this cloud config so every phone, tablet, and PC shares an identical, cohesive look.
+
+### Job Bundle 4: Grid In-Situ Absence Ergonomics & Fit-Grid Portrait Engine
+- [ ] **Mark Teacher Absent via Long-Press on Master Grid Teacher Column (FEAT-08)**:
+  - **Problem**: When reviewing the Master Routine grid, users must scroll all the way back up to the top attendance tray to toggle a teacher absent.
+  - **Solution**:
+    - Add 500ms touch long-press (mobile) and right-click (desktop) with native haptic vibration (`navigator.vibrate([45, 60])`) directly on any teacher name cell in the leftmost sticky column (`.sticky-col` / `.teacher-header-cell`).
+    - Opens a rapid action popover / bottom sheet:
+      `[ 🔴 Mark Absent ]  [ 🟢 Mark Present ]  [ ⛔ Sub-Availability ]`
+    - Instantly synchronizes with `state.absentTeachers`, updates grid row styles, and reflects in the top Mark Absence tray.
+- [ ] **Fit-Grid Portrait Refinement (BUG-04)**:
+  - **Screen Overflow**: Enforce `width: 100vw; max-width: 100%; overflow-x: clip;` so 10-column Fit Grid never bleeds offscreen on mobile portrait.
+  - **Cell Height Distortion**: Prevent excessive row stretching by enforcing `max-height: 48px`, `overflow: hidden`, single-line abbreviations with ellipsis, and compact stacked tags in portrait mode.
+  - **Orientation-Aware Prompt**: Suggest rotating to landscape for optimal multi-period viewing while ensuring portrait mode remains clean and readable.
 
 ### 1. Cloud Sync Status Indicator (`☁ Live` vs `☁ Offline`)
 - [ ] **Live Indicator**: Add a prominent yet elegant status badge/icon in the header/settings indicating the cloud Google Sheet is connected and syncing seamlessly (e.g., `🟢 Cloud Live` or `☁ Live` with a soft green pulse).
