@@ -854,6 +854,11 @@ function setTheme(themeKey) {
 window.setTheme = setTheme;
 
 function updateThemeSelectorUI(activeTheme) {
+    // Ableton Live & iOS Visual Swatch Cards
+    document.querySelectorAll('.theme-swatch-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.theme === activeTheme);
+    });
+
     // Quick pills
     document.querySelectorAll('.theme-quick-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.theme === activeTheme);
@@ -874,18 +879,6 @@ function updateThemeSelectorUI(activeTheme) {
     document.querySelectorAll('.theme-option-btn').forEach(btn => {
         const isMatch = (btn.dataset.theme === activeTheme);
         btn.classList.toggle('active', isMatch);
-        if (isMatch) {
-            const parentGrid = btn.closest('.theme-variant-grid');
-            if (parentGrid && parentGrid.dataset.catTarget) {
-                const cat = parentGrid.dataset.catTarget;
-                document.querySelectorAll('.theme-cat-btn').forEach(cBtn => {
-                    cBtn.classList.toggle('active', cBtn.dataset.cat === cat);
-                });
-                document.querySelectorAll('.theme-variant-grid').forEach(g => {
-                    g.classList.toggle('active', g.dataset.catTarget === cat);
-                });
-            }
-        }
     });
 }
 
@@ -1263,7 +1256,7 @@ function bindEvents() {
     safeBind('same-period-lock-toggle', 'change', (e) => {
         state.settings.samePeriodLock = e.target.checked;
         saveStateToStorage();
-        showToast(state.settings.samePeriodLock ? 'Same-Period Lock on' : 'Cross-period subs allowed');
+        showToast(state.settings.samePeriodLock ? '🔒 Same-Period Lock Enabled' : '🔓 Cross-Period Subs Allowed', false, 3500);
     });
 
     safeBind('acceptance-timer-toggle', 'change', (e) => {
@@ -1343,15 +1336,50 @@ function bindEvents() {
         });
     });
 
-    // Theme selector option buttons in Settings
-    document.querySelectorAll('.theme-option-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const theme = btn.dataset.theme;
-            setTheme(theme);
+    // Ableton Live & iOS Inspired Theme Swatch Cards
+    document.querySelectorAll('.theme-swatch-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const theme = card.dataset.theme;
+            if (theme) {
+                setTheme(theme);
+                if (navigator.vibrate) {
+                    try { navigator.vibrate(25); } catch (e) {}
+                }
+            }
+        });
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const theme = card.dataset.theme;
+                if (theme) setTheme(theme);
+            }
         });
     });
 
-    // Compact Layman Theme Selector Pills
+    // Theme Family Filter Pills (Light, Dark, Glass, Studio, All)
+    document.querySelectorAll('.theme-family-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+            const family = pill.dataset.family;
+            document.querySelectorAll('.theme-family-pill').forEach(p => p.classList.toggle('active', p === pill));
+            document.querySelectorAll('.theme-swatch-card').forEach(card => {
+                if (family === 'all' || card.dataset.family === family) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Theme selector option buttons in Settings (Backwards Compatibility)
+    document.querySelectorAll('.theme-option-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const theme = btn.dataset.theme;
+            if (theme) setTheme(theme);
+        });
+    });
+
+    // Compact Layman Theme Selector Pills (Backwards Compatibility)
     document.querySelectorAll('.theme-quick-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const theme = btn.dataset.theme;
@@ -1359,7 +1387,7 @@ function bindEvents() {
         });
     });
 
-    // More Themes Dropdown Selector
+    // More Themes Dropdown Selector (Backwards Compatibility)
     safeBind('theme-more-select', 'change', (e) => {
         const theme = e.target.value;
         if (theme) setTheme(theme);
@@ -6071,7 +6099,7 @@ function executeMove(source, target) {
                 return;
             }
             if (!isSamePeriod && !allowCrossPeriod) {
-                showToast(`Substitutions locked to same period (${tPeriod}).`);
+                showToast(`⛔ Locked: Same-Period Subs Only (${tPeriod})`, true, 5000);
                 return;
             }
             assignSubstitute(tPeriod, tTeacher, sTeacher, sPeriod);
@@ -6080,7 +6108,7 @@ function executeMove(source, target) {
 
         // --- SCENARIO 2: ATTEMPTED SUB DRAG ACROSS DIFFERENT PERIODS WHEN LOCKED ---
         if ((isSourceSubRelated || isTargetSubRelated) && !isSamePeriod && !allowCrossPeriod) {
-            showToast(`Substitutions locked to same period (${sPeriod || tPeriod}).`);
+            showToast(`⛔ Locked: Same-Period Subs Only (${sPeriod || tPeriod})`, true, 5000);
             return;
         }
     }
@@ -7572,7 +7600,8 @@ function closeTourModal() {
 window.openTourModal = openTourModal;
 window.closeTourModal = closeTourModal;
 
-function showToast(message, isCritical = false) {
+let toastTimeout = null;
+function showToast(message, isCritical = false, duration = 4000) {
     // If minimize alerts is on and message is non-critical, suppress toast
     if (state.settings && state.settings.minimizeAlerts && !isCritical) {
         return;
@@ -7582,9 +7611,17 @@ function showToast(message, isCritical = false) {
     const msgElement = document.getElementById('toast-message');
     if(!toast || !msgElement) return;
     
+    if (toastTimeout) {
+        clearTimeout(toastTimeout);
+        toastTimeout = null;
+    }
+
     msgElement.textContent = message;
     toast.classList.remove('hidden');
-    setTimeout(() => { toast.classList.add('hidden'); }, 4000);
+    toastTimeout = setTimeout(() => { 
+        toast.classList.add('hidden'); 
+        toastTimeout = null;
+    }, duration);
 }
 
 // --- REAL 2026 - 2027 MASTER TIMETABLE DATA (LITTLE FLOWER PREPARATORY SCHOOL) ---

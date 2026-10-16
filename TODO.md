@@ -180,17 +180,17 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] **Professional Terminology for "Fit-Grid" (Scale to Viewport) & Desktop Click Fix (Delivered in v1.45.0)**:
     - Rebranded feature terminology to **Scale to Viewport** across tooltips, labels, 3-dot overflow menu, and guide text.
     - Fixed desktop mouse interaction on need-to-sub cells (`.cell-missing` and `.cell-covered`): guarded `#sheet-overlay` dismissal against trailing clicks within 300ms, ensuring smooth 1-tap substitute picker opening.
-  - [ ] **Settings Section & Control Relocations (Job Bundle 9)**:
-    - **Developer Options to Very Bottom**: Move the entire Developer Options card to the absolute bottom of Settings (below "About & Guides").
-    - **Same-Period Lock to Regular Settings**: Move `samePeriodLock` toggle back to "General & Policies" since it actively blocks users by default.
-    - **Same-Period Lock Toast Polish**: Make the rejection toast punchy/concise and increase display duration (or offer an interactive prompt) so coordinators can comfortably read why the cross-period drop was rejected.
-    - **Shift "Allow Disputes" to Developer Options**: Move `allowDisputes` toggle out of General & Policies into Developer Options.
-    - **Shift Google Sheets URL Input to Developer Options**: Move `#sheets-url-input` and Save URL button into Developer Options, keeping standard Cloud Sync focused on clean connection status, manual Push, and Sync triggers.
-    - **Shift Test Simulations to Developer Options**: Move `#btn-simulate-day` and `#btn-simulate-complex` out of Timetable Data into Developer Options.
-  - [ ] **iOS & Ableton Live Inspired Theme Menus (Job Bundle 9)**:
-    - Redesign the theme selector taking inspiration from iOS settings and Ableton Live's minimalist color themes.
-    - Build sleek visual palette chips/swatches displaying true UI background, card surface, and accent/tint colors.
-    - Group into cohesive families (`Light`, `Dark`, `Glass Refraction`, `High Contrast`) with instant live-preview on tap, eliminating bulky standard `<select>` dropdowns.
+  - [x] **Settings Section & Control Relocations (Job Bundle 9 - Delivered in v1.46.0)**:
+    - **Developer Options to Very Bottom**: Moved the entire Developer Options card (`#roster-color-settings-group`) to the absolute bottom of Settings (below "About & Guides"), preserving the 5-tap version Easter egg unlock and smooth scroll-into-view.
+    - **Same-Period Lock to Regular Settings**: Moved `samePeriodLock` toggle back to "General & Policies" since it actively blocks coordinators by default.
+    - **Same-Period Lock Toast Polish**: Replaced wordy rejection copy with punchy, high-visibility microcopy (`⛔ Locked: Same-Period Subs Only (${tPeriod})`) with a 5000ms duration and timer-clearing tracking in `showToast` so coordinators comfortably understand cross-period constraints.
+    - **Shift "Allow Disputes" to Developer Options**: Relocated `#admin-dispute-setting-row` out of General & Policies into Developer Options.
+    - **Shift Google Sheets URL Input to Developer Options**: Relocated `#sheets-csv-url-input` and Save URL button into Developer Options, keeping standard Cloud Sync focused on clean connection status, manual Push, and Sync triggers.
+    - **Shift Test Simulations to Developer Options**: Relocated `#mock-scenario-select` and `#btn-apply-scenario` out of Timetable Data into Developer Options.
+  - [x] **iOS & Ableton Live Inspired Theme Menus (Job Bundle 9 - Delivered in v1.46.0)**:
+    - Redesigned the theme selector taking inspiration from iOS Settings and Ableton Live's minimalist color themes.
+    - Built tactile visual palette cards (`.theme-swatch-card`) displaying true canvas background (`--bg-color`), surface card (`--surface-color`), and accent LED chip (`--accent-blue`).
+    - Grouped all 12 themes into cohesive families (`☀️ Light`, `🌙 Dark`, `🪟 Glass Materials`, `🔲 Studio`) with instant 1-tap live preview and responsive category tabs (`.theme-family-pill`).
   - [x] **Substitutions Page Bug Fixes (BUG-06) (Delivered in v1.44.0)**:
     - Fixed fatal JavaScript script crash caused by stale undefined window exports.
     - Added self-healing absence reconciliation and fallback class resolution in `renderSubstitutions()`.

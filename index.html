@@ -221,7 +221,7 @@
                 </div>
 
                 <div class="grid-status-footer">
-                    <span class="version-badge">v1.45.0</span>
+                    <span class="version-badge">v1.46.0</span>
                     <span class="grid-status-dot">●</span>
                     <span class="grid-status-label">LFPS Front Desk Offline-First</span>
                     <div id="footer-conflict-pill" class="footer-conflict-pill hidden" title="Click to inspect timetable conflicts">
@@ -343,13 +343,14 @@
                         <button id="btn-change-pin" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; white-space:nowrap;">🔑 Change PIN</button>
                     </div>
                 </div>
-                <div class="settings-row" id="admin-dispute-setting-row">
+                <!-- Same-Period Substitution Lock (General Policies) -->
+                <div class="settings-row" id="same-period-lock-setting-row">
                     <div class="settings-row-info">
-                        <span class="settings-row-label">Allow Substitution Disputes <span class="admin-only-tag">Admin / AC Only</span></span>
-                        <span class="settings-row-desc">Permit teachers to flag a substitution with a Dispute button and optional reason note.</span>
+                        <span class="settings-row-label">Same-Period Substitution Lock</span>
+                        <span class="settings-row-desc">Restricts substitutions to the same timetable period. Uncheck to allow dragging and assigning substitutes across different periods.</span>
                     </div>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="allow-disputes-toggle" checked>
+                        <input type="checkbox" id="same-period-lock-toggle" checked>
                         <span class="slider round"></span>
                     </label>
                 </div>
@@ -378,28 +379,254 @@
             <!-- 3. Appearance & Themes -->
             <div class="settings-group">
                 <div class="settings-group-title">Appearance & Themes</div>
-                <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:8px;">
+                <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:12px;">
                     <div class="settings-row-info">
-                        <span class="settings-row-label">Interface Theme</span>
-                        <span class="settings-row-desc">Select your preferred color scheme or match system defaults.</span>
+                        <span class="settings-row-label">Interface Theme Palette</span>
+                        <span class="settings-row-desc">Tactile visual themes inspired by iOS and Ableton Live. Tap any swatch for instant live preview.</span>
                     </div>
-                    <div class="compact-theme-selector">
-                        <div class="quick-theme-pills">
-                            <button type="button" class="theme-quick-btn" data-theme="light">☀️ Light</button>
-                            <button type="button" class="theme-quick-btn" data-theme="dark">🌙 Dark</button>
-                            <button type="button" class="theme-quick-btn" data-theme="utopian-glass">💠 Utopian</button>
+                    <div class="theme-palette-container">
+                        <!-- Family Filter Tabs -->
+                        <div class="theme-family-filter" id="theme-family-filter">
+                            <button type="button" class="theme-family-pill active" data-family="all">All Themes</button>
+                            <button type="button" class="theme-family-pill" data-family="light">☀️ Light</button>
+                            <button type="button" class="theme-family-pill" data-family="dark">🌙 Dark</button>
+                            <button type="button" class="theme-family-pill" data-family="glass">🪟 Glass Materials</button>
+                            <button type="button" class="theme-family-pill" data-family="contrast">🔲 Studio</button>
                         </div>
-                        <select id="theme-more-select" class="apple-select theme-more-select">
+                        <!-- Ableton-Style Swatch Grid -->
+                        <div class="theme-swatch-grid" id="theme-swatch-grid">
+                            <!-- 1. System Default -->
+                            <div class="theme-swatch-card" data-theme="system" data-family="light" role="button" tabindex="0">
+                                <div class="theme-swatch-preview" style="background:linear-gradient(135deg, #f2f2f7 50%, #1c1c1e 50%); border-color:rgba(142,142,147,0.3);">
+                                    <div class="theme-swatch-surface" style="background:linear-gradient(135deg, #ffffff 50%, #2c2c2e 50%); border-color:rgba(142,142,147,0.4);">
+                                        <div class="theme-swatch-accent" style="background:#007aff;"></div>
+                                        <div class="theme-swatch-lines">
+                                            <div class="theme-swatch-line line-short" style="background:rgba(142,142,147,0.7);"></div>
+                                            <div class="theme-swatch-line line-long" style="background:rgba(142,142,147,0.5);"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="theme-swatch-meta">
+                                    <span class="theme-swatch-title">System Auto</span>
+                                    <span class="theme-swatch-tag">Match Device OS</span>
+                                </div>
+                                <span class="theme-swatch-check">✓</span>
+                            </div>
+
+                            <!-- 2. Light -->
+                            <div class="theme-swatch-card" data-theme="light" data-family="light" role="button" tabindex="0">
+                                <div class="theme-swatch-preview" style="background:#f2f2f7; border-color:#e5e5ea;">
+                                    <div class="theme-swatch-surface" style="background:#ffffff; border-color:#e5e5ea;">
+                                        <div class="theme-swatch-accent" style="background:#007aff;"></div>
+                                        <div class="theme-swatch-lines">
+                                            <div class="theme-swatch-line line-short" style="background:#8e8e93;"></div>
+                                            <div class="theme-swatch-line line-long" style="background:#c7c7cc;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="theme-swatch-meta">
+                                    <span class="theme-swatch-title">iOS Light</span>
+                                    <span class="theme-swatch-tag">Minimalist Day</span>
+                                </div>
+                                <span class="theme-swatch-check">✓</span>
+                            </div>
+
+                            <!-- 3. Warm Sepia -->
+                            <div class="theme-swatch-card" data-theme="warm-sepia" data-family="light" role="button" tabindex="0">
+                                <div class="theme-swatch-preview" style="background:#f5f0e6; border-color:#e4dacb;">
+                                    <div class="theme-swatch-surface" style="background:#fdfbf7; border-color:#e4dacb;">
+                                        <div class="theme-swatch-accent" style="background:#2c6ecb;"></div>
+                                        <div class="theme-swatch-lines">
+                                            <div class="theme-swatch-line line-short" style="background:#8a7e72;"></div>
+                                            <div class="theme-swatch-line line-long" style="background:#c4b9aa;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="theme-swatch-meta">
+                                    <span class="theme-swatch-title">Warm Sepia</span>
+                                    <span class="theme-swatch-tag">Paper & Daylight</span>
+                                </div>
+                                <span class="theme-swatch-check">✓</span>
+                            </div>
+
+                            <!-- 4. Dark -->
+                            <div class="theme-swatch-card" data-theme="dark" data-family="dark" role="button" tabindex="0">
+                                <div class="theme-swatch-preview" style="background:#000000; border-color:#38383a;">
+                                    <div class="theme-swatch-surface" style="background:#1c1c1e; border-color:#38383a;">
+                                        <div class="theme-swatch-accent" style="background:#0a84ff;"></div>
+                                        <div class="theme-swatch-lines">
+                                            <div class="theme-swatch-line line-short" style="background:#aeaeb2;"></div>
+                                            <div class="theme-swatch-line line-long" style="background:#48484a;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="theme-swatch-meta">
+                                    <span class="theme-swatch-title">iOS Dark</span>
+                                    <span class="theme-swatch-tag">Minimalist Night</span>
+                                </div>
+                                <span class="theme-swatch-check">✓</span>
+                            </div>
+
+                            <!-- 5. Midnight OLED -->
+                            <div class="theme-swatch-card" data-theme="midnight" data-family="dark" role="button" tabindex="0">
+                                <div class="theme-swatch-preview" style="background:#000000; border-color:#1f232b;">
+                                    <div class="theme-swatch-surface" style="background:#0b0c0e; border-color:#1f232b;">
+                                        <div class="theme-swatch-accent" style="background:#3b82f6;"></div>
+                                        <div class="theme-swatch-lines">
+                                            <div class="theme-swatch-line line-short" style="background:#7f8694;"></div>
+                                            <div class="theme-swatch-line line-long" style="background:#2e3542;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="theme-swatch-meta">
+                                    <span class="theme-swatch-title">Midnight OLED</span>
+                                    <span class="theme-swatch-tag">Pure Pitch Black</span>
+                                </div>
+                                <span class="theme-swatch-check">✓</span>
+                            </div>
+
+                            <!-- 6. Slate Nord -->
+                            <div class="theme-swatch-card" data-theme="slate-nord" data-family="dark" role="button" tabindex="0">
+                                <div class="theme-swatch-preview" style="background:#242933; border-color:#434c5e;">
+                                    <div class="theme-swatch-surface" style="background:#2e3440; border-color:#434c5e;">
+                                        <div class="theme-swatch-accent" style="background:#88c0d0;"></div>
+                                        <div class="theme-swatch-lines">
+                                            <div class="theme-swatch-line line-short" style="background:#d8dee9;"></div>
+                                            <div class="theme-swatch-line line-long" style="background:#4c566a;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="theme-swatch-meta">
+                                    <span class="theme-swatch-title">Slate Nord</span>
+                                    <span class="theme-swatch-tag">Arctic Midnight</span>
+                                </div>
+                                <span class="theme-swatch-check">✓</span>
+                            </div>
+
+                            <!-- 7. Utopian Glass -->
+                            <div class="theme-swatch-card" data-theme="utopian-glass" data-family="glass" role="button" tabindex="0">
+                                <div class="theme-swatch-preview" style="background:#f0f9ff; border-color:rgba(2,132,199,0.25);">
+                                    <div class="theme-swatch-surface" style="background:rgba(255,255,255,0.75); border-color:rgba(2,132,199,0.35);">
+                                        <div class="theme-swatch-accent" style="background:#0284c7;"></div>
+                                        <div class="theme-swatch-lines">
+                                            <div class="theme-swatch-line line-short" style="background:#475569;"></div>
+                                            <div class="theme-swatch-line line-long" style="background:#94a3b8;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="theme-swatch-meta">
+                                    <span class="theme-swatch-title">Utopian Glass</span>
+                                    <span class="theme-swatch-tag">Architectural Day</span>
+                                </div>
+                                <span class="theme-swatch-check">✓</span>
+                            </div>
+
+                            <!-- 8. Utopian Night -->
+                            <div class="theme-swatch-card" data-theme="utopian-night" data-family="glass" role="button" tabindex="0">
+                                <div class="theme-swatch-preview" style="background:#0a0f1d; border-color:rgba(56,189,248,0.3);">
+                                    <div class="theme-swatch-surface" style="background:rgba(15,23,42,0.8); border-color:rgba(56,189,248,0.4);">
+                                        <div class="theme-swatch-accent" style="background:#38bdf8;"></div>
+                                        <div class="theme-swatch-lines">
+                                            <div class="theme-swatch-line line-short" style="background:#94a3b8;"></div>
+                                            <div class="theme-swatch-line line-long" style="background:#475569;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="theme-swatch-meta">
+                                    <span class="theme-swatch-title">Utopian Night</span>
+                                    <span class="theme-swatch-tag">Deep Refraction</span>
+                                </div>
+                                <span class="theme-swatch-check">✓</span>
+                            </div>
+
+                            <!-- 9. Aero Frost -->
+                            <div class="theme-swatch-card" data-theme="aero-frost" data-family="glass" role="button" tabindex="0">
+                                <div class="theme-swatch-preview" style="background:#e8eef5; border-color:rgba(37,99,235,0.25);">
+                                    <div class="theme-swatch-surface" style="background:rgba(255,255,255,0.7); border-color:rgba(37,99,235,0.3);">
+                                        <div class="theme-swatch-accent" style="background:#2563eb;"></div>
+                                        <div class="theme-swatch-lines">
+                                            <div class="theme-swatch-line line-short" style="background:#64748b;"></div>
+                                            <div class="theme-swatch-line line-long" style="background:#94a3b8;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="theme-swatch-meta">
+                                    <span class="theme-swatch-title">Aero Frost</span>
+                                    <span class="theme-swatch-tag">Liquid Acrylic</span>
+                                </div>
+                                <span class="theme-swatch-check">✓</span>
+                            </div>
+
+                            <!-- 10. Cyber Glass -->
+                            <div class="theme-swatch-card" data-theme="cyber-glass" data-family="glass" role="button" tabindex="0">
+                                <div class="theme-swatch-preview" style="background:#090d16; border-color:rgba(56,189,248,0.3);">
+                                    <div class="theme-swatch-surface" style="background:rgba(18,24,38,0.8); border-color:rgba(56,189,248,0.45);">
+                                        <div class="theme-swatch-accent" style="background:#38bdf8;"></div>
+                                        <div class="theme-swatch-lines">
+                                            <div class="theme-swatch-line line-short" style="background:#34d399;"></div>
+                                            <div class="theme-swatch-line line-long" style="background:#475569;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="theme-swatch-meta">
+                                    <span class="theme-swatch-title">Cyber Glass</span>
+                                    <span class="theme-swatch-tag">Smoked Neon</span>
+                                </div>
+                                <span class="theme-swatch-check">✓</span>
+                            </div>
+
+                            <!-- 11. Retro Glass -->
+                            <div class="theme-swatch-card" data-theme="retro-glass" data-family="glass" role="button" tabindex="0">
+                                <div class="theme-swatch-preview" style="background:#1a1c23; border-color:rgba(255,255,255,0.15);">
+                                    <div class="theme-swatch-surface" style="background:rgba(35,39,49,0.9); border-color:rgba(255,255,255,0.18);">
+                                        <div class="theme-swatch-accent" style="background:#4ea8de;"></div>
+                                        <div class="theme-swatch-lines">
+                                            <div class="theme-swatch-line line-short" style="background:#9aa5b8;"></div>
+                                            <div class="theme-swatch-line line-long" style="background:#4f5768;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="theme-swatch-meta">
+                                    <span class="theme-swatch-title">Retro Glass</span>
+                                    <span class="theme-swatch-tag">Vintage Lustre</span>
+                                </div>
+                                <span class="theme-swatch-check">✓</span>
+                            </div>
+
+                            <!-- 12. High Contrast -->
+                            <div class="theme-swatch-card" data-theme="high-contrast" data-family="contrast" role="button" tabindex="0">
+                                <div class="theme-swatch-preview" style="background:#ffffff; border-color:#000000;">
+                                    <div class="theme-swatch-surface" style="background:#ffffff; border-color:#000000;">
+                                        <div class="theme-swatch-accent" style="background:#0044cc;"></div>
+                                        <div class="theme-swatch-lines">
+                                            <div class="theme-swatch-line line-short" style="background:#000000;"></div>
+                                            <div class="theme-swatch-line line-long" style="background:#555555;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="theme-swatch-meta">
+                                    <span class="theme-swatch-title">High Contrast</span>
+                                    <span class="theme-swatch-tag">Monochrome Studio</span>
+                                </div>
+                                <span class="theme-swatch-check">✓</span>
+                            </div>
+                        </div>
+
+                        <!-- Hidden select dropdown to maintain full backwards-compatibility with existing scripts -->
+                        <select id="theme-more-select" class="apple-select theme-more-select" style="display:none !important;">
                             <option value="">More Themes...</option>
                             <option value="system">📱 Auto (Match System)</option>
+                            <option value="light">☀️ Light</option>
+                            <option value="dark">🌙 Dark</option>
+                            <option value="warm-sepia">📜 Warm Sepia</option>
+                            <option value="midnight">⬛ Midnight OLED</option>
+                            <option value="slate-nord">❄️ Slate Nord</option>
+                            <option value="utopian-glass">💠 Utopian Glass</option>
                             <option value="utopian-night">🌃 Utopian Night</option>
                             <option value="retro-glass">✨ Retro Glass</option>
                             <option value="aero-frost">❄️ Aero Frost</option>
                             <option value="cyber-glass">🌌 Cyber Glass</option>
-                            <option value="warm-sepia">📜 Warm Sepia</option>
                             <option value="high-contrast">🔲 High Contrast</option>
-                            <option value="midnight">⬛ Midnight OLED</option>
-                            <option value="slate-nord">❄️ Slate Nord</option>
                         </select>
                     </div>
                 </div>
@@ -420,12 +647,8 @@
                 <div class="settings-group-title">Cloud & Synchronization (2-Way Live Sync)</div>
                 <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:10px;">
                     <div class="settings-row-info">
-                        <span class="settings-row-label">Google Apps Script Web App / Sheet URL</span>
+                        <span class="settings-row-label">Cloud Routine & Daily Ledger Sync</span>
                         <span class="settings-row-desc">Sync master routine updates and automatically push daily substitution records back to Google Sheets.</span>
-                    </div>
-                    <div style="display:flex; gap:6px;">
-                        <input type="url" id="sheets-csv-url-input" class="apple-input" style="font-size:12px; flex:1;" placeholder="https://script.google.com/macros/s/.../exec">
-                        <button id="btn-save-sheets-url" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; white-space:nowrap;">Save URL</button>
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px; flex-wrap:wrap; gap:8px;">
                         <div id="cloud-sync-status-text" style="font-size:11px; color:var(--text-secondary);">
@@ -445,9 +668,9 @@
                 </div>
             </div>
 
-            <!-- 5. Timetable Data & Simulations -->
+            <!-- 5. Timetable Data & Storage -->
             <div class="settings-group">
-                <div class="settings-group-title">Timetable Data & Simulations</div>
+                <div class="settings-group-title">Timetable Data & Storage</div>
                 <div class="settings-row">
                     <div class="settings-row-info">
                         <span class="settings-row-label">Reset to 2026–2027 Timetable</span>
@@ -455,6 +678,73 @@
                     </div>
                     <button id="btn-pristine-reset" class="btn-secondary" style="font-size:11px; padding:6px 10px; font-weight:700; white-space:nowrap;">Reset Baseline</button>
                 </div>
+                <div class="settings-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Action History Buffer</span>
+                        <span class="settings-row-desc">Wipe accumulated undo/redo history stack without altering schedule.</span>
+                    </div>
+                    <button type="button" id="btn-purge-history" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; color:var(--accent-red);">🗑 Purge History</button>
+                </div>
+            </div>
+
+            <!-- 6. About & Guides -->
+            <div class="settings-group">
+                <div class="settings-group-title">About & Guides</div>
+                <div class="settings-row" style="cursor: pointer;" id="settings-open-tour-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Feature Overview & Guide</span>
+                        <span class="settings-row-desc">Explore everything Front Desk can do with an interactive visual tour.</span>
+                    </div>
+                    <span style="font-size:18px;">💡 →</span>
+                </div>
+                <div class="settings-row" id="settings-version-row" style="cursor:pointer; user-select:none;" title="Tap 5 times to unlock Developer Options">
+                    <span class="settings-row-label">Version</span>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span class="settings-row-value" id="settings-version-val">v1.46.0 (Timetable Schema 2.0)</span>
+                        <span id="dev-mode-pill" class="dev-badge-pill hidden">🛠 Dev Unlocked</span>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-row-label">Storage Engine</span>
+                    <span class="settings-row-value">Offline-First LocalStorage</span>
+                </div>
+            </div>
+
+            <!-- 7. Developer Options (Hidden Behind 5-Tap Version Easter Egg - Placed at Absolute Bottom) -->
+            <div class="settings-group hidden" id="roster-color-settings-group">
+                <div class="settings-group-title" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>🛠 Developer Options</span>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" id="btn-reset-roster-colors" class="btn-text-only" style="font-size:11px; font-weight:700; color:var(--accent-blue); background:none; border:none; cursor:pointer;">Reset Defaults</button>
+                        <button type="button" id="btn-relock-dev" class="btn-text-only" style="font-size:11px; font-weight:600; color:var(--text-secondary); background:none; border:none; cursor:pointer;" title="Re-lock Developer Options">🔒 Lock</button>
+                    </div>
+                </div>
+
+                <!-- Relocated Developer Option: Allow Substitution Disputes -->
+                <div class="settings-row" id="admin-dispute-setting-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Allow Substitution Disputes <span class="admin-only-tag">Admin / AC Only</span></span>
+                        <span class="settings-row-desc">Permit teachers to flag a substitution with a Dispute button and optional reason note.</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="allow-disputes-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <!-- Relocated Developer Option: Google Apps Script Web App Endpoint URL -->
+                <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:8px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Google Apps Script Web App URL</span>
+                        <span class="settings-row-desc">Endpoint URL for 2-way live Google Sheets database synchronization.</span>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <input type="url" id="sheets-csv-url-input" class="apple-input" style="font-size:12px; flex:1;" placeholder="https://script.google.com/macros/s/.../exec">
+                        <button id="btn-save-sheets-url" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; white-space:nowrap;">Save URL</button>
+                    </div>
+                </div>
+
+                <!-- Relocated Developer Option: Simulate Absence / Test Scenarios -->
                 <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
                     <div class="settings-row-info" style="min-width:180px;">
                         <span class="settings-row-label">Simulate Absence / Test Scenarios</span>
@@ -470,36 +760,6 @@
                         </select>
                         <button id="btn-apply-scenario" class="btn-secondary" style="font-size:11px; padding:6px 10px; font-weight:700; white-space:nowrap;">Run Test</button>
                     </div>
-                </div>
-                <div class="settings-row">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Action History Buffer</span>
-                        <span class="settings-row-desc">Wipe accumulated undo/redo history stack without altering schedule.</span>
-                    </div>
-                    <button type="button" id="btn-purge-history" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; color:var(--accent-red);">🗑 Purge History</button>
-                </div>
-            </div>
-
-            <!-- 6. Developer Options (Hidden Behind 5-Tap Version Easter Egg) -->
-            <div class="settings-group hidden" id="roster-color-settings-group">
-                <div class="settings-group-title" style="display:flex; justify-content:space-between; align-items:center;">
-                    <span>🛠 Developer Options</span>
-                    <div style="display:flex; gap:8px;">
-                        <button type="button" id="btn-reset-roster-colors" class="btn-text-only" style="font-size:11px; font-weight:700; color:var(--accent-blue); background:none; border:none; cursor:pointer;">Reset Defaults</button>
-                        <button type="button" id="btn-relock-dev" class="btn-text-only" style="font-size:11px; font-weight:600; color:var(--text-secondary); background:none; border:none; cursor:pointer;" title="Re-lock Developer Options">🔒 Lock</button>
-                    </div>
-                </div>
-
-                <!-- Developer Option: Same-Period Substitution Lock (Default ON) -->
-                <div class="settings-row">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Same-Period Substitution Lock</span>
-                        <span class="settings-row-desc">Default: ON. Restrict subs to the same period. Uncheck to allow dragging/assigning substitutes across different periods.</span>
-                    </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="same-period-lock-toggle" checked>
-                        <span class="slider round"></span>
-                    </label>
                 </div>
 
                 <!-- Developer Option: Acceptance Countdown Timer & Free Dispute Policy -->
@@ -631,29 +891,6 @@
                             <button type="button" class="color-pill-btn" data-target="absent" data-color="#dc2626" style="background:#dc2626;" title="Red"></button>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- 7. About & Guides -->
-            <div class="settings-group">
-                <div class="settings-group-title">About & Guides</div>
-                <div class="settings-row" style="cursor: pointer;" id="settings-open-tour-row">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Feature Overview & Guide</span>
-                        <span class="settings-row-desc">Explore everything Front Desk can do with an interactive visual tour.</span>
-                    </div>
-                    <span style="font-size:18px;">💡 →</span>
-                </div>
-                <div class="settings-row" id="settings-version-row" style="cursor:pointer; user-select:none;" title="Tap 5 times to unlock Developer Options">
-                    <span class="settings-row-label">Version</span>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <span class="settings-row-value" id="settings-version-val">v1.45.0 (Timetable Schema 2.0)</span>
-                        <span id="dev-mode-pill" class="dev-badge-pill hidden">🛠 Dev Unlocked</span>
-                    </div>
-                </div>
-                <div class="settings-row">
-                    <span class="settings-row-label">Storage Engine</span>
-                    <span class="settings-row-value">Offline-First LocalStorage</span>
                 </div>
             </div>
         </div>

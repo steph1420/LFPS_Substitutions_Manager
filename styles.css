@@ -2991,6 +2991,188 @@ input:checked + .slider:before {
     flex: 1;
 }
 
+/* Ableton Live & iOS Inspired Visual Theme Menu */
+.theme-palette-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.theme-family-filter {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 4px;
+    background: var(--segment-bg);
+    border-radius: 10px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.theme-family-filter::-webkit-scrollbar {
+    display: none;
+}
+
+.theme-family-pill {
+    padding: 6px 12px;
+    font-size: 11.5px;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 7px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.theme-family-pill:hover {
+    color: var(--text-primary);
+}
+
+.theme-family-pill.active {
+    background: var(--surface-color);
+    color: var(--text-primary);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.theme-swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    width: 100%;
+}
+
+.theme-swatch-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    background: var(--bg-color);
+    border: 1.5px solid var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    user-select: none;
+    outline: none;
+}
+
+.theme-swatch-card:hover {
+    border-color: var(--accent-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.theme-swatch-card:active {
+    transform: scale(0.97);
+}
+
+.theme-swatch-card.active {
+    border-color: var(--accent-blue);
+    background: var(--surface-color);
+    box-shadow: 0 0 0 2px var(--accent-blue), 0 4px 14px rgba(0, 122, 255, 0.18);
+}
+
+/* Ableton-Style Palette Mini-Canvas */
+.theme-swatch-preview {
+    position: relative;
+    width: 100%;
+    height: 52px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.theme-swatch-surface {
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 5px 6px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.theme-swatch-accent {
+    width: 18px;
+    height: 6px;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.theme-swatch-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5px;
+}
+
+.theme-swatch-line {
+    height: 2.5px;
+    border-radius: 1.5px;
+    opacity: 0.7;
+}
+
+.theme-swatch-line.line-short {
+    width: 50%;
+}
+
+.theme-swatch-line.line-long {
+    width: 85%;
+}
+
+/* Card Typography & iOS Checkmark */
+.theme-swatch-meta {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.theme-swatch-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.theme-swatch-tag {
+    font-size: 9.5px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.theme-swatch-check {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 5px rgba(0, 122, 255, 0.4);
+}
+
+.theme-swatch-card.active .theme-swatch-check {
+    opacity: 1;
+    transform: scale(1);
+}
+
 /* Developer Options Pill */
 .dev-badge-pill {
     font-size: 9px;

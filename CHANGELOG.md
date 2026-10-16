@@ -17,6 +17,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.46.0] - 2026-10-16
+
+### Added
+- **iOS & Ableton Live Inspired Visual Theme Menu**:
+  - Replaced legacy text dropdown with a tactile palette swatch grid (`.theme-swatch-grid`) inspired by Ableton Live's Look/Feel color tiles and iOS Settings.
+  - Each theme card (`.theme-swatch-card`) renders an authentic miniature preview canvas showcasing actual canvas background (`--bg-color`), inset surface card (`--surface-color`), accent LED indicator (`--accent-blue`), and grid line contrast.
+  - Interactive family filter tabs (`.theme-family-pill`: `All`, `☀️ Light`, `🌙 Dark`, `🪟 Glass Materials`, `🔲 Studio`) with instant 1-tap live preview, haptic tap feedback, and iOS checkmark status badge (`.theme-swatch-check`).
+  - Covers all 12 themes (`system`, `light`, `warm-sepia`, `dark`, `midnight`, `slate-nord`, `utopian-glass`, `utopian-night`, `aero-frost`, `cyber-glass`, `retro-glass`, `high-contrast`).
+
+### Changed
+- **Settings Hierarchy & Developer Options Relocation**:
+  - Relocated Developer Options (`#roster-color-settings-group`) to the absolute bottom of the Settings modal below "About & Guides", cleanly separated and unlocked via the 5-tap version Easter egg with smooth auto-scroll.
+  - Relocated **Same-Period Substitution Lock** (`#same-period-lock-toggle`) into "General & Policies" since it actively blocks coordinators by default.
+  - Relocated **Allow Substitution Disputes** (`#admin-dispute-setting-row`) into Developer Options.
+  - Relocated **Google Apps Script Web App Endpoint URL** (`#sheets-csv-url-input`) into Developer Options, keeping standard Cloud Sync focused purely on connection status, Push Today's Ledger, and Sync Routine.
+  - Relocated **Simulate Absence / Test Scenarios** (`#mock-scenario-select` and `#btn-apply-scenario`) out of Timetable Data into Developer Options.
+- **Same-Period Lock Toast Polish & Duration**:
+  - Replaced wordy rejection copy with crisp, high-visibility microcopy: `⛔ Locked: Same-Period Subs Only (${tPeriod})`.
+  - Upgraded `showToast` to track and cancel pending timers (`toastTimeout`), guaranteeing a full 5000ms display duration for critical constraints without premature dismissals.
+  - Polished toggle toast to `🔒 Same-Period Lock Enabled` and `🔓 Cross-Period Subs Allowed`.
+
 ## [v1.45.1] - 2026-10-16
 
 ### Fixed
