@@ -244,7 +244,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 
 ---
 
-## 🚀 Active Roadmap: Job Bundles 13, 14 & 15
+## 🚀 Active Roadmap: Job Bundles 13, 14, 15 & 16
 
 ### Job Bundle 13: Routine Grid Visual Integrity, Always-Editable Routine & Grid Context Popover (RESOLVED in v1.50.0)
 - **Status**: 🟢 Resolved (v1.50.0)
@@ -290,6 +290,26 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - **Universal Long-Press Indicator Standard**: Standardized Yamaha-inspired finger glyph indicator (`<span class="hold-indicator">👆</span>`) with clear subtext microcopy (`Hold for duties` / `Hold for more`).
 - [x] **FEAT-21 (Detailed Staff Availability Page Simplification & De-Cluttering)**:
   - Streamlined `#sub-avail-modal` with simplified header title `Staff Availability & Duties`, converted common duty chips into a high-density 3-column grid (`repeat(3, 1fr)`), and removed verbose parenthetical microcopy.
+
+### Job Bundle 16: Substitution Table Sorting, Desktop Width Responsiveness, Class/Teacher Consolidation & Dated Excel Server Backup
+- **Status**: 🔴 Queued (Next Up)
+- [ ] **FEAT-22 (Interactive Column Header Sorting in Substitution Tables)**:
+  - Make each column header in the Substitution Register table (and Off. CT ledger table) interactive and tappable.
+  - Sorting criteria:
+    - **Period**: Chronological sort by period order (`1st Pd`, `2nd Pd`, `3rd Pd`, etc.).
+    - **Class / Section**: Alphabetical class sort (`NUR A`, `PREP A`, `KG A`, etc.).
+    - **Teacher Name**: Alphabetical sort by absent teacher or substitute name.
+    - **Status**: Group by pending vs covered vs accepted/disputed.
+  - Clear visual indicator: Directional sort chevron (`▲` / `▼`) next to the active sorted column header with ascending/descending toggle on re-tap.
+- [ ] **FEAT-23 (Responsive Substitution Table Width Behavior: Narrow on Mobile, Spacious on Desktop)**:
+  - Clarification: The narrow condensed table structure was requested strictly for narrower viewports (mobile / small tablets).
+  - On wider screens / desktop viewports, restore a generous layout: remove forced horizontal squeezing, allow natural table expansion (`width: 100%`), restore comfortable column padding and spacious cell breathing room, while preserving the compact layout on narrow screens (`@media (max-width: 768px)`).
+- [ ] **FEAT-24 (Class / Teacher Column Consolidation & Elimination of Standalone Absent Column)**:
+  - Consolidate columns: instead of "Class / Dept" and separate "Absent" teacher column, combine them into a unified **Class / Teacher** column displaying the target class and the associated absent teacher (e.g. `PREP A • Mrs. S. Lakra (Absent)` or stacked class badge + teacher name).
+  - Eliminate the standalone "Absent Teacher" column completely, reducing column clutter and providing more breathing room for Substitute assignments and Actions.
+- [ ] **FEAT-25 (Dated Server Excel Backup & Audit Logging System)**:
+  - Implement a robust server/cloud Excel backup pipeline that automatically archives timetable and substitution snapshots with standardized date-stamped naming (e.g., `LFPS_Substitutions_Backup_YYYY-MM-DD.xlsx` / Google Sheets versioned backup).
+  - Add an audit logging system in Settings / Cloud Sync displaying a historical list of backup snapshots with timestamps, status, row counts, and 1-tap download or restore links.
 
 
 
