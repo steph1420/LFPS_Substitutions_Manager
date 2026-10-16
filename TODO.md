@@ -155,24 +155,30 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 ### FEAT-13: Front Desk Velocity, Contextual Menus, Grid Alignment, Live Cloud Broadcast & Ableton Themes (ACTIVE / NEXT)
 - **Status**: 🟡 In Queue / Next Up
 - **Tasks to Deliver**:
-  - [ ] **Ergonomic Speed-of-Light Zero-Travel UI Architecture**:
+  - [x] **Ergonomic Speed-of-Light Zero-Travel UI Architecture (Delivered in v1.45.0)**:
     - Avoid excessive hand/mouse travel distances across the interface.
-    - Anchor contextual micro-actions directly adjacent to cursor/touch targets; eliminate disruptive full-screen modals for quick micro-actions.
-  - [ ] **Routine Header Right-Alignment**:
-    - Right-align Fit-Grid button (`#fit-grid-toggle-btn`) and Hide Absent toggle (`#hide-absent-toggle-wrapper`) to the far right of the routine header bar, balancing the pinned view select on the left.
-  - [ ] **Context Menu for Reset Button History Purge**:
-    - Replace the disruptive `#history-purge-modal` popup on right-click / 500ms long-press of `#reset-schedule-btn` and `#more-item-reset` with a sleek, anchored Apple-style context popover right beside the button (`[ 🗑 Purge Action History ]`).
-  - [ ] **Grid Scroll Panel De-Obstruction Assessment**:
-    - Evaluate taking the routine table out of the nested `.table-scroll-container` scroll panel to prevent nested scrollbar traps.
-    - Test natural page/document scrolling while preserving sticky header rows and sticky teacher columns intact across viewports.
-  - [ ] **Settings Section & Control Relocations**:
+    - Anchored contextual micro-actions directly adjacent to cursor/touch targets; eliminated disruptive full-screen modals for quick micro-actions.
+  - [x] **Routine Header Right-Alignment (Delivered in v1.45.0)**:
+    - Right-aligned Scale to Viewport button (`#fit-grid-btn`) and Hide Absent toggle (`#hide-absent-toggle-wrapper`) via `.routine-header-right-controls` with `margin-left: auto;`, balancing the pinned view select on the left.
+  - [x] **Context Popover for Reset Button History Purge (Delivered in v1.45.0)**:
+    - Replaced the disruptive `#history-purge-modal` popup on right-click / 500ms long-press of `#reset-schedule-btn` and `#more-item-reset` with a sleek, anchored iOS-style context popover (`#reset-context-popover`) right beside the button (`[ 🗑 Purge Action History ]`).
+  - [x] **Grid Scroll Panel De-Obstruction (Delivered in v1.45.0)**:
+    - Decoupled the routine table from nested `.table-scroll-container` letterbox traps: set `max-height: none !important; overflow-y: visible !important;` across CSS and dynamic layout engine.
+    - All 9 teacher rows are immediately visible on desktop without scrolling inside a container; whole page scrolls naturally without cursor traps.
+  - [x] **Absence Panel Sub-Availability Full-Height Hardware Pad Button (Delivered in v1.45.0)**:
+    - Redesigned `#btn-open-sub-avail-modal` into a tactile hardware-like "pad button" (`.btn-sub-avail-pad`, MPC/Launchpad aesthetic with squircle corners, full vertical stretch, tactile press depth, glowing LED indicator, and clear stacked icon + label + live off-duty count badge) docked against the right edge of `.absent-tray-container`.
+    - Fully accessible across desktop, mobile portrait, and mobile landscape.
+  - [x] **Professional Terminology for "Fit-Grid" (Scale to Viewport) & Desktop Click Fix (Delivered in v1.45.0)**:
+    - Rebranded feature terminology to **Scale to Viewport** across tooltips, labels, 3-dot overflow menu, and guide text.
+    - Fixed desktop mouse interaction on need-to-sub cells (`.cell-missing` and `.cell-covered`): guarded `#sheet-overlay` dismissal against trailing clicks within 300ms, ensuring smooth 1-tap substitute picker opening.
+  - [ ] **Settings Section & Control Relocations (Job Bundle 9)**:
     - **Developer Options to Very Bottom**: Move the entire Developer Options card to the absolute bottom of Settings (below "About & Guides").
     - **Same-Period Lock to Regular Settings**: Move `samePeriodLock` toggle back to "General & Policies" since it actively blocks users by default.
     - **Same-Period Lock Toast Polish**: Make the rejection toast punchy/concise and increase display duration (or offer an interactive prompt) so coordinators can comfortably read why the cross-period drop was rejected.
     - **Shift "Allow Disputes" to Developer Options**: Move `allowDisputes` toggle out of General & Policies into Developer Options.
     - **Shift Google Sheets URL Input to Developer Options**: Move `#sheets-url-input` and Save URL button into Developer Options, keeping standard Cloud Sync focused on clean connection status, manual Push, and Sync triggers.
     - **Shift Test Simulations to Developer Options**: Move `#btn-simulate-day` and `#btn-simulate-complex` out of Timetable Data into Developer Options.
-  - [ ] **iOS & Ableton Live Inspired Theme Menus**:
+  - [ ] **iOS & Ableton Live Inspired Theme Menus (Job Bundle 9)**:
     - Redesign the theme selector taking inspiration from iOS settings and Ableton Live's minimalist color themes.
     - Build sleek visual palette chips/swatches displaying true UI background, card surface, and accent/tint colors.
     - Group into cohesive families (`Light`, `Dark`, `Glass Refraction`, `High Contrast`) with instant live-preview on tap, eliminating bulky standard `<select>` dropdowns.
@@ -186,16 +192,11 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] **Live Timetable Conflict Pill (Delivered in v1.44.0)**:
     - Added live conflict pill in `.grid-status-footer` (`#footer-conflict-pill`) and synchronized with `#collision-indicator`.
     - Clicking the pill smoothly scrolls to conflicting cells and provides instant toast diagnostics.
-  - [ ] **Absence Panel Sub-Availability Full-Height Pad Button**:
-    - Redesign `#btn-open-sub-avail-modal` to span the entire vertical height of the absence panel (`.absent-tray-container`) instead of sitting inside the top header row.
-    - Style it as a tactile hardware-like "pad button" (MPC/Launchpad aesthetic with prominent squircle corners, full vertical stretch, tactile press depth, and clear stacked icon + label) docked against the right edge of the absence tray.
   - [ ] **Subbed Teacher Target Cell Halo Ring Customizer**:
     - Polish visual indicator halo ring on target subbed cells (`sub-halo-active`) with developer options color presets.
-  - [ ] **Cloud Auto-Sync & Mandatory Substitution Broadcast**:
+  - [ ] **Cloud Auto-Sync & Mandatory Substitution Broadcast (Job Bundle 10)**:
     - **Live Cloud vs. Local Mode State Machine**: Respect user choices from connectivity notifications to either "Go Live" or stay in a "Local Session". When "Go Live" is active, resume background auto-sync.
     - **Unconditional Substitution Cloud Broadcast**: Regardless of whether the app is currently in local or cloud mode, every confirmed substitution event must immediately broadcast to the Google Apps Script cloud endpoint so all school staff are notified in real time.
-  - [ ] **Professional Terminology for "Fit-Grid" (Feature Re-branding)**:
-    - Select professional terminology: "Fit to Viewport", "Scale to Width", or "Full Bleed Canvas".
 
 
 

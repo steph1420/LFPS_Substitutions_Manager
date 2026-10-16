@@ -704,14 +704,25 @@ body {
 
 /* Absent Tray */
 .absent-tray-container {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
     margin-bottom: 25px;
+    position: relative;
+}
+
+.absent-tray-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .absent-tray-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .absent-tray-header h3,
@@ -988,6 +999,14 @@ body {
 
 .routine-header-scrollable::-webkit-scrollbar {
     display: none;
+}
+
+.routine-header-right-controls {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
 .teacher-quick-action-modal {
@@ -1453,6 +1472,7 @@ input:checked + .slider:before {
 .table-scroll-container {
     width: 100%;
     overflow-x: auto;
+    overflow-y: visible;
     -webkit-overflow-scrolling: touch; 
     display: block; 
     border-radius: var(--radius-md);
@@ -1460,7 +1480,6 @@ input:checked + .slider:before {
     background: var(--surface-color);
     margin-bottom: 15px;
     contain: paint layout;
-    will-change: scroll-position;
     transform: translateZ(0);
 }
 
@@ -3057,8 +3076,25 @@ input:checked + .slider:before {
     }
     .absent-tray-container {
         margin-bottom: 6px !important;
-        padding: 4px 8px !important;
+        padding: 4px 6px !important;
         border-radius: 8px !important;
+        gap: 6px !important;
+    }
+    .btn-sub-avail-pad {
+        width: 60px !important;
+        min-height: 52px !important;
+        padding: 4px 2px !important;
+        border-radius: 10px !important;
+    }
+    .btn-sub-avail-pad .pad-icon {
+        font-size: 15px !important;
+    }
+    .btn-sub-avail-pad .pad-label {
+        font-size: 8.5px !important;
+    }
+    .btn-sub-avail-pad .pad-count-badge {
+        font-size: 8px !important;
+        padding: 1px 4px !important;
     }
     .absent-tray-header {
         margin-bottom: 3px !important;
@@ -3271,7 +3307,24 @@ input:checked + .slider:before {
     }
     .absent-tray-container {
         margin-bottom: 4px !important;
-        padding: 2px 8px !important;
+        padding: 2px 6px !important;
+        gap: 6px !important;
+    }
+    .btn-sub-avail-pad {
+        width: 52px !important;
+        min-height: 40px !important;
+        padding: 2px 2px !important;
+        border-radius: 8px !important;
+    }
+    .btn-sub-avail-pad .pad-icon {
+        font-size: 13px !important;
+    }
+    .btn-sub-avail-pad .pad-label {
+        font-size: 8px !important;
+    }
+    .btn-sub-avail-pad .pad-count-badge {
+        font-size: 7.5px !important;
+        padding: 0 3px !important;
     }
     .absent-tray-header {
         display: none !important;
@@ -3322,7 +3375,8 @@ input:checked + .slider:before {
         font-size: 12px !important;
     }
     .table-scroll-container {
-        max-height: calc(100vh - 120px) !important;
+        max-height: none !important;
+        overflow-y: visible !important;
     }
 }
 
@@ -3377,7 +3431,8 @@ input:checked + .slider:before {
         font-size: 17px;
     }
     .table-scroll-container {
-        max-height: calc(100vh - 215px);
+        max-height: none !important;
+        overflow-y: visible !important;
     }
     .bottom-sheet {
         width: 90% !important;
@@ -5085,35 +5140,103 @@ body.master-edit-mode .routine-table tbody td:hover:not(:first-child) {
     transform: translateY(-1px);
 }
 
-/* Distinct Squircle Edge Button for Absence Panel Top-Right */
+/* Tactile Hardware Pad Button for Staff Availability (Full Height, Right Edge) */
+.btn-sub-avail-pad {
+    flex-shrink: 0;
+    align-self: stretch;
+    width: 82px;
+    min-height: 68px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: linear-gradient(180deg, var(--surface-opaque, var(--surface-color)) 0%, rgba(239, 68, 68, 0.08) 100%);
+    border: 1.5px solid rgba(239, 68, 68, 0.38);
+    border-radius: 14px; /* Tactile Squircle */
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08), inset 0 1.5px 0.5px rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+    user-select: none;
+    padding: 6px 4px;
+    transition: transform 0.12s ease, background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-sub-avail-pad:hover {
+    background: linear-gradient(180deg, var(--surface-opaque, var(--surface-color)) 0%, rgba(239, 68, 68, 0.16) 100%);
+    border-color: rgba(239, 68, 68, 0.65);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(239, 68, 68, 0.2), inset 0 1.5px 0.5px rgba(255, 255, 255, 0.35);
+}
+
+.btn-sub-avail-pad:active {
+    transform: translateY(2px) scale(0.97);
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.pad-led {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 6px #10b981;
+    transition: all 0.2s ease;
+    margin-bottom: 1px;
+}
+
+.btn-sub-avail-pad.has-unavail .pad-led {
+    background: #ef4444;
+    box-shadow: 0 0 8px #ef4444;
+    animation: pulse 1.6s infinite ease-in-out;
+}
+
+.pad-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.pad-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+    color: var(--accent-red, #ef4444);
+    text-align: center;
+    line-height: 1.15;
+}
+
+.pad-count-badge {
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 8px;
+    background: rgba(239, 68, 68, 0.18);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    white-space: nowrap;
+}
+
+.pad-count-badge.hidden {
+    display: none !important;
+}
+
+/* Distinct Squircle Edge Button fallback */
 .btn-squircle-edge {
-    border-radius: 9px !important; /* Apple Squircle */
+    border-radius: 9px !important;
     padding: 5px 12px !important;
     font-size: 11.5px !important;
     font-weight: 700 !important;
-    letter-spacing: 0.2px;
     background: var(--surface-opaque, var(--surface-color)) !important;
     color: var(--accent-red, #ef4444) !important;
     border: 1.5px solid rgba(239, 68, 68, 0.45) !important;
-    box-shadow: 0 1.5px 4px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 1.5px 4px rgba(0, 0, 0, 0.08) !important;
     cursor: pointer;
-    user-select: none;
-    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-}
-
-.btn-squircle-edge:hover {
-    background: rgba(239, 68, 68, 0.1) !important;
-    border-color: var(--accent-red, #ef4444) !important;
-    transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.2) !important;
-}
-
-.btn-squircle-edge:active {
-    transform: scale(0.96);
 }
 
 /* Sleek iOS-Style Absence Card Context Popover */
-.absence-context-overlay {
+.absence-context-overlay,
+.reset-context-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -5125,25 +5248,50 @@ body.master-edit-mode .routine-table tbody td:hover:not(:first-child) {
     -webkit-backdrop-filter: blur(2px);
 }
 
-.absence-context-popover {
+.absence-context-popover,
+.reset-context-popover {
     position: fixed;
     z-index: 2000;
-    min-width: 210px;
-    max-width: 270px;
+    min-width: 220px;
+    max-width: 280px;
     background: var(--surface-elevated, #ffffff);
     border: 1px solid var(--border-color);
     border-radius: 14px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 1px 4px rgba(0,0,0,0.1);
-    padding: 8px;
+    padding: 10px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     animation: popIn 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .absence-context-popover.hidden,
-.absence-context-overlay.hidden {
+.absence-context-overlay.hidden,
+.reset-context-popover.hidden,
+.reset-context-overlay.hidden {
     display: none !important;
+}
+
+.ctx-reset-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.ctx-reset-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ctx-reset-note {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    line-height: 1.35;
+    margin-bottom: 4px;
 }
 
 .ctx-teacher-header {
@@ -5245,6 +5393,26 @@ body.master-edit-mode .routine-table tbody td:hover:not(:first-child) {
     background: rgba(239, 68, 68, 0.22);
     color: #f87171;
     border-color: rgba(239, 68, 68, 0.45);
+}
+
+[data-theme="dark"] .reset-context-popover,
+[data-theme="midnight"] .reset-context-popover,
+[data-theme="utopian-night"] .reset-context-popover,
+[data-theme="slate-nord"] .reset-context-popover,
+[data-theme="retro-glass"] .reset-context-popover {
+    background: var(--surface-opaque, #1c1c1e) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="dark"] .btn-sub-avail-pad,
+[data-theme="midnight"] .btn-sub-avail-pad,
+[data-theme="utopian-night"] .btn-sub-avail-pad,
+[data-theme="slate-nord"] .btn-sub-avail-pad,
+[data-theme="retro-glass"] .btn-sub-avail-pad {
+    background: linear-gradient(180deg, var(--surface-color) 0%, rgba(239, 68, 68, 0.14) 100%) !important;
+    border-color: rgba(239, 68, 68, 0.45) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0.5px rgba(255, 255, 255, 0.1) !important;
 }
 
 /* The distinct, visually identifiable '?' button */

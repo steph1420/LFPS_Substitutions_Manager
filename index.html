@@ -6,11 +6,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.44.0">
+    <link rel="stylesheet" href="styles.css?v=1.45.0">
 </head>
 <body>
 
-    <!-- Sticky Top Bar for Expanded Fit-Grid View (Mobile Landscape & Full-Screen Fit) -->
+    <!-- Sticky Top Bar for Scaled Viewport Mode (Mobile Landscape & Full-Screen Fit) -->
     <div id="fit-grid-sticky-bar" class="fit-grid-sticky-bar hidden">
         <div class="fit-bar-left">
             <span class="fit-bar-title">📊 Master Routine</span>
@@ -28,7 +28,7 @@
             <button id="fit-grid-edit-btn" class="btn-fit-edit" title="Toggle Timetable Editing">
                 <span id="fit-grid-edit-icon">✎</span> <span id="fit-grid-edit-label">Edit Schedule</span>
             </button>
-            <button id="exit-fit-grid-btn" class="btn-exit-fit btn-fit-grid" title="Exit Fit-Grid View (Esc)" aria-label="Exit Fit-Grid">
+            <button id="exit-fit-grid-btn" class="btn-exit-fit btn-fit-grid" title="Exit Viewport Scaling (Esc)" aria-label="Exit Viewport Scaling">
                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M4 14h6v6"></path>
                     <path d="M20 14h-6v6"></path>
@@ -100,11 +100,11 @@
                         </div>
                         <div class="more-popover-item" id="more-item-subavail">
                             <span class="more-icon">⛔</span>
-                            <span class="more-text">Sub-Availability</span>
+                            <span class="more-text">Staff Availability</span>
                         </div>
                         <div class="more-popover-item" id="more-item-fitgrid">
                             <span class="more-icon">📊</span>
-                            <span class="more-text">Toggle Fit-Grid View</span>
+                            <span class="more-text">Scale to Viewport</span>
                         </div>
                         <div class="more-popover-item" id="more-item-tour">
                             <span class="more-icon">💡</span>
@@ -140,14 +140,18 @@
         <!-- TAB 1: DASHBOARD (Grid Matrix Layout) -->
         <section id="tab-dashboard" class="tab-section active">
             <div class="absent-tray-container">
-                <div class="absent-tray-header">
-                    <h3>Mark Absences</h3>
-                    <button type="button" id="btn-open-sub-avail-modal" class="btn-sub-avail-manage btn-squircle-edge" title="Manage Staff Substitution Availability">
-                        <span class="sub-avail-icon">⛔</span>
-                        <span class="sub-avail-label">Staff Availability</span>
-                    </button>
+                <div class="absent-tray-main">
+                    <div class="absent-tray-header">
+                        <h3>Mark Absences</h3>
+                    </div>
+                    <div class="absent-tray" id="teacher-roster"></div>
                 </div>
-                <div class="absent-tray" id="teacher-roster"></div>
+                <button type="button" id="btn-open-sub-avail-modal" class="btn-sub-avail-pad" title="Manage Staff Substitution Availability">
+                    <div class="pad-led" id="pad-sub-avail-led"></div>
+                    <span class="pad-icon">⛔</span>
+                    <span class="pad-label">Staff<br>Avail</span>
+                    <span class="pad-count-badge hidden" id="pad-sub-avail-count">0 Off</span>
+                </button>
                 <!-- Sleek Compact iOS Context Popover for Right-Click / Long-Press on Absence Card -->
                 <div id="absence-context-popover" class="absence-context-popover hidden" role="menu">
                     <!-- Populated dynamically by JS -->
@@ -170,14 +174,6 @@
 
                     <!-- Zone 2 (Scrollable Right): Horizontal Scrolling Controls -->
                     <div class="routine-header-scrollable">
-                        <button id="fit-grid-btn" class="btn-fit-grid" title="Expand Grid to fit screen width (Ideal for Landscape)" aria-label="Expand Grid">
-                            <span>⛶</span>
-                        </button>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="hide-absent-toggle">
-                            <span class="slider round"></span>
-                            <span class="label-text">Hide Absent</span>
-                        </label>
                         <div id="displaced-indicator" class="displaced-indicator hidden">
                             <span class="pulse-dot"></span>
                             <span class="text">Displaced</span>
@@ -185,6 +181,16 @@
                         <div id="collision-indicator" class="collision-indicator hidden" title="Click to inspect conflicts">
                             <span class="pulse-amber-dot"></span>
                             <span id="collision-counter-text" class="text">0 Conflicts</span>
+                        </div>
+                        <div class="routine-header-right-controls">
+                            <label class="toggle-switch" id="hide-absent-toggle-wrapper">
+                                <input type="checkbox" id="hide-absent-toggle">
+                                <span class="slider round"></span>
+                                <span class="label-text">Hide Absent</span>
+                            </label>
+                            <button id="fit-grid-btn" class="btn-fit-grid" title="Scale to Viewport (Ideal for Landscape)" aria-label="Scale to Viewport">
+                                <span>⛶</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -220,7 +226,7 @@
                 </div>
 
                 <div class="grid-status-footer">
-                    <span class="version-badge">v1.44.0</span>
+                    <span class="version-badge">v1.45.0</span>
                     <span class="grid-status-dot">●</span>
                     <span class="grid-status-label">LFPS Front Desk Offline-First</span>
                     <div id="footer-conflict-pill" class="footer-conflict-pill hidden" title="Click to inspect timetable conflicts">
@@ -646,7 +652,7 @@
                 <div class="settings-row" id="settings-version-row" style="cursor:pointer; user-select:none;" title="Tap 5 times to unlock Developer Options">
                     <span class="settings-row-label">Version</span>
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <span class="settings-row-value" id="settings-version-val">v1.44.0 (Timetable Schema 2.0)</span>
+                        <span class="settings-row-value" id="settings-version-val">v1.45.0 (Timetable Schema 2.0)</span>
                         <span id="dev-mode-pill" class="dev-badge-pill hidden">🛠 Dev Unlocked</span>
                     </div>
                 </div>
@@ -790,8 +796,8 @@
             <div class="tour-card">
                 <div class="tour-icon">📊</div>
                 <div class="tour-text">
-                    <h4>Interactive Routine Matrix & Fit-Grid View</h4>
-                    <p>Live spreadsheet grid with interactive hover crosshairs and 1-tap <b>Fit Grid</b> mode for full-width mobile landscape viewing.</p>
+                    <h4>Interactive Routine Matrix & Viewport Scaling</h4>
+                    <p>Live spreadsheet grid with interactive hover crosshairs and 1-tap <b>Scale to Viewport</b> mode for full-bleed mobile and landscape viewing.</p>
                 </div>
             </div>
             <div class="tour-card">
@@ -1106,29 +1112,21 @@
     </div>
     <div id="teacher-quick-action-overlay" class="overlay"></div>
 
-    <!-- History Purge Modal (Shortcut from Reset Button Long-Press / Right-Click) -->
-    <div id="history-purge-modal" class="settings-modal history-purge-modal hidden">
-        <div class="settings-modal-header" style="padding: 14px 16px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 18px;">🗑</span>
-                <h3 style="margin: 0; font-size: 15px;">Purge Action History</h3>
-            </div>
-            <button id="close-history-purge-btn" class="settings-close-btn" aria-label="Close">✕</button>
+    <!-- Sleek Compact Reset Context Popover (Shortcut from Reset Button Long-Press / Right-Click) -->
+    <div id="reset-context-popover" class="reset-context-popover hidden" role="menu">
+        <div class="ctx-reset-header">
+            <span style="font-size: 15px;">🗑</span>
+            <div style="font-weight: 700; font-size: 13px;">Action History</div>
         </div>
-        <div class="settings-modal-body" style="padding: 16px; font-size: 13px; line-height: 1.4; color: var(--text-secondary);">
-            <p style="margin: 0 0 12px 0; color: var(--text-primary); font-weight: 600;">
-                Clear all cached undo and redo steps from memory?
-            </p>
-            <p style="margin: 0; font-size: 12px;">
-                This resets your action history buffer without modifying the schedule, substitutions, or marked absences.
-            </p>
-            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px;">
-                <button type="button" id="history-purge-cancel-btn" class="btn-secondary" style="padding: 8px 14px;">Cancel</button>
-                <button type="button" id="history-purge-confirm-btn" class="btn-primary" style="background: var(--accent-red); padding: 8px 16px; font-weight: 700;">🗑 Purge History</button>
-            </div>
+        <div class="ctx-reset-body">
+            <div class="ctx-reset-note">Wipes cached undo and redo steps without modifying the timetable or substitutions.</div>
+            <button type="button" id="ctx-btn-purge-history" class="ctx-action-btn unavail-toggle" style="width: 100%;">
+                <span>🗑</span>
+                <span>Purge Action History</span>
+            </button>
         </div>
     </div>
-    <div id="history-purge-overlay" class="overlay"></div>
+    <div id="reset-context-overlay" class="reset-context-overlay hidden"></div>
 
     <!-- Header Notification Center Modal -->
     <div id="notifications-modal" class="settings-modal notifications-modal hidden">
@@ -1150,6 +1148,6 @@
     </div>
     <div id="notifications-overlay" class="overlay"></div>
 
-    <script src="app.js?v=1.44.0"></script>
+    <script src="app.js?v=1.45.0"></script>
 </body>
 </html>

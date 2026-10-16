@@ -47,6 +47,8 @@ const state = {
     }
 };
 
+let lastBottomSheetOpenTime = 0;
+
 const PRIMARY_AC = 'Mrs. R. Pahwa';
 const ASSISTANT_AC = 'Mrs. S. Lakra';
 
@@ -1103,9 +1105,11 @@ function bindEvents() {
     safeBind('hide-absent-toggle', 'change', renderAll);
     
     safeBind('sheet-overlay', 'click', (e) => {
+        if (Date.now() - lastBottomSheetOpenTime < 300) return;
         e.preventDefault(); e.stopPropagation(); closeBottomSheet();
     });
     safeBind('sheet-overlay', 'touchstart', (e) => {
+        if (Date.now() - lastBottomSheetOpenTime < 300) return;
         e.preventDefault(); e.stopPropagation(); closeBottomSheet();
     }, {passive: false});
 
@@ -1518,11 +1522,12 @@ function bindEvents() {
         if (teacher && sec) openOfficiatingModal('ct', sec, teacher);
     });
 
-    // Reset Button History Purge Shortcut Modal
-    safeBind('close-history-purge-btn', 'click', closeHistoryPurgeModal);
-    safeBind('history-purge-cancel-btn', 'click', closeHistoryPurgeModal);
-    safeBind('history-purge-overlay', 'click', closeHistoryPurgeModal);
-    safeBind('history-purge-confirm-btn', 'click', confirmPurgeActionHistory);
+    // Reset Button History Purge Shortcut Context Popover
+    safeBind('reset-context-overlay', 'click', closeResetContextMenu);
+    safeBind('ctx-btn-purge-history', 'click', () => {
+        closeResetContextMenu();
+        confirmPurgeActionHistory();
+    });
 
     // Bind Long-press & Right-click to Reset Buttons
     bindResetButtonLongPress(document.getElementById('reset-schedule-btn'));
@@ -1625,7 +1630,7 @@ function bindEvents() {
                 if (state.isEditMode) {
                     handleGridInteraction(period, teacher);
                 } else if (td.classList.contains('cell-missing') || td.classList.contains('cell-covered')) {
-                    openBottomSheet(period, teacher);
+                    setTimeout(() => openBottomSheet(period, teacher), 20);
                 }
             }
         });
@@ -1918,31 +1923,63 @@ function closeTeacherQuickActionModal() {
 }
 window.closeTeacherQuickActionModal = closeTeacherQuickActionModal;
 
-// --- RESET BUTTON HISTORY PURGE SHORTCUT MODAL ---
-function openHistoryPurgeModal() {
+// --- RESET BUTTON HISTORY PURGE SHORTCUT CONTEXT POPOVER ---
+function openResetContextMenu(anchorEl, clientX, clientY) {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
         try { navigator.vibrate([40, 50]); } catch (_) {}
     }
-    const modal = document.getElementById('history-purge-modal');
-    const overlay = document.getElementById('history-purge-overlay');
-    if (modal) modal.classList.remove('hidden');
-    if (overlay) overlay.classList.add('active');
-}
-window.openHistoryPurgeModal = openHistoryPurgeModal;
+    const popover = document.getElementById('reset-context-popover');
+    const overlay = document.getElementById('reset-context-overlay');
+    if (!popover || !overlay) return;
 
-function closeHistoryPurgeModal() {
-    const modal = document.getElementById('history-purge-modal');
-    const overlay = document.getElementById('history-purge-overlay');
-    if (modal) modal.classList.add('hidden');
-    if (overlay) overlay.classList.remove('active');
+    popover.classList.remove('hidden');
+    overlay.classList.remove('hidden');
+
+    if (anchorEl && anchorEl.getBoundingClientRect) {
+        const rect = anchorEl.getBoundingClientRect();
+        let top = rect.bottom + 6;
+        let left = rect.left + (rect.width / 2) - 110;
+        if (left < 10) left = 10;
+        if (left + 230 > window.innerWidth) left = window.innerWidth - 235;
+        if (top + 130 > window.innerHeight) top = rect.top - 120;
+        popover.style.top = `${Math.max(10, Math.round(top))}px`;
+        popover.style.left = `${Math.max(10, Math.round(left))}px`;
+    } else if (clientX !== undefined && clientY !== undefined) {
+        let top = clientY + 6;
+        let left = clientX - 100;
+        if (left < 10) left = 10;
+        if (left + 230 > window.innerWidth) left = window.innerWidth - 235;
+        if (top + 130 > window.innerHeight) top = clientY - 120;
+        popover.style.top = `${Math.max(10, Math.round(top))}px`;
+        popover.style.left = `${Math.max(10, Math.round(left))}px`;
+    }
+
+    const purgeBtn = document.getElementById('ctx-btn-purge-history');
+    if (purgeBtn) {
+        purgeBtn.onclick = (e) => {
+            e.stopPropagation();
+            closeResetContextMenu();
+            confirmPurgeActionHistory();
+        };
+    }
 }
-window.closeHistoryPurgeModal = closeHistoryPurgeModal;
+window.openResetContextMenu = openResetContextMenu;
+window.openHistoryPurgeModal = openResetContextMenu;
+
+function closeResetContextMenu() {
+    const popover = document.getElementById('reset-context-popover');
+    const overlay = document.getElementById('reset-context-overlay');
+    if (popover) popover.classList.add('hidden');
+    if (overlay) overlay.classList.add('hidden');
+}
+window.closeResetContextMenu = closeResetContextMenu;
+window.closeHistoryPurgeModal = closeResetContextMenu;
 
 function confirmPurgeActionHistory() {
     state.actionHistory = { grid: [], subs: [], redoGrid: [], redoSubs: [] };
     saveStateToStorage();
     updateUndoUI();
-    closeHistoryPurgeModal();
+    closeResetContextMenu();
     showToast('🗑 Action history buffer wiped clean.');
 }
 window.confirmPurgeActionHistory = confirmPurgeActionHistory;
@@ -1952,11 +1989,14 @@ function bindResetButtonLongPress(el) {
     let touchTimer = null;
     let isLongPress = false;
 
-    el.addEventListener('touchstart', () => {
+    el.addEventListener('touchstart', (e) => {
         isLongPress = false;
+        const touch = e.touches[0];
+        const cx = touch ? touch.clientX : undefined;
+        const cy = touch ? touch.clientY : undefined;
         touchTimer = setTimeout(() => {
             isLongPress = true;
-            openHistoryPurgeModal();
+            openResetContextMenu(el, cx, cy);
         }, 500);
     }, { passive: true });
 
@@ -1974,7 +2014,7 @@ function bindResetButtonLongPress(el) {
 
     el.addEventListener('contextmenu', (e) => {
         e.preventDefault();
-        openHistoryPurgeModal();
+        openResetContextMenu(el, e.clientX, e.clientY);
     });
 }
 
@@ -2475,11 +2515,13 @@ function toggleFitGridMode(enable) {
     if (isFitGridMode) {
         const isPortrait = window.innerHeight > window.innerWidth && window.innerWidth < 650;
         if (isPortrait) {
-            showToast('Fit-Grid on (Landscape suggested)');
+            showToast('Scaled to Viewport (Landscape suggested)');
         } else {
-            showToast('Fit-Grid enabled');
+            showToast('Scaled to Viewport');
         }
         if (navigator.vibrate) try { navigator.vibrate(35); } catch (_) {}
+    } else {
+        showToast('Natural grid layout restored');
     }
 }
 window.toggleFitGridMode = toggleFitGridMode;
@@ -4655,7 +4697,6 @@ let lastComputedWidth = 0;
 let viewportResizeTimer = null;
 
 function computeViewportLayout() {
-    const vh = window.innerHeight;
     const vw = window.innerWidth;
     const isDesktop = vw >= 900;
     if (document.body) {
@@ -4663,17 +4704,9 @@ function computeViewportLayout() {
     }
 
     const tableContainer = document.querySelector('.table-scroll-container');
-    if (tableContainer && isDesktop) {
-        const headerEl = document.querySelector('.app-header');
-        const trayEl = document.querySelector('.absent-tray-container');
-        const routineHeaderEl = document.querySelector('.routine-header');
-        const hHeight = headerEl ? headerEl.offsetHeight : 80;
-        const tHeight = (trayEl && !trayEl.classList.contains('hidden')) ? trayEl.offsetHeight : 0;
-        const rhHeight = routineHeaderEl ? routineHeaderEl.offsetHeight : 40;
-        const availableHeight = Math.max(320, vh - hHeight - tHeight - rhHeight - 70);
-        tableContainer.style.maxHeight = `${availableHeight}px`;
-    } else if (tableContainer) {
-        tableContainer.style.maxHeight = '';
+    if (tableContainer) {
+        tableContainer.style.maxHeight = 'none';
+        tableContainer.style.overflowY = 'visible';
     }
 }
 window.computeViewportLayout = computeViewportLayout;
@@ -4881,6 +4914,25 @@ function renderAbsentTray() {
         });
         tray.appendChild(el);
     });
+
+    // Update Hardware Pad Button Status and Count Badge
+    const unavailCount = Object.keys(state.subUnavailable?.[state.day] || {}).length;
+    const padBtn = document.getElementById('btn-open-sub-avail-modal');
+    const padBadge = document.getElementById('pad-sub-avail-count');
+    if (padBtn) {
+        if (unavailCount > 0) {
+            padBtn.classList.add('has-unavail');
+            if (padBadge) {
+                padBadge.textContent = `${unavailCount} Off`;
+                padBadge.classList.remove('hidden');
+            }
+        } else {
+            padBtn.classList.remove('has-unavail');
+            if (padBadge) {
+                padBadge.classList.add('hidden');
+            }
+        }
+    }
 }
 
 function renderTableRoutine() {
@@ -6137,6 +6189,7 @@ function handleResetSchedule() {
 }
 
 function openBottomSheet(period, targetTeacher) {
+    lastBottomSheetOpenTime = Date.now();
     const existingStatus = getSubStatusObj(state.day, period, targetTeacher);
     if (state.settings?.acceptanceTimerEnabled && existingStatus.status === 'accepted' && !hasCoordinatorPermissions()) {
         showToast('Locked by acceptance', true);

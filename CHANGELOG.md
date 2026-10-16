@@ -17,6 +17,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.45.0] - 2026-10-16
+
+### Added
+- **Full-Height Hardware Pad Button for Staff Availability**:
+  - Redesigned `#btn-open-sub-avail-modal` into a tactile hardware-style pad button (`.btn-sub-avail-pad`) spanning the full vertical height of `.absent-tray-container` docked against the right edge.
+  - Features MPC/Launchpad squircle aesthetics (`border-radius: 14px`), tactile active press depth (`transform: translateY(2px)`), live status LED (`.pad-led` pulsing green/red), and dynamic off-duty count badge (`#pad-sub-avail-count`).
+  - Seamlessly responsive across desktop, mobile portrait, and mobile landscape.
+- **Anchored Context Popover for Action History Purge**:
+  - Replaced the large full-screen `#history-purge-modal` with a sleek, compact iOS-style context popover (`#reset-context-popover`) anchored directly beside `#reset-schedule-btn` and `#more-item-reset` on right-click / 500ms long-press.
+  - Enables zero-travel, 1-tap history buffer wiping without modal disruption.
+
+### Changed
+- **Routine Header Right-Alignment**:
+  - Right-aligned Scale to Viewport button (`#fit-grid-btn`) and Hide Absent toggle (`#hide-absent-toggle-wrapper`) via `.routine-header-right-controls` with `margin-left: auto;`, creating a balanced, clean front-desk header.
+- **Grid Scroll Panel De-Obstruction**:
+  - Decoupled the master routine table from nested `.table-scroll-container` letterbox traps (`max-height: none !important; overflow-y: visible !important;`).
+  - All 9 teacher rows are immediately visible on desktop displays without requiring internal vertical scrolling; natural document scrolling is fully restored.
+- **Professional Re-branding to "Scale to Viewport"**:
+  - Standardized terminology from "Fit Grid" to **Scale to Viewport** across tooltips, labels, 3-dot overflow menu, and guide text.
+
+### Fixed
+- **Desktop Need-to-Sub Cell Tap Interaction**:
+  - Fixed issue where clicking `.cell-missing` or `.cell-covered` cells on desktop was inadvertently dismissed by trailing clicks hitting `#sheet-overlay`.
+  - Added timestamp guard (`lastBottomSheetOpenTime < 300ms`) and safe event dispatching, ensuring 100% reliable 1-tap substitute picker activation on desktop.
+
 ## [v1.44.0] - 2026-10-16
 
 ### Fixed
