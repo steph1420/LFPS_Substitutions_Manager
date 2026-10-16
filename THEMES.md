@@ -333,3 +333,4 @@ When styling new applications or tools in the ecosystem:
   - `var(--radius-md)` (10px) for input fields, buttons, and chips.
   - `var(--radius-sm)` (6px) for badges and inner slot cells.
 - [ ] **Preserve Glassmorphism Fallback**: On browsers without `backdrop-filter` support, ensure `--surface-color` provides acceptable opacity for text contrast.
+
