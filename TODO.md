@@ -24,6 +24,15 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] Enforced `opacity: 1 !important` and opaque background on `.row-absent td:first-child` so absent teacher cells never become 60% translucent.
   - [x] Retained tactile separation divider and elevated box-shadow (`box-shadow: 3px 0 8px rgba(0,0,0,0.08)`) with `z-index: 10` (and `z-index: 15` for header intersection) so passing period cards are cleanly occluded underneath with zero visual text collision.
 
+### BUG-08: Grid Sticky Teacher Column Right Edge Border & Leftmost Under-Slide Peeking Leak
+- **Status**: 🔴 Open
+- **Reported**:
+  1. The teacher column on the left needs a visible, crisp border on its right edge because when period slot cards slide underneath it during horizontal scrolling, the dividing boundary disappears.
+  2. Period slot cards sliding underneath travel all the way to the left edge of the screen, peeking out on the leftmost edge not covered by the teacher column (breaking the physical visual illusion that the teacher column is flush with the left viewport edge).
+- **Target Solution**:
+  - [ ] **Solid Right-Edge Separation**: Enforce `border-right: 2px solid var(--border-color) !important; box-shadow: 3px 0 8px rgba(0,0,0,0.12) !important;` on `.routine-table th:first-child` and `.routine-table td:first-child` across all themes.
+  - [ ] **Eliminate Leftmost Gap & Under-Slide Peeking**: Ensure `.table-scroll-container` has `padding-left: 0 !important; margin-left: 0 !important;` and `.routine-table` has flush left alignment so sticky cells lock cleanly at `left: 0 !important;`, preventing scrolling cells from ever peeking past the left margin.
+
 ### PERF-01: Master Routine Initial Render Stutter & In-Memory Pre-Render ("Keep-Warm" Engine)
 - **Status**: 🔴 Open
 - **Reported**: The Master Routine table draws noticeably slow / stutters when the page is first loaded and scrolled down into view.
@@ -232,6 +241,46 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - Responsive cards for all 9 teachers with real-time class load, substitution coverage, role badges, dual 1-tap toggles (`toggleTeacherAbsence`, `toggleSubAvailability`), and quick duty manager (`openTeacherQuickActionModal`).
     - Developer Options hidden toggle (`#hide-absence-panel-toggle` / `state.settings.hideAbsencePanelFromGrid`) to collapse `.absent-tray-container` from Grid view for an unobstructed, full-height Master Routine table.
     - Context menu right-click / long-press enhancement with direct Attendance Toggle (`[ 🟢 Mark Present Today ]` / `[ 🔴 Mark Absent Today ]`), Sub-Availability Toggle, and strict viewport boundary clamping.
+
+---
+
+## 🚀 Active Roadmap: Job Bundles 13, 14 & 15
+
+### Job Bundle 13: Routine Grid Visual Integrity, Always-Editable Routine & Grid Context Popover
+- **Status**: 🔴 Queued / Active Candidate
+- [ ] **BUG-08 (Sticky Teacher Column Right Border & Leftmost Peeking Fix)**:
+  - Enforce prominent right-edge border and drop shadow on sticky teacher column (`.routine-table th:first-child`, `.routine-table td:first-child`) so scrolling period cells never erase the column boundary.
+  - Fix leftmost under-slide peeking: ensure `.table-scroll-container` and table start flush with `left: 0`, completely preventing sliding cells from peeking past the left edge of the teacher column.
+- [ ] **FEAT-15 (Always-Editable Routine Grid & Hidden Developer Edit Lock)**:
+  - Remove the requirement to click "Edit Schedule" before moving or assigning slots. The routine table is directly interactive and editable by default at all times.
+  - Move the "Edit Routine Lock" into Developer Options as a hidden setting (`state.settings.routineEditLock: false`) for coordinators who specifically want to lock the grid to prevent accidental drags.
+  - When unlocked (default), drag-and-drop and slot editing are immediately responsive without prerequisite mode toggling.
+- [ ] **FEAT-16 (Anchored In-Situ Context Popover on Routine Grid)**:
+  - Right-click (desktop) and 500ms long-press (mobile) on any teacher cell in the routine grid currently opens `#teacher-quick-action-modal` (a full popup modal).
+  - Replace with an anchored, high-speed iOS-style context popover (`#grid-cell-context-popover`) docked right beside the clicked cell/cursor (providing rapid micro-actions: Mark Absent/Present, Set Off-Duty, Assign Sub, Quick Duty remark).
+
+### Job Bundle 14: Modernized Substitutions Register, Bottom Counter, 'My Subs' Filter & Narrow Table
+- **Status**: 🔴 Queued
+- [ ] **FEAT-14.1 (Counter Panel Relocation & Top Filter Simplification)**:
+  - Shift the counter pills (`#register-summary-bar` / `#register-stats-pills`) to the bottom of `#tab-substitutions` below the ledger table.
+  - Above the table, retain only the filter controls: `All`, `Pending`, `Covered`, plus `'My Subs'`.
+- [ ] **FEAT-14.2 ('My Subs' / 'My' Filter Button)**:
+  - Add `'My Subs'` filter button showing only rows where the active profile (`state.activeTeacher`) is assigned as substitute or is the absent teacher.
+- [ ] **FEAT-14.3 (Narrower Responsive Substitution Table Architecture)**:
+  - Compact multi-line cell design combining Period + Class into a unified column (`P1` badge with `Prep A` below).
+  - Tighten padding and streamline teacher names and action buttons.
+  - Responsive fluid columns so mobile viewports do not require horizontal scrolling traps.
+
+### Job Bundle 15: Streamlined Officiating Class Teacher (Off. CT.), Roster Full Names & Settings Re-Organization
+- **Status**: 🔴 Queued
+- [ ] **FEAT-17 (Streamlined Officiating Class Teacher Workflow)**:
+  - **In Roster Tab**: For any absent Class Teacher, provide an inline 1-tap Off. CT. selector directly on their card. For substitute candidates, show an "Assign as Off. CT." pill.
+  - **In Substitutions Tab**: Add a dedicated Off. CT. management table at the bottom positioned right above the bottom counter panel.
+- [ ] **FEAT-18 (Roster Full Name Display on Responsive Screens)**:
+  - Display full formal names (e.g. `Mrs. Manisha Midha`, `Mr. Stephen Ashish Lakra`) on Roster cards when viewport $\ge 768\text{px}$.
+- [ ] **FEAT-19 (Settings Section Flow: Themes to Bottom Above Version)**:
+  - In Settings modal (`#settings-modal`), move the "Appearance & Themes" section down to the bottom, directly above "About & Guides" (where the Version row is).
+
 
 
 
