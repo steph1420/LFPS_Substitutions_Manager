@@ -33,6 +33,17 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] **Periodic Background Sync & Selective Diff Patching**: Keep routine rendered and run background poll for Google Sheet cloud updates, selectively updating only cells with actual diffs (`calculateScheduleDiffs`), eliminating full-table redraw lag.
   - [ ] **Compositor & Layer Optimization**: Keep `contain: paint layout` and GPU layer promotion (`transform: translateZ(0)`) warm so scrolling onto the table has zero frame drops.
 
+### BUG-06: Substitutions Page Failure — Missing Teacher Names & Auto-Resolve Inoperative
+- **Status**: 🔴 Open / Critical
+- **Reported**: On the Substitutions tab (`#tab-substitutions` / Daily Substitution Register), teacher names are not rendering or visible, and the Smart Auto-Resolve solver (`#auto-resolve-btn` / `performAutoResolve`) is failing to execute.
+- **Target Solution**:
+  - [ ] **Audit `renderSubstitutions()`**:
+    - Verify data extraction and DOM generation for absent teachers and assigned substitutes in `.sub-register-table`.
+    - Fix color/contrast and text-clipping issues that may cause teacher names to appear invisible or blank across themes and responsive viewports.
+  - [ ] **Audit `performAutoResolve()` & `generateStrategySolution()`**:
+    - Fix runtime exceptions in `generateStrategySolution` (e.g. safeguarding `simSchedule[period]` object initialization, undefined dereferencing, and affinity checks).
+    - Ensure `#auto-resolve-modal` correctly renders 3 solver proposals (`Subject Match`, `Balanced Load`, `Minimal Splits`) and applies assignments cleanly.
+
 ### BUG-01: Limbo Tray Drag Failure & Click-to-Restore Mechanism (RESOLVED in v1.35.0)
 - **Status**: 🟢 Resolved (v1.35.0)
 - **Solution Delivered**:
@@ -179,6 +190,9 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - Style it as a tactile hardware-like "pad button" (MPC/Launchpad aesthetic with prominent squircle corners, full vertical stretch, tactile press depth, and clear stacked icon + label) docked against the right edge of the absence tray.
   - [ ] **Subbed Teacher Target Cell Halo Ring Customizer**:
     - Polish visual indicator halo ring on target subbed cells (`sub-halo-active`) with developer options color presets.
+  - [ ] **Substitutions Page Bug Fixes (BUG-06)**:
+    - Fix missing/invisible teacher names in Daily Substitution Register (`.sub-register-table`).
+    - Fix Smart Auto-Resolve solver (`#auto-resolve-btn` / `performAutoResolve`) and proposal generation.
   - [ ] **Professional Terminology for "Fit-Grid" (Feature Re-branding)**:
     - Select professional terminology: "Fit to Viewport", "Scale to Width", or "Full Bleed Canvas".
 
