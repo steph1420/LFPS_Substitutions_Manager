@@ -6850,16 +6850,42 @@ function renderSubstitutions() {
         `;
     }
 
+    const activeTeacher = state.activeTeacher;
+    let mySubsCount = 0;
+    rowsData.forEach(r => {
+        if (activeTeacher && (r.subTeacher === activeTeacher || r.absentTeacher === activeTeacher)) {
+            mySubsCount++;
+        }
+    });
+
+    const myBtn = document.getElementById('reg-filter-btn-my');
+    if (myBtn) {
+        myBtn.innerHTML = mySubsCount > 0 
+            ? `My Subs <span class="reg-filter-count">${mySubsCount}</span>` 
+            : 'My Subs';
+    }
+
+    document.querySelectorAll('.reg-filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === registerFilter);
+    });
+
     const filteredRows = rowsData.filter(r => {
         if (registerFilter === 'pending') return !r.subTeacher;
         if (registerFilter === 'covered') return Boolean(r.subTeacher);
+        if (registerFilter === 'my') {
+            return activeTeacher && (r.subTeacher === activeTeacher || r.absentTeacher === activeTeacher);
+        }
         return true;
     });
 
     if (filteredRows.length === 0) {
+        let emptyMsg = `No ${registerFilter} substitution entries for ${state.day}.`;
+        if (registerFilter === 'my') {
+            emptyMsg = `No substitution duties assigned to ${activeTeacher || 'your profile'} for ${state.day}.`;
+        }
         conflictList.innerHTML = `
             <div style="text-align:center; padding: 30px 16px; background:var(--surface-color); border:1px solid var(--border-color); border-radius:14px; color:var(--text-secondary); font-size:13px;">
-                No ${registerFilter} substitution entries for ${state.day}.
+                ${emptyMsg}
             </div>
         `;
         return;
@@ -6873,12 +6899,11 @@ function renderSubstitutions() {
             <table class="sub-register-table">
                 <thead>
                     <tr>
-                        <th>Period</th>
-                        <th>Class & Dept</th>
-                        <th>Absent Teacher</th>
-                        <th>Assigned Substitute</th>
-                        <th>Acceptance & Status</th>
-                        <th style="text-align:right;">Actions</th>
+                        <th class="col-period-class">Period & Class</th>
+                        <th class="col-absent">Absent</th>
+                        <th class="col-sub">Substitute</th>
+                        <th class="col-status">Status</th>
+                        <th class="col-actions" style="text-align:right;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -6887,6 +6912,17 @@ function renderSubstitutions() {
     filteredRows.forEach(row => {
         const { period, absentTeacher, baseTask, subTeacher, statusObj } = row;
         const taskInfo = parseTaskDetails(baseTask);
+        const classTag = taskInfo.section || baseTask;
+        const subjectTag = taskInfo.subjectPrefix || (taskInfo.section ? '' : 'Class');
+        const deptTag = taskInfo.dept ? `<span class="reg-dept-tag">${taskInfo.dept}</span>` : '';
+        const absentRole = staffDirectory[absentTeacher]?.role ? staffDirectory[absentTeacher].role.split('/')[0].trim() : 'Staff';
+
+        const absentCellHtml = `
+            <div class="reg-teacher-block">
+                <span class="reg-teacher-name absent-name ${subTeacher ? 'struck' : ''}">${absentTeacher}</span>
+                <span class="reg-teacher-role-sub">${absentRole}</span>
+            </div>
+        `;
 
         if (subTeacher) {
             const affinity = evaluateTeacherAffinity(subTeacher, baseTask, period, state.day);
@@ -6894,6 +6930,7 @@ function renderSubstitutions() {
             const isSplitSub = coPartners.length > 0;
             const timerKey = `${state.day}::${period}::${absentTeacher}`;
             const activeTimer = activeAcceptTimers.get(timerKey);
+            const subRole = staffDirectory[subTeacher]?.role ? staffDirectory[subTeacher].role.split('/')[0].trim() : 'Staff';
 
             // Check whether current user can press Accept/Dispute for this row
             const canTeacherAct = (state.currentRole !== 'teacher') || (state.activeTeacher === subTeacher) || isCoord;
@@ -6908,7 +6945,7 @@ function renderSubstitutions() {
             } else if (statusObj.status === 'accepted') {
                 const isTimerLock = Boolean(state.settings?.acceptanceTimerEnabled);
                 statusCellHtml = `
-                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                    <div class="reg-status-pill-group">
                         <span class="badge-accepted-locked" title="Accepted by ${statusObj.acceptedBy || subTeacher}.${isTimerLock ? ' Locked across the board.' : ''}">🔒 Accepted</span>
                         ${isSplitSub ? `<span class="reg-status-badge status-split" title="Split from co-teaching">👥 Split</span>` : ''}
                         ${(!isTimerLock && canTeacherAct && disputesEnabled) ? `<button class="btn-dispute-sub" onclick="openDisputeModal('${period}', '${absentTeacher}')" title="Dispute this substitution with an optional note">⚑ Dispute</button>` : ''}
@@ -6916,7 +6953,7 @@ function renderSubstitutions() {
                 `;
             } else if (statusObj.status === 'disputed') {
                 statusCellHtml = `
-                    <div style="display:flex; flex-direction:column; align-items:flex-start; gap:3px;">
+                    <div class="reg-status-pill-group" style="flex-direction:column; align-items:flex-start; gap:2px;">
                         <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
                             <span class="badge-disputed">⚑ Disputed</span>
                             ${canTeacherAct ? `<button class="btn-accept-sub" onclick="startAcceptSubCountdown('${period}', '${absentTeacher}')">✓ Accept</button>` : ''}
@@ -6934,7 +6971,7 @@ function renderSubstitutions() {
                     : 'Accept substitution';
 
                 statusCellHtml = `
-                    <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+                    <div class="reg-status-pill-group">
                         ${baseBadge}
                         ${canTeacherAct ? `<button class="btn-accept-sub" onclick="startAcceptSubCountdown('${period}', '${absentTeacher}')" title="${acceptTooltip}">✓ Accept</button>` : ''}
                         ${(canTeacherAct && disputesEnabled) ? `<button class="btn-dispute-sub" onclick="openDisputeModal('${period}', '${absentTeacher}')" title="Dispute this substitution with an optional note">⚑ Dispute</button>` : ''}
@@ -6961,32 +6998,47 @@ function renderSubstitutions() {
                 `;
             }
 
+            const subCellHtml = `
+                <div class="reg-teacher-block">
+                    <strong class="reg-teacher-name sub-name">${subTeacher}</strong>
+                    <span class="reg-affinity-tag" title="Score: ${affinity.score} pts • Load: ${affinity.teachingLoad}/${affinity.totalSlots} pds">${affinity.primaryBadge}</span>
+                </div>
+            `;
+
             tableHtml += `
                 <tr class="reg-row-covered">
-                    <td class="reg-cell-period"><span class="reg-period-badge">${period}</span></td>
-                    <td class="reg-cell-task">
-                        <span class="reg-class-pill">${baseTask}</span>
-                        <span class="reg-dept-tag">${taskInfo.dept}</span>
+                    <td class="reg-cell-period-class">
+                        <div class="reg-period-class-header">
+                            <span class="reg-period-badge">${period}</span>
+                            <span class="reg-class-pill">${classTag}</span>
+                        </div>
+                        <div class="reg-subject-line">
+                            <span class="reg-subject-text">${subjectTag || classTag}</span>
+                            ${deptTag}
+                        </div>
                     </td>
-                    <td class="reg-cell-absent"><span class="reg-teacher-name absent-name" style="text-decoration:line-through;">${absentTeacher}</span></td>
-                    <td class="reg-cell-sub">
-                        <strong class="reg-teacher-name sub-name">${subTeacher}</strong>
-                        <span class="reg-affinity-tag" title="Score: ${affinity.score} pts • Load: ${affinity.teachingLoad}/${affinity.totalSlots} pds">${affinity.primaryBadge}</span>
-                    </td>
+                    <td class="reg-cell-absent">${absentCellHtml}</td>
+                    <td class="reg-cell-sub">${subCellHtml}</td>
                     <td class="reg-cell-status">${statusCellHtml}</td>
                     <td class="reg-cell-actions">${actionsHtml}</td>
                 </tr>
             `;
         } else {
+            const subCellHtml = `<span class="reg-unassigned-tag">Unassigned</span>`;
             tableHtml += `
                 <tr class="reg-row-pending">
-                    <td class="reg-cell-period"><span class="reg-period-badge">${period}</span></td>
-                    <td class="reg-cell-task">
-                        <span class="reg-class-pill" style="color:var(--accent-pink);">${baseTask}</span>
-                        <span class="reg-dept-tag">${taskInfo.dept}</span>
+                    <td class="reg-cell-period-class">
+                        <div class="reg-period-class-header">
+                            <span class="reg-period-badge">${period}</span>
+                            <span class="reg-class-pill" style="color:var(--accent-pink);">${classTag}</span>
+                        </div>
+                        <div class="reg-subject-line">
+                            <span class="reg-subject-text">${subjectTag || classTag}</span>
+                            ${deptTag}
+                        </div>
                     </td>
-                    <td class="reg-cell-absent"><strong class="reg-teacher-name absent-name">${absentTeacher}</strong></td>
-                    <td class="reg-cell-sub"><span class="reg-teacher-name" style="color:var(--text-secondary); font-style:italic; font-size:12px;">Unassigned</span></td>
+                    <td class="reg-cell-absent">${absentCellHtml}</td>
+                    <td class="reg-cell-sub">${subCellHtml}</td>
                     <td class="reg-cell-status"><span class="reg-status-badge status-pending">⚠ Needs Sub</span></td>
                     <td class="reg-cell-actions">
                         <div class="reg-actions-cell">

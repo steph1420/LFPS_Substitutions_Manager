@@ -259,17 +259,18 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - Replaced cumbersome modal popups with an anchored, high-speed iOS-style context popover (`#grid-cell-context-popover`) docked right beside the clicked cell/cursor on right-click (desktop) and 500ms long-press (mobile).
   - Supplies rapid contextual micro-actions: Mark Absent/Present, Set Off-Duty, Assign Sub, Clear Sub, Reset Slot to Master Routine, and Quick Duty modal shortcut.
 
-### Job Bundle 14: Modernized Substitutions Register, Bottom Counter, 'My Subs' Filter & Narrow Table
-- **Status**: 🔴 Queued
-- [ ] **FEAT-14.1 (Counter Panel Relocation & Top Filter Simplification)**:
-  - Shift the counter pills (`#register-summary-bar` / `#register-stats-pills`) to the bottom of `#tab-substitutions` below the ledger table.
-  - Above the table, retain only the filter controls: `All`, `Pending`, `Covered`, plus `'My Subs'`.
-- [ ] **FEAT-14.2 ('My Subs' / 'My' Filter Button)**:
-  - Add `'My Subs'` filter button showing only rows where the active profile (`state.activeTeacher`) is assigned as substitute or is the absent teacher.
-- [ ] **FEAT-14.3 (Narrower Responsive Substitution Table Architecture)**:
-  - Compact multi-line cell design combining Period + Class into a unified column (`P1` badge with `Prep A` below).
-  - Tighten padding and streamline teacher names and action buttons.
-  - Responsive fluid columns so mobile viewports do not require horizontal scrolling traps.
+### Job Bundle 14: Modernized Substitutions Register, Bottom Counter, 'My Subs' Filter & Narrow Table (RESOLVED in v1.51.0)
+- **Status**: 🟢 Resolved (v1.51.0)
+- [x] **FEAT-14.1 (Counter Panel Relocation & Top Filter Simplification)**:
+  - Shifted the counter pills (`#register-summary-bar` / `#register-stats-pills`) to the bottom of `#tab-substitutions` below the ledger table (`.bottom-summary-bar`).
+  - Above the table, retained only the filter controls: `All`, `Pending`, `Covered`, plus `'My Subs'`.
+- [x] **FEAT-14.2 ('My Subs' / 'My' Filter Button)**:
+  - Added `'My Subs'` filter button showing only rows where the active profile (`state.activeTeacher`) is assigned as substitute or is the absent teacher.
+  - Added live notification counter badge (`.reg-filter-count`) displaying active coverage duties at a glance.
+- [x] **FEAT-14.3 (Narrower Responsive Substitution Table Architecture)**:
+  - Compact multi-line cell design combining Period + Class into a unified column (`P1` badge with `Prep A` and subject below).
+  - Reduced column count from 6 to 5 and reduced table min-width from 680px down to 480px (440px on mobile $\le 600\text{px}$), resolving horizontal scroll traps.
+  - Tightened padding, added teacher role subtitles, and streamlined action buttons.
 
 ### Job Bundle 15: Streamlined Officiating Class Teacher (Off. CT.), Roster Full Names & Settings Re-Organization
 - **Status**: 🔴 Queued

@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.50.0">
+    <link rel="stylesheet" href="styles.css?v=1.51.0">
 </head>
 <body>
 
@@ -211,7 +211,7 @@
                 </div>
 
                 <div class="grid-status-footer">
-                    <span class="version-badge">v1.50.0</span>
+                    <span class="version-badge">v1.51.0</span>
                     <span class="grid-status-dot">●</span>
                     <span class="grid-status-label">LFPS Front Desk Offline-First</span>
                     <div id="footer-conflict-pill" class="footer-conflict-pill hidden" title="Click to inspect timetable conflicts">
@@ -292,20 +292,30 @@
                         <button id="auto-resolve-btn" class="btn-magic hidden">✨ Smart Auto-Resolve</button>
                     </div>
                 </div>
-                <!-- Register Filter & Summary Strip -->
-                <div id="register-summary-bar" class="register-summary-bar hidden">
-                    <div class="register-stats" id="register-stats-pills">
-                        <!-- Populated by JS -->
-                    </div>
+                <!-- Register Filter Bar (Top) -->
+                <div class="register-filter-bar" id="register-filter-bar">
                     <div class="register-filter-group" id="register-filter-group">
                         <button class="reg-filter-btn active" data-filter="all">All</button>
                         <button class="reg-filter-btn" data-filter="pending">Pending</button>
                         <button class="reg-filter-btn" data-filter="covered">Covered</button>
+                        <button class="reg-filter-btn" data-filter="my" id="reg-filter-btn-my" title="Show substitutions where you are covering or absent">My Subs</button>
                     </div>
                 </div>
             </div>
             <div class="conflict-list" id="conflict-list">
                 <!-- High-Density Register Ledger populated by JS -->
+            </div>
+
+            <!-- Officiating Class Teacher (Off. CT.) Slot in Substitutions Page (Job Bundle 15) -->
+            <div id="sub-off-ct-container" class="sub-off-ct-container hidden">
+                <!-- Dynamically populated by JS -->
+            </div>
+
+            <!-- Register Summary / Counter Strip Shifted Below Table -->
+            <div id="register-summary-bar" class="register-summary-bar bottom-summary-bar hidden">
+                <div class="register-stats" id="register-stats-pills">
+                    <!-- Populated by JS -->
+                </div>
             </div>
         </section>
 
@@ -778,7 +788,7 @@
                 <div class="settings-row" id="settings-version-row" style="cursor:pointer; user-select:none;" title="Tap 5 times to unlock Developer Options">
                     <span class="settings-row-label">Version</span>
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <span class="settings-row-value" id="settings-version-val">v1.50.0 (Timetable Schema 2.0)</span>
+                        <span class="settings-row-value" id="settings-version-val">v1.51.0 (Timetable Schema 2.0)</span>
                         <span id="dev-mode-pill" class="dev-badge-pill hidden">🛠 Dev Unlocked</span>
                     </div>
                 </div>
@@ -1526,6 +1536,6 @@
     </div>
     <div id="notifications-overlay" class="overlay"></div>
 
-    <script src="app.js?v=1.50.0"></script>
+    <script src="app.js?v=1.51.0"></script>
 </body>
 </html>

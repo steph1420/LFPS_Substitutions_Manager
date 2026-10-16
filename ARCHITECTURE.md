@@ -1,5 +1,5 @@
 # Front Desk PWA - Architecture & Developer Guide
-**Current Version:** v1.50.0
+**Current Version:** v1.51.0
 **Project Type:** Vanilla JS/HTML/CSS Offline-First PWA
 **Purpose:** School substitution management and daily timetable resolution.
 
@@ -528,3 +528,14 @@ To enable live synchronization from Google Sheets in future releases:
 *   **Persistent Sticky Teacher Column Divider & Leftmost Occlusion Flange (BUG-08):**
     *   Added dedicated `::after` vertical divider (`2.5px solid`, `z-index: 25`) preventing border collapse when period cards slide under.
     *   Added `34px` opaque masking flange (`::before`) and updated scroll container to `overflow-y: clip !important`, resolving WebKit under-slide peeking leaks.
+
+### 11.11 Modernized Substitutions Register & Narrow Table Layout (v1.51.0)
+*   **Bottom Summary Counter & Clean Top Filter Bar:**
+    *   Shifted KPI summary pill strip (`#register-summary-bar`) below the substitutions ledger (`.bottom-summary-bar`).
+    *   Replaced top bar with an uncluttered filter strip (`#register-filter-bar`) hosting `All`, `Pending`, `Covered`, and `'My Subs'`.
+*   **'My Subs' Quick-Filter with Live Notification Count:**
+    *   Added `My Subs` button (`#reg-filter-btn-my`) filtering rows against `state.activeTeacher` (covering duties or absent classes).
+    *   Live count badge (`.reg-filter-count`) alerting staff to active duties at a glance.
+*   **Narrow 5-Column Table Architecture (FEAT-14.3):**
+    *   Merged Period and Class/Subject into a unified stacked column (`.reg-cell-period-class`), reducing table column count from 6 to 5.
+    *   Reduced table minimum width from `680px` to `480px` (`440px` on mobile $\le 600\text{px}$), resolving horizontal scroll traps and overflow distortion.

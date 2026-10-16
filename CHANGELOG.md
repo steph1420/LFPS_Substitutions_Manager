@@ -14,6 +14,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.51.0] - 2026-10-16
+
+### Added
+- **Modernized Substitutions Register with Bottom Summary Counter (FEAT-14.1)**:
+  - Shifted the KPI counter strip (`#register-summary-bar`) from the top of the Substitutions page down to the bottom below the table (`.bottom-summary-bar`), creating a clean, unobstructed workspace.
+  - Streamlined the top bar to focus purely on navigation filters (`All`, `Pending`, `Covered`, and `My Subs`).
+- **'My Subs' Quick-Filter with Live Count Badge (FEAT-14.2)**:
+  - Added `'My Subs'` filter tab (`#reg-filter-btn-my`) allowing staff to instantly isolate coverage duties and absent classes matching their active profile (`state.activeTeacher`).
+  - Added live notification counter badge (`.reg-filter-count`) showing active duties at a glance.
+  - Friendly contextual empty state when no duties are assigned (`No substitution duties assigned to [Teacher] today`).
+- **Narrower Responsive Substitution Table Architecture (FEAT-14.3)**:
+  - Compacted the table from 6 columns down to 5 by merging Period and Class/Subject into a unified stacked block (`.reg-cell-period-class`).
+  - Reduced table minimum width from 680px down to 480px (440px on mobile viewports $\le 600\text{px}$), eliminating horizontal scroll traps and awkward overflow.
+  - Tightened cell padding, added staff role subtitles, and streamlined action buttons for high-density readability across mobile and desktop devices.
+
 ## [v1.50.0] - 2026-10-16
 
 ### Added
