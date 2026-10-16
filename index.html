@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.45.0">
+    <link rel="stylesheet" href="styles.css?v=1.49.0">
 </head>
 <body>
 
@@ -211,7 +211,7 @@
                 </div>
 
                 <div class="grid-status-footer">
-                    <span class="version-badge">v1.48.0</span>
+                    <span class="version-badge">v1.49.0</span>
                     <span class="grid-status-dot">●</span>
                     <span class="grid-status-label">LFPS Front Desk Offline-First</span>
                     <div id="footer-conflict-pill" class="footer-conflict-pill hidden" title="Click to inspect timetable conflicts">
@@ -222,7 +222,61 @@
             </div>
         </section>
 
-        <!-- TAB 2: SUBSTITUTIONS (Daily Substitution Register / Ledger) -->
+        <!-- TAB 2: ROSTER (Staff Roster, Daily Attendance & Sub-Availability) -->
+        <section id="tab-roster" class="tab-section">
+            <div class="roster-tab-container">
+                <div class="roster-header-bar">
+                    <div class="roster-title-group">
+                        <div class="roster-heading-row">
+                            <h2>Staff Roster & Attendance</h2>
+                            <span class="roster-day-badge" id="roster-day-badge">MON</span>
+                        </div>
+                        <p class="roster-subtitle">Manage daily staff presence, off-duty unavailability, and officiating responsibilities.</p>
+                    </div>
+                    <div class="roster-stats-strip" id="roster-stats-strip">
+                        <div class="roster-stat-pill present" id="stat-pill-present" title="Staff members present today">
+                            <span class="stat-dot">●</span>
+                            <span class="stat-label">Present:</span>
+                            <span class="stat-count" id="roster-present-count">9</span>
+                        </div>
+                        <div class="roster-stat-pill absent" id="stat-pill-absent" title="Staff members absent today">
+                            <span class="stat-dot">●</span>
+                            <span class="stat-label">Absent:</span>
+                            <span class="stat-count" id="roster-absent-count">0</span>
+                        </div>
+                        <div class="roster-stat-pill unavail" id="stat-pill-unavail" title="Staff members off-duty or unavailable for substitutions">
+                            <span class="stat-dot">●</span>
+                            <span class="stat-label">Off-Duty:</span>
+                            <span class="stat-count" id="roster-unavail-count">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Search & Batch Action Bar -->
+                <div class="roster-actions-bar">
+                    <div class="roster-search-wrapper">
+                        <span class="roster-search-icon">🔍</span>
+                        <input type="text" id="roster-search-input" class="roster-search-input" placeholder="Search teacher, class, role..." aria-label="Search Staff Roster">
+                        <button type="button" id="roster-search-clear" class="roster-search-clear hidden" aria-label="Clear Search">✕</button>
+                    </div>
+                    <div class="roster-batch-btns">
+                        <button type="button" id="btn-roster-mark-all-present" class="btn-roster-batch present" title="Reset all teachers to present">
+                            <span>🟢</span> <span>Mark All Present</span>
+                        </button>
+                        <button type="button" id="btn-roster-open-duties" class="btn-roster-batch duties" title="Manage all staff duty remarks & off-duty status">
+                            <span>⛔</span> <span>Staff Availability & Duties</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Staff Roster Cards Grid -->
+                <div class="roster-cards-grid" id="roster-cards-container">
+                    <!-- Populated dynamically by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: SUBSTITUTIONS (Daily Substitution Register / Ledger) -->
         <section id="tab-substitutions" class="tab-section">
             <div class="resolver-header">
                 <div class="register-top-bar">
@@ -268,6 +322,14 @@
             <button class="nav-btn active" data-target="tab-dashboard">
                 <span class="icon">📊</span>
                 <span>Grid</span>
+            </button>
+        </div>
+        <div class="nav-splitter" aria-hidden="true"></div>
+        <div class="nav-zone" data-target="tab-roster" id="zone-tab-roster">
+            <button class="nav-btn" data-target="tab-roster">
+                <span class="icon">👥</span>
+                <span>Roster</span>
+                <span class="badge hidden" id="roster-absent-badge">0</span>
             </button>
         </div>
         <div class="nav-splitter" aria-hidden="true"></div>
@@ -716,7 +778,7 @@
                 <div class="settings-row" id="settings-version-row" style="cursor:pointer; user-select:none;" title="Tap 5 times to unlock Developer Options">
                     <span class="settings-row-label">Version</span>
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <span class="settings-row-value" id="settings-version-val">v1.48.0 (Timetable Schema 2.0)</span>
+                        <span class="settings-row-value" id="settings-version-val">v1.49.0 (Timetable Schema 2.0)</span>
                         <span id="dev-mode-pill" class="dev-badge-pill hidden">🛠 Dev Unlocked</span>
                     </div>
                 </div>
@@ -734,6 +796,18 @@
                         <button type="button" id="btn-reset-roster-colors" class="btn-text-only" style="font-size:11px; font-weight:700; color:var(--accent-blue); background:none; border:none; cursor:pointer;">Reset Defaults</button>
                         <button type="button" id="btn-relock-dev" class="btn-text-only" style="font-size:11px; font-weight:600; color:var(--text-secondary); background:none; border:none; cursor:pointer;" title="Re-lock Developer Options">🔒 Lock</button>
                     </div>
+                </div>
+
+                <!-- Developer Option: Hide Absence Panel from Routine Grid View -->
+                <div class="settings-row" id="hide-absence-panel-setting-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Hide Absence Panel from Routine Grid</span>
+                        <span class="settings-row-desc">Collapses the horizontal Mark Absences tray from the Master Routine Grid tab for a full-height, distraction-free timetable view. All absence and staff availability can be managed from the Roster tab.</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="hide-absence-panel-toggle">
+                        <span class="slider round"></span>
+                    </label>
                 </div>
 
                 <!-- Relocated Developer Option: Allow Substitution Disputes -->
@@ -1434,6 +1508,6 @@
     </div>
     <div id="notifications-overlay" class="overlay"></div>
 
-    <script src="app.js?v=1.48.0"></script>
+    <script src="app.js?v=1.49.0"></script>
 </body>
 </html>

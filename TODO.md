@@ -223,9 +223,15 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - **Background Auto-Sync Engine**: 60-second periodic fetch and `visibilitychange` poll in Live Cloud mode, non-intrusively detecting timetable diffs and routing alerts to Notification Center (`🔔`).
     - **Unconditional Mandatory Substitution Broadcasting**: Immediate cloud dispatch (`broadcastSubstitutionsToCloud`) for all substitution assignments, unassignments, auto-resolves, absence reverts, orphan cleanups, disputes, and undo/redo operations regardless of local or cloud mode.
     - **Offline Queue & Reconnection Draining**: Built-in queue buffer (`state.pendingBroadcasts`) that safely retains records when offline and drains automatically upon network restoration.
-  - [ ] **Roster Management Tab & Grid Absence Panel Toggle (Job Bundle 12 - Future Candidate)**:
-    - Dedicated Roster view tab for bulk absence and off-duty unavailability management.
-    - Setting toggle to hide absence panel from grid view for a cleaner, full-height routine.
+  - [x] **Roster Management Tab & Grid Absence Panel Toggle (Job Bundle 12 - Delivered in v1.49.0)**:
+    - Dedicated Roster view tab (`#tab-roster`, bottom nav zone 2) for whole-school attendance, teaching schedule overview, and off-duty unavailability management.
+    - Live absence notification counter badge (`#roster-absent-badge`) on bottom nav tab.
+    - KPI statistics strip (`🟢 Present: X`, `🔴 Absent: Y`, `⛔ Off-Duty: Z`).
+    - Real-time search filtering (`#roster-search-input`) with 1-tap clear button (`#roster-search-clear`).
+    - Batch actions: `[ 🟢 Mark All Present ]` and `[ ⛔ Staff Availability & Duties ]`.
+    - Responsive cards for all 9 teachers with real-time class load, substitution coverage, role badges, dual 1-tap toggles (`toggleTeacherAbsence`, `toggleSubAvailability`), and quick duty manager (`openTeacherQuickActionModal`).
+    - Developer Options hidden toggle (`#hide-absence-panel-toggle` / `state.settings.hideAbsencePanelFromGrid`) to collapse `.absent-tray-container` from Grid view for an unobstructed, full-height Master Routine table.
+    - Context menu right-click / long-press enhancement with direct Attendance Toggle (`[ 🟢 Mark Present Today ]` / `[ 🔴 Mark Absent Today ]`), Sub-Availability Toggle, and strict viewport boundary clamping.
 
 
 

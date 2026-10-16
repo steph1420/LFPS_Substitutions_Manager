@@ -31,6 +31,7 @@ const state = {
         minimizeAlerts: false,
         detectCollisions: true,
         allowDisputes: true,
+        hideAbsencePanelFromGrid: false,
         adminPin: '1234',
         sheetsCsvUrl: DEFAULT_SHEETS_WEBAPP_URL,
         lastCloudSync: null,
@@ -609,6 +610,7 @@ function loadStateFromStorage() {
                 minimizeAlerts: false, 
                 detectCollisions: true, 
                 allowDisputes: true, 
+                hideAbsencePanelFromGrid: false,
                 adminPin: '1234',
                 sheetsCsvUrl: DEFAULT_SHEETS_WEBAPP_URL,
                 lastCloudSync: null,
@@ -915,6 +917,8 @@ function switchTabSection(targetId) {
     });
     if (targetId === 'tab-substitutions') {
         renderSubstitutions();
+    } else if (targetId === 'tab-roster') {
+        renderRosterTab();
     }
     updateUndoUI();
 }
@@ -1283,6 +1287,13 @@ function bindEvents() {
         renderAll();
         showToast(state.settings.allowDisputes ? 'Disputes enabled' : 'Disputes disabled');
     });
+
+    safeBind('hide-absence-panel-toggle', 'change', (e) => {
+        state.settings.hideAbsencePanelFromGrid = e.target.checked;
+        saveStateToStorage();
+        renderAbsentTray();
+        showToast(state.settings.hideAbsencePanelFromGrid ? 'Absence panel hidden from Grid' : 'Absence panel visible on Grid');
+    });
     
     safeBind('same-period-lock-toggle', 'change', (e) => {
         state.settings.samePeriodLock = e.target.checked;
@@ -1511,6 +1522,35 @@ function bindEvents() {
         renderNotificationCenter();
         updateNotificationBadge();
         showToast('Notices refreshed');
+    });
+
+    // Roster Tab Controls (Job Bundle 12)
+    const rosterSearchInput = document.getElementById('roster-search-input');
+    const rosterSearchClear = document.getElementById('roster-search-clear');
+    if (rosterSearchInput) {
+        rosterSearchInput.addEventListener('input', (e) => {
+            state.rosterSearchQuery = e.target.value;
+            if (rosterSearchClear) {
+                rosterSearchClear.classList.toggle('hidden', !e.target.value);
+            }
+            renderRosterTab();
+        });
+    }
+    if (rosterSearchClear) {
+        rosterSearchClear.addEventListener('click', () => {
+            if (rosterSearchInput) {
+                rosterSearchInput.value = '';
+            }
+            state.rosterSearchQuery = '';
+            rosterSearchClear.classList.add('hidden');
+            renderRosterTab();
+        });
+    }
+    safeBind('btn-roster-mark-all-present', 'click', () => {
+        markAllTeachersPresent();
+    });
+    safeBind('btn-roster-open-duties', 'click', () => {
+        openSubAvailModal(null, 'all');
     });
 
     // Sub-Availability Rapid 1-Tap Modal & Remark Popover Bindings (Job Bundle 2)
@@ -2393,6 +2433,7 @@ function openAbsenceContextMenu(teacher, anchorEl, clientX, clientY) {
     const overlay = document.getElementById('absence-context-overlay');
     if (!popover || !overlay) return;
 
+    const isAbsent = state.absentTeachers.has(teacher);
     const isUnavail = isTeacherSubUnavailable(teacher, state.day);
     const staff = staffDirectory[teacher];
     const ctSec = classTeacherMap[teacher];
@@ -2403,13 +2444,17 @@ function openAbsenceContextMenu(teacher, anchorEl, clientX, clientY) {
         <div class="ctx-teacher-header">
             <div>
                 <div class="ctx-teacher-name">${escapeHtml(teacher)}</div>
-                <div class="ctx-teacher-status">${roleLabel} • ${isUnavail ? '⛔ Unavailable' : '🟢 Available'}</div>
+                <div class="ctx-teacher-status">${roleLabel} • ${isAbsent ? '🔴 Absent' : '🟢 Present'} • ${isUnavail ? '⛔ Unavailable' : '🟢 Available'}</div>
             </div>
         </div>
+        <button type="button" class="ctx-action-btn ${isAbsent ? 'present-toggle' : 'absent-toggle'}" id="ctx-btn-toggle-absence">
+            <span>${isAbsent ? '🟢' : '🔴'}</span>
+            <span>${isAbsent ? 'Mark Present Today' : 'Mark Absent Today'}</span>
+        </button>
         ${isUnavail ? `
             <button type="button" class="ctx-action-btn avail-toggle" id="ctx-btn-toggle-avail">
                 <span>🟢</span>
-                <span>Mark Available Today</span>
+                <span>Mark Available for Sub</span>
             </button>
         ` : `
             <button type="button" class="ctx-action-btn unavail-toggle" id="ctx-btn-toggle-avail">
@@ -2423,39 +2468,53 @@ function openAbsenceContextMenu(teacher, anchorEl, clientX, clientY) {
     popover.classList.remove('hidden');
     overlay.classList.remove('hidden');
 
+    const popWidth = 250;
+    const popHeight = 175;
+    let top = 80;
+    let left = 20;
+
     if (anchorEl) {
         const rect = anchorEl.getBoundingClientRect();
-        let top = rect.bottom + 6;
-        let left = rect.left + (rect.width / 2) - 110;
-        if (left < 10) left = 10;
-        if (left + 230 > window.innerWidth) left = window.innerWidth - 235;
-        if (top + 130 > window.innerHeight) top = rect.top - 120;
-        popover.style.top = `${Math.max(10, Math.round(top))}px`;
-        popover.style.left = `${Math.max(10, Math.round(left))}px`;
+        top = rect.bottom + 6;
+        left = rect.left + (rect.width / 2) - (popWidth / 2);
     } else if (clientX !== undefined && clientY !== undefined) {
-        let top = clientY + 6;
-        let left = clientX - 100;
-        if (left < 10) left = 10;
-        if (left + 230 > window.innerWidth) left = window.innerWidth - 235;
-        if (top + 130 > window.innerHeight) top = clientY - 120;
-        popover.style.top = `${Math.max(10, Math.round(top))}px`;
-        popover.style.left = `${Math.max(10, Math.round(left))}px`;
+        top = clientY + 6;
+        left = clientX - (popWidth / 2);
+    }
+
+    if (left + popWidth > window.innerWidth - 12) {
+        left = window.innerWidth - popWidth - 12;
+    }
+    if (left < 12) left = 12;
+
+    if (top + popHeight > window.innerHeight - 12) {
+        if (anchorEl) {
+            const rect = anchorEl.getBoundingClientRect();
+            top = rect.top - popHeight - 6;
+        } else if (clientY !== undefined) {
+            top = clientY - popHeight - 6;
+        }
+    }
+    if (top < 12) top = 12;
+
+    popover.style.top = `${Math.round(top)}px`;
+    popover.style.left = `${Math.round(left)}px`;
+
+    const absenceBtn = document.getElementById('ctx-btn-toggle-absence');
+    if (absenceBtn) {
+        absenceBtn.onclick = (e) => {
+            e.stopPropagation();
+            toggleTeacherAbsence(teacher);
+            closeAbsenceContextMenu();
+        };
     }
 
     const toggleBtn = document.getElementById('ctx-btn-toggle-avail');
     if (toggleBtn) {
         toggleBtn.onclick = (e) => {
             e.stopPropagation();
-            if (isUnavail) {
-                setTeacherSubUnavailable(teacher, false, '', state.day);
-                showToast(`✓ ${teacher} available`);
-            } else {
-                setTeacherSubUnavailable(teacher, true, 'Unavailable', state.day);
-                showToast(`⛔ ${teacher} unavailable`);
-            }
-            if (navigator.vibrate) try { navigator.vibrate(40); } catch (_) {}
+            toggleSubAvailability(teacher);
             closeAbsenceContextMenu();
-            renderAll();
         };
     }
 
@@ -2477,8 +2536,57 @@ function closeAbsenceContextMenu() {
     if (overlay) overlay.classList.add('hidden');
 }
 
+// --- RAPID ABSENCE & AVAILABILITY TOGGLES (JOB BUNDLE 12) ---
+function toggleTeacherAbsence(teacher) {
+    if (!teacher) return;
+    const wasAbsent = state.absentTeachers.has(teacher);
+    if (wasAbsent) {
+        state.absentTeachers.delete(teacher);
+        revertSubstitutionsForTeacher(teacher, state.day);
+        showToast(`✓ ${teacher} marked present`);
+    } else {
+        state.absentTeachers.add(teacher);
+        showToast(`🔴 ${teacher} marked absent`);
+    }
+    saveStateToStorage();
+    broadcastSubstitutionsToCloud();
+    renderAll();
+}
+
+function toggleSubAvailability(teacher) {
+    if (!teacher) return;
+    const isUnavail = isTeacherSubUnavailable(teacher, state.day);
+    if (isUnavail) {
+        setTeacherSubUnavailable(teacher, false, '', state.day);
+        showToast(`✓ ${teacher} available for substitutions`);
+    } else {
+        setTeacherSubUnavailable(teacher, true, 'Off-Duty', state.day);
+        showToast(`⛔ ${teacher} marked unavailable`);
+    }
+    broadcastSubstitutionsToCloud();
+}
+
+function markAllTeachersPresent() {
+    if (state.absentTeachers.size === 0) {
+        showToast("All staff already marked present");
+        return;
+    }
+    const count = state.absentTeachers.size;
+    state.absentTeachers.forEach(teacher => {
+        revertSubstitutionsForTeacher(teacher, state.day);
+    });
+    state.absentTeachers.clear();
+    saveStateToStorage();
+    broadcastSubstitutionsToCloud();
+    renderAll();
+    showToast(`✓ Marked all ${count} teachers present`);
+}
+
 window.openAbsenceContextMenu = openAbsenceContextMenu;
 window.closeAbsenceContextMenu = closeAbsenceContextMenu;
+window.toggleTeacherAbsence = toggleTeacherAbsence;
+window.toggleSubAvailability = toggleSubAvailability;
+window.markAllTeachersPresent = markAllTeachersPresent;
 
 window.isTeacherSubUnavailable = isTeacherSubUnavailable;
 window.getTeacherSubUnavailableRemark = getTeacherSubUnavailableRemark;
@@ -4660,7 +4768,7 @@ function updateRolePermissionsUI() {
     }
 
     // Populate legacy teacher select dropdown if needed
-    if (teacherSelect && teacherSelect.options.length === 0) {
+    if (teacherSelect && (!teacherSelect.options || teacherSelect.options.length === 0)) {
         teachers.forEach(t => {
             const opt = document.createElement('option');
             opt.value = t;
@@ -5122,7 +5230,7 @@ let viewportResizeTimer = null;
 function computeViewportLayout() {
     const vw = window.innerWidth;
     const isDesktop = vw >= 900;
-    if (document.body) {
+    if (document.body && document.body.dataset) {
         document.body.dataset.device = isDesktop ? 'desktop' : 'mobile';
     }
 
@@ -5156,6 +5264,7 @@ function renderAll() {
     renderTableRoutine(); 
     renderDisplacedTray();
     renderSubstitutions();
+    renderRosterTab();
     renderCollisionIndicator();
     updateNotificationBadge();
     computeViewportLayout();
@@ -5222,6 +5331,11 @@ function formatTaskCellContent(task) {
 window.formatTaskCellContent = formatTaskCellContent;
 
 function renderAbsentTray() {
+    const trayContainer = document.querySelector('.absent-tray-container');
+    if (trayContainer) {
+        trayContainer.classList.toggle('tray-hidden', !!state.settings?.hideAbsencePanelFromGrid);
+    }
+
     const tray = document.getElementById('teacher-roster');
     if(!tray) return;
     tray.innerHTML = '';
@@ -5322,14 +5436,7 @@ function renderAbsentTray() {
                 return;
             }
             if (e.target.closest('.btn-sub-reason-help')) return;
-            if (isAbsent) {
-                state.absentTeachers.delete(teacher);
-                revertSubstitutionsForTeacher(teacher, state.day);
-            } else {
-                state.absentTeachers.add(teacher);
-            }
-            saveStateToStorage();
-            renderAll();
+            toggleTeacherAbsence(teacher);
         });
         el.addEventListener('contextmenu', (e) => {
             e.preventDefault();
@@ -5356,7 +5463,261 @@ function renderAbsentTray() {
             }
         }
     }
+
+    // Update Bottom Navigation Roster Badge
+    const rosterBadge = document.getElementById('roster-absent-badge');
+    if (rosterBadge) {
+        const absentCount = state.absentTeachers.size;
+        rosterBadge.textContent = absentCount;
+        rosterBadge.classList.toggle('hidden', absentCount === 0);
+        rosterBadge.classList.toggle('visible', absentCount > 0);
+        if (absentCount > 0) {
+            rosterBadge.style.cssText = "background:var(--accent-red); color:white; padding:2px 6px; border-radius:10px; font-size:10px; position:absolute; top:-5px; right:15px;";
+        } else {
+            rosterBadge.style.cssText = "display:none;";
+        }
+    }
 }
+window.renderAbsentTray = renderAbsentTray;
+
+// --- TAB 2: DEDICATED STAFF ROSTER & ATTENDANCE MANAGER (JOB BUNDLE 12) ---
+function renderRosterTab() {
+    const container = document.getElementById('roster-cards-container');
+    const dayBadge = document.getElementById('roster-day-badge');
+    const presentCountEl = document.getElementById('roster-present-count');
+    const absentCountEl = document.getElementById('roster-absent-count');
+    const unavailCountEl = document.getElementById('roster-unavail-count');
+    const rosterBadge = document.getElementById('roster-absent-badge');
+
+    const totalStaff = teachers.length;
+    const absentCount = state.absentTeachers.size;
+    const presentCount = Math.max(0, totalStaff - absentCount);
+    const unavailCount = Object.keys(state.subUnavailable?.[state.day] || {}).length;
+
+    if (dayBadge) dayBadge.textContent = state.day;
+    if (presentCountEl) presentCountEl.textContent = presentCount;
+    if (absentCountEl) absentCountEl.textContent = absentCount;
+    if (unavailCountEl) unavailCountEl.textContent = unavailCount;
+
+    // Update bottom nav badge
+    if (rosterBadge) {
+        rosterBadge.textContent = absentCount;
+        rosterBadge.classList.toggle('hidden', absentCount === 0);
+        rosterBadge.classList.toggle('visible', absentCount > 0);
+        if (absentCount > 0) {
+            rosterBadge.style.cssText = "background:var(--accent-red); color:white; padding:2px 6px; border-radius:10px; font-size:10px; position:absolute; top:-5px; right:15px;";
+        } else {
+            rosterBadge.style.cssText = "display:none;";
+        }
+    }
+
+    if (!container) return;
+    container.innerHTML = '';
+
+    // Filter by search query if any
+    const query = (state.rosterSearchQuery || '').trim().toLowerCase();
+
+    // Sort: Class Teachers first, then Subject Teachers
+    const sortedTeachers = [...teachers].sort((a, b) => {
+        const aIsCT = !!classTeacherMap[a];
+        const bIsCT = !!classTeacherMap[b];
+        if (aIsCT && !bIsCT) return -1;
+        if (!aIsCT && bIsCT) return 1;
+        return teachers.indexOf(a) - teachers.indexOf(b);
+    });
+
+    const filteredTeachers = sortedTeachers.filter(teacher => {
+        if (!query) return true;
+        const staff = staffDirectory[teacher];
+        const ctSec = classTeacherMap[teacher] || '';
+        const role = staff?.role || '';
+        const fullName = staff?.fullName || '';
+        const unavailRemark = getTeacherSubUnavailableRemark(teacher, state.day);
+        const isAbsent = state.absentTeachers.has(teacher);
+        const statusText = isAbsent ? 'absent' : 'present';
+        const availText = isTeacherSubUnavailable(teacher, state.day) ? 'unavailable off-duty' : 'available';
+
+        const hay = `${teacher} ${fullName} ${role} ${ctSec} ${unavailRemark} ${statusText} ${availText}`.toLowerCase();
+        return hay.includes(query);
+    });
+
+    if (filteredTeachers.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+                <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
+                <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">No matching staff found</div>
+                <div style="font-size: 12px;">No teachers match "${escapeHtml(query)}". Try searching by name, role, class, or status.</div>
+            </div>
+        `;
+        return;
+    }
+
+    const daySched = state.schedule[state.day] || {};
+    const daySubs = state.substitutions[state.day] || {};
+
+    filteredTeachers.forEach(teacher => {
+        const staff = staffDirectory[teacher];
+        const ctSec = classTeacherMap[teacher];
+        const isCT = !!ctSec;
+        const isAbsent = state.absentTeachers.has(teacher);
+        const isUnavail = isTeacherSubUnavailable(teacher, state.day);
+        const unavailRemark = getTeacherSubUnavailableRemark(teacher, state.day);
+        const isOffAC = !isAbsent && state.officiatingAC?.[state.day] === teacher && state.absentTeachers.has(PRIMARY_AC) && state.absentTeachers.has(ASSISTANT_AC);
+        const offCTSecs = !isAbsent ? getOfficiatingCTSectionsForTeacher(teacher, state.day) : [];
+
+        const initials = staff?.initials || teacher.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '').slice(0, 2).toUpperCase();
+        const blobClass = isCT ? 'blob-ct' : 'blob-st';
+
+        let cornerBadge = '';
+        if (isOffAC) {
+            cornerBadge = `<span class="blob-corner-badge badge-off-ac" title="Officiating AC">⚡</span>`;
+        } else if (teacher === PRIMARY_AC) {
+            cornerBadge = `<span class="blob-corner-badge badge-ac" title="Academic Coordinator">AC</span>`;
+        } else if (teacher === ASSISTANT_AC) {
+            cornerBadge = `<span class="blob-corner-badge badge-asst-ac" title="Asst. Academic Coordinator">A.AC</span>`;
+        }
+
+        // Assigned periods today
+        const assignedPeriods = [];
+        periods.forEach(p => {
+            if (p === 'BREAK' || p === 'BREAKFAST BREAK' || p === 'BREAKFAST') return;
+            const task = daySched[p]?.[teacher];
+            if (task && task !== 'Free' && task !== '-') {
+                assignedPeriods.push({ period: p, task });
+            }
+        });
+
+        // Covering substitutions today
+        const coveringPeriods = [];
+        periods.forEach(p => {
+            if (p === 'BREAK' || p === 'BREAKFAST BREAK' || p === 'BREAKFAST') return;
+            const periodSubs = daySubs[p] || {};
+            Object.keys(periodSubs).forEach(absentTeacher => {
+                if (periodSubs[absentTeacher] === teacher) {
+                    coveringPeriods.push({ period: p, absentTeacher });
+                }
+            });
+        });
+
+        // Build teaching schedule text
+        let teachingSchedText = '';
+        if (assignedPeriods.length > 0) {
+            const periodList = assignedPeriods.map(a => `${a.period} (${a.task})`).join(', ');
+            teachingSchedText = `${assignedPeriods.length} Class${assignedPeriods.length > 1 ? 'es' : ''}: ${periodList}`;
+        } else {
+            teachingSchedText = 'No regular classes scheduled (Free all day)';
+        }
+
+        let coveringSchedText = '';
+        if (coveringPeriods.length > 0) {
+            const covList = coveringPeriods.map(c => `${c.period} for ${c.absentTeacher}`).join(', ');
+            coveringSchedText = `Covering ${coveringPeriods.length} period${coveringPeriods.length > 1 ? 's' : ''}: ${covList}`;
+        } else {
+            coveringSchedText = '0 substitutions assigned';
+        }
+
+        // Build role label
+        let roleLabel = '';
+        if (teacher === PRIMARY_AC) {
+            roleLabel = `Academic Coordinator • Class Teacher (${ctSec || 'Prep A'})`;
+        } else if (teacher === ASSISTANT_AC) {
+            roleLabel = `Asst. Academic Coordinator • Class Teacher (${ctSec || 'KG A'})`;
+        } else if (isCT) {
+            roleLabel = `Class Teacher (${ctSec})`;
+        } else {
+            roleLabel = staff?.role || 'Subject Teacher';
+        }
+
+        const card = document.createElement('div');
+        card.className = `roster-teacher-card ${isAbsent ? 'is-absent' : ''} ${isUnavail ? 'is-unavail' : ''}`;
+        card.setAttribute('data-teacher', teacher);
+
+        card.innerHTML = `
+            <div class="roster-card-header">
+                <div class="roster-card-avatar-wrap">
+                    <div class="avatar-circle ${blobClass}">
+                        ${initials}
+                        ${cornerBadge}
+                    </div>
+                </div>
+                <div class="roster-card-info">
+                    <div class="roster-card-name-row">
+                        <span class="roster-card-name">${escapeHtml(teacher)}</span>
+                    </div>
+                    <div class="roster-card-role">${escapeHtml(roleLabel)}</div>
+                    <div class="roster-card-badges">
+                        ${isAbsent ? `<span class="reg-stat-pill stat-pending" style="font-size:10px; padding:1px 6px;">🔴 Absent</span>` : `<span class="reg-stat-pill stat-covered" style="font-size:10px; padding:1px 6px;">🟢 Present</span>`}
+                        ${isUnavail && !isAbsent ? `<span class="avatar-sub-unavail-badge" style="font-size:10px; padding:1px 6px;">⛔ ${escapeHtml(unavailRemark || 'Off-Duty')}</span>` : ''}
+                        ${isOffAC ? `<span class="ct-badge-mini" style="background:rgba(245,158,11,0.15); color:#d97706; font-size:10px; padding:1px 6px;">⚡ Off. AC</span>` : ''}
+                        ${offCTSecs.length > 0 ? `<span class="ct-badge-mini" style="background:rgba(139,92,246,0.15); color:#7c3aed; font-size:10px; padding:1px 6px;">🏫 Off. CT (${offCTSecs.join(', ')})</span>` : ''}
+                    </div>
+                </div>
+                <button type="button" class="roster-card-btn-manage" title="Manage duties, remarks & officiating for ${escapeHtml(teacher)}" aria-label="Manage duties">
+                    ⚙️
+                </button>
+            </div>
+
+            <div class="roster-card-schedule-box">
+                <div class="roster-schedule-item">
+                    <span class="sched-icon">📘</span>
+                    <div>
+                        <span class="sched-label">Today: </span>
+                        <span class="sched-val">${escapeHtml(teachingSchedText)}</span>
+                    </div>
+                </div>
+                <div class="roster-schedule-item">
+                    <span class="sched-icon">🔄</span>
+                    <div>
+                        <span class="sched-label">Subs: </span>
+                        <span class="sched-val">${escapeHtml(coveringSchedText)}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="roster-card-actions-row">
+                <button type="button" class="roster-action-toggle-btn attendance ${isAbsent ? 'is-absent' : 'is-present'}" title="Toggle presence for ${escapeHtml(teacher)}">
+                    <span class="btn-main-label">
+                        <span>${isAbsent ? '🔴' : '🟢'}</span>
+                        <span>${isAbsent ? 'Absent' : 'Present'}</span>
+                    </span>
+                    <span class="btn-sub-hint">${isAbsent ? 'Tap to mark present' : 'Tap to mark absent'}</span>
+                </button>
+                <button type="button" class="roster-action-toggle-btn avail ${isUnavail ? 'is-unavail' : 'is-avail'}" title="Toggle substitution availability for ${escapeHtml(teacher)}">
+                    <span class="btn-main-label">
+                        <span>${isUnavail ? '⛔' : '✓'}</span>
+                        <span>${isUnavail ? 'Off-Duty' : 'Available'}</span>
+                    </span>
+                    <span class="btn-sub-hint">${isUnavail ? (unavailRemark ? escapeHtml(unavailRemark) : 'Set available') : 'Tap for off-duty'}</span>
+                </button>
+            </div>
+        `;
+
+        // Wire event listeners on card buttons
+        const attendBtn = card.querySelector('.roster-action-toggle-btn.attendance');
+        if (attendBtn) {
+            attendBtn.addEventListener('click', () => {
+                toggleTeacherAbsence(teacher);
+            });
+        }
+
+        const availBtn = card.querySelector('.roster-action-toggle-btn.avail');
+        if (availBtn) {
+            availBtn.addEventListener('click', () => {
+                toggleSubAvailability(teacher);
+            });
+        }
+
+        const manageBtn = card.querySelector('.roster-card-btn-manage');
+        if (manageBtn) {
+            manageBtn.addEventListener('click', () => {
+                openTeacherQuickActionModal(teacher);
+            });
+        }
+
+        container.appendChild(card);
+    });
+}
+window.renderRosterTab = renderRosterTab;
 
 function renderTableRoutine() {
     const table = document.getElementById('routine-table');
@@ -7714,6 +8075,11 @@ function openSettingsModal() {
     const undoCards = document.querySelectorAll('.undo-style-card');
     const currentUndoStyle = state.settings.undoIconStyle || 'curved';
     undoCards.forEach(c => c.classList.toggle('active', c.getAttribute('data-style') === currentUndoStyle));
+
+    const hideAbsenceToggle = document.getElementById('hide-absence-panel-toggle');
+    if (hideAbsenceToggle) {
+        hideAbsenceToggle.checked = state.settings.hideAbsencePanelFromGrid === true;
+    }
 
     updateRolePermissionsUI();
     updateCloudSyncUI();

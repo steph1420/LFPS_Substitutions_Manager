@@ -9,13 +9,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Planned
-- **Roster Management Tab & Grid Absence Panel Toggle**:
-  - Dedicated Roster view tab for bulk absence and off-duty unavailability management.
-  - Setting toggle to hide absence panel from grid view for a cleaner, full-height routine.
 - **Simple Mode**:
   - Streamlined view option presenting strictly basic manual substitution logic.
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
+
+## [v1.49.0] - 2026-10-16
+
+### Added
+- **Dedicated Staff Roster & Attendance Tab (`#tab-roster`, Bottom Nav Zone 2)**:
+  - Added dedicated Roster tab to bottom navigation (`[ 📊 Grid ] | [ 👥 Roster ] | [ 🔄 Substitutions ]`) for streamlined whole-school attendance and duty management.
+  - Real-time absence counter badge (`#roster-absent-badge`) alerting coordinators to active staff absences at a glance.
+  - KPI Stat Strip with glanceable status pills: `🟢 Present: X`, `🔴 Absent: Y`, `⛔ Off-Duty: Z`.
+  - Instant live search filter (`#roster-search-input`) with 1-tap clear button (`#roster-search-clear`) matching teacher names, roles, classes, or duty remarks.
+  - Batch action buttons: `[ 🟢 Mark All Present ]` (`#btn-roster-mark-all-present`) to quickly reset all staff attendance and `[ ⛔ Staff Availability & Duties ]` (`#btn-roster-open-duties`) to launch all-staff duty configuration.
+  - Responsive Staff Roster card grid (`#roster-cards-container`) for all 9 teachers:
+    - Teacher identity avatar with role-colored circular blobs (`.blob-ct` / `.blob-st`) and leadership corner badges (`AC`, `A.AC`, `⚡ Off. AC`).
+    - Full respectful honorific teacher name and detailed role tags (`Class Teacher (Prep A)`, `Subject Teacher`, `Off. CT (Prep B)`).
+    - Real-time daily teaching schedule breakdown (`📘 4 Classes: P1, P2, P4, P6` or `No Classes Today`).
+    - Substitution duty load counter showing active coverage assignments (`🔄 Covering: P3 for Mrs. Midha`).
+    - Tactile dual 1-tap action buttons:
+      - **Attendance Toggle**: Instantly toggles between `🟢 Present` and `🔴 Absent` with automatic cloud broadcast and substitution reconciliation.
+      - **Sub-Availability Toggle**: Instantly toggles between `✓ Available for Sub` and `⛔ Off-Duty: [Remark]`.
+    - 1-tap duty management button (`⚙️`) launching `#teacher-quick-action-modal` for instant duty chip selection (`Bus Duty`, `CBSE Duty`, `Parent Meet`, etc.).
+- **Developer Option: Hide Absence Panel from Routine Grid (`#hide-absence-panel-toggle`)**:
+  - Added hidden setting toggle inside Developer Options (`state.settings.hideAbsencePanelFromGrid: false`).
+  - When enabled, collapses `.absent-tray-container` (`.tray-hidden`) from the Grid view, giving coordinators a 100% full-height, distraction-free Master Routine table while all absence management is handled in the dedicated Roster tab.
+- **Enhanced Absent Teacher Context Menu & Viewport Clamping**:
+  - Augmented `#absence-context-popover` with direct 1-tap Attendance Toggle (`[ 🟢 Mark Present Today ]` / `[ 🔴 Mark Absent Today ]`), Sub-Availability Toggle, and duty remark shortcuts.
+  - Implemented strict viewport boundary clamping ensuring the context popover never renders offscreen regardless of horizontal scroll or edge proximity.
+  - Boosted popover `z-index` to `2100` and overlay to `2050` with full theme glass support across Utopian Glass and Utopian Night.
 
 ## [v1.48.0] - 2026-10-16
 
