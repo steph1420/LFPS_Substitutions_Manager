@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.42.0">
+    <link rel="stylesheet" href="styles.css?v=1.43.0">
 </head>
 <body>
 
@@ -28,8 +28,13 @@
             <button id="fit-grid-edit-btn" class="btn-fit-edit" title="Toggle Timetable Editing">
                 <span id="fit-grid-edit-icon">✎</span> <span id="fit-grid-edit-label">Edit Schedule</span>
             </button>
-            <button id="exit-fit-grid-btn" class="btn-exit-fit" title="Exit Fit-Grid View (Esc)">
-                <span>↙ Back to Normal</span>
+            <button id="exit-fit-grid-btn" class="btn-exit-fit btn-fit-grid" title="Exit Fit-Grid View (Esc)" aria-label="Exit Fit-Grid">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 14h6v6"></path>
+                    <path d="M20 14h-6v6"></path>
+                    <path d="M4 10h6V4"></path>
+                    <path d="M20 10h-6V4"></path>
+                </svg>
             </button>
         </div>
     </div>
@@ -59,7 +64,6 @@
                         <span id="master-lock-icon">🔒</span>
                     </button>
                 </div>
-                <button id="tour-btn" class="btn-icon-circle header-desktop-only" aria-label="Feature Tour" title="App Features & Overview">💡</button>
                 <button id="notifications-btn" class="btn-icon-circle notifications-btn" aria-label="Notifications" title="Operational Notices & Disputes">
                     <span class="notif-icon">🔔</span>
                     <span id="notif-badge" class="notif-badge hidden">0</span>
@@ -138,11 +142,17 @@
             <div class="absent-tray-container">
                 <div class="absent-tray-header">
                     <h3>Mark Absences</h3>
-                    <button type="button" id="btn-open-sub-avail-modal" class="btn-sub-avail-manage" title="Mark teachers unavailable for substitution with custom remarks">
-                        ⛔ Sub-Availability
+                    <button type="button" id="btn-open-sub-avail-modal" class="btn-sub-avail-manage btn-squircle-edge" title="Manage Staff Substitution Availability">
+                        <span class="sub-avail-icon">⛔</span>
+                        <span class="sub-avail-label">Staff Availability</span>
                     </button>
                 </div>
                 <div class="absent-tray" id="teacher-roster"></div>
+                <!-- Sleek Compact iOS Context Popover for Right-Click / Long-Press on Absence Card -->
+                <div id="absence-context-popover" class="absence-context-popover hidden" role="menu">
+                    <!-- Populated dynamically by JS -->
+                </div>
+                <div id="absence-context-overlay" class="absence-context-overlay hidden"></div>
             </div>
 
             <div class="master-routine-container">
@@ -210,7 +220,7 @@
                 </div>
 
                 <div class="grid-status-footer">
-                    <span class="version-badge">v1.42.0</span>
+                    <span class="version-badge">v1.43.0</span>
                     <span class="grid-status-dot">●</span>
                     <span class="grid-status-label">LFPS Front Desk Offline-First</span>
                 </div>
@@ -290,83 +300,33 @@
             <button id="close-settings-btn" class="settings-close-btn" aria-label="Close Settings">✕</button>
         </div>
         <div class="settings-modal-body">
-            <!-- 1. Access Role & Identity -->
+            <!-- 1. Active Staff Profile & Auto-Permissions -->
             <div class="settings-group">
-                <div class="settings-group-title">Access Role & Identity</div>
-                <div class="role-selector-grid" id="settings-role-grid">
-                    <button class="role-option-btn active" data-role="admin">
-                        <span>🛡</span>
-                        <div>
-                            <div class="role-opt-title">Administrator</div>
-                            <div class="role-opt-sub">Full system & override access</div>
-                        </div>
-                    </button>
-                    <button class="role-option-btn" data-role="ac">
-                        <span>🎓</span>
-                        <div>
-                            <div class="role-opt-title">Academic Coord.</div>
-                            <div class="role-opt-sub">Mrs. R. Pahwa (Primary AC)</div>
-                        </div>
-                    </button>
-                    <button class="role-option-btn" data-role="asst_ac">
-                        <span>🎓</span>
-                        <div>
-                            <div class="role-opt-title">Asst. Academic Coord.</div>
-                            <div class="role-opt-sub">Mrs. S. Lakra (Full AC parity)</div>
-                        </div>
-                    </button>
-                    <button class="role-option-btn" data-role="teacher">
-                        <span>👤</span>
-                        <div>
-                            <div class="role-opt-title">Teacher View</div>
-                            <div class="role-opt-sub">Accept/Dispute & offAC inheritance</div>
-                        </div>
-                    </button>
-                </div>
-                <div id="teacher-identity-row" class="settings-row hidden" style="margin-top: 8px;">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Viewing as Teacher</span>
-                        <span class="settings-row-desc">Select which teacher profile is active in Teacher View.</span>
+                <div class="settings-group-title">Active Staff Profile</div>
+                <div class="settings-row" style="flex-wrap:wrap; gap:10px;">
+                    <div class="settings-row-info" style="min-width:200px;">
+                        <span class="settings-row-label">Operating Identity</span>
+                        <span class="settings-row-desc">Permissions (Administrator, Coordinator, or Class Teacher) are inherited automatically from staff records.</span>
                     </div>
-                    <select id="active-teacher-select" class="apple-select">
+                    <select id="active-staff-profile-select" class="apple-select" style="min-width:200px; font-weight:600;">
                         <!-- Populated by JS -->
                     </select>
                 </div>
-            </div>
-
-            <!-- 2. Google Sheets Cloud Sync & Master Source of Truth -->
-            <div class="settings-group" id="cloud-sync-settings-group">
-                <div class="settings-group-title">Google Sheets Cloud Sync (2-Way Live Sync)</div>
-                <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:10px;">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Google Apps Script Web App / Sheet URL</span>
-                        <span class="settings-row-desc">Sync master routine updates and automatically push daily substitution records back to Google Sheets.</span>
-                    </div>
-                    <div style="display:flex; gap:6px;">
-                        <input type="url" id="sheets-csv-url-input" class="apple-input" style="font-size:12px; flex:1;" placeholder="https://script.google.com/macros/s/.../exec">
-                        <button id="btn-save-sheets-url" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; white-space:nowrap;">Save URL</button>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px; flex-wrap:wrap; gap:8px;">
-                        <div id="cloud-sync-status-text" style="font-size:11px; color:var(--text-secondary);">
-                            Status: <span id="sync-last-time">Local Baseline (Not Synced)</span>
-                        </div>
-                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                            <button id="btn-push-sheets" class="btn-secondary" style="font-size:12px; padding:6px 12px; font-weight:700; display:flex; align-items:center; gap:6px;" title="Push today's substitutions to Google Sheets Daily_Ledger">
-                                <span>📤</span>
-                                <span>Push Today's Ledger</span>
-                            </button>
-                            <button id="btn-sync-now" class="btn-primary" style="font-size:12px; padding:6px 14px; font-weight:700; background:var(--accent-blue); color:#ffffff; display:flex; align-items:center; gap:6px;">
-                                <span id="sync-spinner" class="sync-icon">☁</span>
-                                <span>Sync Routine</span>
-                            </button>
-                        </div>
-                    </div>
+                <!-- Hidden legacy role grid and teacher identity row to preserve full compatibility -->
+                <div class="role-selector-grid hidden" id="settings-role-grid" style="display:none !important;">
+                    <button class="role-option-btn active" data-role="admin"></button>
+                    <button class="role-option-btn" data-role="ac"></button>
+                    <button class="role-option-btn" data-role="asst_ac"></button>
+                    <button class="role-option-btn" data-role="teacher"></button>
+                </div>
+                <div id="teacher-identity-row" class="settings-row hidden" style="display:none !important;">
+                    <select id="active-teacher-select" class="apple-select"></select>
                 </div>
             </div>
 
-            <!-- 3. Preferences & Routine Protections -->
+            <!-- 2. General & Policies -->
             <div class="settings-group">
-                <div class="settings-group-title">Preferences & Routine Protections</div>
+                <div class="settings-group-title">General & Policies</div>
                 <!-- Admin PIN Security & Masking -->
                 <div class="settings-row" id="admin-pin-setting-row">
                     <div class="settings-row-info">
@@ -410,9 +370,9 @@
                 </div>
             </div>
 
-            <!-- 4. Appearance & Display (Compact Theme Pills + Fullscreen) -->
+            <!-- 3. Appearance & Themes -->
             <div class="settings-group">
-                <div class="settings-group-title">Appearance & Display</div>
+                <div class="settings-group-title">Appearance & Themes</div>
                 <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:8px;">
                     <div class="settings-row-info">
                         <span class="settings-row-label">Interface Theme</span>
@@ -450,77 +410,78 @@
                 </div>
             </div>
 
-            <!-- 5. Developer Options: Roster Blob & Badge Colors (Hidden Behind 5-Tap Easter Egg) -->
+            <!-- 4. Cloud & Synchronization -->
+            <div class="settings-group" id="cloud-sync-settings-group">
+                <div class="settings-group-title">Cloud & Synchronization (2-Way Live Sync)</div>
+                <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:10px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Google Apps Script Web App / Sheet URL</span>
+                        <span class="settings-row-desc">Sync master routine updates and automatically push daily substitution records back to Google Sheets.</span>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <input type="url" id="sheets-csv-url-input" class="apple-input" style="font-size:12px; flex:1;" placeholder="https://script.google.com/macros/s/.../exec">
+                        <button id="btn-save-sheets-url" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; white-space:nowrap;">Save URL</button>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px; flex-wrap:wrap; gap:8px;">
+                        <div id="cloud-sync-status-text" style="font-size:11px; color:var(--text-secondary);">
+                            Status: <span id="sync-last-time">Local Baseline (Not Synced)</span>
+                        </div>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <button id="btn-push-sheets" class="btn-secondary" style="font-size:12px; padding:6px 12px; font-weight:700; display:flex; align-items:center; gap:6px;" title="Push today's substitutions to Google Sheets Daily_Ledger">
+                                <span>📤</span>
+                                <span>Push Today's Ledger</span>
+                            </button>
+                            <button id="btn-sync-now" class="btn-primary" style="font-size:12px; padding:6px 14px; font-weight:700; background:var(--accent-blue); color:#ffffff; display:flex; align-items:center; gap:6px;">
+                                <span id="sync-spinner" class="sync-icon">☁</span>
+                                <span>Sync Routine</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Timetable Data & Simulations -->
+            <div class="settings-group">
+                <div class="settings-group-title">Timetable Data & Simulations</div>
+                <div class="settings-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Reset to 2026–2027 Timetable</span>
+                        <span class="settings-row-desc">Restores the official LFPS timetable baseline from the Excel master sheet.</span>
+                    </div>
+                    <button id="btn-pristine-reset" class="btn-secondary" style="font-size:11px; padding:6px 10px; font-weight:700; white-space:nowrap;">Reset Baseline</button>
+                </div>
+                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
+                    <div class="settings-row-info" style="min-width:180px;">
+                        <span class="settings-row-label">Simulate Absence / Test Scenarios</span>
+                        <span class="settings-row-desc">Generates test states or procedural routines based on real teacher subject pools.</span>
+                    </div>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <select id="mock-scenario-select" class="apple-select" style="font-size:12px; padding:5px 8px;">
+                            <option value="single_absence">Single: Ms. N. Horo (Hindi)</option>
+                            <option value="ct_absence">Class Teacher: Mrs. S. Lakra (KG A)</option>
+                            <option value="dual_absence">Multi: Mrs. S. Lakra + Ms. A. Amira</option>
+                            <option value="coordinator_contingency">Dual AC: Mrs. R. Pahwa + Mrs. S. Lakra</option>
+                            <option value="procedural">Procedural Timetable Generation</option>
+                        </select>
+                        <button id="btn-apply-scenario" class="btn-secondary" style="font-size:11px; padding:6px 10px; font-weight:700; white-space:nowrap;">Run Test</button>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Action History Buffer</span>
+                        <span class="settings-row-desc">Wipe accumulated undo/redo history stack without altering schedule.</span>
+                    </div>
+                    <button type="button" id="btn-purge-history" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; color:var(--accent-red);">🗑 Purge History</button>
+                </div>
+            </div>
+
+            <!-- 6. Developer Options (Hidden Behind 5-Tap Version Easter Egg) -->
             <div class="settings-group hidden" id="roster-color-settings-group">
                 <div class="settings-group-title" style="display:flex; justify-content:space-between; align-items:center;">
-                    <span>🛠 Developer Options (Roster Color Palette)</span>
+                    <span>🛠 Developer Options</span>
                     <div style="display:flex; gap:8px;">
                         <button type="button" id="btn-reset-roster-colors" class="btn-text-only" style="font-size:11px; font-weight:700; color:var(--accent-blue); background:none; border:none; cursor:pointer;">Reset Defaults</button>
                         <button type="button" id="btn-relock-dev" class="btn-text-only" style="font-size:11px; font-weight:600; color:var(--text-secondary); background:none; border:none; cursor:pointer;" title="Re-lock Developer Options">🔒 Lock</button>
-                    </div>
-                </div>
-                
-                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Class Teacher (CT) Blob</span>
-                        <span class="settings-row-desc">Ring and tint for Class Teachers (Teal Sky `#0284c7`).</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <input type="color" id="color-picker-ct" value="#0284c7" class="color-picker-input">
-                        <div class="color-preset-pills">
-                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#0284c7" style="background:#0284c7;" title="Teal Sky (Active)"></button>
-                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#0ea5e9" style="background:#0ea5e9;" title="Sky Blue"></button>
-                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#af52de" style="background:#af52de;" title="Royal Violet"></button>
-                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#10b981" style="background:#10b981;" title="Emerald"></button>
-                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#6366f1" style="background:#6366f1;" title="Indigo"></button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Subject Teacher (ST) Blob</span>
-                        <span class="settings-row-desc">Ring and tint for Subject & 2nd/3rd Teachers (`#007aff`).</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <input type="color" id="color-picker-st" value="#007aff" class="color-picker-input">
-                        <div class="color-preset-pills">
-                            <button type="button" class="color-pill-btn" data-target="st" data-color="#007aff" style="background:#007aff;" title="iOS Blue (Active)"></button>
-                            <button type="button" class="color-pill-btn" data-target="st" data-color="#06b6d4" style="background:#06b6d4;" title="Cyan"></button>
-                            <button type="button" class="color-pill-btn" data-target="st" data-color="#059669" style="background:#059669;" title="Sea Green"></button>
-                            <button type="button" class="color-pill-btn" data-target="st" data-color="#64748b" style="background:#64748b;" title="Slate"></button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Coordinator Badges (AC & AAC)</span>
-                        <span class="settings-row-desc">Unified matching badge color for AC & Assistant AC (`#8b5cf6`).</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <input type="color" id="color-picker-coord" value="#8b5cf6" class="color-picker-input">
-                        <div class="color-preset-pills">
-                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#8b5cf6" style="background:#8b5cf6;" title="Purple (Active)"></button>
-                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#f59e0b" style="background:#f59e0b;" title="Amber Gold"></button>
-                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#0284c7" style="background:#0284c7;" title="Cobalt"></button>
-                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#1e293b" style="background:#1e293b;" title="Obsidian"></button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Absent Alert Color</span>
-                        <span class="settings-row-desc">Ring and fill when teacher is marked absent (`#ff3b30`).</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <input type="color" id="color-picker-absent" value="#ff3b30" class="color-picker-input">
-                        <div class="color-preset-pills">
-                            <button type="button" class="color-pill-btn" data-target="absent" data-color="#ff3b30" style="background:#ff3b30;" title="Crimson"></button>
-                            <button type="button" class="color-pill-btn" data-target="absent" data-color="#e11d48" style="background:#e11d48;" title="Rose"></button>
-                            <button type="button" class="color-pill-btn" data-target="absent" data-color="#dc2626" style="background:#dc2626;" title="Red"></button>
-                        </div>
                     </div>
                 </div>
 
@@ -601,39 +562,76 @@
                         </button>
                     </div>
                 </div>
-            </div>
-
-            <!-- 6. Timetable Baseline & Mock Data Generator -->
-            <div class="settings-group">
-                <div class="settings-group-title">Timetable Baseline & Mock Data Generator</div>
-                <div class="settings-row">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Reset to 2026–2027 Timetable</span>
-                        <span class="settings-row-desc">Restores the official LFPS timetable baseline from the Excel master sheet.</span>
-                    </div>
-                    <button id="btn-pristine-reset" class="btn-secondary" style="font-size:11px; padding:6px 10px; font-weight:700; white-space:nowrap;">Reset Baseline</button>
-                </div>
+                
+                <!-- Roster Colors -->
                 <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
-                    <div class="settings-row-info" style="min-width:180px;">
-                        <span class="settings-row-label">Simulate Absence / Test Scenarios</span>
-                        <span class="settings-row-desc">Generates test states or procedural routines based on real teacher subject pools.</span>
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Class Teacher (CT) Blob</span>
+                        <span class="settings-row-desc">Ring and tint for Class Teachers (Teal Sky `#0284c7`).</span>
                     </div>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <select id="mock-scenario-select" class="apple-select" style="font-size:12px; padding:5px 8px;">
-                            <option value="single_absence">Single: Ms. N. Horo (Hindi)</option>
-                            <option value="ct_absence">Class Teacher: Mrs. S. Lakra (KG A)</option>
-                            <option value="dual_absence">Multi: Mrs. S. Lakra + Ms. A. Amira</option>
-                            <option value="coordinator_contingency">Dual AC: Mrs. R. Pahwa + Mrs. S. Lakra</option>
-                            <option value="procedural">Procedural Timetable Generation</option>
-                        </select>
-                        <button id="btn-apply-scenario" class="btn-secondary" style="font-size:11px; padding:6px 10px; font-weight:700; white-space:nowrap;">Run Test</button>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <input type="color" id="color-picker-ct" value="#0284c7" class="color-picker-input">
+                        <div class="color-preset-pills">
+                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#0284c7" style="background:#0284c7;" title="Teal Sky (Active)"></button>
+                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#0ea5e9" style="background:#0ea5e9;" title="Sky Blue"></button>
+                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#af52de" style="background:#af52de;" title="Royal Violet"></button>
+                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#10b981" style="background:#10b981;" title="Emerald"></button>
+                            <button type="button" class="color-pill-btn" data-target="ct" data-color="#6366f1" style="background:#6366f1;" title="Indigo"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Subject Teacher (ST) Blob</span>
+                        <span class="settings-row-desc">Ring and tint for Subject & 2nd/3rd Teachers (`#007aff`).</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <input type="color" id="color-picker-st" value="#007aff" class="color-picker-input">
+                        <div class="color-preset-pills">
+                            <button type="button" class="color-pill-btn" data-target="st" data-color="#007aff" style="background:#007aff;" title="iOS Blue (Active)"></button>
+                            <button type="button" class="color-pill-btn" data-target="st" data-color="#06b6d4" style="background:#06b6d4;" title="Cyan"></button>
+                            <button type="button" class="color-pill-btn" data-target="st" data-color="#059669" style="background:#059669;" title="Sea Green"></button>
+                            <button type="button" class="color-pill-btn" data-target="st" data-color="#64748b" style="background:#64748b;" title="Slate"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Coordinator Badges (AC & AAC)</span>
+                        <span class="settings-row-desc">Unified matching badge color for AC & Assistant AC (`#8b5cf6`).</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <input type="color" id="color-picker-coord" value="#8b5cf6" class="color-picker-input">
+                        <div class="color-preset-pills">
+                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#8b5cf6" style="background:#8b5cf6;" title="Purple (Active)"></button>
+                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#f59e0b" style="background:#f59e0b;" title="Amber Gold"></button>
+                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#0284c7" style="background:#0284c7;" title="Cobalt"></button>
+                            <button type="button" class="color-pill-btn" data-target="coord" data-color="#1e293b" style="background:#1e293b;" title="Obsidian"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Absent Alert Color</span>
+                        <span class="settings-row-desc">Ring and fill when teacher is marked absent (`#ff3b30`).</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <input type="color" id="color-picker-absent" value="#ff3b30" class="color-picker-input">
+                        <div class="color-preset-pills">
+                            <button type="button" class="color-pill-btn" data-target="absent" data-color="#ff3b30" style="background:#ff3b30;" title="Crimson"></button>
+                            <button type="button" class="color-pill-btn" data-target="absent" data-color="#e11d48" style="background:#e11d48;" title="Rose"></button>
+                            <button type="button" class="color-pill-btn" data-target="absent" data-color="#dc2626" style="background:#dc2626;" title="Red"></button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 7. Explore & Learn -->
+            <!-- 7. About & Guides -->
             <div class="settings-group">
-                <div class="settings-group-title">Explore & Learn</div>
+                <div class="settings-group-title">About & Guides</div>
                 <div class="settings-row" style="cursor: pointer;" id="settings-open-tour-row">
                     <div class="settings-row-info">
                         <span class="settings-row-label">Feature Overview & Guide</span>
@@ -641,28 +639,16 @@
                     </div>
                     <span style="font-size:18px;">💡 →</span>
                 </div>
-            </div>
-
-            <!-- 8. Application Info (With Android-Style 5-Tap Developer Easter Egg) -->
-            <div class="settings-group">
-                <div class="settings-group-title">Application Info</div>
                 <div class="settings-row" id="settings-version-row" style="cursor:pointer; user-select:none;" title="Tap 5 times to unlock Developer Options">
                     <span class="settings-row-label">Version</span>
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <span class="settings-row-value" id="settings-version-val">v1.42.0 (Timetable Schema 2.0)</span>
+                        <span class="settings-row-value" id="settings-version-val">v1.43.0 (Timetable Schema 2.0)</span>
                         <span id="dev-mode-pill" class="dev-badge-pill hidden">🛠 Dev Unlocked</span>
                     </div>
                 </div>
                 <div class="settings-row">
                     <span class="settings-row-label">Storage Engine</span>
                     <span class="settings-row-value">Offline-First LocalStorage</span>
-                </div>
-                <div class="settings-row">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Action History Buffer</span>
-                        <span class="settings-row-desc">Wipe accumulated undo/redo history stack.</span>
-                    </div>
-                    <button type="button" id="btn-purge-history" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; color:var(--accent-red);">🗑 Purge History</button>
                 </div>
             </div>
         </div>
@@ -1160,6 +1146,6 @@
     </div>
     <div id="notifications-overlay" class="overlay"></div>
 
-    <script src="app.js?v=1.42.0"></script>
+    <script src="app.js?v=1.43.0"></script>
 </body>
 </html>

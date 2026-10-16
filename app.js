@@ -1214,6 +1214,29 @@ function bindEvents() {
         });
     });
 
+    // Seamless Automatic Role & Permission Inheritance
+    safeBind('active-staff-profile-select', 'change', (e) => {
+        const val = e.target.value;
+        if (val === 'admin') {
+            setActiveRole('admin');
+            showToast('Role: Administrator');
+        } else if (val === PRIMARY_AC) {
+            state.activeTeacher = PRIMARY_AC;
+            setActiveRole('ac');
+            showToast(`Role: AC (${PRIMARY_AC})`);
+        } else if (val === ASSISTANT_AC) {
+            state.activeTeacher = ASSISTANT_AC;
+            setActiveRole('asst_ac');
+            showToast(`Role: Asst AC (${ASSISTANT_AC})`);
+        } else {
+            state.activeTeacher = val;
+            setActiveRole('teacher');
+            showToast(`Viewing: ${val}`);
+        }
+    });
+
+    safeBind('absence-context-overlay', 'click', closeAbsenceContextMenu);
+
     safeBind('active-teacher-select', 'change', (e) => {
         state.activeTeacher = e.target.value;
         saveStateToStorage();
@@ -1410,8 +1433,7 @@ function bindEvents() {
 
         safeBind('more-item-tour', 'click', () => {
             morePopover.classList.add('hidden');
-            const tourBtn = document.getElementById('tour-btn');
-            if (tourBtn) tourBtn.click();
+            openTourModal();
         });
     }
 
@@ -1551,7 +1573,7 @@ function bindEvents() {
                 closeBottomSheet();
                 setTimeout(() => { sheet.style.transform = ''; }, 320); 
             } else {
-                sheet.style.transform = 'translateY(0)'; 
+                sheet.style.transform = (window.innerWidth >= 900) ? 'translateX(-50%) translateY(0)' : 'translateY(0)'; 
             }
         });
 
@@ -1562,6 +1584,46 @@ function bindEvents() {
     const table = document.getElementById('routine-table');
     
     if (table && tableContainer) {
+        // Desktop Click vs Drag Detection for Timetable Cells (Job Bundle 6)
+        let mouseCellDownX = 0;
+        let mouseCellDownY = 0;
+        let mouseCellDownTime = 0;
+        let mouseCellTarget = null;
+        let isDragActive = false;
+
+        table.addEventListener('mousedown', (e) => {
+            const td = e.target.closest('td');
+            if (td) {
+                mouseCellDownX = e.clientX;
+                mouseCellDownY = e.clientY;
+                mouseCellDownTime = Date.now();
+                mouseCellTarget = td;
+                isDragActive = false;
+            }
+        });
+
+        table.addEventListener('mouseup', (e) => {
+            if (isDragActive || e.altKey) return;
+            const td = e.target.closest('td');
+            if (!td || td !== mouseCellTarget) return;
+
+            const dist = Math.hypot(e.clientX - mouseCellDownX, e.clientY - mouseCellDownY);
+            const timeDiff = Date.now() - mouseCellDownTime;
+
+            // If mouse moved less than 6px within 500ms, it is a deliberate click/tap
+            if (dist < 6 && timeDiff < 500) {
+                const period = td.dataset.period;
+                const teacher = td.dataset.teacher;
+                if (!period || !teacher) return;
+
+                if (state.isEditMode) {
+                    handleGridInteraction(period, teacher);
+                } else if (td.classList.contains('cell-missing') || td.classList.contains('cell-covered')) {
+                    openBottomSheet(period, teacher);
+                }
+            }
+        });
+
         // Option+Click: Reset clicked element to original state (revert sub, send subject back, reset cell)
         table.addEventListener('click', (e) => {
             if (e.altKey) {
@@ -1589,6 +1651,7 @@ function bindEvents() {
         }
 
         table.addEventListener('dragstart', (e) => {
+            isDragActive = true;
             const td = e.target.closest('td');
             if (!td || !td.dataset.period) return e.preventDefault();
             
@@ -1715,6 +1778,7 @@ function bindEvents() {
         table.addEventListener('dragend', () => {
             scrollSpeed = 0;
             draggedData = null;
+            setTimeout(() => { isDragActive = false; }, 60);
             document.querySelectorAll('.drag-over, .drag-over-sub').forEach(el => el.classList.remove('drag-over', 'drag-over-sub'));
             document.querySelectorAll('.cell-dragging').forEach(el => el.classList.remove('cell-dragging'));
         });
@@ -2200,6 +2264,102 @@ function hideSubRemarkPopover() {
     const popover = document.getElementById('sub-remark-popover');
     if (popover) popover.classList.add('hidden');
 }
+
+// --- ABSENCE TRAY SLEEK COMPACT CONTEXT MENU (JOB BUNDLE 6) ---
+let currentAbsenceCtxTeacher = null;
+
+function openAbsenceContextMenu(teacher, anchorEl, clientX, clientY) {
+    currentAbsenceCtxTeacher = teacher;
+    const popover = document.getElementById('absence-context-popover');
+    const overlay = document.getElementById('absence-context-overlay');
+    if (!popover || !overlay) return;
+
+    const isUnavail = isTeacherSubUnavailable(teacher, state.day);
+    const staff = staffDirectory[teacher];
+    const ctSec = classTeacherMap[teacher];
+    const isCT = !!ctSec;
+    const roleLabel = isCT ? `Class Teacher (${ctSec})` : (staff?.role || 'Teacher');
+
+    popover.innerHTML = `
+        <div class="ctx-teacher-header">
+            <div>
+                <div class="ctx-teacher-name">${escapeHtml(teacher)}</div>
+                <div class="ctx-teacher-status">${roleLabel} • ${isUnavail ? '⛔ Unavailable' : '🟢 Available'}</div>
+            </div>
+        </div>
+        ${isUnavail ? `
+            <button type="button" class="ctx-action-btn avail-toggle" id="ctx-btn-toggle-avail">
+                <span>🟢</span>
+                <span>Mark Available Today</span>
+            </button>
+        ` : `
+            <button type="button" class="ctx-action-btn unavail-toggle" id="ctx-btn-toggle-avail">
+                <span>⛔</span>
+                <span>Mark Unavailable Today</span>
+            </button>
+        `}
+        <button type="button" class="ctx-more-link" id="ctx-btn-more-options">More duty options & remarks...</button>
+    `;
+
+    popover.classList.remove('hidden');
+    overlay.classList.remove('hidden');
+
+    if (anchorEl) {
+        const rect = anchorEl.getBoundingClientRect();
+        let top = rect.bottom + 6;
+        let left = rect.left + (rect.width / 2) - 110;
+        if (left < 10) left = 10;
+        if (left + 230 > window.innerWidth) left = window.innerWidth - 235;
+        if (top + 130 > window.innerHeight) top = rect.top - 120;
+        popover.style.top = `${Math.max(10, Math.round(top))}px`;
+        popover.style.left = `${Math.max(10, Math.round(left))}px`;
+    } else if (clientX !== undefined && clientY !== undefined) {
+        let top = clientY + 6;
+        let left = clientX - 100;
+        if (left < 10) left = 10;
+        if (left + 230 > window.innerWidth) left = window.innerWidth - 235;
+        if (top + 130 > window.innerHeight) top = clientY - 120;
+        popover.style.top = `${Math.max(10, Math.round(top))}px`;
+        popover.style.left = `${Math.max(10, Math.round(left))}px`;
+    }
+
+    const toggleBtn = document.getElementById('ctx-btn-toggle-avail');
+    if (toggleBtn) {
+        toggleBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (isUnavail) {
+                setTeacherSubUnavailable(teacher, false, '', state.day);
+                showToast(`✓ ${teacher} available`);
+            } else {
+                setTeacherSubUnavailable(teacher, true, 'Unavailable', state.day);
+                showToast(`⛔ ${teacher} unavailable`);
+            }
+            if (navigator.vibrate) try { navigator.vibrate(40); } catch (_) {}
+            closeAbsenceContextMenu();
+            renderAll();
+        };
+    }
+
+    const moreBtn = document.getElementById('ctx-btn-more-options');
+    if (moreBtn) {
+        moreBtn.onclick = (e) => {
+            e.stopPropagation();
+            closeAbsenceContextMenu();
+            openSubAvailModal(teacher);
+        };
+    }
+}
+
+function closeAbsenceContextMenu() {
+    currentAbsenceCtxTeacher = null;
+    const popover = document.getElementById('absence-context-popover');
+    const overlay = document.getElementById('absence-context-overlay');
+    if (popover) popover.classList.add('hidden');
+    if (overlay) overlay.classList.add('hidden');
+}
+
+window.openAbsenceContextMenu = openAbsenceContextMenu;
+window.closeAbsenceContextMenu = closeAbsenceContextMenu;
 
 window.isTeacherSubUnavailable = isTeacherSubUnavailable;
 window.getTeacherSubUnavailableRemark = getTeacherSubUnavailableRemark;
@@ -3979,10 +4139,46 @@ function updateRolePermissionsUI() {
     const badgeBtn = document.getElementById('role-badge-btn');
     const teacherRow = document.getElementById('teacher-identity-row');
     const teacherSelect = document.getElementById('active-teacher-select');
+    const staffSelect = document.getElementById('active-staff-profile-select');
     const disputeSettingRow = document.getElementById('admin-dispute-setting-row');
     const allowDisputesToggle = document.getElementById('allow-disputes-toggle');
 
-    // Populate teacher select dropdown if needed
+    // Populate active staff profile select if needed
+    if (staffSelect && staffSelect.options.length === 0) {
+        const adminOpt = document.createElement('option');
+        adminOpt.value = 'admin';
+        adminOpt.textContent = '🛡 Front Desk Admin (Full Access)';
+        staffSelect.appendChild(adminOpt);
+
+        teachers.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t;
+            const ctSec = classTeacherMap[t];
+            if (t === PRIMARY_AC) {
+                opt.textContent = `🎓 ${t} (Academic Coordinator)`;
+            } else if (t === ASSISTANT_AC) {
+                opt.textContent = `🎓 ${t} (Asst. Academic Coord.)`;
+            } else if (ctSec) {
+                opt.textContent = `👤 ${t} (Class Teacher ${ctSec})`;
+            } else {
+                opt.textContent = `👤 ${t} (Subject Teacher)`;
+            }
+            staffSelect.appendChild(opt);
+        });
+    }
+    if (staffSelect) {
+        if (state.currentRole === 'admin') {
+            staffSelect.value = 'admin';
+        } else if (state.currentRole === 'ac') {
+            staffSelect.value = PRIMARY_AC;
+        } else if (state.currentRole === 'asst_ac') {
+            staffSelect.value = ASSISTANT_AC;
+        } else {
+            staffSelect.value = state.activeTeacher;
+        }
+    }
+
+    // Populate legacy teacher select dropdown if needed
     if (teacherSelect && teacherSelect.options.length === 0) {
         teachers.forEach(t => {
             const opt = document.createElement('option');
@@ -4016,7 +4212,7 @@ function updateRolePermissionsUI() {
         } else if (state.currentRole === 'asst_ac') {
             badgeBtn.textContent = '🎓 Asst AC';
         } else if (isOffAC) {
-            badgeBtn.textContent = `⚡ offAC (${state.activeTeacher.split(' ')[1] || state.activeTeacher})`;
+            badgeBtn.textContent = `⚡ Off. AC (${state.activeTeacher.split(' ')[1] || state.activeTeacher})`;
             badgeBtn.classList.add('role-off-ac');
         } else {
             badgeBtn.textContent = `👤 ${state.activeTeacher.split(' ')[1] || state.activeTeacher}`;
@@ -4050,7 +4246,7 @@ function renderOfficiatingBanners() {
     const ctStrip = document.getElementById('off-ct-strip');
     const day = state.day;
 
-    // 1. Dual-Absence Officiating AC (offAC) Contingency
+    // 1. Dual-Absence Officiating AC (Off. AC) Contingency
     const bothACsAbsent = state.absentTeachers.has(PRIMARY_AC) && state.absentTeachers.has(ASSISTANT_AC);
     if (acBanner) {
         if (bothACsAbsent) {
@@ -4068,7 +4264,7 @@ function renderOfficiatingBanners() {
                         </div>
                     </div>
                     <div style="display:flex; gap:6px; align-items:center;">
-                        <button class="btn-assign-off-ac" onclick="openOfficiatingModal('ac')">Change offAC</button>
+                        <button class="btn-assign-off-ac" onclick="openOfficiatingModal('ac')">Change Off. AC</button>
                         <button class="btn-assign-off-ac" style="padding:5px 8px;" title="Clear Officiating AC" onclick="clearOfficiatingAssignment('ac')">✕</button>
                     </div>
                 `;
@@ -4078,7 +4274,7 @@ function renderOfficiatingBanners() {
                         <span>🚨</span>
                         <div>
                             <strong>Both Academic Coordinators Absent (${PRIMARY_AC} & ${ASSISTANT_AC})</strong>
-                            <div style="font-size:11px; font-weight:500; opacity:0.9;">Assign an Officiating AC (offAC) to inherit coordinator permissions for ${day}.</div>
+                            <div style="font-size:11px; font-weight:500; opacity:0.9;">Assign an Officiating AC (Off. AC) to inherit coordinator permissions for ${day}.</div>
                         </div>
                     </div>
                     <button class="btn-assign-off-ac" onclick="openOfficiatingModal('ac')">+ Assign Officiating AC</button>
@@ -4135,7 +4331,7 @@ function openOfficiatingModal(type, section = null, absentCT = null) {
     pendingOfficiatingTarget = { type, section, absentCT };
 
     if (type === 'ac') {
-        if (titleEl) titleEl.textContent = '⚡ Assign Officiating AC (offAC)';
+        if (titleEl) titleEl.textContent = '⚡ Assign Officiating AC (Off. AC)';
         if (subtitleEl) subtitleEl.textContent = `Both ${PRIMARY_AC} (AC) and ${ASSISTANT_AC} (Asst AC) are absent on ${state.day}. Select a present teacher to inherit Academic Coordinator permissions for the day.`;
     } else {
         if (titleEl) titleEl.textContent = `🏫 Assign Officiating Class Teacher (Class ${section})`;
@@ -4575,7 +4771,7 @@ function renderAbsentTray() {
         // Subtly color code: CTs get Pink blob, STs get Blue blob
         const blobClass = isCT ? 'blob-ct' : 'blob-st';
 
-        // Corner badge on lower right: AC for primary AC, A.AC for assistant AC, offAC for officiating
+        // Corner badge on lower right: AC for primary AC, A.AC for assistant AC, Off. AC for officiating
         let cornerBadge = '';
         if (isOffAC) {
             cornerBadge = `<span class="blob-corner-badge badge-off-ac" title="Officiating AC">⚡</span>`;
@@ -4622,17 +4818,20 @@ function renderAbsentTray() {
             ${unavailBadge}
         `;
 
-        // Mobile touch-hold (long-press) listener for Sub-Availability
+        // Mobile touch-hold (long-press) listener for Sub-Availability Context Menu
         let touchTimer = null;
         let isLongPress = false;
-        el.addEventListener('touchstart', () => {
+        el.addEventListener('touchstart', (e) => {
             isLongPress = false;
+            const touch = e.touches[0];
+            const clientX = touch ? touch.clientX : undefined;
+            const clientY = touch ? touch.clientY : undefined;
             touchTimer = setTimeout(() => {
                 isLongPress = true;
                 if (typeof navigator !== 'undefined' && navigator.vibrate) {
                     try { navigator.vibrate(40); } catch (_) {}
                 }
-                openSubAvailModal(teacher);
+                openAbsenceContextMenu(teacher, el, clientX, clientY);
             }, 500);
         }, { passive: true });
         el.addEventListener('touchend', () => {
@@ -4660,7 +4859,7 @@ function renderAbsentTray() {
         });
         el.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            openSubAvailModal(teacher);
+            openAbsenceContextMenu(teacher, el, e.clientX, e.clientY);
         });
         tray.appendChild(el);
     });
@@ -5975,7 +6174,7 @@ function openBottomSheet(period, targetTeacher) {
     overlay.classList.remove('hidden');
     sheet.classList.add('open');
     overlay.classList.add('active');
-    sheet.style.transform = 'translateY(0)'; 
+    sheet.style.transform = (window.innerWidth >= 900) ? 'translateX(-50%) translateY(0)' : 'translateY(0)'; 
 }
 
 function closeBottomSheet() {

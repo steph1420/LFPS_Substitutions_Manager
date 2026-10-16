@@ -3008,7 +3008,11 @@ input:checked + .slider:before {
     /* 2. Compact Day Reel */
     .day-selector {
         padding: 2px !important;
-        margin-bottom: 4px !important;
+        margin: 0 auto 4px !important;
+        max-width: 380px !important;
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
     }
     .day-btn {
         padding: 3px 0 !important;
@@ -3202,18 +3206,30 @@ input:checked + .slider:before {
         gap: 10px !important;
     }
     .header-top {
-        margin-bottom: 0 !important;
+        display: contents !important;
+    }
+    .title-wrapper {
+        order: 1 !important;
         flex-shrink: 0 !important;
-        gap: 6px !important;
     }
     .header-top h1 {
         font-size: 14.5px !important;
     }
     .day-selector {
-        margin: 0 !important;
+        order: 2 !important;
+        margin: 0 auto !important;
         max-width: 320px !important;
         padding: 1.5px !important;
         flex-grow: 1 !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+    .header-controls {
+        order: 3 !important;
+        flex-shrink: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
     }
     .day-btn {
         padding: 2px 4px !important;
@@ -3331,6 +3347,24 @@ input:checked + .slider:before {
     }
     .table-scroll-container {
         max-height: calc(100vh - 215px);
+    }
+    .bottom-sheet {
+        width: 90% !important;
+        max-width: 520px !important;
+        left: 50% !important;
+        transform: translateX(-50%) translateY(100%) !important;
+        border-radius: 20px 20px 0 0 !important;
+        max-height: 82vh !important;
+        overflow-y: auto !important;
+        bottom: 0 !important;
+        transition: transform 0.28s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    }
+    .bottom-sheet.open {
+        transform: translateX(-50%) translateY(0) !important;
+    }
+    .sheet-content {
+        max-height: 65vh;
+        overflow-y: auto;
     }
 }
 
@@ -3646,25 +3680,28 @@ input:checked + .slider:before {
 .btn-exit-fit {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    background: var(--accent-blue);
-    color: #fff;
-    border: none;
-    padding: 5px 12px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 600;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--surface-color);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 122, 255, 0.3);
-    transition: transform 0.15s ease, opacity 0.15s ease;
+    box-shadow: var(--shadow-sm);
+    flex-shrink: 0;
+    transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
 .btn-exit-fit:hover {
-    opacity: 0.92;
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+    background: rgba(0, 122, 255, 0.08);
 }
 
 .btn-exit-fit:active {
-    transform: scale(0.96);
+    transform: scale(0.94);
 }
 
 body.fit-grid-mode {
@@ -4187,6 +4224,7 @@ body.fit-grid-mode .shared-badge {
     color: #fff;
 }
 
+.role-badge-btn.role-off-ac,
 .role-badge-btn.role-offac {
     background: rgba(255, 149, 0, 0.16);
     color: var(--accent-orange);
@@ -4973,11 +5011,11 @@ body.master-edit-mode .routine-table tbody td:hover:not(:first-child) {
 .btn-sub-avail-manage {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     background: rgba(239, 68, 68, 0.1);
     color: #ef4444;
     border: 1px solid rgba(239, 68, 68, 0.35);
-    border-radius: 8px;
+    border-radius: 9px;
     padding: 4px 10px;
     font-size: 11.5px;
     font-weight: 600;
@@ -4990,6 +5028,143 @@ body.master-edit-mode .routine-table tbody td:hover:not(:first-child) {
     background: rgba(239, 68, 68, 0.18);
     border-color: #ef4444;
     transform: translateY(-1px);
+}
+
+/* Distinct Squircle Edge Button for Absence Panel Top-Right */
+.btn-squircle-edge {
+    border-radius: 9px !important; /* Apple Squircle */
+    padding: 5px 12px !important;
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.2px;
+    background: var(--surface-opaque, var(--surface-color)) !important;
+    color: var(--accent-red, #ef4444) !important;
+    border: 1.5px solid rgba(239, 68, 68, 0.45) !important;
+    box-shadow: 0 1.5px 4px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-squircle-edge:hover {
+    background: rgba(239, 68, 68, 0.1) !important;
+    border-color: var(--accent-red, #ef4444) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.2) !important;
+}
+
+.btn-squircle-edge:active {
+    transform: scale(0.96);
+}
+
+/* Sleek iOS-Style Absence Card Context Popover */
+.absence-context-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 1990;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+.absence-context-popover {
+    position: fixed;
+    z-index: 2000;
+    min-width: 210px;
+    max-width: 270px;
+    background: var(--surface-elevated, #ffffff);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 1px 4px rgba(0,0,0,0.1);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    animation: popIn 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.absence-context-popover.hidden,
+.absence-context-overlay.hidden {
+    display: none !important;
+}
+
+.ctx-teacher-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px 6px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ctx-teacher-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.ctx-teacher-status {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.ctx-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--bg-color);
+    color: var(--text-primary);
+    transition: background 0.15s, transform 0.1s;
+}
+
+.ctx-action-btn:hover {
+    background: var(--hover-color);
+}
+
+.ctx-action-btn.unavail-toggle {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--accent-red, #ef4444);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.ctx-action-btn.unavail-toggle:hover {
+    background: rgba(239, 68, 68, 0.22);
+}
+
+.ctx-action-btn.avail-toggle {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--accent-green, #10b981);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.ctx-action-btn.avail-toggle:hover {
+    background: rgba(16, 185, 129, 0.22);
+}
+
+.ctx-more-link {
+    font-size: 11px;
+    color: var(--accent-blue);
+    background: none;
+    border: none;
+    padding: 4px;
+    text-align: center;
+    cursor: pointer;
+    font-weight: 600;
+    border-radius: 6px;
+}
+
+.ctx-more-link:hover {
+    text-decoration: underline;
 }
 
 /* Status Pill with ? Button */

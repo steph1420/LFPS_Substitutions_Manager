@@ -151,7 +151,43 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - Synchronizes roster color palette, locked undo button style, and preferences across all school devices.
 
 
-### Job Bundle 6: Performance Engine & Keep-Warm Pre-Rendering (PERF-01)
+### FEAT-12: Front Desk Ergonomics, Navigation Polish, Contextual Controls & Desktop Interaction Fixes (RESOLVED in v1.43.0)
+- **Status**: 🟢 Resolved (v1.43.0)
+- **Solution Delivered**:
+  - [x] **Header Simplification & Tour Button Removal**:
+    - Removed `#tour-btn` from `.header-controls` bar to reclaim header space across mobile and desktop.
+    - Preserved direct feature tour access inside the 3-dot overflow menu (`#more-item-tour`) and within Settings ("Feature Overview & Guide").
+  - [x] **Mobile Day Bar Centering**:
+    - Fixed mobile layout bug where the day bar (`.day-selector`) shifted to the right of the 3-dot overflow menu.
+    - Set `.header-top` to `display: contents !important` in mobile landscape with explicit flex ordering (`title-wrapper`: order 1, `day-selector`: order 2 with `margin: 0 auto`, `header-controls`: order 3), perfectly centering the day selector in the middle.
+    - Enforced `margin: 0 auto 4px !important; max-width: 380px !important; justify-content: center !important;` in mobile portrait.
+  - [x] **Fit-Grid Inward Collapse Icon (Eliminated "Back to Normal")**:
+    - Removed text button "Back to normal".
+    - Redesigned `#exit-fit-grid-btn` into a compact icon-only button with inward collapse squared corners (`M4 14h6v6`, `M20 14h-6v6`, `M4 10h6V4`, `M20 10h-6V4`) matching uniform icon dimensions.
+  - [x] **iOS-Inspired Settings Screen Re-organization**:
+    - Restructured Settings into 7 clean, logical iOS-style grouped sections:
+      1. **Active Staff Profile**: Operating identity with automatic permission inheritance.
+      2. **General & Policies**: Master Routine PIN (`••••` with Change PIN), Allow Disputes toggle, Minimize Alerts toggle, Conflict highlight toggle.
+      3. **Appearance & Themes**: Interface Theme pills & dropdown, Browser Fullscreen Mode toggle.
+      4. **Cloud & Synchronization**: Google Sheets Web App URL, Save URL, Push Today's Ledger, Sync Routine.
+      5. **Timetable Data & Simulations**: Baseline reset, Test scenarios, Action History buffer purge.
+      6. **Developer Options** (hidden behind 5-tap version Easter egg): Same-period lock, countdown timer, halo ring customizer, undo/redo button style, roster color customizer.
+      7. **About & Guides**: Features tour, version info (`v1.43.0`), offline storage engine.
+  - [x] **Strict Terminology Audit: Renamed `offAC` $\to$ `Off. AC`**:
+    - Eradicated all user-facing instances of `offAC` across `index.html`, `app.js`, `styles.css`, tooltips, and contingency banners; standardized strictly on **Officiating AC (Off. AC)**.
+  - [x] **Access Role & Identity Streamlining**:
+    - Replaced the loud 4-card role grid in Settings with an elegant "Operating Identity" dropdown.
+    - The app automatically inherits permissions based on the active staff profile (Admin, Coordinator for Mrs. R. Pahwa, Asst AC for Mrs. S. Lakra, Class Teacher, or Off. AC for designated teachers).
+  - [x] **Compact Context Menu for Absence Tray Right-Click / Long-Press**:
+    - Right-click (desktop) and 500ms long-press (mobile) on a teacher's card in the mark absence tray opens a sleek, compact iOS-style context popover with direct 1-tap toggle (`[ ⛔ Mark Unavailable Today ]` / `[ 🟢 Mark Available Today ]`) and a discreet `More duty options & remarks...` link, eliminating large modal popups for quick availability changes.
+  - [x] **Absence Panel Sub-Availability Squircle Button Redesign**:
+    - Redesigned `#btn-open-sub-avail-modal` into a distinctive squircle button (`.btn-squircle-edge`, `border-radius: 9px`) anchored to the top-right of the absence panel with clear call-to-action labeling (`⛔ Staff Availability`) and visible button affordance.
+  - [x] **Desktop Grid Tap Bug Fix on Need-to-Sub Cells (`.cell-missing`)**:
+    - Fixed desktop mouse interaction on `.cell-missing` and `.cell-covered` cells where HTML5 `draggable="true"` was suppressing native click events.
+    - Added mouse position and movement distance tracking (< 6px threshold) on `mouseup` to reliably trigger `openBottomSheet(period, teacher)` on desktop mouse clicks.
+    - Centered `.bottom-sheet` on desktop (`min-width: 900px`) as a clean Apple-style modal sheet (`max-width: 520px; left: 50%; transform: translateX(-50%)`) with `max-height: 82vh` and smooth scrolling.
+
+### Job Bundle 7: Performance Engine & Keep-Warm Pre-Rendering (PERF-01)
 - [ ] **Instant Offscreen Pre-rendering on Load**: Construct and composite the full Master Routine table DOM offscreen during initial page load (`requestIdleCallback`) before user scrolls down.
 - [ ] **In-Memory DOM "Keep-Warm" Cache**: Keep rendered table elements alive in memory; avoid destructive `innerHTML` rebuilds on tab switches.
 - [ ] **Selective Diff Patching**: When polling Google Sheets for background updates, selectively patch only cells with actual diffs (`calculateScheduleDiffs`), eliminating full-table redraw lag.
