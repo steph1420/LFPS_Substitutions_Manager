@@ -280,6 +280,15 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - Display full formal names (e.g. `Mrs. Manisha Midha`, `Mr. Stephen Ashish Lakra`) on Roster cards when viewport $\ge 768\text{px}$.
 - [ ] **FEAT-19 (Settings Section Flow: Themes to Bottom Above Version)**:
   - In Settings modal (`#settings-modal`), move the "Appearance & Themes" section down to the bottom, directly above "About & Guides" (where the Version row is).
+- [ ] **FEAT-20 (Roster Card Action Streamlining & Universal Long-Press Affordance Badge)**:
+  - **Remove Gear Icon**: Remove `.roster-card-btn-manage` (the gear icon `⚙`) from Roster teacher cards to declutter card real estate.
+  - **Enhanced 'Available' Button Interactions**:
+    - Primary 1-tap: Toggles substitution availability (`toggleSubAvailability(teacher)`).
+    - Right-Click (desktop) & 500ms Long-Press (mobile/touch) with haptic feedback: Opens the individual teacher's availability & duty remarks modal (`openSubAvailModal(teacher, 'single')`).
+    - Microcopy Affordance: Inside the button, display `"Available"` with subtle subtext microcopy `"Long press for more"`.
+  - **Universal Long-Press Indicator Exploration & Implementation**:
+    - *Hardware Precedent*: Yamaha keyboards/synthesizers (e.g. Montage, Genos) mark dual-function "Hold / Direct Access" keys with a finger glyph touching a circular pad.
+    - *Universal Indicator Standard*: Standardize a clean, non-intrusive hold indicator (subtle corner pip `◢` or tactile finger contact icon `👆` with touch ring) across all right-click/long-press supporting elements (Roster cards, Absence tray avatars, Routine grid cells, and Reset buttons).
 
 
 
