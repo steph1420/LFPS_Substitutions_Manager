@@ -7207,6 +7207,9 @@ function handleGlobalKeydown(e) {
         closeSettingsModal();
         closeTourModal();
         closeBottomSheet();
+        closeAbsenceContextMenu();
+        closeResetContextMenu();
+        closeNotificationsModal();
         return;
     }
 

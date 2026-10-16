@@ -33,6 +33,15 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] **Periodic Background Sync & Selective Diff Patching**: Keep routine rendered and run background poll for Google Sheet cloud updates, selectively updating only cells with actual diffs (`calculateScheduleDiffs`), eliminating full-table redraw lag.
   - [ ] **Compositor & Layer Optimization**: Keep `contain: paint layout` and GPU layer promotion (`transform: translateZ(0)`) warm so scrolling onto the table has zero frame drops.
 
+### BUG-07: Right-Click / Long-Press on Absent Teacher Only Blurs Absence Panel Without Popover Menu (RESOLVED in v1.45.1)
+- **Status**: 🟢 Resolved (v1.45.1)
+- **Reported**: Right-clicking or 500ms long-pressing an absent teacher card only blurred the absence panel, and no context menu appeared.
+- **Root Cause**: `#absence-context-popover` and `#absence-context-overlay` were nested inside `.absent-tray-container`. In themes with `backdrop-filter` (e.g. Utopian Glass / Utopian Night), the container created a local stacking context and containing block for `position: fixed` elements, trapping the overlay inside the container and pushing the popover coordinates out of view.
+- **Solution Delivered**:
+  - [x] Relocated `#absence-context-popover` and `#absence-context-overlay` from inside `.absent-tray-container` to the root of `<body>` alongside modal sheets.
+  - [x] Fullscreen overlay blur now covers the entire viewport and popover coordinates anchor precisely beneath the clicked teacher card.
+  - [x] Added `closeAbsenceContextMenu()`, `closeResetContextMenu()`, and `closeNotificationsModal()` to global Escape key handler.
+
 ### BUG-06: Substitutions Page Failure — Missing Teacher Names & Auto-Resolve Inoperative (RESOLVED in v1.44.0)
 - **Status**: 🟢 Resolved (v1.44.0)
 - **Solution Delivered**:

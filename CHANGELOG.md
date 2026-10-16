@@ -17,6 +17,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.45.1] - 2026-10-16
+
+### Fixed
+- **Absence Tray Context Popover Stacking Trap (BUG-07)**:
+  - Resolved issue where right-clicking or 500ms long-pressing an absent teacher card only blurred the absence panel without displaying the context popover menu.
+  - Root cause was `#absence-context-popover` and `#absence-context-overlay` residing inside `.absent-tray-container`, which created a local containing block in themes with `backdrop-filter`, confining the overlay and distorting popover coordinates.
+  - Relocated popover and overlay to root of `<body>`; the popover now anchors right below the teacher card with full-screen soft blur overlay.
+  - Added popover dismissal to the global Escape key handler.
+
 ## [v1.45.0] - 2026-10-16
 
 ### Added
