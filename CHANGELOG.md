@@ -14,6 +14,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.50.0] - 2026-10-16
+
+### Added
+- **Always-Editable Routine Grid & Hidden Developer Edit Lock (FEAT-15)**:
+  - Eliminated the prerequisite requirement to click "Edit Schedule" before moving or assigning timetable cells. Drag-and-drop cell moves and tap interactions are now directly active by default at all times.
+  - Relocated the optional Routine Edit Lock (`state.settings.routineEditLock: false`) into Developer Options (`#routine-edit-lock-toggle`) for coordinators who specifically prefer locking the grid against accidental drag gestures.
+  - Automatically hid the redundant `#edit-toggle-btn` and `#fit-grid-edit-btn` from top controls when unlocked, significantly decluttering the header bar.
+  - Preserved Master Edit Mode behavior: button dynamically reappears as `🛠 Master Save` when editing baseline routine.
+- **Anchored iOS-Style Routine Grid Context Popover (`#grid-cell-context-popover`, FEAT-16)**:
+  - Replaced cumbersome full modal popups with an anchored, high-speed iOS-style context popover docked right beside the clicked cell or touch cursor on desktop right-click or 500ms touch long-press.
+  - Context-aware action buttons customized for every cell type:
+    - **Teacher Column**: 1-tap Attendance Toggle (`[ 🔴 Mark Absent Today ]` / `[ 🟢 Mark Present Today ]`), Sub-Availability Toggle, Officiating AC assignment shortcut, and duty options link.
+    - **Missing Period Cells (`.cell-missing`)**: Direct 1-tap `[ 🔄 Choose Substitute ]` button opening the candidate bottom sheet.
+    - **Covered Period Cells (`.cell-covered`)**: Direct 1-tap `[ 🔄 Change Substitute ]` and `[ ✕ Clear Substitute ]` buttons.
+    - **Modified Period Cells**: Direct 1-tap `[ ↺ Reset Slot to Master Routine ]` returning slot to baseline.
+  - Full touch-friendly long-press with native haptic vibration (`navigator.vibrate([45, 60])`), viewport boundary clamping, and global Escape key dismissal.
+
+### Fixed
+- **Routine Grid Right-Edge Divider Bar & Leftmost Under-Slide Peeking Leak (BUG-08)**:
+  - Fixed horizontal scrolling issue where the dividing edge of the sticky teacher column vanished as period cards slid underneath. Added a persistent 2.5px solid right-edge divider bar (`::after`) with drop shadow (`z-index: 25`) across all light, dark, and glass theme presets.
+  - Fixed WebKit horizontal clipping bug where period cards slid all the way to the screen's left edge past the sticky teacher column. Added a 34px opaque masking flange (`::before`) and updated `.table-scroll-container` to `overflow-x: auto !important; overflow-y: hidden !important; overflow-y: clip !important; padding: 0 !important;`, ensuring clean occlusion and zero visual edge leak.
+
 ## [v1.49.0] - 2026-10-16
 
 ### Added

@@ -1,5 +1,5 @@
 # Front Desk PWA - Architecture & Developer Guide
-**Current Version:** v1.42.0
+**Current Version:** v1.50.0
 **Project Type:** Vanilla JS/HTML/CSS Offline-First PWA
 **Purpose:** School substitution management and daily timetable resolution.
 
@@ -517,3 +517,14 @@ To enable live synchronization from Google Sheets in future releases:
     *   Interactive style selector with 4 switchable variants (`curved`, `circular`, `svg`, `text`) locking across all viewports.
 *   **Concise Toast Microcopy:**
     *   Streamlined over 60 toast messages into punchy 2–4 word microcopy.
+
+### 11.10 Direct Interaction, Routine Edit Lock & Grid Context Popover (v1.50.0)
+*   **Always-Editable Routine Grid (`isGridEditable`):**
+    *   Drag-and-drop cell moves and slot reassignment are immediately active by default without clicking "Edit Schedule".
+    *   `state.settings.routineEditLock` moved to Developer Options (`#routine-edit-lock-toggle`). Redundant `#edit-toggle-btn` hidden in standard operation and automatically restored as "🛠 Master Save" in Master Edit Mode.
+*   **Anchored iOS-Style Context Popover (`#grid-cell-context-popover`):**
+    *   Replaced full modal popups with high-speed context popovers anchored directly beside clicked/long-pressed cells with viewport clamping.
+    *   Supplies direct 1-tap micro-actions: Attendance toggle, Sub-Availability toggle, candidate picker, unassign sub, and baseline slot reset.
+*   **Persistent Sticky Teacher Column Divider & Leftmost Occlusion Flange (BUG-08):**
+    *   Added dedicated `::after` vertical divider (`2.5px solid`, `z-index: 25`) preventing border collapse when period cards slide under.
+    *   Added `34px` opaque masking flange (`::before`) and updated scroll container to `overflow-y: clip !important`, resolving WebKit under-slide peeking leaks.

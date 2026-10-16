@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.49.0">
+    <link rel="stylesheet" href="styles.css?v=1.50.0">
 </head>
 <body>
 
@@ -211,7 +211,7 @@
                 </div>
 
                 <div class="grid-status-footer">
-                    <span class="version-badge">v1.49.0</span>
+                    <span class="version-badge">v1.50.0</span>
                     <span class="grid-status-dot">●</span>
                     <span class="grid-status-label">LFPS Front Desk Offline-First</span>
                     <div id="footer-conflict-pill" class="footer-conflict-pill hidden" title="Click to inspect timetable conflicts">
@@ -778,7 +778,7 @@
                 <div class="settings-row" id="settings-version-row" style="cursor:pointer; user-select:none;" title="Tap 5 times to unlock Developer Options">
                     <span class="settings-row-label">Version</span>
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <span class="settings-row-value" id="settings-version-val">v1.49.0 (Timetable Schema 2.0)</span>
+                        <span class="settings-row-value" id="settings-version-val">v1.50.0 (Timetable Schema 2.0)</span>
                         <span id="dev-mode-pill" class="dev-badge-pill hidden">🛠 Dev Unlocked</span>
                     </div>
                 </div>
@@ -796,6 +796,18 @@
                         <button type="button" id="btn-reset-roster-colors" class="btn-text-only" style="font-size:11px; font-weight:700; color:var(--accent-blue); background:none; border:none; cursor:pointer;">Reset Defaults</button>
                         <button type="button" id="btn-relock-dev" class="btn-text-only" style="font-size:11px; font-weight:600; color:var(--text-secondary); background:none; border:none; cursor:pointer;" title="Re-lock Developer Options">🔒 Lock</button>
                     </div>
+                </div>
+
+                <!-- Developer Option: Routine Edit Lock (FEAT-15) -->
+                <div class="settings-row" id="routine-edit-lock-setting-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Lock Routine Grid (Require 'Edit' to Drag)</span>
+                        <span class="settings-row-desc">When disabled (default), routine cells can be dragged and rearranged immediately without tapping 'Edit Schedule'. Enable this to protect the grid against accidental drag gestures.</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="routine-edit-lock-toggle">
+                        <span class="slider round"></span>
+                    </label>
                 </div>
 
                 <!-- Developer Option: Hide Absence Panel from Routine Grid View -->
@@ -1456,6 +1468,12 @@
     </div>
     <div id="reset-context-overlay" class="reset-context-overlay hidden"></div>
 
+    <!-- Master Routine Grid Cell Quick Context Popover (FEAT-16) -->
+    <div id="grid-cell-context-popover" class="grid-cell-context-popover hidden" role="dialog" aria-label="Cell Quick Actions">
+        <!-- Dynamically populated by openGridCellContextMenu() in app.js -->
+    </div>
+    <div id="grid-cell-context-overlay" class="grid-cell-context-overlay hidden"></div>
+
     <!-- Header Cloud Session & Broadcasting Popover -->
     <div id="cloud-session-popover" class="cloud-session-popover hidden" role="dialog" aria-labelledby="cloud-popover-title">
         <div class="cloud-popover-header">
@@ -1508,6 +1526,6 @@
     </div>
     <div id="notifications-overlay" class="overlay"></div>
 
-    <script src="app.js?v=1.49.0"></script>
+    <script src="app.js?v=1.50.0"></script>
 </body>
 </html>

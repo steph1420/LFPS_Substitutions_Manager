@@ -1486,17 +1486,20 @@ input:checked + .slider:before {
 }
 
 /* --- Spreadsheet Grid Styles --- */
+/* --- Spreadsheet Grid Styles --- */
 .table-scroll-container {
     width: 100%;
-    overflow-x: auto;
-    overflow-y: visible;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overflow-y: clip !important;
     -webkit-overflow-scrolling: touch; 
     display: block; 
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-soft);
     background: var(--surface-color);
     margin-bottom: 15px;
-    contain: paint layout;
+    padding: 0 !important;
+    position: relative;
     transform: translateZ(0);
 }
 
@@ -1507,6 +1510,7 @@ input:checked + .slider:before {
     font-size: 12px;
     table-layout: fixed;
     box-sizing: border-box;
+    margin: 0 !important;
 }
 
 .routine-table th, .routine-table td {
@@ -1521,26 +1525,62 @@ input:checked + .slider:before {
     overflow: hidden;
 }
 
-.routine-table th:first-child, .routine-table td:first-child {
-    position: sticky;
-    left: 0;
+.routine-table th:first-child, .routine-table td:first-child,
+.class-routine-table th:first-child, .class-routine-table td:first-child {
+    position: sticky !important;
+    left: 0 !important;
     width: 120px !important;
     min-width: 120px !important;
     max-width: 120px !important;
     background: var(--surface-opaque, var(--surface-color)) !important;
     opacity: 1 !important;
     font-weight: 600;
-    z-index: 10;
-    border-right: 2px solid var(--border-color);
-    box-shadow: 3px 0 8px rgba(0, 0, 0, 0.08);
+    z-index: 12 !important;
+    border-right: 2px solid var(--border-color) !important;
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.12) !important;
     text-align: left;
     padding: 6px 8px;
     transform: translateZ(0);
 }
 
-.routine-table th:first-child {
-    z-index: 15 !important;
+.routine-table th:first-child,
+.class-routine-table th:first-child {
+    z-index: 16 !important;
     background: var(--surface-opaque, var(--surface-color)) !important;
+    cursor: default;
+}
+
+/* BUG-08: Persistent Solid Physical Right-Edge Divider Bar */
+.routine-table th:first-child::after,
+.routine-table td:first-child::after,
+.class-routine-table th:first-child::after,
+.class-routine-table td:first-child::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 2.5px;
+    background: var(--border-color);
+    box-shadow: 3px 0 8px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+    z-index: 25;
+}
+
+/* BUG-08: Masking Flange to Left Edge preventing sliding period cells from peeking past the teacher column */
+.routine-table th:first-child::before,
+.routine-table td:first-child::before,
+.class-routine-table th:first-child::before,
+.class-routine-table td:first-child::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -32px;
+    width: 34px;
+    bottom: 0;
+    background: inherit;
+    pointer-events: none;
+    z-index: 12;
 }
 
 .routine-table th {
@@ -1558,11 +1598,6 @@ input:checked + .slider:before {
     padding: 6px 4px;
     white-space: normal;
     line-height: 1.2;
-}
-
-.routine-table th:first-child {
-    cursor: default;
-    z-index: 3;
 }
 
 /* Static Break Column (Column 4 / Period 'BREAK') */
@@ -2428,10 +2463,16 @@ input:checked + .slider:before {
 [data-theme="utopian-glass"] .routine-table th:first-child {
     background: #ffffff !important;
     opacity: 1 !important;
-    border-right: 2px solid rgba(14, 165, 233, 0.25) !important;
-    box-shadow: 4px 0 12px rgba(14, 165, 233, 0.12) !important;
+    border-right: 2px solid rgba(14, 165, 233, 0.35) !important;
+    box-shadow: 4px 0 12px rgba(14, 165, 233, 0.16) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+}
+
+[data-theme="utopian-glass"] .routine-table td:first-child::after,
+[data-theme="utopian-glass"] .routine-table th:first-child::after {
+    background: rgba(14, 165, 233, 0.45) !important;
+    box-shadow: 3px 0 10px rgba(14, 165, 233, 0.25) !important;
 }
 
 [data-theme="utopian-glass"] .routine-table td:not(:first-child) {
@@ -2562,6 +2603,12 @@ input:checked + .slider:before {
     border-radius: 5px;
 }
 
+[data-theme="cyber-glass"] .routine-table th:first-child::after,
+[data-theme="cyber-glass"] .routine-table td:first-child::after {
+    background: rgba(56, 189, 248, 0.45) !important;
+    box-shadow: 3px 0 10px rgba(56, 189, 248, 0.25) !important;
+}
+
 [data-theme="cyber-glass"] .routine-table tr.row-absent td:not(:first-child) {
     background: rgba(40, 16, 28, 0.6) !important;
     border-color: rgba(244, 63, 94, 0.35) !important;
@@ -2656,8 +2703,14 @@ input:checked + .slider:before {
 [data-theme="utopian-night"] .routine-table td:first-child {
     background: #081120 !important;
     opacity: 1 !important;
-    border-right: 2px solid rgba(56, 189, 248, 0.32) !important;
+    border-right: 2px solid rgba(56, 189, 248, 0.38) !important;
     box-shadow: 4px 0 12px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-theme="utopian-night"] .routine-table th:first-child::after,
+[data-theme="utopian-night"] .routine-table td:first-child::after {
+    background: rgba(56, 189, 248, 0.5) !important;
+    box-shadow: 3px 0 10px rgba(56, 189, 248, 0.3) !important;
 }
 
 /* Utopian Night Absent & Missing Cell Refraction - Vivid Red High-Contrast */
@@ -3591,7 +3644,9 @@ input:checked + .slider:before {
     }
     .table-scroll-container {
         max-height: none !important;
-        overflow-y: visible !important;
+        height: auto !important;
+        overflow-y: hidden !important;
+        overflow-y: clip !important;
     }
 }
 
@@ -3647,7 +3702,9 @@ input:checked + .slider:before {
     }
     .table-scroll-container {
         max-height: none !important;
-        overflow-y: visible !important;
+        height: auto !important;
+        overflow-y: hidden !important;
+        overflow-y: clip !important;
     }
     .bottom-sheet {
         width: 90% !important;
@@ -5505,9 +5562,10 @@ body.master-edit-mode .routine-table tbody td:hover:not(:first-child) {
     cursor: pointer;
 }
 
-/* Sleek iOS-Style Absence Card Context Popover */
+/* Sleek iOS-Style Context Popovers */
 .absence-context-overlay,
-.reset-context-overlay {
+.reset-context-overlay,
+.grid-cell-context-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -5520,11 +5578,12 @@ body.master-edit-mode .routine-table tbody td:hover:not(:first-child) {
 }
 
 .absence-context-popover,
-.reset-context-popover {
+.reset-context-popover,
+.grid-cell-context-popover {
     position: fixed;
     z-index: 2100;
-    min-width: 220px;
-    max-width: 280px;
+    min-width: 230px;
+    max-width: 290px;
     background: var(--surface-elevated, #ffffff);
     border: 1px solid var(--border-color);
     border-radius: 14px;
@@ -5539,7 +5598,9 @@ body.master-edit-mode .routine-table tbody td:hover:not(:first-child) {
 .absence-context-popover.hidden,
 .absence-context-overlay.hidden,
 .reset-context-popover.hidden,
-.reset-context-overlay.hidden {
+.reset-context-overlay.hidden,
+.grid-cell-context-popover.hidden,
+.grid-cell-context-overlay.hidden {
     display: none !important;
 }
 
@@ -5643,6 +5704,16 @@ body.master-edit-mode .routine-table tbody td:hover:not(:first-child) {
 
 .ctx-action-btn.absent-toggle:hover {
     background: rgba(255, 59, 48, 0.22);
+}
+
+.ctx-action-btn.sub-toggle {
+    background: rgba(0, 122, 255, 0.12);
+    color: var(--accent-blue, #007aff);
+    border: 1px solid rgba(0, 122, 255, 0.3);
+}
+
+.ctx-action-btn.sub-toggle:hover {
+    background: rgba(0, 122, 255, 0.22);
 }
 
 .ctx-more-link {

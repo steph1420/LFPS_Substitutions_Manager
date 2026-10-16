@@ -32,6 +32,7 @@ const state = {
         detectCollisions: true,
         allowDisputes: true,
         hideAbsencePanelFromGrid: false,
+        routineEditLock: false,
         adminPin: '1234',
         sheetsCsvUrl: DEFAULT_SHEETS_WEBAPP_URL,
         lastCloudSync: null,
@@ -50,6 +51,14 @@ const state = {
         redoSubs: []
     }
 };
+
+function isGridEditable() {
+    if (state.settings && state.settings.routineEditLock) {
+        return !!state.isEditMode;
+    }
+    return true;
+}
+window.isGridEditable = isGridEditable;
 
 let lastBottomSheetOpenTime = 0;
 
@@ -611,6 +620,7 @@ function loadStateFromStorage() {
                 detectCollisions: true, 
                 allowDisputes: true, 
                 hideAbsencePanelFromGrid: false,
+                routineEditLock: false,
                 adminPin: '1234',
                 sheetsCsvUrl: DEFAULT_SHEETS_WEBAPP_URL,
                 lastCloudSync: null,
@@ -1294,6 +1304,17 @@ function bindEvents() {
         renderAbsentTray();
         showToast(state.settings.hideAbsencePanelFromGrid ? 'Absence panel hidden from Grid' : 'Absence panel visible on Grid');
     });
+
+    safeBind('routine-edit-lock-toggle', 'change', (e) => {
+        state.settings.routineEditLock = e.target.checked;
+        saveStateToStorage();
+        updateRoutineEditLockUI();
+        updateMasterLockUI();
+        renderTableRoutine();
+        showToast(state.settings.routineEditLock ? 'Routine grid locked (Edit mode required)' : 'Routine grid directly editable');
+    });
+
+    safeBind('grid-cell-context-overlay', 'click', closeGridCellContextMenu);
     
     safeBind('same-period-lock-toggle', 'change', (e) => {
         state.settings.samePeriodLock = e.target.checked;
@@ -1740,10 +1761,12 @@ function bindEvents() {
                 const teacher = td.dataset.teacher;
                 if (!period || !teacher) return;
 
-                if (state.isEditMode) {
+                if (selectedCell) {
                     handleGridInteraction(period, teacher);
                 } else if (td.classList.contains('cell-missing') || td.classList.contains('cell-covered')) {
                     setTimeout(() => openBottomSheet(period, teacher), 20);
+                } else if (isGridEditable()) {
+                    handleGridInteraction(period, teacher);
                 }
             }
         });
@@ -1799,7 +1822,7 @@ function bindEvents() {
             const isMissingSub = isAbsent && baseTask && baseTask !== 'Free' && !assignedSub;
             const isSubRelated = isMissingSub || assignedSub || coveringFor;
             
-            if (!state.isEditMode && !isSubRelated) {
+            if (!isGridEditable() && !isSubRelated) {
                 return e.preventDefault();
             }
             
@@ -2535,6 +2558,244 @@ function closeAbsenceContextMenu() {
     if (popover) popover.classList.add('hidden');
     if (overlay) overlay.classList.add('hidden');
 }
+
+// --- MASTER ROUTINE GRID IN-SITU CONTEXT POPOVER (FEAT-16) ---
+let currentGridCtxTarget = null; // { teacher, period }
+
+function openGridCellContextMenu(teacher, period = null, anchorEl = null, clientX = undefined, clientY = undefined) {
+    if (!teacher) return;
+    currentGridCtxTarget = { teacher, period };
+
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate([40, 50]); } catch (_) {}
+    }
+
+    const popover = document.getElementById('grid-cell-context-popover');
+    const overlay = document.getElementById('grid-cell-context-overlay');
+    if (!popover || !overlay) return;
+
+    const isAbsent = state.absentTeachers.has(teacher);
+    const isUnavail = isTeacherSubUnavailable(teacher, state.day);
+    const staff = staffDirectory[teacher];
+    const ctSec = classTeacherMap[teacher];
+    const isCT = !!ctSec;
+    const roleLabel = isCT ? `Class Teacher (${ctSec})` : (staff?.role || 'Staff');
+    const fullName = staff?.fullName || teacher;
+
+    let periodTaskInfo = '';
+    let isMissingSub = false;
+    let assignedSub = null;
+    let task = null;
+    let baseTask = null;
+
+    if (period && period !== 'BREAK' && period !== 'BREAKFAST' && period !== 'BREAKFAST BREAK') {
+        task = state.schedule[state.day]?.[period]?.[teacher] || 'Free';
+        baseTask = state.baseSchedule[state.day]?.[period]?.[teacher];
+        assignedSub = isAbsent ? state.substitutions[state.day]?.[period]?.[teacher] : null;
+        isMissingSub = isAbsent && baseTask && baseTask !== 'Free' && !assignedSub;
+        const taskDisplay = task !== 'Free' ? task : 'Free Period';
+        periodTaskInfo = `
+            <div style="font-size:11px; padding:3px 6px; background:var(--bg-color); border-radius:6px; margin-top:4px; font-weight:600; color:var(--text-secondary); display:flex; justify-content:space-between; align-items:center;">
+                <span>🕒 ${escapeHtml(period)}</span>
+                <span style="color:var(--text-primary);">${escapeHtml(taskDisplay)}</span>
+            </div>
+        `;
+    }
+
+    // Role Contingency Button (if absent CT or AC)
+    let roleActionBtnHtml = '';
+    if (isAbsent && isCT) {
+        const currentOffCT = state.officiatingCT?.[state.day]?.[ctSec];
+        roleActionBtnHtml = `
+            <button type="button" class="ctx-action-btn sub-toggle" id="grid-ctx-btn-off-ct">
+                <span>📋</span>
+                <span>${currentOffCT ? `Change Off. CT ${ctSec} (${currentOffCT})` : `Assign Officiating CT (${ctSec})`}</span>
+            </button>
+        `;
+    } else if (isAbsent && (teacher === PRIMARY_AC || teacher === ASSISTANT_AC)) {
+        roleActionBtnHtml = `
+            <button type="button" class="ctx-action-btn sub-toggle" id="grid-ctx-btn-off-ac">
+                <span>⚡</span>
+                <span>Designate Officiating AC</span>
+            </button>
+        `;
+    }
+
+    // Period-specific action button
+    let periodActionBtnHtml = '';
+    if (period) {
+        if (isMissingSub) {
+            periodActionBtnHtml = `
+                <button type="button" class="ctx-action-btn sub-toggle" id="grid-ctx-btn-sub-pick">
+                    <span>🔍</span>
+                    <span>Assign Substitute for ${escapeHtml(period)}...</span>
+                </button>
+            `;
+        } else if (assignedSub) {
+            periodActionBtnHtml = `
+                <button type="button" class="ctx-action-btn unavail-toggle" id="grid-ctx-btn-sub-clear">
+                    <span>✕</span>
+                    <span>Clear Sub (${escapeHtml(assignedSub)})</span>
+                </button>
+            `;
+        } else if (task !== baseTask && baseTask && baseTask !== 'Free') {
+            periodActionBtnHtml = `
+                <button type="button" class="ctx-action-btn" id="grid-ctx-btn-reset-slot">
+                    <span>↺</span>
+                    <span>Reset Slot to Baseline (${escapeHtml(baseTask)})</span>
+                </button>
+            `;
+        }
+    }
+
+    popover.innerHTML = `
+        <div class="ctx-teacher-header" style="flex-direction:column; align-items:flex-start; gap:2px;">
+            <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                <div class="ctx-teacher-name">${escapeHtml(teacher)}</div>
+                <span style="font-size:11px; font-weight:700; color:${isAbsent ? 'var(--accent-red)' : 'var(--accent-green)'};">${isAbsent ? '🔴 Absent' : '🟢 Present'}</span>
+            </div>
+            <div class="ctx-teacher-status">${escapeHtml(fullName !== teacher ? fullName + ' • ' : '')}${escapeHtml(roleLabel)} • ${isUnavail ? '⛔ Off-Duty' : '🟢 Available'}</div>
+            ${periodTaskInfo}
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:6px;">
+            <button type="button" class="ctx-action-btn ${isAbsent ? 'present-toggle' : 'absent-toggle'}" id="grid-ctx-btn-absence">
+                <span>${isAbsent ? '🟢' : '🔴'}</span>
+                <span>${isAbsent ? 'Mark Present Today' : 'Mark Absent Today'}</span>
+            </button>
+
+            <button type="button" class="ctx-action-btn ${isUnavail ? 'avail-toggle' : 'unavail-toggle'}" id="grid-ctx-btn-avail">
+                <span>${isUnavail ? '🟢' : '⛔'}</span>
+                <span>${isUnavail ? 'Set Available for Substitution' : 'Set Unavailable for Sub (Off-Duty)'}</span>
+            </button>
+
+            ${roleActionBtnHtml}
+            ${periodActionBtnHtml}
+
+            <button type="button" class="ctx-more-link" id="grid-ctx-btn-more">
+                Duty remarks & schedule settings →
+            </button>
+        </div>
+    `;
+
+    popover.classList.remove('hidden');
+    overlay.classList.remove('hidden');
+
+    // Viewport positioning & boundary clamping
+    const popoverWidth = 260;
+    const popoverHeight = 240;
+    let top = 100;
+    let left = 20;
+
+    if (anchorEl && anchorEl.getBoundingClientRect) {
+        const rect = anchorEl.getBoundingClientRect();
+        top = rect.bottom + 6;
+        left = rect.left;
+        if (left + popoverWidth > window.innerWidth - 10) {
+            left = window.innerWidth - popoverWidth - 10;
+        }
+        if (left < 10) left = 10;
+        if (top + popoverHeight > window.innerHeight - 10) {
+            top = Math.max(10, rect.top - popoverHeight - 6);
+        }
+    } else if (clientX !== undefined && clientY !== undefined) {
+        top = clientY + 8;
+        left = clientX - 20;
+        if (left + popoverWidth > window.innerWidth - 10) {
+            left = window.innerWidth - popoverWidth - 10;
+        }
+        if (left < 10) left = 10;
+        if (top + popoverHeight > window.innerHeight - 10) {
+            top = Math.max(10, clientY - popoverHeight - 8);
+        }
+    }
+
+    popover.style.top = `${Math.round(top)}px`;
+    popover.style.left = `${Math.round(left)}px`;
+
+    // Button event bindings
+    const absenceBtn = document.getElementById('grid-ctx-btn-absence');
+    if (absenceBtn) {
+        absenceBtn.onclick = (e) => {
+            e.stopPropagation();
+            closeGridCellContextMenu();
+            toggleTeacherAbsence(teacher);
+        };
+    }
+
+    const availBtn = document.getElementById('grid-ctx-btn-avail');
+    if (availBtn) {
+        availBtn.onclick = (e) => {
+            e.stopPropagation();
+            closeGridCellContextMenu();
+            toggleSubAvailability(teacher);
+        };
+    }
+
+    const offCtBtn = document.getElementById('grid-ctx-btn-off-ct');
+    if (offCtBtn) {
+        offCtBtn.onclick = (e) => {
+            e.stopPropagation();
+            closeGridCellContextMenu();
+            openTeacherQuickActionModal(teacher);
+        };
+    }
+
+    const offAcBtn = document.getElementById('grid-ctx-btn-off-ac');
+    if (offAcBtn) {
+        offAcBtn.onclick = (e) => {
+            e.stopPropagation();
+            closeGridCellContextMenu();
+            openTeacherQuickActionModal(teacher);
+        };
+    }
+
+    const subPickBtn = document.getElementById('grid-ctx-btn-sub-pick');
+    if (subPickBtn) {
+        subPickBtn.onclick = (e) => {
+            e.stopPropagation();
+            closeGridCellContextMenu();
+            openBottomSheet(period, teacher);
+        };
+    }
+
+    const subClearBtn = document.getElementById('grid-ctx-btn-sub-clear');
+    if (subClearBtn) {
+        subClearBtn.onclick = (e) => {
+            e.stopPropagation();
+            closeGridCellContextMenu();
+            unassignSubstitute(period, teacher);
+        };
+    }
+
+    const resetSlotBtn = document.getElementById('grid-ctx-btn-reset-slot');
+    if (resetSlotBtn) {
+        resetSlotBtn.onclick = (e) => {
+            e.stopPropagation();
+            closeGridCellContextMenu();
+            resetCellToOriginalState(period, teacher);
+        };
+    }
+
+    const moreBtn = document.getElementById('grid-ctx-btn-more');
+    if (moreBtn) {
+        moreBtn.onclick = (e) => {
+            e.stopPropagation();
+            closeGridCellContextMenu();
+            openSubAvailModal(teacher, 'single');
+        };
+    }
+}
+window.openGridCellContextMenu = openGridCellContextMenu;
+
+function closeGridCellContextMenu() {
+    currentGridCtxTarget = null;
+    const popover = document.getElementById('grid-cell-context-popover');
+    const overlay = document.getElementById('grid-cell-context-overlay');
+    if (popover) popover.classList.add('hidden');
+    if (overlay) overlay.classList.add('hidden');
+}
+window.closeGridCellContextMenu = closeGridCellContextMenu;
 
 // --- RAPID ABSENCE & AVAILABILITY TOGGLES (JOB BUNDLE 12) ---
 function toggleTeacherAbsence(teacher) {
@@ -3282,8 +3543,34 @@ function updateMasterLockUI() {
         if (fitGridEditIcon) fitGridEditIcon.textContent = '✎';
         if (fitGridEditLabel) fitGridEditLabel.textContent = 'Edit Schedule';
     }
+    updateRoutineEditLockUI();
 }
 window.updateMasterLockUI = updateMasterLockUI;
+
+function updateRoutineEditLockUI() {
+    const lockToggle = document.getElementById('routine-edit-lock-toggle');
+    if (lockToggle) {
+        lockToggle.checked = !!(state.settings && state.settings.routineEditLock);
+    }
+    const editBtn = document.getElementById('edit-toggle-btn');
+    const fitGridEditBtn = document.getElementById('fit-grid-edit-btn');
+    
+    if (state.isMasterEditMode) {
+        if (editBtn) editBtn.style.display = '';
+        if (fitGridEditBtn) fitGridEditBtn.style.display = '';
+        return;
+    }
+
+    const isLocked = !!(state.settings && state.settings.routineEditLock);
+    if (!isLocked) {
+        if (editBtn) editBtn.style.display = 'none';
+        if (fitGridEditBtn) fitGridEditBtn.style.display = 'none';
+    } else {
+        if (editBtn) editBtn.style.display = '';
+        if (fitGridEditBtn) fitGridEditBtn.style.display = '';
+    }
+}
+window.updateRoutineEditLockUI = updateRoutineEditLockUI;
 
 function openPinModal(title = 'Admin Passcode Required', subtext = 'Enter 4-digit PIN to unlock Master Routine editing.', onSuccess = null, mode = 'verify') {
     enteredPin = '';
@@ -5259,6 +5546,7 @@ window.addEventListener('orientationchange', () => {
 function renderAll() {
     cleanupOrphanSubstitutions(state.day);
     updateRolePermissionsUI();
+    updateMasterLockUI();
     renderOfficiatingBanners();
     renderAbsentTray();
     renderTableRoutine(); 
@@ -5863,7 +6151,7 @@ function renderTableRoutine() {
                 `;
                 cellTitle = `${teacher} is absent. Drag this cell to an available teacher to assign substitute, or tap to choose.`;
                 isDraggable = true;
-                clickHandler = state.isEditMode 
+                clickHandler = selectedCell 
                     ? `onclick="handleGridInteraction('${period}', '${teacher}')"` 
                     : `onclick="openBottomSheet('${period}', '${teacher}')"`;
 
@@ -5883,7 +6171,7 @@ function renderTableRoutine() {
                 `;
                 cellTitle = `Covered by ${assignedSub} (${subStatusInfo.status}). Drag to reassign substitute, or tap to manage.`;
                 isDraggable = true;
-                clickHandler = state.isEditMode 
+                clickHandler = selectedCell 
                     ? `onclick="handleGridInteraction('${period}', '${teacher}')"` 
                     : `onclick="openBottomSheet('${period}', '${teacher}')"`;
 
@@ -5904,7 +6192,7 @@ function renderTableRoutine() {
                 `;
                 cellTitle = `Substituting for ${coveringFor}${periodNote} (${subStatusInfo.status}). Drag to another teacher to reassign, or drag back to ${coveringFor} to unassign.`;
                 isDraggable = true;
-                clickHandler = state.isEditMode ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
+                clickHandler = isGridEditable() ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
 
             } else if (task !== 'Free') {
                 cellClasses.push('cell-assigned');
@@ -5927,11 +6215,11 @@ function renderTableRoutine() {
                     cellTitle = `${teacher}: ${task}`;
                 }
 
-                isDraggable = state.isEditMode;
+                isDraggable = isGridEditable();
                 if (hasCoPartners) {
                     clickHandler = `onclick="handleCoTeachingClick('${period}', '${teacher}', event)"`;
                 } else {
-                    clickHandler = state.isEditMode ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
+                    clickHandler = isGridEditable() ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
                 }
 
             } else {
@@ -5945,7 +6233,7 @@ function renderTableRoutine() {
                     clickHandler = `onclick="handleCoTeachingClick('${period}', '${teacher}', event)"`;
                 } else {
                     cellTitle = `${teacher} is Free in ${period}`;
-                    clickHandler = state.isEditMode ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
+                    clickHandler = isGridEditable() ? `onclick="handleGridInteraction('${period}', '${teacher}')"` : '';
                 }
                 isDraggable = false;
             }
@@ -5989,7 +6277,7 @@ function renderTableRoutine() {
     html += '</tbody>';
     table.innerHTML = html;
 
-    // Attach in-situ long-press & right-click actions on teacher cells (FEAT-08)
+    // Attach in-situ long-press & right-click actions on teacher cells and period cells (FEAT-16)
     table.querySelectorAll('.teacher-cell').forEach(cell => {
         const teacher = cell.dataset.teacher;
         if (!teacher) return;
@@ -5997,14 +6285,14 @@ function renderTableRoutine() {
         let touchTimer = null;
         let isLongPress = false;
 
-        cell.addEventListener('touchstart', () => {
+        cell.addEventListener('touchstart', (e) => {
             isLongPress = false;
+            const touch = e.touches && e.touches[0];
+            const clientX = touch ? touch.clientX : undefined;
+            const clientY = touch ? touch.clientY : undefined;
             touchTimer = setTimeout(() => {
                 isLongPress = true;
-                if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                    try { navigator.vibrate([45, 60]); } catch (_) {}
-                }
-                openTeacherQuickActionModal(teacher);
+                openGridCellContextMenu(teacher, null, cell, clientX, clientY);
             }, 500);
         }, { passive: true });
 
@@ -6022,10 +6310,44 @@ function renderTableRoutine() {
 
         cell.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                try { navigator.vibrate(40); } catch (_) {}
+            openGridCellContextMenu(teacher, null, cell, e.clientX, e.clientY);
+        });
+    });
+
+    table.querySelectorAll('tbody td[data-period]').forEach(cell => {
+        const period = cell.dataset.period;
+        const teacher = cell.dataset.teacher;
+        if (!period || !teacher) return;
+
+        let touchTimer = null;
+        let isLongPress = false;
+
+        cell.addEventListener('touchstart', (e) => {
+            isLongPress = false;
+            const touch = e.touches && e.touches[0];
+            const clientX = touch ? touch.clientX : undefined;
+            const clientY = touch ? touch.clientY : undefined;
+            touchTimer = setTimeout(() => {
+                isLongPress = true;
+                openGridCellContextMenu(teacher, period, cell, clientX, clientY);
+            }, 500);
+        }, { passive: true });
+
+        cell.addEventListener('touchend', (e) => {
+            if (touchTimer) clearTimeout(touchTimer);
+            if (isLongPress) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
             }
-            openTeacherQuickActionModal(teacher);
+        });
+
+        cell.addEventListener('touchmove', () => {
+            if (touchTimer) clearTimeout(touchTimer);
+        });
+
+        cell.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            openGridCellContextMenu(teacher, period, cell, e.clientX, e.clientY);
         });
     });
 }
@@ -8006,6 +8328,7 @@ function handleGlobalKeydown(e) {
         closeBottomSheet();
         closeAbsenceContextMenu();
         closeResetContextMenu();
+        closeGridCellContextMenu();
         closeNotificationsModal();
         closeCloudSessionPopover();
         return;

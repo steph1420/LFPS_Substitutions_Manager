@@ -24,14 +24,14 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] Enforced `opacity: 1 !important` and opaque background on `.row-absent td:first-child` so absent teacher cells never become 60% translucent.
   - [x] Retained tactile separation divider and elevated box-shadow (`box-shadow: 3px 0 8px rgba(0,0,0,0.08)`) with `z-index: 10` (and `z-index: 15` for header intersection) so passing period cards are cleanly occluded underneath with zero visual text collision.
 
-### BUG-08: Grid Sticky Teacher Column Right Edge Border & Leftmost Under-Slide Peeking Leak
-- **Status**: 🔴 Open
+### BUG-08: Grid Sticky Teacher Column Right Edge Border & Leftmost Under-Slide Peeking Leak (RESOLVED in v1.50.0)
+- **Status**: 🟢 Resolved (v1.50.0)
 - **Reported**:
   1. The teacher column on the left needs a visible, crisp border on its right edge because when period slot cards slide underneath it during horizontal scrolling, the dividing boundary disappears.
   2. Period slot cards sliding underneath travel all the way to the left edge of the screen, peeking out on the leftmost edge not covered by the teacher column (breaking the physical visual illusion that the teacher column is flush with the left viewport edge).
-- **Target Solution**:
-  - [ ] **Solid Right-Edge Separation**: Enforce `border-right: 2px solid var(--border-color) !important; box-shadow: 3px 0 8px rgba(0,0,0,0.12) !important;` on `.routine-table th:first-child` and `.routine-table td:first-child` across all themes.
-  - [ ] **Eliminate Leftmost Gap & Under-Slide Peeking**: Ensure `.table-scroll-container` has `padding-left: 0 !important; margin-left: 0 !important;` and `.routine-table` has flush left alignment so sticky cells lock cleanly at `left: 0 !important;`, preventing scrolling cells from ever peeking past the left margin.
+- **Solution Delivered**:
+  - [x] **Solid Right-Edge Separation**: Implemented `.routine-table th:first-child::after, td:first-child::after` pseudo-element with dedicated high `z-index: 25`, pinned to the right edge with a 2.5px solid border and soft drop shadow across all light, dark, and glass themes. It cannot be collapsed or erased by passing period cards.
+  - [x] **Eliminate Leftmost Gap & Under-Slide Peeking**: Implemented a 34px opaque masking flange (`::before`) extending to `left: -32px` with `z-index: 12`. Updated `.table-scroll-container` to `overflow-x: auto !important; overflow-y: hidden !important; overflow-y: clip !important; padding: 0 !important;` across all viewport sizes, fixing the WebKit horizontal scrollport leak where period cells bled outside the table to the screen's left edge.
 
 ### PERF-01: Master Routine Initial Render Stutter & In-Memory Pre-Render ("Keep-Warm" Engine)
 - **Status**: 🔴 Open
@@ -246,18 +246,18 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 
 ## 🚀 Active Roadmap: Job Bundles 13, 14 & 15
 
-### Job Bundle 13: Routine Grid Visual Integrity, Always-Editable Routine & Grid Context Popover
-- **Status**: 🔴 Queued / Active Candidate
-- [ ] **BUG-08 (Sticky Teacher Column Right Border & Leftmost Peeking Fix)**:
-  - Enforce prominent right-edge border and drop shadow on sticky teacher column (`.routine-table th:first-child`, `.routine-table td:first-child`) so scrolling period cells never erase the column boundary.
-  - Fix leftmost under-slide peeking: ensure `.table-scroll-container` and table start flush with `left: 0`, completely preventing sliding cells from peeking past the left edge of the teacher column.
-- [ ] **FEAT-15 (Always-Editable Routine Grid & Hidden Developer Edit Lock)**:
-  - Remove the requirement to click "Edit Schedule" before moving or assigning slots. The routine table is directly interactive and editable by default at all times.
-  - Move the "Edit Routine Lock" into Developer Options as a hidden setting (`state.settings.routineEditLock: false`) for coordinators who specifically want to lock the grid to prevent accidental drags.
-  - When unlocked (default), drag-and-drop and slot editing are immediately responsive without prerequisite mode toggling.
-- [ ] **FEAT-16 (Anchored In-Situ Context Popover on Routine Grid)**:
-  - Right-click (desktop) and 500ms long-press (mobile) on any teacher cell in the routine grid currently opens `#teacher-quick-action-modal` (a full popup modal).
-  - Replace with an anchored, high-speed iOS-style context popover (`#grid-cell-context-popover`) docked right beside the clicked cell/cursor (providing rapid micro-actions: Mark Absent/Present, Set Off-Duty, Assign Sub, Quick Duty remark).
+### Job Bundle 13: Routine Grid Visual Integrity, Always-Editable Routine & Grid Context Popover (RESOLVED in v1.50.0)
+- **Status**: 🟢 Resolved (v1.50.0)
+- [x] **BUG-08 (Sticky Teacher Column Right Border & Leftmost Peeking Fix)**:
+  - Enforced prominent 2.5px right-edge border and drop shadow on sticky teacher column (`.routine-table th:first-child::after`, `.routine-table td:first-child::after` with `z-index: 25`) so scrolling period cells never erase the column boundary.
+  - Fixed leftmost under-slide peeking: added 34px opaque masking flange (`::before`) and updated `.table-scroll-container` to `overflow-y: clip !important; padding: 0 !important;`, completely preventing sliding cells from peeking past the left edge of the teacher column.
+- [x] **FEAT-15 (Always-Editable Routine Grid & Hidden Developer Edit Lock)**:
+  - Removed the requirement to click "Edit Schedule" before moving or assigning slots. The routine table is directly interactive and editable by default at all times.
+  - Moved the "Edit Routine Lock" into Developer Options as a hidden setting (`state.settings.routineEditLock: false`) for coordinators who specifically want to lock the grid to prevent accidental drags.
+  - When unlocked (default), drag-and-drop and slot editing are immediately responsive without prerequisite mode toggling; redundant `#edit-toggle-btn` is hidden from the header.
+- [x] **FEAT-16 (Anchored In-Situ Context Popover on Routine Grid)**:
+  - Replaced cumbersome modal popups with an anchored, high-speed iOS-style context popover (`#grid-cell-context-popover`) docked right beside the clicked cell/cursor on right-click (desktop) and 500ms long-press (mobile).
+  - Supplies rapid contextual micro-actions: Mark Absent/Present, Set Off-Duty, Assign Sub, Clear Sub, Reset Slot to Master Routine, and Quick Duty modal shortcut.
 
 ### Job Bundle 14: Modernized Substitutions Register, Bottom Counter, 'My Subs' Filter & Narrow Table
 - **Status**: 🔴 Queued
