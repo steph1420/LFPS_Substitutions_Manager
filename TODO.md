@@ -174,6 +174,9 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] **Cloud Auto-Sync & Mandatory Substitution Broadcast**:
     - **Live Cloud vs. Local Mode State Machine**: Respect user choices from connectivity notifications to either "Go Live" or stay in a "Local Session". When "Go Live" is active, resume background auto-sync.
     - **Unconditional Substitution Cloud Broadcast**: Regardless of whether the app is currently in local or cloud mode, every confirmed substitution event must immediately broadcast to the Google Apps Script cloud endpoint so all school staff are notified in real time.
+  - [ ] **Absence Panel Sub-Availability Full-Height Pad Button**:
+    - Redesign `#btn-open-sub-avail-modal` to span the entire vertical height of the absence panel (`.absent-tray-container`) instead of sitting inside the top header row.
+    - Style it as a tactile hardware-like "pad button" (MPC/Launchpad aesthetic with prominent squircle corners, full vertical stretch, tactile press depth, and clear stacked icon + label) docked against the right edge of the absence tray.
   - [ ] **Subbed Teacher Target Cell Halo Ring Customizer**:
     - Polish visual indicator halo ring on target subbed cells (`sub-halo-active`) with developer options color presets.
   - [ ] **Professional Terminology for "Fit-Grid" (Feature Re-branding)**:
