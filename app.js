@@ -18,7 +18,10 @@ const state = {
     officiatingCT: {}, // day -> { section: teacherName }
     subUnavailable: {}, // day -> { [teacherName]: remark }
     displaced: { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] },
+    pendingBroadcasts: [],
     settings: {
+        cloudMode: 'live',
+        autoSyncInterval: 60,
         samePeriodLock: true,
         acceptanceTimerEnabled: false,
         acceptanceTimerDuration: 10,
@@ -513,6 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindEvents();
     updateUndoUI();
     renderAll();
+    initCloudSyncEngine();
 });
 
 function saveStateToStorage() {
@@ -530,6 +534,7 @@ function saveStateToStorage() {
         officiatingCT: state.officiatingCT,
         subUnavailable: state.subUnavailable,
         displaced: state.displaced,
+        pendingBroadcasts: state.pendingBroadcasts || [],
         absentTeachers: Array.from(state.absentTeachers), 
         settings: state.settings,
         actionHistory: state.actionHistory
@@ -590,8 +595,11 @@ function loadStateFromStorage() {
             state.officiatingCT = parsed.officiatingCT || {};
             state.subUnavailable = parsed.subUnavailable || {};
             state.displaced = parsed.displaced || { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] };
+            state.pendingBroadcasts = parsed.pendingBroadcasts || [];
             state.absentTeachers = new Set(parsed.absentTeachers || []);
             state.settings = Object.assign({ 
+                cloudMode: 'live',
+                autoSyncInterval: 60,
                 samePeriodLock: true, 
                 acceptanceTimerEnabled: false,
                 acceptanceTimerDuration: 10,
@@ -1088,6 +1096,29 @@ function bindEvents() {
         pushSubstitutionsToCloud();
     });
 
+    // Header Cloud Status Pill & Popover
+    safeBind('header-cloud-status', 'click', (e) => {
+        e.stopPropagation();
+        toggleCloudSessionPopover();
+    });
+    safeBind('cloud-session-overlay', 'click', closeCloudSessionPopover);
+    safeBind('cloud-toggle-mode-btn', 'click', () => {
+        closeCloudSessionPopover();
+        setCloudMode(state.settings.cloudMode === 'live' ? 'local' : 'live');
+    });
+    safeBind('cloud-sync-routine-btn', 'click', () => {
+        closeCloudSessionPopover();
+        syncFromGoogleSheets(true);
+    });
+    safeBind('cloud-push-ledger-btn', 'click', () => {
+        closeCloudSessionPopover();
+        pushSubstitutionsToCloud();
+    });
+
+    // Cloud Mode Segmented Buttons in Settings
+    safeBind('segment-cloud-live', 'click', () => setCloudMode('live'));
+    safeBind('segment-cloud-local', 'click', () => setCloudMode('local'));
+
     // Cloud Conflict Modal Buttons
     safeBind('close-cloud-conflict-btn', 'click', closeCloudConflictModal);
     safeBind('cloud-conflict-overlay', 'click', closeCloudConflictModal);
@@ -1570,6 +1601,9 @@ function bindEvents() {
         }
         if (!e.target.closest('#sub-remark-popover')) {
             hideSubRemarkPopover();
+        }
+        if (!e.target.closest('#cloud-session-popover') && !e.target.closest('#header-cloud-status')) {
+            closeCloudSessionPopover();
         }
     });
 
@@ -3575,6 +3609,8 @@ function closeMasterCellModal() {
 
 let pendingCloudSchedule = null;
 let currentCloudDiffs = [];
+window.getCurrentCloudDiffs = () => currentCloudDiffs;
+window.setCurrentCloudDiffs = (d) => { currentCloudDiffs = d; };
 
 function parseCSV(text) {
     if (!text || typeof text !== 'string') return [];
@@ -3909,18 +3945,20 @@ function updateCloudSyncUI() {
         urlInput.value = state.settings.sheetsCsvUrl || '';
     }
     const isWebApp = (state.settings.sheetsCsvUrl || '').includes('/exec');
+    const modeLabel = state.settings.cloudMode === 'live' ? 'Live Auto-Sync' : 'Local Session';
     if (syncTimeEl) {
         if (state.settings.lastCloudSync) {
             const d = new Date(state.settings.lastCloudSync);
             const timeStr = `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-            syncTimeEl.innerHTML = `${isWebApp ? '<span style="color:var(--accent-green); font-weight:700;">● 2-Way Connected</span> • ' : ''}Synced ${timeStr}`;
+            syncTimeEl.innerHTML = `${isWebApp ? `<span style="color:var(--accent-green); font-weight:700;">● ${modeLabel}</span> • ` : ''}Synced ${timeStr}`;
         } else {
             syncTimeEl.innerHTML = isWebApp 
-                ? '<span style="color:var(--accent-green); font-weight:700;">● 2-Way Ready</span> (Not Synced Yet)' 
+                ? `<span style="color:var(--accent-green); font-weight:700;">● ${modeLabel}</span> (Not Synced Yet)` 
                 : 'Local Baseline (Not Synced)';
             syncTimeEl.style.color = 'var(--text-secondary)';
         }
     }
+    updateHeaderCloudStatus();
 }
 
 async function pushSubstitutionsToCloud(entries = null) {
@@ -4014,6 +4052,364 @@ async function pushBaselineUpdatesToCloud(updates) {
     }
 }
 window.pushBaselineUpdatesToCloud = pushBaselineUpdatesToCloud;
+
+// --- CLOUD STATE MACHINE, AUTO-SYNC & LIVE SUBSTITUTION BROADCAST ENGINE ---
+let autoSyncIntervalTimer = null;
+let isSilentSyncing = false;
+let broadcastDebounceTimer = null;
+let isBroadcasting = false;
+
+function initCloudSyncEngine() {
+    // Setup online/offline listeners
+    window.addEventListener('online', () => {
+        updateHeaderCloudStatus();
+        updateCloudSyncUI();
+        showToast('☁ Network restored: Online');
+        drainPendingBroadcasts();
+        if (state.settings.cloudMode === 'live') {
+            startAutoSync();
+            silentAutoSyncRoutine();
+        }
+    });
+
+    window.addEventListener('offline', () => {
+        updateHeaderCloudStatus('offline');
+        updateCloudSyncUI();
+        showToast('⚪ Network offline: Working in local session');
+    });
+
+    // Visibility change: check for routine updates when returning to tab in live mode
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && state.settings.cloudMode === 'live' && navigator.onLine) {
+            silentAutoSyncRoutine();
+        }
+    });
+
+    // Initial state
+    updateHeaderCloudStatus();
+    updateCloudSyncUI();
+
+    // Start auto-sync if in live mode
+    if (state.settings.cloudMode === 'live' && navigator.onLine) {
+        startAutoSync();
+        // Warm check after 2 seconds on boot
+        setTimeout(() => {
+            silentAutoSyncRoutine();
+            drainPendingBroadcasts();
+        }, 2000);
+    }
+}
+window.initCloudSyncEngine = initCloudSyncEngine;
+
+function setCloudMode(mode) {
+    if (mode !== 'live' && mode !== 'local') return;
+    state.settings.cloudMode = mode;
+    saveStateToStorage();
+
+    if (mode === 'live') {
+        startAutoSync();
+        showToast('☁ Connected: Live Cloud Auto-Sync Active');
+        silentAutoSyncRoutine();
+    } else {
+        stopAutoSync();
+        showToast('🏠 Local Session Active: Routine auto-sync paused. Substitutions will still broadcast.');
+    }
+
+    updateCloudSyncUI();
+    updateHeaderCloudStatus();
+    updateNotificationBadge();
+    renderNotificationCenter();
+}
+window.setCloudMode = setCloudMode;
+
+function startAutoSync() {
+    stopAutoSync();
+    if (state.settings.cloudMode !== 'live' || !navigator.onLine) return;
+    const intervalSec = state.settings.autoSyncInterval || 60;
+    autoSyncIntervalTimer = setInterval(silentAutoSyncRoutine, intervalSec * 1000);
+}
+window.startAutoSync = startAutoSync;
+
+function stopAutoSync() {
+    if (autoSyncIntervalTimer) {
+        clearInterval(autoSyncIntervalTimer);
+        autoSyncIntervalTimer = null;
+    }
+}
+window.stopAutoSync = stopAutoSync;
+
+async function silentAutoSyncRoutine() {
+    if (isSilentSyncing || !navigator.onLine || state.settings.cloudMode !== 'live') return;
+    const rawUrl = state.settings.sheetsCsvUrl || DEFAULT_SHEETS_WEBAPP_URL;
+    const url = normalizeCSVUrl(rawUrl);
+    if (!url) return;
+
+    try {
+        isSilentSyncing = true;
+        const response = await fetch(url, { cache: 'no-cache' });
+        if (!response.ok) {
+            isSilentSyncing = false;
+            return;
+        }
+
+        const csvText = await response.text();
+        const rows = parseCSV(csvText);
+        if (!rows || rows.length < 2) {
+            isSilentSyncing = false;
+            return;
+        }
+
+        const cloudSchedule = parseTimetableFromCSV(rows);
+        if (!cloudSchedule) {
+            isSilentSyncing = false;
+            return;
+        }
+
+        const diffs = calculateScheduleDiffs(state.baseSchedule, cloudSchedule);
+        isSilentSyncing = false;
+
+        if (diffs.length > 0) {
+            pendingCloudSchedule = cloudSchedule;
+            currentCloudDiffs = diffs;
+            updateNotificationBadge();
+            renderNotificationCenter();
+            showToast(`☁ Cloud Sync: ${diffs.length} routine update(s) detected. Check 🔔 Notices.`);
+        } else {
+            state.settings.lastCloudSync = new Date().toISOString();
+            saveStateToStorage();
+            updateCloudSyncUI();
+            updateHeaderCloudStatus();
+        }
+    } catch (e) {
+        isSilentSyncing = false;
+        console.warn('[Auto-Sync] Background diff check:', e);
+    }
+}
+window.silentAutoSyncRoutine = silentAutoSyncRoutine;
+
+async function drainPendingBroadcasts() {
+    const isOnline = (typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean') ? navigator.onLine : true;
+    if (!isOnline || !state.pendingBroadcasts || state.pendingBroadcasts.length === 0) return;
+    const count = state.pendingBroadcasts.length;
+    console.log(`[Cloud Broadcast] Draining ${count} pending broadcast(s)...`);
+    state.pendingBroadcasts = [];
+    saveStateToStorage();
+    await broadcastSubstitutionsToCloud(true);
+}
+window.drainPendingBroadcasts = drainPendingBroadcasts;
+
+async function broadcastSubstitutionsToCloud(immediate = false) {
+    if (broadcastDebounceTimer) {
+        clearTimeout(broadcastDebounceTimer);
+        broadcastDebounceTimer = null;
+    }
+
+    const executeBroadcast = async () => {
+        const rawUrl = state.settings.sheetsCsvUrl || DEFAULT_SHEETS_WEBAPP_URL;
+        if (!rawUrl || !rawUrl.includes('/exec')) {
+            console.log('[Cloud Broadcast] Skipped: No Google Apps Script Web App endpoint configured.');
+            return false;
+        }
+
+        // Build current active entries for today
+        const entries = [];
+        const currentSubs = state.substitutions[state.day] || {};
+        Object.keys(currentSubs).forEach(period => {
+            Object.keys(currentSubs[period] || {}).forEach(absentTeacher => {
+                const assignedSub = currentSubs[period][absentTeacher];
+                const statusObj = getSubStatusObj(state.day, period, absentTeacher);
+                const disputeReason = statusObj.status === 'disputed' ? (statusObj.reason || '') : '';
+                entries.push({
+                    day: state.day,
+                    period: period,
+                    absentTeacher: absentTeacher,
+                    assignedSub: assignedSub,
+                    status: statusObj.status === 'accepted' ? 'Accepted' : (statusObj.status === 'disputed' ? 'Disputed' : 'Assigned'),
+                    note: disputeReason || `Covering ${state.baseSchedule[state.day]?.[period]?.[absentTeacher] || 'Class'}`
+                });
+            });
+        });
+
+        // If offline, queue to pendingBroadcasts and save
+        const isOnline = (typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean') ? navigator.onLine : true;
+        if (!isOnline) {
+            console.log('[Cloud Broadcast] Offline: queuing substitution broadcast.');
+            if (!state.pendingBroadcasts) state.pendingBroadcasts = [];
+            state.pendingBroadcasts.push({
+                timestamp: Date.now(),
+                day: state.day,
+                entries
+            });
+            saveStateToStorage();
+            updateHeaderCloudStatus();
+            return false;
+        }
+
+        updateHeaderCloudStatus('broadcasting');
+
+        try {
+            isBroadcasting = true;
+            const payload = {
+                action: 'logSubstitutions',
+                entries: entries,
+                broadcastTimestamp: Date.now(),
+                schoolDay: state.day
+            };
+
+            await fetch(rawUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(payload)
+            });
+
+            isBroadcasting = false;
+            state.settings.lastCloudSync = new Date().toISOString();
+            state.pendingBroadcasts = [];
+            saveStateToStorage();
+            updateHeaderCloudStatus();
+            updateCloudSyncUI();
+            console.log(`[Cloud Broadcast] Dispatched ${entries.length} record(s) to Google Sheets.`);
+            return true;
+        } catch (err) {
+            isBroadcasting = false;
+            console.warn('[Cloud Broadcast] Network failure, saved to queue:', err);
+            if (!state.pendingBroadcasts) state.pendingBroadcasts = [];
+            state.pendingBroadcasts.push({
+                timestamp: Date.now(),
+                day: state.day,
+                entries
+            });
+            saveStateToStorage();
+            updateHeaderCloudStatus();
+            return false;
+        }
+    };
+
+    if (immediate) {
+        return executeBroadcast();
+    } else {
+        broadcastDebounceTimer = setTimeout(executeBroadcast, 400);
+    }
+}
+window.broadcastSubstitutionsToCloud = broadcastSubstitutionsToCloud;
+
+function updateHeaderCloudStatus(statusOverride = null) {
+    const pill = document.getElementById('header-cloud-status');
+    const textEl = document.getElementById('header-cloud-status-text');
+    const popoverBadge = document.getElementById('cloud-popover-badge');
+    const popoverDesc = document.getElementById('cloud-popover-desc');
+    const toggleIcon = document.getElementById('cloud-toggle-mode-icon');
+    const toggleLabel = document.getElementById('cloud-toggle-mode-label');
+    const popoverLastTime = document.getElementById('cloud-popover-last-time');
+    const liveSegment = document.getElementById('segment-cloud-live');
+    const localSegment = document.getElementById('segment-cloud-local');
+    const modeExpl = document.getElementById('cloud-mode-explanation');
+
+    const isLive = state.settings.cloudMode === 'live';
+    const isOnline = (typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean') ? navigator.onLine : true;
+
+    // Segmented buttons in Settings
+    if (liveSegment && localSegment) {
+        liveSegment.classList.toggle('active', isLive);
+        localSegment.classList.toggle('active', !isLive);
+    }
+    if (modeExpl) {
+        modeExpl.innerHTML = isLive
+            ? '<strong>Live Cloud:</strong> Automatically checks and syncs routine updates from Google Sheets every 60s. All substitutions are immediately broadcast to staff.'
+            : '<strong>Local Session:</strong> Routine auto-sync is paused to protect your local baseline. Substitutions continue to broadcast live to staff.';
+    }
+
+    if (popoverLastTime) {
+        if (state.settings.lastCloudSync) {
+            const d = new Date(state.settings.lastCloudSync);
+            popoverLastTime.textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else {
+            popoverLastTime.textContent = 'Not Synced';
+        }
+    }
+
+    if (!pill) return;
+
+    pill.classList.remove('mode-live', 'mode-local', 'mode-offline', 'broadcasting');
+
+    if (statusOverride === 'broadcasting') {
+        pill.classList.add('broadcasting');
+        if (textEl) textEl.textContent = '☁↑ Broadcast';
+        return;
+    }
+
+    if (!isOnline) {
+        pill.classList.add('mode-offline');
+        if (textEl) textEl.textContent = '⚪ Offline';
+        if (popoverBadge) {
+            popoverBadge.className = 'cloud-popover-badge mode-offline';
+            popoverBadge.textContent = '⚪ Offline';
+        }
+        if (popoverDesc) popoverDesc.textContent = 'Offline session. Actions are safely preserved and will broadcast upon reconnecting.';
+        if (toggleLabel) toggleLabel.textContent = isLive ? 'Switch to Local Session' : 'Go Live';
+        if (toggleIcon) toggleIcon.textContent = isLive ? '🏠' : '☁';
+        return;
+    }
+
+    if (isLive) {
+        pill.classList.add('mode-live');
+        if (textEl) textEl.textContent = '☁ Live';
+        if (popoverBadge) {
+            popoverBadge.className = 'cloud-popover-badge mode-live';
+            popoverBadge.textContent = '● Live Cloud';
+        }
+        if (popoverDesc) popoverDesc.textContent = 'Routine auto-syncs every 60s. Substitutions broadcast live to all staff.';
+        if (toggleLabel) toggleLabel.textContent = 'Switch to Local Session';
+        if (toggleIcon) toggleIcon.textContent = '🏠';
+    } else {
+        pill.classList.add('mode-local');
+        if (textEl) textEl.textContent = '🏠 Local';
+        if (popoverBadge) {
+            popoverBadge.className = 'cloud-popover-badge mode-local';
+            popoverBadge.textContent = '● Local Session';
+        }
+        if (popoverDesc) popoverDesc.textContent = 'Routine auto-sync paused. Substitutions still broadcast live to staff.';
+        if (toggleLabel) toggleLabel.textContent = 'Go Live & Resume Auto-Sync';
+        if (toggleIcon) toggleIcon.textContent = '☁';
+    }
+}
+window.updateHeaderCloudStatus = updateHeaderCloudStatus;
+
+function openCloudSessionPopover() {
+    const popover = document.getElementById('cloud-session-popover');
+    const overlay = document.getElementById('cloud-session-overlay');
+    const pill = document.getElementById('header-cloud-status');
+    if (!popover || !pill) return;
+
+    updateHeaderCloudStatus();
+    const rect = pill.getBoundingClientRect();
+    popover.style.top = `${Math.min(window.innerHeight - 250, rect.bottom + 6)}px`;
+    popover.style.left = `${Math.max(12, Math.min(window.innerWidth - 300, rect.left))}px`;
+
+    popover.classList.remove('hidden');
+    if (overlay) overlay.classList.remove('hidden');
+}
+window.openCloudSessionPopover = openCloudSessionPopover;
+
+function closeCloudSessionPopover() {
+    const popover = document.getElementById('cloud-session-popover');
+    const overlay = document.getElementById('cloud-session-overlay');
+    if (popover) popover.classList.add('hidden');
+    if (overlay) overlay.classList.add('hidden');
+}
+window.closeCloudSessionPopover = closeCloudSessionPopover;
+
+function toggleCloudSessionPopover() {
+    const popover = document.getElementById('cloud-session-popover');
+    if (!popover) return;
+    if (popover.classList.contains('hidden')) {
+        openCloudSessionPopover();
+    } else {
+        closeCloudSessionPopover();
+    }
+}
+window.toggleCloudSessionPopover = toggleCloudSessionPopover;
 
 
 function extractClassSection(task) {
@@ -4557,15 +4953,8 @@ function startAcceptSubCountdown(period, absentTeacher) {
         renderAll();
         showToast('Substitution accepted');
 
-        // Automatically push accepted substitution to Google Sheets Daily_Ledger
-        pushSubstitutionsToCloud([{
-            day: day,
-            period: period,
-            absentTeacher: absentTeacher,
-            assignedSub: subTeacher,
-            status: 'Accepted',
-            note: `Accepted by ${subTeacher}`
-        }]);
+        // Automatically broadcast accepted substitution to Google Sheets Daily_Ledger
+        broadcastSubstitutionsToCloud(true);
         return;
     }
 
@@ -4604,15 +4993,8 @@ function startAcceptSubCountdown(period, absentTeacher) {
             renderAll();
             showToast('Substitution accepted');
 
-            // Automatically push accepted substitution to Google Sheets Daily_Ledger
-            pushSubstitutionsToCloud([{
-                day: day,
-                period: period,
-                absentTeacher: absentTeacher,
-                assignedSub: subTeacher,
-                status: 'Accepted',
-                note: `Accepted by ${subTeacher}`
-            }]);
+            // Automatically broadcast accepted substitution to Google Sheets Daily_Ledger
+            broadcastSubstitutionsToCloud(true);
         }
     }, 1000);
 
@@ -4715,6 +5097,7 @@ function submitDisputeReason() {
     closeDisputeModal();
     saveStateToStorage();
     renderAll();
+    broadcastSubstitutionsToCloud();
     showToast(`⚑ Substitution (${period}) flagged for Coordinator review.`, true);
 }
 window.submitDisputeReason = submitDisputeReason;
@@ -4727,6 +5110,7 @@ function dismissDispute(period, absentTeacher) {
     clearSubStatusAndTimer(state.day, period, absentTeacher);
     saveStateToStorage();
     renderAll();
+    broadcastSubstitutionsToCloud();
     showToast(`Cleared dispute flag for ${period}.`);
 }
 window.dismissDispute = dismissDispute;
@@ -6431,6 +6815,7 @@ function assignSubstitute(period, absentTeacher, subTeacher, targetPeriod = peri
         showToast(`Assigned ${subTeacher} (${periodLabel})`);
     }
     renderAll();
+    broadcastSubstitutionsToCloud();
 }
 window.assignSubstitute = assignSubstitute;
 
@@ -6470,6 +6855,7 @@ function unassignSubstitute(period, absentTeacher) {
     updateUndoUI();
     showToast('Sub unassigned');
     renderAll();
+    broadcastSubstitutionsToCloud();
 }
 window.unassignSubstitute = unassignSubstitute;
 
@@ -6503,6 +6889,7 @@ function revertSubstitutionsForTeacher(teacher, day = state.day) {
             state.schedule[day][period][teacher] = state.baseSchedule[day][period][teacher];
         }
     });
+    broadcastSubstitutionsToCloud();
 }
 window.revertSubstitutionsForTeacher = revertSubstitutionsForTeacher;
 
@@ -6539,6 +6926,9 @@ function cleanupOrphanSubstitutions(day = state.day) {
                 delete subMap[absT];
             }
         }
+    }
+    if (cleaned) {
+        broadcastSubstitutionsToCloud();
     }
     return cleaned;
 }
@@ -6902,6 +7292,7 @@ function applySelectedProposal() {
 
     closeAutoResolveModal();
     renderAll();
+    broadcastSubstitutionsToCloud();
     showToast(`Applied ${activeProp.title}`);
 }
 window.applySelectedProposal = applySelectedProposal;
@@ -7099,6 +7490,9 @@ function undoLastAction() {
     if(toast) toast.classList.add('hidden');
     showToast('Action undone');
     renderAll();
+    if (['sub', 'unassign-sub', 'batch-sub', 'reset'].includes(action.type)) {
+        broadcastSubstitutionsToCloud();
+    }
 }
 
 function redoLastAction() {
@@ -7225,6 +7619,9 @@ function redoLastAction() {
     updateUndoUI();
     showToast('Action redone');
     renderAll();
+    if (['sub', 'unassign-sub', 'batch-sub', 'reset'].includes(action.type)) {
+        broadcastSubstitutionsToCloud();
+    }
 }
 window.redoLastAction = redoLastAction;
 
@@ -7249,6 +7646,7 @@ function handleGlobalKeydown(e) {
         closeAbsenceContextMenu();
         closeResetContextMenu();
         closeNotificationsModal();
+        closeCloudSessionPopover();
         return;
     }
 
@@ -7341,6 +7739,41 @@ window.closeSettingsModal = closeSettingsModal;
 function getOperationalNotices() {
     const notices = [];
     const day = state.day;
+
+    // 0. Cloud Routine Diffs from Google Sheets
+    if (typeof currentCloudDiffs !== 'undefined' && currentCloudDiffs && currentCloudDiffs.length > 0) {
+        notices.push({
+            id: 'cloud-diffs-notice',
+            type: 'cloud-diff',
+            icon: '☁',
+            title: `Cloud Routine: ${currentCloudDiffs.length} Slot Change${currentCloudDiffs.length === 1 ? '' : 's'}`,
+            desc: 'Google Sheets timetable has pending routine updates.',
+            meta: 'Google Sheets Diff',
+            actionLabel: 'Review Diffs',
+            onAction: () => {
+                closeNotificationsModal();
+                openCloudConflictModal(currentCloudDiffs);
+            }
+        });
+    }
+
+    // 0b. Cloud Session in Local Mode Notice
+    const isOnline = (typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean') ? navigator.onLine : true;
+    if (state.settings?.cloudMode === 'local' && isOnline) {
+        notices.push({
+            id: 'cloud-mode-local-notice',
+            type: 'cloud-local',
+            icon: '☁',
+            title: 'Cloud Sync: Local Session Mode',
+            desc: 'Routine auto-sync is paused. Go Live to sync routine updates with Google Sheets, or stick to Local.',
+            meta: 'Local Session',
+            actionLabel: '☁ Go Live',
+            onAction: () => {
+                closeNotificationsModal();
+                setCloudMode('live');
+            }
+        });
+    }
 
     // 1. Substitution Disputes
     if (state.subStatus?.[day]) {
@@ -7488,6 +7921,7 @@ function getOperationalNotices() {
 
     return notices;
 }
+window.getOperationalNotices = getOperationalNotices;
 
 let activeNoticeActions = new Map();
 

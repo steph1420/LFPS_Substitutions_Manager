@@ -217,13 +217,15 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
       - Enabled tap-to-close on `#sheet-handle` across touch and mouse interactions with expanded hit area (`::before`).
       - Adjusted drag-to-dismiss threshold in landscape / short viewports to 25px for effortless swipe-down dismissal.
     - **Developer Options Verification**:
-      - Ensured Developer Options remains cleanly hidden behind the 5-tap version Easter egg at the very bottom.
-  - [ ] **Roster Management Tab & Grid Absence Panel Toggle (Future Candidate)**:
+  - [x] **Cloud Auto-Sync & Mandatory Substitution Broadcast (Job Bundle 11 - Delivered in v1.48.0)**:
+    - **Live Cloud vs. Local Mode State Machine**: Operating mode state machine (`state.settings.cloudMode`: `live` vs `local`) with Settings segmented control pills and clear explanation callout.
+    - **Tactile Header Cloud Status Pill (`#header-cloud-status`)**: Live multi-state LED dot badge (`● Live`, `● Local`, `⚪ Offline`, `☁↑ Broadcast`) with interactive `#cloud-session-popover` for 1-tap mode toggling, immediate routine sync, and ledger push.
+    - **Background Auto-Sync Engine**: 60-second periodic fetch and `visibilitychange` poll in Live Cloud mode, non-intrusively detecting timetable diffs and routing alerts to Notification Center (`🔔`).
+    - **Unconditional Mandatory Substitution Broadcasting**: Immediate cloud dispatch (`broadcastSubstitutionsToCloud`) for all substitution assignments, unassignments, auto-resolves, absence reverts, orphan cleanups, disputes, and undo/redo operations regardless of local or cloud mode.
+    - **Offline Queue & Reconnection Draining**: Built-in queue buffer (`state.pendingBroadcasts`) that safely retains records when offline and drains automatically upon network restoration.
+  - [ ] **Roster Management Tab & Grid Absence Panel Toggle (Job Bundle 12 - Future Candidate)**:
     - Dedicated Roster view tab for bulk absence and off-duty unavailability management.
     - Setting toggle to hide absence panel from grid view for a cleaner, full-height routine.
-  - [ ] **Cloud Auto-Sync & Mandatory Substitution Broadcast (Job Bundle 11)**:
-    - **Live Cloud vs. Local Mode State Machine**: Respect user choices from connectivity notifications to either "Go Live" or stay in a "Local Session". When "Go Live" is active, resume background auto-sync.
-    - **Unconditional Substitution Cloud Broadcast**: Regardless of whether the app is currently in local or cloud mode, every confirmed substitution event must immediately broadcast to the Google Apps Script cloud endpoint so all school staff are notified in real time.
 
 
 

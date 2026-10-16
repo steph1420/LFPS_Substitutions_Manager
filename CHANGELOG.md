@@ -9,13 +9,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Planned
-- **Live Cloud Sync Status Indicator**:
-  - Live icon/pill showing the Google Sheet is active and syncing seamlessly.
-  - Dedicated "Sheet Offline" indicator when disconnected or offline.
+- **Roster Management Tab & Grid Absence Panel Toggle**:
+  - Dedicated Roster view tab for bulk absence and off-duty unavailability management.
+  - Setting toggle to hide absence panel from grid view for a cleaner, full-height routine.
 - **Simple Mode**:
   - Streamlined view option presenting strictly basic manual substitution logic.
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
+
+## [v1.48.0] - 2026-10-16
+
+### Added
+- **Cloud Operating Mode State Machine (`Live Cloud Mode` vs `Local Session`)**:
+  - Added operating mode selection (`state.settings.cloudMode`) allowing coordinators to seamlessly switch between automated 2-way cloud synchronization and an offline local session.
+  - Settings segmented control with tactile pills (`[ ☁ Live Cloud Mode ]` vs `[ 🏠 Local Session ]`) and explanatory callout microcopy.
+- **Tactile Header Cloud Status Pill (`#header-cloud-status`)**:
+  - Compact Apple-style status indicator docked in the header with live LED dot:
+    - `🟢 ☁ Live`: Active 2-way cloud auto-sync running every 60s.
+    - `🟡 🏠 Local`: Local offline session with routine auto-sync paused.
+    - `⚪ Offline`: Network disconnected; actions safely queued locally.
+    - `🔵 ☁↑ Broadcast`: Active live broadcast pulse transmitting substitution events to Google Sheets.
+  - Tapping opens `#cloud-session-popover` for 1-tap mode toggling, immediate routine sync, and manual ledger push.
+- **Background Auto-Sync Engine**:
+  - Automatically fetches timetable diffs from Google Sheets every 60 seconds when in Live Cloud mode.
+  - Detects incoming schedule modifications non-disruptively; surfaces alerts in Notification Center (`🔔`) without interrupting active drag-and-drop actions.
+  - Automatically checks for updates when returning to the app (`visibilitychange`).
+- **Unconditional Mandatory Substitution Broadcasting (`broadcastSubstitutionsToCloud`)**:
+  - Regardless of whether the app is in Live Cloud Mode or Local Session, every substitution event is unconditionally broadcasted to Google Sheets in real time so all school teachers receive immediate notifications.
+  - Automatically dispatches on single assignment (`assignSubstitute`), unassignment (`unassignSubstitute`), auto-resolve batches (`applySelectedProposal`), teacher absence reverts (`revertSubstitutionsForTeacher`), orphan cleanups (`cleanupOrphanSubstitutions`), dispute flagging (`submitDisputeReason`), dispute dismissals (`dismissDispute`), and undo/redo operations.
+  - Non-blocking 400ms debouncing consolidates rapid multi-cell actions into single network payloads.
+  - Built-in offline buffer (`state.pendingBroadcasts`) that automatically drains and flushes queued records upon network reconnection (`window.addEventListener('online')`).
+- **Notification Center Cloud Integration**:
+  - Operational notices for pending cloud routine diffs (`Review & Apply`) and local session status reminders (`☁ Go Live`).
 
 ## [v1.47.0] - 2026-10-16
 
