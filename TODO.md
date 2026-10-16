@@ -143,12 +143,42 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] **Concise, High-Density Toast Messages (Microcopy Streamlining)**:
     - Audited and condensed over 60 wordy toast messages across `app.js` into glanceable 2–4 word microcopy (e.g. `Edit mode enabled`, `Baseline routine restored`, `Locked by acceptance`, `History purged`, `Co-teachers kept paired`).
 
-### Upcoming Items & Future Bundles:
-- [ ] **Professional Terminology for "Fit-Grid" (Feature Re-branding)**:
-  - Select professional terminology: "Fit to Viewport", "Scale to Width", or "Full Bleed Canvas".
-- [ ] **Cloud-Synced Global Settings (Unified Across Every Viewer)**:
-  - Push / fetch config via Google Sheets / Apps Script (`Config` / `Metadata` tab).
-  - Synchronizes roster color palette, locked undo button style, and preferences across all school devices.
+### FEAT-13: Front Desk Velocity, Contextual Menus, Grid Alignment, Live Cloud Broadcast & Ableton Themes (ACTIVE / NEXT)
+- **Status**: 🟡 In Queue / Next Up
+- **Tasks to Deliver**:
+  - [ ] **Ergonomic Speed-of-Light Zero-Travel UI Architecture**:
+    - Avoid excessive hand/mouse travel distances across the interface.
+    - Anchor contextual micro-actions directly adjacent to cursor/touch targets; eliminate disruptive full-screen modals for quick micro-actions.
+  - [ ] **Routine Header Right-Alignment**:
+    - Right-align Fit-Grid button (`#fit-grid-toggle-btn`) and Hide Absent toggle (`#hide-absent-toggle-wrapper`) to the far right of the routine header bar, balancing the pinned view select on the left.
+  - [ ] **Context Menu for Reset Button History Purge**:
+    - Replace the disruptive `#history-purge-modal` popup on right-click / 500ms long-press of `#reset-schedule-btn` and `#more-item-reset` with a sleek, anchored Apple-style context popover right beside the button (`[ 🗑 Purge Action History ]`).
+  - [ ] **Grid Scroll Panel De-Obstruction Assessment**:
+    - Evaluate taking the routine table out of the nested `.table-scroll-container` scroll panel to prevent nested scrollbar traps.
+    - Test natural page/document scrolling while preserving sticky header rows and sticky teacher columns intact across viewports.
+  - [ ] **Settings Section & Control Relocations**:
+    - **Developer Options to Very Bottom**: Move the entire Developer Options card to the absolute bottom of Settings (below "About & Guides").
+    - **Same-Period Lock to Regular Settings**: Move `samePeriodLock` toggle back to "General & Policies" since it actively blocks users by default.
+    - **Same-Period Lock Toast Polish**: Make the rejection toast punchy/concise and increase display duration (or offer an interactive prompt) so coordinators can comfortably read why the cross-period drop was rejected.
+    - **Shift "Allow Disputes" to Developer Options**: Move `allowDisputes` toggle out of General & Policies into Developer Options.
+    - **Shift Google Sheets URL Input to Developer Options**: Move `#sheets-url-input` and Save URL button into Developer Options, keeping standard Cloud Sync focused on clean connection status, manual Push, and Sync triggers.
+    - **Shift Test Simulations to Developer Options**: Move `#btn-simulate-day` and `#btn-simulate-complex` out of Timetable Data into Developer Options.
+  - [ ] **iOS & Ableton Live Inspired Theme Menus**:
+    - Redesign the theme selector taking inspiration from iOS settings and Ableton Live's minimalist color themes.
+    - Build sleek visual palette chips/swatches displaying true UI background, card surface, and accent/tint colors.
+    - Group into cohesive families (`Light`, `Dark`, `Glass Refraction`, `High Contrast`) with instant live-preview on tap, eliminating bulky standard `<select>` dropdowns.
+  - [ ] **Live Timetable Conflict Pill**:
+    - Add a prominent live `⚠️ N Conflicts` pill/badge in the grid status footer/header (matching the Displaced Limbo counter), tapping which scrolls directly to or inspects active timetable clashes.
+  - [ ] **Edit Schedule Mode Drag-to-Sub Fix**:
+    - Fix drag-and-drop handler in 'Edit Schedule' mode (`state.isEditMode === true`): when dropping a card onto an absent teacher's missing period cell (`.cell-missing`), recognize it as a substitution assignment and record it into `state.substitutions` with full audit history and visual badges, rather than treating it as a raw routine swap.
+  - [ ] **Cloud Auto-Sync & Mandatory Substitution Broadcast**:
+    - **Live Cloud vs. Local Mode State Machine**: Respect user choices from connectivity notifications to either "Go Live" or stay in a "Local Session". When "Go Live" is active, resume background auto-sync.
+    - **Unconditional Substitution Cloud Broadcast**: Regardless of whether the app is currently in local or cloud mode, every confirmed substitution event must immediately broadcast to the Google Apps Script cloud endpoint so all school staff are notified in real time.
+  - [ ] **Subbed Teacher Target Cell Halo Ring Customizer**:
+    - Polish visual indicator halo ring on target subbed cells (`sub-halo-active`) with developer options color presets.
+  - [ ] **Professional Terminology for "Fit-Grid" (Feature Re-branding)**:
+    - Select professional terminology: "Fit to Viewport", "Scale to Width", or "Full Bleed Canvas".
+
 
 
 ### FEAT-12: Front Desk Ergonomics, Navigation Polish, Contextual Controls & Desktop Interaction Fixes (RESOLVED in v1.43.0)
