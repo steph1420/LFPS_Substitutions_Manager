@@ -1,5 +1,5 @@
 # Front Desk PWA - Architecture & Developer Guide
-**Current Version:** v1.41.0
+**Current Version:** v1.42.0
 **Project Type:** Vanilla JS/HTML/CSS Offline-First PWA
 **Purpose:** School substitution management and daily timetable resolution.
 
@@ -495,3 +495,25 @@ To enable live synchronization from Google Sheets in future releases:
 *   **Strict Class Teacher Priority Sorting:**
     *   Roster and timetable matrix sort Class Teachers first (`Mrs. S. Lakra`, `Mrs. M. Midha`, `Mrs. R. Pahwa`, `Mrs. R. Narayan`), followed by Subject Teachers.
     *   `Mr. S. A. Lakra` classified strictly as "3rd Teacher" with Blue ST blob.
+
+### 11.9 Hidden Settings, Policy Safeguards & Notification Center (v1.42.0)
+*   **Header Notification Center (`🔔` Icon & Modal Drawer):**
+    *   Added top header notification bell button (`#notifications-btn`) with live notice counter (`#notif-badge`), as well as a direct entry point in the mobile 3-dot overflow menu.
+    *   `getOperationalNotices()` evaluates state for:
+        1.  Active substitution disputes (`statusObj.status === 'disputed'`).
+        2.  Timetable clashes/collisions (`findConflicts()`).
+        3.  Displaced staff waiting in Limbo.
+        4.  Officiating Class Teacher (Off. CT.) & Officiating AC (Off. AC) coverage gaps for absent leads.
+        5.  Uncovered substitute periods.
+    *   1-tap actionable jump buttons on every notice card for rapid administration.
+*   **Free Dispute by Default Policy:**
+    *   Substitutions are free to dispute at any time without time lockouts.
+    *   10-second acceptance timer moved to 🛠 Developer Options (hidden behind 5-tap version easter egg) with selectable duration (`5s`, `10s`, `30s`, `60s`).
+*   **Cross-Period Policy in Hidden Settings:**
+    *   `samePeriodLock: true` enforced by default; toggle relocated to Developer Options to declutter visible Settings.
+*   **Subbed Teacher Target Cell Halo Ring:**
+    *   Target cells in routine table display an illuminated breathing halo ring (`@keyframes haloPulse`, `.sub-halo-active`) with configurable color (`emerald`, `cyan`, `amber`, `violet`) in Developer Options.
+*   **Mobile Undo/Redo Icon Selector in Hidden Settings:**
+    *   Interactive style selector with 4 switchable variants (`curved`, `circular`, `svg`, `text`) locking across all viewports.
+*   **Concise Toast Microcopy:**
+    *   Streamlined over 60 toast messages into punchy 2–4 word microcopy.

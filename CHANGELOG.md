@@ -17,6 +17,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.42.0] - 2026-10-16
+
+### Added
+- **Header Notification Center (`🔔` Icon with Live Notice Badge & Popover)**:
+  - Added an Apple-style bell button (`#notifications-btn`) with live notice counter pill (`#notif-badge`) in the top navigation bar, plus integrated into 3-dot overflow menu.
+  - Slide-over modal (`#notifications-modal`) aggregates operational notices:
+    - **Dispute Notices**: Live flags (`⚑`) when staff dispute an allocation, with direct 1-tap navigation to the register.
+    - **Timetable Conflicts / Clashes**: Real-time warnings (`⚠️`) for schedule clashes, with 1-tap jump to the conflicting cell.
+    - **Displaced Staff in Limbo**: Alerts (`👥`) for unallocated teachers awaiting reassignment.
+    - **Officiating Role Alerts**: Reminders (`⭐`/`🏫`) when Academic Coordinator or Class Teachers are absent and require Off. AC / Off. CT. designated.
+    - **Uncovered Periods**: Alerts (`🕒`) for uncovered periods with 1-tap assign drawer opener.
+- **Subbed Teacher Target Cell Visual Indicator & Halo Ring**:
+  - Target cells in routine table display an illuminated breathing halo ring (`@keyframes haloPulse`, `.sub-halo-active`).
+  - Added toggle (`subHaloIndicator`, default: `true`) and 4-color palette selector (`🟢 Emerald`, `🔵 Neon Cyan`, `🟡 Amber Gold`, `🟣 Royal Violet`) in Developer Options.
+- **Mobile Undo/Redo Icon Selector in Developer Options**:
+  - Added interactive button style picker with live cards: `Curved` (`↩ ↪`), `Circular` (`↺ ↻`), `Geometric` (`◀ ▶`), and `Micro-Text` (`↶ ↷`).
+  - Style selection immediately locks and applies to header buttons across all viewports.
+
+### Changed
+- **Free Dispute by Default Policy**:
+  - Disabled the 10-second acceptance countdown timer by default. Substitutions are now free to dispute at any point without lock-in restrictions.
+  - Relocated Acceptance Countdown Timer toggle (default `false`) and duration selector (`5s`, `10s`, `30s`, `60s`) into 🛠 Developer Options for administrators requiring permanent lock-ins.
+- **Cross-Period Policy Relocation**:
+  - Maintained `samePeriodLock: true` as the enforced default policy.
+  - Relocated toggle out of visible Settings into 🛠 Developer Options to declutter front desk UI.
+- **Concise, High-Density Toast Messages (Microcopy Streamlining)**:
+  - Audited and trimmed wordy toasts across `app.js` into punchy 2–4 word microcopy (e.g. `Edit mode enabled`, `Baseline routine restored`, `Locked by acceptance`, `History purged`, `Co-teachers kept paired`).
+
+### Fixed
+- **Absent Teacher Subject Visibility in Utopian Night Theme**:
+  - Corrected low-contrast styling in `[data-theme="utopian-night"]` by applying deep crimson background (`rgba(45, 12, 22, 0.72) !important`), bright crimson glow (`#ff4d4d !important; text-shadow: 0 0 10px rgba(239, 68, 68, 0.5)`), and red-tinted class tags on absent teacher rows and missing cells.
+
 ## [v1.41.0] - 2026-10-15
 
 ### Added

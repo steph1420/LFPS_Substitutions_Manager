@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.41.0">
+    <link rel="stylesheet" href="styles.css?v=1.42.0">
 </head>
 <body>
 
@@ -60,6 +60,10 @@
                     </button>
                 </div>
                 <button id="tour-btn" class="btn-icon-circle header-desktop-only" aria-label="Feature Tour" title="App Features & Overview">💡</button>
+                <button id="notifications-btn" class="btn-icon-circle notifications-btn" aria-label="Notifications" title="Operational Notices & Disputes">
+                    <span class="notif-icon">🔔</span>
+                    <span id="notif-badge" class="notif-badge hidden">0</span>
+                </button>
                 <button id="settings-btn" class="settings-btn" aria-label="Settings" title="Settings">
                     <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"></circle>
@@ -72,6 +76,11 @@
                         <span style="font-size:16px; font-weight:bold; line-height:1;">⋮</span>
                     </button>
                     <div id="header-more-popover" class="header-more-popover hidden">
+                        <div class="more-popover-item" id="more-item-notifs">
+                            <span class="more-icon">🔔</span>
+                            <span class="more-text">Notifications</span>
+                            <span id="more-notif-badge" class="more-badge hidden">0</span>
+                        </div>
                         <div class="more-popover-item" id="more-item-edit">
                             <span class="more-icon" id="more-item-edit-icon">✎</span>
                             <span class="more-text" id="more-item-edit-text">Edit Routine</span>
@@ -201,7 +210,7 @@
                 </div>
 
                 <div class="grid-status-footer">
-                    <span class="version-badge">v1.41.0</span>
+                    <span class="version-badge">v1.42.0</span>
                     <span class="grid-status-dot">●</span>
                     <span class="grid-status-label">LFPS Front Desk Offline-First</span>
                 </div>
@@ -399,16 +408,6 @@
                         <span class="slider round"></span>
                     </label>
                 </div>
-                <div class="settings-row">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Same-Period Lock</span>
-                        <span class="settings-row-desc">Restrict substitutions to the same period column. Turn off to allow assigning substitutes across any period.</span>
-                    </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="same-period-lock-toggle" checked>
-                        <span class="slider round"></span>
-                    </label>
-                </div>
             </div>
 
             <!-- 4. Appearance & Display (Compact Theme Pills + Fullscreen) -->
@@ -524,6 +523,84 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Developer Option: Same-Period Substitution Lock (Default ON) -->
+                <div class="settings-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Same-Period Substitution Lock</span>
+                        <span class="settings-row-desc">Default: ON. Restrict subs to the same period. Uncheck to allow dragging/assigning substitutes across different periods.</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="same-period-lock-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <!-- Developer Option: Acceptance Countdown Timer & Free Dispute Policy -->
+                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
+                    <div class="settings-row-info" style="min-width:200px;">
+                        <span class="settings-row-label">Acceptance Countdown Timer Lock-In</span>
+                        <span class="settings-row-desc">Default: OFF (free to dispute at any time). When enabled, assigned subs lock permanently after countdown expires.</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <select id="acceptance-timer-duration" class="theme-more-select" style="min-width:70px; padding:4px 8px; font-size:11.5px;">
+                            <option value="5">5s</option>
+                            <option value="10" selected>10s</option>
+                            <option value="30">30s</option>
+                            <option value="60">60s</option>
+                        </select>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="acceptance-timer-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Developer Option: Subbed Teacher Target Cell Halo Indicator -->
+                <div class="settings-row" style="flex-wrap:wrap; gap:8px;">
+                    <div class="settings-row-info" style="min-width:200px;">
+                        <span class="settings-row-label">Subbed Teacher Cell Halo Ring</span>
+                        <span class="settings-row-desc">Displays a glowing halo ring on the covering period cell in the subbed teacher's row.</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <select id="sub-halo-color-select" class="theme-more-select" style="min-width:115px; padding:4px 8px; font-size:11.5px;">
+                            <option value="emerald" selected>🟢 Emerald</option>
+                            <option value="cyan">🔵 Neon Cyan</option>
+                            <option value="amber">🟡 Amber Gold</option>
+                            <option value="violet">🟣 Royal Violet</option>
+                        </select>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sub-halo-toggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Developer Option: Mobile Undo/Redo Button Style Selector -->
+                <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:8px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Undo / Redo Button Style</span>
+                        <span class="settings-row-desc">Choose and lock your preferred button icon style for compact phone viewports.</span>
+                    </div>
+                    <div class="undo-style-options" id="undo-style-options">
+                        <button type="button" class="undo-style-card active" data-style="curved">
+                            <span class="undo-sample">↩ ↪</span>
+                            <span class="undo-label">Curved</span>
+                        </button>
+                        <button type="button" class="undo-style-card" data-style="circular">
+                            <span class="undo-sample">↺ ↻</span>
+                            <span class="undo-label">Circular</span>
+                        </button>
+                        <button type="button" class="undo-style-card" data-style="svg">
+                            <span class="undo-sample">◀ ▶</span>
+                            <span class="undo-label">Geometric</span>
+                        </button>
+                        <button type="button" class="undo-style-card" data-style="text">
+                            <span class="undo-sample">[UNDO]</span>
+                            <span class="undo-label">Micro-Text</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- 6. Timetable Baseline & Mock Data Generator -->
@@ -572,7 +649,7 @@
                 <div class="settings-row" id="settings-version-row" style="cursor:pointer; user-select:none;" title="Tap 5 times to unlock Developer Options">
                     <span class="settings-row-label">Version</span>
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <span class="settings-row-value" id="settings-version-val">v1.41.0 (Timetable Schema 2.0)</span>
+                        <span class="settings-row-value" id="settings-version-val">v1.42.0 (Timetable Schema 2.0)</span>
                         <span id="dev-mode-pill" class="dev-badge-pill hidden">🛠 Dev Unlocked</span>
                     </div>
                 </div>
@@ -1063,6 +1140,26 @@
     </div>
     <div id="history-purge-overlay" class="overlay"></div>
 
-    <script src="app.js?v=1.41.0"></script>
+    <!-- Header Notification Center Modal -->
+    <div id="notifications-modal" class="settings-modal notifications-modal hidden">
+        <div class="settings-modal-header" style="padding: 14px 16px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:18px;">🔔</span>
+                <h3 style="margin:0; font-size:15px;">Operational Notices</h3>
+                <span id="notif-modal-counter" class="reg-stat-pill stat-pending" style="font-size:11px; padding:2px 8px; font-weight:700;">0 Notices</span>
+            </div>
+            <button id="close-notifications-btn" class="settings-close-btn" aria-label="Close">✕</button>
+        </div>
+        <div class="settings-modal-body" id="notifications-modal-body" style="padding: 12px 16px; max-height: 420px; overflow-y: auto; display:flex; flex-direction:column; gap:8px;">
+            <!-- Populated dynamically: Disputes, Clashes, Displaced Limbo, Officiating CT/AC reminders -->
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-top:1px solid var(--border-color); background:var(--card-bg);">
+            <button type="button" id="notif-refresh-btn" class="btn-text-only" style="font-size:11.5px; font-weight:700; color:var(--accent-blue); background:none; border:none; cursor:pointer;">↻ Refresh</button>
+            <button type="button" id="notif-done-btn" class="btn-primary" style="font-size:12px; padding:5px 14px; font-weight:700;">✓ Done</button>
+        </div>
+    </div>
+    <div id="notifications-overlay" class="overlay"></div>
+
+    <script src="app.js?v=1.42.0"></script>
 </body>
 </html>

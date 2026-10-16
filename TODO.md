@@ -115,36 +115,40 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] **Reset Button History Purge Shortcut**: 500ms touch-hold and right-click on `#reset-schedule-btn` and `#more-item-reset` reveals `#history-purge-modal` to wipe undo/redo buffers without altering the schedule.
   - [x] **Absent Teacher Subject & Missing Cell Visibility in Utopian Night & Glass Themes**: Enforced deep crimson glass background and luminous red borders on `.cell-missing`, and bright red text on `.row-absent .cell-subject-name` and `.cell-missing .cell-subject-name` across all themes.
 
-### Job Bundle 5: Hidden Settings, Cross-Period Policy, Acceptance Timer & Notification Center
-- [ ] **Free Dispute by Default & Hidden Acceptance Countdown Timer**:
-  - **Free Dispute by Default**: Disable the 10-second acceptance countdown timer and permanent lock-in (`Locked: Accepted substitutions cannot be disputed.`). Substitutions are free to dispute at any point without time lock-in restrictions.
-  - **Relocate to Developer Options (Hidden Settings)**:
-    - Add an Enable/Disable toggle for the Acceptance Countdown Timer (default: `false` / disabled).
-    - Add a Countdown Duration selector dropdown (`5s`, `10s`, `30s`, `60s`) that activates when the timer is enabled.
-- [ ] **Header Notification Center (`🔔` Icon with Live Notice Badge)**:
-  - Add an Apple-style notification bell icon (`🔔`) in the top navigation header with an active unread notice counter/badge.
-  - Tapping opens an interactive Notification Center / slide-over popover sheet displaying:
-    - **Dispute Notices**: Live flags when a teacher disputes a substitution (e.g. `⚑ Mrs. R. Pahwa disputed Period 3 assignment ("Lab setup required")`) with 1-tap `[ Reassign ]` and `[ Clear Flag ]` buttons.
-    - **Clashes & Conflicts**: Real-time warnings for teacher timetable collisions or duplicate room bookings.
-    - **Displaced Teacher Alerts**: Unassigned displaced teachers in Limbo.
-    - **Officiating Role Alerts**: Reminders to designate an Officiating Class Teacher (Off. CT.) or Officiating AC (Off. AC) when staff are absent.
-    - **Cloud Sync Notices**: Offline warnings or successful cloud sync reports.
-- [ ] **Cross-Period Substitution Policy in Hidden Settings**:
-  - **Default**: Substitutions across different periods remain **locked by default** (`samePeriodLock: true`).
-  - **Hidden Setting**: Relocate the "Same-Period Lock" toggle into "🛠 Developer Options" (hidden behind 5-tap Easter egg in Application Info) to declutter the main Settings for layman front desk staff.
-- [ ] **Mobile Undo/Redo Icon Recognition**:
-  - Add style selector in **Developer Options (Hidden Settings)** with live preview swatches:
-    1. **Curved Arrows** (`↩ Undo` / `↪ Redo`)
-    2. **Circular Arrows** (`↺ Undo` / `↻ Redo`)
-    3. **Apple/Android High-Contrast SVG Vector Icons** (crisp geometric strokes)
-    4. **Micro-Text Pills** (`[ UNDO ]` / `[ REDO ]` high-density typography)
-  - Allow selecting, testing, and locking one preferred design across all screen breakpoints.
-- [ ] **Concise, High-Density Toast Messages (Microcopy Streamlining)**:
-  - Audit and streamline all `showToast` calls across `app.js` to eliminate verbose, long sentences.
-  - Transform wordy messages into crisp, glanceable mobile notifications (e.g. `Edit Schedule Mode enabled (Drag & drop to move tasks)` $\to$ `✎ Edit Mode On`, `Reset schedule to official pristine 2026–2027 routine` $\to$ `↺ Reset to Baseline`, `🗑 Action history buffer wiped clean` $\to$ `🗑 History Cleared`, `⛶ Fit-Grid Active. Rotate device to landscape for full widescreen view!` $\to$ `⛶ Fit-Grid On (Rotate for wide)`).
+### FEAT-11: Hidden Settings, Policy Safeguards, Notification Center & Halo Ring (RESOLVED in v1.42.0)
+- **Status**: 🟢 Resolved (v1.42.0)
+- **Solution Delivered**:
+  - [x] **Free Dispute by Default & Hidden Acceptance Countdown Timer**:
+    - **Free Dispute Policy**: 10-second timer lock-in disabled by default. Assigned substitutions can now be disputed freely at any time without time-locking restrictions.
+    - **Developer Options Controls**: Added Acceptance Countdown Timer toggle (default `false`) and Countdown Duration dropdown (`5s`, `10s`, `30s`, `60s`) inside 🛠 Developer Options for administrators who still prefer hard lock-ins.
+  - [x] **Header Notification Center (`🔔` Icon with Live Notice Badge)**:
+    - Added an Apple-style bell button (`#notifications-btn`) with live notice counter pill (`#notif-badge`) in the top navigation bar, plus integrated into 3-dot overflow menu.
+    - Added slide-over modal (`#notifications-modal`) aggregating real-time operational notices:
+      - **Disputes**: Live dispute alerts (`⚑`) with 1-tap direct navigation to substitution register.
+      - **Timetable Conflicts / Clashes**: Immediate warnings (`⚠️`) with 1-tap scroll-to-cell clash inspector.
+      - **Displaced Staff in Limbo**: Alerts (`👥`) for unallocated staff awaiting reallocation.
+      - **Officiating Role Alerts**: Reminders (`⭐`/`🏫`) when Academic Coordinator or Class Teachers are absent and need Off. AC / Off. CT. designated.
+      - **Uncovered Periods**: Alerts (`🕒`) for uncovered periods with 1-tap assign drawer opener.
+  - [x] **Cross-Period Substitution Policy in Hidden Settings**:
+    - **Default Locked**: Enforced `samePeriodLock: true` as the unyielding default.
+    - **Developer Options Relocation**: Moved the Same-Period Lock toggle out of the visible Settings menu and tucked it into "🛠 Developer Options" to keep standard front desk UI uncluttered.
+  - [x] **Mobile Undo/Redo Icon Selector in Hidden Settings**:
+    - Built interactive button style selector in Developer Options with live preview cards: `Curved` (`↩ ↪`), `Circular` (`↺ ↻`), `Geometric` (`◀ ▶`), and `Micro-Text` (`↶ ↷`).
+    - Preferences immediately persist to storage and lock across all viewports.
+  - [x] **Subbed Teacher Target Cell Visual Indicator & Halo Ring (Hidden Setting)**:
+    - Target cells in routine table display an illuminated breathing halo ring (`@keyframes haloPulse`, `sub-halo-active`).
+    - Added Developer Options toggle (`subHaloIndicator`, default: `true`) and color palette selector (`🟢 Emerald`, `🔵 Neon Cyan`, `🟡 Amber Gold`, `🟣 Royal Violet`).
+  - [x] **Absent Teacher Subject Visibility in Utopian Night Theme**:
+    - Strengthened CSS specificity and vivid red glow (`#ff4d4d !important; text-shadow: 0 0 10px rgba(239, 68, 68, 0.5)`) for absent teachers' cells, class tags, and subject names in Utopian Night theme, fixing visibility gaps.
+  - [x] **Concise, High-Density Toast Messages (Microcopy Streamlining)**:
+    - Audited and condensed over 60 wordy toast messages across `app.js` into glanceable 2–4 word microcopy (e.g. `Edit mode enabled`, `Baseline routine restored`, `Locked by acceptance`, `History purged`, `Co-teachers kept paired`).
+
+### Upcoming Items & Future Bundles:
+- [ ] **Professional Terminology for "Fit-Grid" (Feature Re-branding)**:
+  - Select professional terminology: "Fit to Viewport", "Scale to Width", or "Full Bleed Canvas".
 - [ ] **Cloud-Synced Global Settings (Unified Across Every Viewer)**:
   - Push / fetch config via Google Sheets / Apps Script (`Config` / `Metadata` tab).
-  - Synchronizes roster color palette, locked undo button style, and preferences so every staff device loads the exact same uniform configuration.
+  - Synchronizes roster color palette, locked undo button style, and preferences across all school devices.
 
 
 ### Job Bundle 6: Performance Engine & Keep-Warm Pre-Rendering (PERF-01)

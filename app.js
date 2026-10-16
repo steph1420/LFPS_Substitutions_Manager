@@ -20,6 +20,11 @@ const state = {
     displaced: { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] },
     settings: {
         samePeriodLock: true,
+        acceptanceTimerEnabled: false,
+        acceptanceTimerDuration: 10,
+        undoIconStyle: 'curved',
+        subHaloIndicator: true,
+        subHaloColor: 'emerald',
         minimizeAlerts: false,
         detectCollisions: true,
         allowDisputes: true,
@@ -586,6 +591,11 @@ function loadStateFromStorage() {
             state.absentTeachers = new Set(parsed.absentTeachers || []);
             state.settings = Object.assign({ 
                 samePeriodLock: true, 
+                acceptanceTimerEnabled: false,
+                acceptanceTimerDuration: 10,
+                undoIconStyle: 'curved',
+                subHaloIndicator: true,
+                subHaloColor: 'emerald',
                 minimizeAlerts: false, 
                 detectCollisions: true, 
                 allowDisputes: true, 
@@ -892,20 +902,24 @@ function scrollTick() {
     }
 }
 
+function switchTabSection(targetId) {
+    if (!targetId) return;
+    document.querySelectorAll('.nav-zone').forEach(z => {
+        z.classList.toggle('active', z.dataset.target === targetId);
+    });
+    document.querySelectorAll('.tab-section').forEach(t => {
+        t.classList.toggle('active', t.id === targetId);
+    });
+    updateUndoUI();
+}
+window.switchTabSection = switchTabSection;
+
 function bindEvents() {
     // Bottom Navigation with Full-Zone Switching
     document.querySelectorAll('.nav-zone').forEach(zone => {
-        zone.addEventListener('click', (e) => {
+        zone.addEventListener('click', () => {
             const targetId = zone.dataset.target;
-            if (!targetId) return;
-
-            document.querySelectorAll('.nav-zone').forEach(z => z.classList.remove('active'));
-            document.querySelectorAll('.tab-section').forEach(t => t.classList.remove('active'));
-            
-            zone.classList.add('active');
-            const targetSection = document.getElementById(targetId);
-            if (targetSection) targetSection.classList.add('active');
-            updateUndoUI(); 
+            switchTabSection(targetId);
         });
     });
 
@@ -1046,9 +1060,9 @@ function bindEvents() {
         if (val.length === 4 && /^\d{4}$/.test(val)) {
             state.settings.adminPin = val;
             saveStateToStorage();
-            showToast('✓ Admin Master Routine PIN updated successfully!');
+            showToast('Admin PIN updated');
         } else {
-            showToast('PIN must be exactly 4 digits.', true);
+            showToast('PIN must be 4 digits', true);
         }
     });
 
@@ -1061,7 +1075,7 @@ function bindEvents() {
         if (urlInput && norm !== rawUrl) urlInput.value = norm;
         saveStateToStorage();
         updateCloudSyncUI();
-        showToast('✓ Saved Google Sheets CSV URL.');
+        showToast('Sheets URL saved');
     });
 
     safeBind('btn-sync-now', 'click', () => {
@@ -1112,21 +1126,21 @@ function bindEvents() {
     safeBind('btn-pristine-reset', 'click', () => {
         closeSettingsModal();
         generateSimulatedData('pristine');
-        showToast('Reset schedule to official pristine 2026–2027 routine.');
+        showToast('Baseline routine restored');
     });
 
     safeBind('btn-apply-scenario', 'click', () => {
         const scenario = document.getElementById('mock-scenario-select')?.value || 'single_absence';
         closeSettingsModal();
         generateSimulatedData(scenario);
-        showToast(`Loaded test simulation: ${scenario}`);
+        showToast(`Simulation loaded: ${scenario}`);
     });
 
     safeBind('btn-purge-history', 'click', () => {
         state.actionHistory = { grid: [], subs: [], redoGrid: [], redoSubs: [] };
         saveStateToStorage();
         updateUndoUI();
-        showToast('🗑 Action history buffer wiped clean.');
+        showToast('History purged');
     });
 
     // Temporary Roster Color Customizer Event Listeners
@@ -1157,7 +1171,7 @@ function bindEvents() {
         state.settings.rosterColors = Object.assign({}, DEFAULT_ROSTER_COLORS);
         applyRosterColors(DEFAULT_ROSTER_COLORS);
         saveStateToStorage();
-        showToast('Reset roster blob & badge colors to defaults.');
+        showToast('Roster colors reset');
     });
     
     // Feature Overview Tour Modal
@@ -1205,7 +1219,7 @@ function bindEvents() {
         saveStateToStorage();
         updateRolePermissionsUI();
         renderAll();
-        showToast(`Viewing as ${state.activeTeacher}`);
+        showToast(`Viewing: ${state.activeTeacher}`);
     });
 
     safeBind('allow-disputes-toggle', 'change', (e) => {
@@ -1213,13 +1227,51 @@ function bindEvents() {
         state.settings.allowDisputes = e.target.checked;
         saveStateToStorage();
         renderAll();
-        showToast(state.settings.allowDisputes ? 'Teacher Substitution Disputes enabled' : 'Teacher Substitution Disputes disabled');
+        showToast(state.settings.allowDisputes ? 'Disputes enabled' : 'Disputes disabled');
     });
     
     safeBind('same-period-lock-toggle', 'change', (e) => {
         state.settings.samePeriodLock = e.target.checked;
         saveStateToStorage();
-        showToast(state.settings.samePeriodLock ? 'Same-Period Lock enabled' : 'Same-Period Lock disabled (Cross-period subs allowed)');
+        showToast(state.settings.samePeriodLock ? 'Same-Period Lock on' : 'Cross-period subs allowed');
+    });
+
+    safeBind('acceptance-timer-toggle', 'change', (e) => {
+        state.settings.acceptanceTimerEnabled = e.target.checked;
+        saveStateToStorage();
+        renderAll();
+        showToast(state.settings.acceptanceTimerEnabled ? `Acceptance timer enabled (${state.settings.acceptanceTimerDuration || 10}s)` : 'Free dispute enabled (No timer)');
+    });
+
+    safeBind('acceptance-timer-duration', 'change', (e) => {
+        state.settings.acceptanceTimerDuration = parseInt(e.target.value, 10) || 10;
+        saveStateToStorage();
+        showToast(`Timer set to ${state.settings.acceptanceTimerDuration}s`);
+    });
+
+    safeBind('sub-halo-toggle', 'change', (e) => {
+        state.settings.subHaloIndicator = e.target.checked;
+        saveStateToStorage();
+        renderTableRoutine();
+        showToast(state.settings.subHaloIndicator ? 'Sub halo ring enabled' : 'Sub halo ring disabled');
+    });
+
+    safeBind('sub-halo-color-select', 'change', (e) => {
+        state.settings.subHaloColor = e.target.value || 'emerald';
+        saveStateToStorage();
+        renderTableRoutine();
+        showToast(`Halo color: ${state.settings.subHaloColor}`);
+    });
+
+    document.querySelectorAll('.undo-style-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const style = card.getAttribute('data-style') || 'curved';
+            state.settings.undoIconStyle = style;
+            saveStateToStorage();
+            document.querySelectorAll('.undo-style-card').forEach(c => c.classList.toggle('active', c === card));
+            updateUndoUI();
+            showToast(`Undo style: ${style}`);
+        });
     });
 
     safeBind('minimize-alerts-toggle', 'change', (e) => {
@@ -1322,6 +1374,11 @@ function bindEvents() {
             }
         });
 
+        safeBind('more-item-notifs', 'click', () => {
+            morePopover.classList.add('hidden');
+            openNotificationsModal();
+        });
+
         safeBind('more-item-edit', 'click', () => {
             morePopover.classList.add('hidden');
             const editBtn = document.getElementById('edit-toggle-btn');
@@ -1357,6 +1414,17 @@ function bindEvents() {
             if (tourBtn) tourBtn.click();
         });
     }
+
+    // Header Notification Center Bindings (Job Bundle 5)
+    safeBind('notifications-btn', 'click', openNotificationsModal);
+    safeBind('close-notifications-btn', 'click', closeNotificationsModal);
+    safeBind('notif-done-btn', 'click', closeNotificationsModal);
+    safeBind('notifications-overlay', 'click', closeNotificationsModal);
+    safeBind('notif-refresh-btn', 'click', () => {
+        renderNotificationCenter();
+        updateNotificationBadge();
+        showToast('Notices refreshed');
+    });
 
     // Sub-Availability Rapid 1-Tap Modal & Remark Popover Bindings (Job Bundle 2)
     safeBind('btn-open-sub-avail-modal', 'click', () => openSubAvailModal(null, 'all'));
@@ -2243,9 +2311,9 @@ function toggleFitGridMode(enable) {
     if (isFitGridMode) {
         const isPortrait = window.innerHeight > window.innerWidth && window.innerWidth < 650;
         if (isPortrait) {
-            showToast('⛶ Fit-Grid Active. Rotate device to landscape for full widescreen view!');
+            showToast('Fit-Grid on (Landscape suggested)');
         } else {
-            showToast('⛶ Fit-Grid View enabled. Tap "Back to Normal" or press Esc to exit.');
+            showToast('Fit-Grid enabled');
         }
         if (navigator.vibrate) try { navigator.vibrate(35); } catch (_) {}
     }
@@ -2378,7 +2446,7 @@ function releaseTeacher(period, teacher, scope = 'period') {
             prevTask
         };
         state.actionHistory.grid.push(action);
-        showToast(`Released ${teacher} from ${period}. Now Free for substitutions.`);
+        showToast(`${teacher} freed (${period})`);
     } else if (scope === 'day') {
         const savedTasks = [];
         periods.forEach(p => {
@@ -2397,7 +2465,7 @@ function releaseTeacher(period, teacher, scope = 'period') {
             savedTasks
         };
         state.actionHistory.grid.push(action);
-        showToast(`Released ${teacher} for entire ${day}. Now Free for substitutions.`);
+        showToast(`${teacher} freed (${day})`);
     }
 
     saveStateToStorage();
@@ -2428,7 +2496,7 @@ function rejoinCoTeacher(period, teacher) {
     triggerCellResetAnimation(period, teacher);
     saveStateToStorage();
     updateUndoUI();
-    showToast(`Restored ${teacher} to co-teach ${baseTask} (${period}).`);
+    showToast(`${teacher} restored to co-teach`);
     renderAll();
 }
 window.rejoinCoTeacher = rejoinCoTeacher;
@@ -2492,14 +2560,14 @@ function resetCellToOriginalState(period, teacher) {
     if (coveringFor) {
         const srcP = coveringSourcePeriod || period;
         const stObj = getSubStatusObj(day, srcP, coveringFor);
-        if (stObj.status === 'accepted' && !hasCoordinatorPermissions()) {
-            showToast(`🔒 Locked: Once accepted, only Admin or Academic Coordinator can unassign this substitution.`, true);
+        if (state.settings?.acceptanceTimerEnabled && stObj.status === 'accepted' && !hasCoordinatorPermissions()) {
+            showToast('Locked by acceptance', true);
             return;
         }
         triggerCellResetAnimation(period, teacher);
         triggerCellResetAnimation(srcP, coveringFor);
         unassignSubstitute(srcP, coveringFor);
-        showToast(`Reverted substitution: Sent class back to ${coveringFor}. ${teacher} freed.`);
+        showToast(`Reverted: ${teacher} freed`);
         return;
     }
 
@@ -2507,14 +2575,14 @@ function resetCellToOriginalState(period, teacher) {
     const assignedSub = state.substitutions[day]?.[period]?.[teacher];
     if (assignedSub) {
         const stObj = getSubStatusObj(day, period, teacher);
-        if (stObj.status === 'accepted' && !hasCoordinatorPermissions()) {
-            showToast(`🔒 Locked: Once accepted, only Admin or Academic Coordinator can unassign this substitution.`, true);
+        if (state.settings?.acceptanceTimerEnabled && stObj.status === 'accepted' && !hasCoordinatorPermissions()) {
+            showToast('Locked by acceptance', true);
             return;
         }
         triggerCellResetAnimation(period, teacher);
         triggerCellResetAnimation(period, assignedSub);
         unassignSubstitute(period, teacher);
-        showToast(`Reverted substitution: ${teacher}'s class returned from ${assignedSub}.`);
+        showToast(`Reverted: returned from ${assignedSub}`);
         return;
     }
 
@@ -2570,9 +2638,9 @@ function resetCellToOriginalState(period, teacher) {
             saveStateToStorage();
             updateUndoUI();
             if (source.type === 'grid') {
-                showToast(`Sent ${currentTask} back to ${source.teacher} (${source.period}).`);
+                showToast(`Returned ${currentTask}`);
             } else {
-                showToast(`Returned ${currentTask} back to Limbo.`);
+                showToast('Returned to Limbo');
             }
             renderAll();
             return;
@@ -2616,7 +2684,7 @@ function resetCellToOriginalState(period, teacher) {
 
             saveStateToStorage();
             updateUndoUI();
-            showToast(`Sent ${currentTask} back to ${foundOrigin.teacher} (${foundOrigin.period}).`);
+            showToast(`Returned ${currentTask}`);
             renderAll();
             return;
         }
@@ -2660,7 +2728,7 @@ function resetCellToOriginalState(period, teacher) {
 
             saveStateToStorage();
             updateUndoUI();
-            showToast(`Recalled ${baseTask} back to ${teacher} (${period}).`);
+            showToast(`Recalled ${baseTask} to ${teacher}`);
             renderAll();
             return;
         }
@@ -2685,7 +2753,7 @@ function resetCellToOriginalState(period, teacher) {
         triggerCellResetAnimation(period, teacher);
         saveStateToStorage();
         updateUndoUI();
-        showToast(`Reset ${teacher} (${period}) back to baseline (${baseTask}).`);
+        showToast('Reset to baseline');
         renderAll();
         return;
     }
@@ -2693,7 +2761,7 @@ function resetCellToOriginalState(period, teacher) {
     // Even if already at baseline, provide tactile bounce feedback on Option-click
     triggerCellResetAnimation(period, teacher);
     renderAll();
-    showToast(`${teacher} (${period}) is already at original baseline.`);
+    showToast('Already at baseline');
 }
 window.resetCellToOriginalState = resetCellToOriginalState;
 
@@ -4136,12 +4204,12 @@ function selectOfficiatingTeacher(teacherName) {
     if (type === 'ac') {
         if (!state.officiatingAC) state.officiatingAC = {};
         state.officiatingAC[day] = teacherName;
-        showToast(`Assigned ${teacherName} as Officiating AC (offAC) for ${day}`);
+        showToast(`Assigned ${teacherName} as Off. AC (${day})`);
     } else if (type === 'ct' && section) {
         if (!state.officiatingCT) state.officiatingCT = {};
         if (!state.officiatingCT[day]) state.officiatingCT[day] = {};
         state.officiatingCT[day][section] = teacherName;
-        showToast(`Assigned ${teacherName} as Officiating Class Teacher (Off. CT.) for Class ${section}`);
+        showToast(`Assigned ${teacherName} as Off. CT. (${section})`);
     }
 
     closeOfficiatingModal();
@@ -4155,10 +4223,10 @@ function clearOfficiatingAssignment(type, section = null) {
     const day = state.day;
     if (type === 'ac' && state.officiatingAC?.[day]) {
         delete state.officiatingAC[day];
-        showToast(`Cleared Officiating AC for ${day}`);
+        showToast('Cleared Off. AC');
     } else if (type === 'ct' && section && state.officiatingCT?.[day]?.[section]) {
         delete state.officiatingCT[day][section];
-        showToast(`Cleared Officiating CT for Class ${section}`);
+        showToast(`Cleared Off. CT. (${section})`);
     }
     saveStateToStorage();
     updateRolePermissionsUI();
@@ -4190,16 +4258,42 @@ function startAcceptSubCountdown(period, absentTeacher) {
     const existingStatus = getSubStatusObj(day, period, absentTeacher);
     if (existingStatus.status === 'accepted') return;
 
-    const key = `${day}::${period}::${absentTeacher}`;
-    if (activeAcceptTimers.has(key)) return;
-
     // Clear any prior dispute state when teacher clicks Accept
     if (state.subStatus?.[day]?.[period]?.[absentTeacher]) {
         delete state.subStatus[day][period][absentTeacher];
     }
 
+    // Default policy: timer disabled by default, free dispute at any point
+    if (!state.settings?.acceptanceTimerEnabled) {
+        if (!state.subStatus[day]) state.subStatus[day] = {};
+        if (!state.subStatus[day][period]) state.subStatus[day][period] = {};
+        state.subStatus[day][period][absentTeacher] = {
+            status: 'accepted',
+            acceptedBy: subTeacher,
+            acceptedAt: Date.now()
+        };
+        saveStateToStorage();
+        renderAll();
+        showToast('Substitution accepted');
+
+        // Automatically push accepted substitution to Google Sheets Daily_Ledger
+        pushSubstitutionsToCloud([{
+            day: day,
+            period: period,
+            absentTeacher: absentTeacher,
+            assignedSub: subTeacher,
+            status: 'Accepted',
+            note: `Accepted by ${subTeacher}`
+        }]);
+        return;
+    }
+
+    const key = `${day}::${period}::${absentTeacher}`;
+    if (activeAcceptTimers.has(key)) return;
+
+    const duration = parseInt(state.settings?.acceptanceTimerDuration, 10) || 10;
     const entry = {
-        remaining: 10,
+        remaining: duration,
         day,
         period,
         absentTeacher,
@@ -4227,7 +4321,7 @@ function startAcceptSubCountdown(period, absentTeacher) {
             };
             saveStateToStorage();
             renderAll();
-            showToast(`🔒 Substitution (${period} • ${subTeacher}) accepted & reported across the board!`, true);
+            showToast('Substitution accepted');
 
             // Automatically push accepted substitution to Google Sheets Daily_Ledger
             pushSubstitutionsToCloud([{
@@ -4254,27 +4348,27 @@ function cancelAcceptSub(period, absentTeacher) {
         clearInterval(timer.intervalId);
         activeAcceptTimers.delete(key);
         renderSubstitutions();
-        showToast(`Acceptance cancelled within 10s window.`);
+        showToast('Acceptance cancelled');
     }
 }
 window.cancelAcceptSub = cancelAcceptSub;
 
 function revokeAcceptedSub(period, absentTeacher) {
     if (!hasCoordinatorPermissions()) {
-        showToast(`Locked: Only Admin or Academic Coordinator can remove a locked acceptance.`, true);
+        showToast('Coordinator permission required', true);
         return;
     }
     const day = state.day;
     clearSubStatusAndTimer(day, period, absentTeacher);
     saveStateToStorage();
     renderAll();
-    showToast(`Coordinator unlocked acceptance for ${period}.`);
+    showToast('Acceptance unlocked');
 }
 window.revokeAcceptedSub = revokeAcceptedSub;
 
 function openDisputeModal(period, absentTeacher) {
     if (state.settings.allowDisputes === false) {
-        showToast(`Disputes are currently disabled by Admin / Academic Coordinator.`);
+        showToast('Disputes disabled');
         return;
     }
     const day = state.day;
@@ -4282,8 +4376,8 @@ function openDisputeModal(period, absentTeacher) {
     if (!subTeacher) return;
 
     const statusObj = getSubStatusObj(day, period, absentTeacher);
-    if (statusObj.status === 'accepted') {
-        showToast(`Locked: Accepted substitutions cannot be disputed.`);
+    if (state.settings?.acceptanceTimerEnabled && statusObj.status === 'accepted') {
+        showToast('Locked: Already accepted');
         return;
     }
 
@@ -4407,6 +4501,7 @@ function renderAll() {
     renderDisplacedTray();
     renderSubstitutions();
     renderCollisionIndicator();
+    updateNotificationBadge();
     computeViewportLayout();
 }
 
@@ -4641,7 +4736,7 @@ function renderTableRoutine() {
             teacherBadges += `<span class="ct-badge-mini">CT ${ctSec}</span>`;
         }
         if (isOffAC) {
-            teacherBadges += `<span class="off-badge-mini">⚡ offAC</span>`;
+            teacherBadges += `<span class="off-badge-mini">⚡ Off. AC</span>`;
         }
         offCTSecs.forEach(sec => {
             teacherBadges += `<span class="off-badge-mini">📋 Off. CT. ${sec}</span>`;
@@ -4702,6 +4797,9 @@ function renderTableRoutine() {
             let isDraggable = false;
             let clickHandler = '';
 
+            const haloEnabled = state.settings?.subHaloIndicator !== false;
+            const haloColor = state.settings?.subHaloColor || 'emerald';
+
             if (isMissingSub) {
                 cellClasses.push('cell-missing');
                 cellContent = `
@@ -4718,6 +4816,9 @@ function renderTableRoutine() {
 
             } else if (assignedSub) {
                 cellClasses.push('cell-covered');
+                if (haloEnabled) {
+                    cellClasses.push('sub-halo-active', `sub-halo-${haloColor}`);
+                }
                 const subStatusInfo = getSubStatusObj(state.day, period, teacher);
                 const statusIcon = subStatusInfo.status === 'accepted' ? '🔒 ' : (subStatusInfo.status === 'disputed' ? '⚑ ' : '↳ ');
                 const subShort = assignedSub.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
@@ -4735,6 +4836,9 @@ function renderTableRoutine() {
 
             } else if (coveringFor) {
                 cellClasses.push('cell-sub-active');
+                if (haloEnabled) {
+                    cellClasses.push('sub-halo-active', `sub-halo-${haloColor}`);
+                }
                 const periodNote = coveringSourcePeriod !== period ? ` [from ${coveringSourcePeriod}]` : '';
                 const subStatusInfo = getSubStatusObj(state.day, coveringSourcePeriod || period, coveringFor);
                 const statusBadgePrefix = subStatusInfo.status === 'accepted' ? '🔒 ' : (subStatusInfo.status === 'disputed' ? '⚑ ' : '');
@@ -5421,10 +5525,12 @@ function renderSubstitutions() {
                     </button>
                 `;
             } else if (statusObj.status === 'accepted') {
+                const isTimerLock = Boolean(state.settings?.acceptanceTimerEnabled);
                 statusCellHtml = `
                     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                        <span class="badge-accepted-locked" title="Accepted by ${statusObj.acceptedBy || subTeacher}. Locked across the board.">🔒 Accepted</span>
+                        <span class="badge-accepted-locked" title="Accepted by ${statusObj.acceptedBy || subTeacher}.${isTimerLock ? ' Locked across the board.' : ''}">🔒 Accepted</span>
                         ${isSplitSub ? `<span class="reg-status-badge status-split" title="Split from co-teaching">👥 Split</span>` : ''}
+                        ${(!isTimerLock && canTeacherAct && disputesEnabled) ? `<button class="btn-dispute-sub" onclick="openDisputeModal('${period}', '${absentTeacher}')" title="Dispute this substitution with an optional note">⚑ Dispute</button>` : ''}
                     </div>
                 `;
             } else if (statusObj.status === 'disputed') {
@@ -5442,10 +5548,14 @@ function renderSubstitutions() {
                     ? `<span class="reg-status-badge status-split" title="Split from co-teaching with ${coPartners.join(', ')}">👥 Split Sub</span>`
                     : `<span class="reg-status-badge status-covered">✓ Assigned</span>`;
 
+                const acceptTooltip = state.settings?.acceptanceTimerEnabled
+                    ? `Accept substitution (${state.settings?.acceptanceTimerDuration || 10}s countdown timer)`
+                    : 'Accept substitution';
+
                 statusCellHtml = `
                     <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
                         ${baseBadge}
-                        ${canTeacherAct ? `<button class="btn-accept-sub" onclick="startAcceptSubCountdown('${period}', '${absentTeacher}')" title="Accept substitution (10s undo timer before permanent lock)">✓ Accept</button>` : ''}
+                        ${canTeacherAct ? `<button class="btn-accept-sub" onclick="startAcceptSubCountdown('${period}', '${absentTeacher}')" title="${acceptTooltip}">✓ Accept</button>` : ''}
                         ${(canTeacherAct && disputesEnabled) ? `<button class="btn-dispute-sub" onclick="openDisputeModal('${period}', '${absentTeacher}')" title="Dispute this substitution with an optional note">⚑ Dispute</button>` : ''}
                     </div>
                 `;
@@ -5453,10 +5563,10 @@ function renderSubstitutions() {
 
             // Build Actions column respecting lock-in permissions
             let actionsHtml = '';
-            if (statusObj.status === 'accepted' && !isCoord) {
+            if (state.settings?.acceptanceTimerEnabled && statusObj.status === 'accepted' && !isCoord) {
                 actionsHtml = `
                     <div class="reg-actions-cell">
-                        <span style="font-size:11px; color:var(--text-secondary); font-weight:600;" title="Locked after 10s acceptance. Only Admin or Academic Coordinator can remove or reassign.">🔒 Locked</span>
+                        <span style="font-size:11px; color:var(--text-secondary); font-weight:600;" title="Locked after acceptance countdown. Only Admin or Academic Coordinator can remove or reassign.">🔒 Locked</span>
                     </div>
                 `;
             } else {
@@ -5767,8 +5877,8 @@ function handleResetSchedule() {
 
 function openBottomSheet(period, targetTeacher) {
     const existingStatus = getSubStatusObj(state.day, period, targetTeacher);
-    if (existingStatus.status === 'accepted' && !hasCoordinatorPermissions()) {
-        showToast(`🔒 Locked: Once accepted, only Admin or Academic Coordinator can modify this substitution.`, true);
+    if (state.settings?.acceptanceTimerEnabled && existingStatus.status === 'accepted' && !hasCoordinatorPermissions()) {
+        showToast('Locked by acceptance', true);
         return;
     }
 
@@ -5890,8 +6000,8 @@ function clearRedoStacks() {
 function assignSubstitute(period, absentTeacher, subTeacher, targetPeriod = period) {
     closeBottomSheet();
     const existingStatus = getSubStatusObj(state.day, period, absentTeacher);
-    if (existingStatus.status === 'accepted' && !hasCoordinatorPermissions()) {
-        showToast(`🔒 Locked: Once accepted, only Admin or Academic Coordinator can reassign this substitution.`, true);
+    if (state.settings?.acceptanceTimerEnabled && existingStatus.status === 'accepted' && !hasCoordinatorPermissions()) {
+        showToast('Locked by acceptance', true);
         return;
     }
 
@@ -5963,9 +6073,9 @@ function assignSubstitute(period, absentTeacher, subTeacher, targetPeriod = peri
     updateUndoUI();
     const periodLabel = targetPeriod === period ? `(${period})` : `(${targetPeriod} for ${period})`;
     if (isCoTeachingSplit) {
-        showToast(`Split ${subTeacher} to ${periodLabel} for ${absentTeacher} (Partner covers solo)`);
+        showToast(`Split sub assigned (${periodLabel})`);
     } else {
-        showToast(`Assigned ${subTeacher} to cover for ${absentTeacher} ${periodLabel}`);
+        showToast(`Assigned ${subTeacher} (${periodLabel})`);
     }
     renderAll();
 }
@@ -5973,8 +6083,8 @@ window.assignSubstitute = assignSubstitute;
 
 function unassignSubstitute(period, absentTeacher) {
     const existingStatus = getSubStatusObj(state.day, period, absentTeacher);
-    if (existingStatus.status === 'accepted' && !hasCoordinatorPermissions()) {
-        showToast(`🔒 Locked: Once accepted, only Admin or Academic Coordinator can unassign this substitution.`, true);
+    if (state.settings?.acceptanceTimerEnabled && existingStatus.status === 'accepted' && !hasCoordinatorPermissions()) {
+        showToast('Locked by acceptance', true);
         return;
     }
 
@@ -6005,7 +6115,7 @@ function unassignSubstitute(period, absentTeacher) {
     
     saveStateToStorage();
     updateUndoUI();
-    showToast(`Unassigned substitute for ${absentTeacher} (${period})`);
+    showToast('Sub unassigned');
     renderAll();
 }
 window.unassignSubstitute = unassignSubstitute;
@@ -6095,7 +6205,7 @@ window.closeSplitModal = closeSplitModal;
 
 function cancelSplitModal() {
     closeSplitModal();
-    showToast("Kept co-teachers paired.");
+    showToast('Co-teachers kept paired');
 }
 window.cancelSplitModal = cancelSplitModal;
 
@@ -6103,7 +6213,7 @@ function applySelectedSplits() {
     const selectedBoxes = document.querySelectorAll('#split-proposals-list input[type="checkbox"]:checked');
     if (selectedBoxes.length === 0) {
         closeSplitModal();
-        showToast("No splits selected. Co-teachers remained paired.");
+        showToast('No splits selected');
         return;
     }
 
@@ -6255,7 +6365,7 @@ function performAutoResolve() {
     });
 
     if (unresolvedList.length === 0) {
-        showToast("No unresolved conflicts to auto-resolve.");
+        showToast('No conflicts to resolve');
         return;
     }
 
@@ -6395,7 +6505,7 @@ function applySelectedProposal() {
     const chosenAssignments = activeProp.assignments.filter(a => a.checked);
     if (chosenAssignments.length === 0) {
         closeAutoResolveModal();
-        showToast("No assignments selected.");
+        showToast('No assignments selected');
         return;
     }
 
@@ -6437,7 +6547,7 @@ function applySelectedProposal() {
 
     closeAutoResolveModal();
     renderAll();
-    showToast(`Applied ${activeProp.title} (${batchActions.length} substitution${batchActions.length > 1 ? 's' : ''} assigned).`);
+    showToast(`Applied ${activeProp.title}`);
 }
 window.applySelectedProposal = applySelectedProposal;
 
@@ -6458,22 +6568,39 @@ function getActiveRedoStack() {
     return state.actionHistory.redoGrid; 
 }
 
+function getUndoRedoIcons(style) {
+    switch (style) {
+        case 'circular':
+            return { undo: '↺', redo: '↻' };
+        case 'svg':
+            return { undo: '◀', redo: '▶' };
+        case 'text':
+            return { undo: '↶', redo: '↷' };
+        case 'curved':
+        default:
+            return { undo: '↩', redo: '↪' };
+    }
+}
+window.getUndoRedoIcons = getUndoRedoIcons;
+
 function updateUndoUI() {
     const undoBtn = document.getElementById('header-undo-btn');
     const redoBtn = document.getElementById('header-redo-btn');
     
     const activeUndo = getActiveHistoryStack();
     const activeRedo = getActiveRedoStack();
+    const iconStyle = state.settings?.undoIconStyle || 'curved';
+    const icons = getUndoRedoIcons(iconStyle);
     
     if (undoBtn) {
         const count = activeUndo.length;
         if (count > 0) {
             undoBtn.removeAttribute('disabled');
-            undoBtn.innerHTML = `<span class="btn-icon">↩</span><span class="btn-text"> Undo (${count})</span>`;
+            undoBtn.innerHTML = `<span class="btn-icon">${icons.undo}</span><span class="btn-text"> Undo (${count})</span>`;
             undoBtn.title = `Undo (${count}) (Cmd+Z)`;
         } else {
             undoBtn.setAttribute('disabled', 'true');
-            undoBtn.innerHTML = `<span class="btn-icon">↩</span><span class="btn-text"> Undo</span>`;
+            undoBtn.innerHTML = `<span class="btn-icon">${icons.undo}</span><span class="btn-text"> Undo</span>`;
             undoBtn.title = 'Undo (Cmd+Z)';
         }
     }
@@ -6482,11 +6609,11 @@ function updateUndoUI() {
         const count = activeRedo.length;
         if (count > 0) {
             redoBtn.removeAttribute('disabled');
-            redoBtn.innerHTML = `<span class="btn-icon">↪</span><span class="btn-text"> Redo (${count})</span>`;
+            redoBtn.innerHTML = `<span class="btn-icon">${icons.redo}</span><span class="btn-text"> Redo (${count})</span>`;
             redoBtn.title = `Redo (${count}) (Cmd+Shift+Z)`;
         } else {
             redoBtn.setAttribute('disabled', 'true');
-            redoBtn.innerHTML = `<span class="btn-icon">↪</span><span class="btn-text"> Redo</span>`;
+            redoBtn.innerHTML = `<span class="btn-icon">${icons.redo}</span><span class="btn-text"> Redo</span>`;
             redoBtn.title = 'Redo';
         }
     }
@@ -6615,7 +6742,7 @@ function undoLastAction() {
     updateUndoUI();
     const toast = document.getElementById('undo-toast');
     if(toast) toast.classList.add('hidden');
-    showToast("Action undone.");
+    showToast('Action undone');
     renderAll();
 }
 
@@ -6741,7 +6868,7 @@ function redoLastAction() {
 
     saveStateToStorage();
     updateUndoUI();
-    showToast("Action redone.");
+    showToast('Action redone');
     renderAll();
 }
 window.redoLastAction = redoLastAction;
@@ -6802,6 +6929,10 @@ function openSettingsModal() {
     const sameLockToggle = document.getElementById('same-period-lock-toggle');
     const minAlertsToggle = document.getElementById('minimize-alerts-toggle');
     const detectCollisionsToggle = document.getElementById('detect-collisions-toggle');
+    const acceptTimerToggle = document.getElementById('acceptance-timer-toggle');
+    const acceptTimerDuration = document.getElementById('acceptance-timer-duration');
+    const subHaloToggle = document.getElementById('sub-halo-toggle');
+    const subHaloColorSelect = document.getElementById('sub-halo-color-select');
     
     if (sameLockToggle) {
         sameLockToggle.checked = state.settings.samePeriodLock !== false;
@@ -6812,6 +6943,21 @@ function openSettingsModal() {
     if (detectCollisionsToggle) {
         detectCollisionsToggle.checked = state.settings.detectCollisions !== false;
     }
+    if (acceptTimerToggle) {
+        acceptTimerToggle.checked = state.settings.acceptanceTimerEnabled === true;
+    }
+    if (acceptTimerDuration) {
+        acceptTimerDuration.value = String(state.settings.acceptanceTimerDuration || 10);
+    }
+    if (subHaloToggle) {
+        subHaloToggle.checked = state.settings.subHaloIndicator !== false;
+    }
+    if (subHaloColorSelect) {
+        subHaloColorSelect.value = state.settings.subHaloColor || 'emerald';
+    }
+    const undoCards = document.querySelectorAll('.undo-style-card');
+    const currentUndoStyle = state.settings.undoIconStyle || 'curved';
+    undoCards.forEach(c => c.classList.toggle('active', c.getAttribute('data-style') === currentUndoStyle));
 
     updateRolePermissionsUI();
     updateCloudSyncUI();
@@ -6832,6 +6978,263 @@ function closeSettingsModal() {
 }
 window.openSettingsModal = openSettingsModal;
 window.closeSettingsModal = closeSettingsModal;
+
+// --- HEADER NOTIFICATION CENTER ---
+function getOperationalNotices() {
+    const notices = [];
+    const day = state.day;
+
+    // 1. Substitution Disputes
+    if (state.subStatus?.[day]) {
+        Object.keys(state.subStatus[day]).forEach(period => {
+            const periodObj = state.subStatus[day][period];
+            if (periodObj) {
+                Object.keys(periodObj).forEach(absentTeacher => {
+                    const statusObj = periodObj[absentTeacher];
+                    if (statusObj && statusObj.status === 'disputed') {
+                        const subTeacher = state.substitutions?.[day]?.[period]?.[absentTeacher] || 'Assigned Sub';
+                        notices.push({
+                            id: `dispute-${day}-${period}-${absentTeacher}`,
+                            type: 'dispute',
+                            icon: '⚑',
+                            title: `Dispute: ${period} (${subTeacher})`,
+                            desc: `Flagged while covering ${absentTeacher}: “${statusObj.reason || 'Flagged by teacher'}”`,
+                            meta: `${day} • ${period}`,
+                            actionLabel: 'Review Sub',
+                            onAction: () => {
+                                closeNotificationsModal();
+                                switchTabSection('tab-substitutions');
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    // 2. Timetable Conflicts / Clashes
+    if (state.settings?.detectCollisions !== false) {
+        const conflicts = findConflicts();
+        if (conflicts && conflicts.count > 0 && Array.isArray(conflicts.details)) {
+            conflicts.details.forEach((detail, idx) => {
+                notices.push({
+                    id: `conflict-${idx}`,
+                    type: 'conflict',
+                    icon: '⚠️',
+                    title: 'Timetable Clash',
+                    desc: detail,
+                    meta: `${day}`,
+                    actionLabel: 'Inspect',
+                    onAction: () => {
+                        closeNotificationsModal();
+                        switchTabSection('tab-routine');
+                        const firstCell = document.querySelector('.cell-collision');
+                        if (firstCell) firstCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            });
+        }
+    }
+
+    // 3. Displaced Staff in Limbo
+    const limboStaff = state.displaced?.[day] || [];
+    if (limboStaff.length > 0) {
+        limboStaff.forEach((item, idx) => {
+            notices.push({
+                id: `limbo-${idx}`,
+                type: 'limbo',
+                icon: '👥',
+                title: `Staff Displaced (${item.teacher})`,
+                desc: `${item.task} displaced from ${item.period} awaiting reallocation.`,
+                meta: `${day} • ${item.period}`,
+                actionLabel: 'Allocate',
+                onAction: () => {
+                    closeNotificationsModal();
+                    switchTabSection('tab-routine');
+                    const limboPool = document.getElementById('limbo-displaced-pool');
+                    if (limboPool) limboPool.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    }
+
+    // 4. Officiating Academic Coordinator Requirement
+    if (state.absentTeachers.has(PRIMARY_AC) && !state.officiatingAC?.[day]) {
+        notices.push({
+            id: 'officiating-ac-needed',
+            type: 'officiating',
+            icon: '⭐',
+            title: 'Officiating AC Required',
+            desc: `${PRIMARY_AC} (Academic Coordinator) is marked absent today. Designate an Officiating AC.`,
+            meta: `${day} • Coordinator Duty`,
+            actionLabel: 'Designate Off. AC',
+            onAction: () => {
+                closeNotificationsModal();
+                openTeacherQuickActionModal(PRIMARY_AC);
+            }
+        });
+    }
+
+    // 5. Officiating Class Teacher Requirements
+    if (typeof classTeams !== 'undefined') {
+        Object.keys(classTeams).forEach(sec => {
+            const team = classTeams[sec];
+            if (team && state.absentTeachers.has(team.ct)) {
+                const assignedOffCT = state.officiatingCT?.[day]?.[sec];
+                if (!assignedOffCT || state.absentTeachers.has(assignedOffCT)) {
+                    notices.push({
+                        id: `officiating-ct-needed-${sec}`,
+                        type: 'officiating',
+                        icon: '🏫',
+                        title: `Off. CT. Required (${sec})`,
+                        desc: `Class Teacher ${team.ct} is absent. Officiating Class Teacher needed for Class ${sec}.`,
+                        meta: `${day} • Class ${sec}`,
+                        actionLabel: 'Assign Off. CT.',
+                        onAction: () => {
+                            closeNotificationsModal();
+                            openTeacherQuickActionModal(team.ct);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    // 6. Uncovered Periods for Absent Teachers
+    if (state.absentTeachers && state.absentTeachers.size > 0) {
+        state.absentTeachers.forEach(absentTeacher => {
+            const periods = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
+            periods.forEach(period => {
+                const baseTask = state.baseSchedule?.[day]?.[period]?.[absentTeacher];
+                if (baseTask && baseTask !== 'Free') {
+                    const assignedSub = state.substitutions?.[day]?.[period]?.[absentTeacher];
+                    if (!assignedSub) {
+                        notices.push({
+                            id: `unassigned-${day}-${period}-${absentTeacher}`,
+                            type: 'unassigned',
+                            icon: '🕒',
+                            title: `Uncovered: ${period} (${absentTeacher})`,
+                            desc: `${baseTask} requires a substitute.`,
+                            meta: `${day} • ${period}`,
+                            actionLabel: 'Assign Sub',
+                            onAction: () => {
+                                closeNotificationsModal();
+                                openBottomSheet(period, absentTeacher);
+                            }
+                        });
+                    }
+                }
+            });
+        });
+    }
+
+    return notices;
+}
+
+let activeNoticeActions = new Map();
+
+function updateNotificationBadge() {
+    const notices = getOperationalNotices();
+    const count = notices.length;
+
+    const notifBadge = document.getElementById('notif-badge');
+    const moreNotifBadge = document.getElementById('more-notif-badge');
+    const modalCounter = document.getElementById('notif-modal-counter');
+
+    if (notifBadge) {
+        if (count > 0) {
+            notifBadge.textContent = count > 99 ? '99+' : count;
+            notifBadge.classList.remove('hidden');
+        } else {
+            notifBadge.classList.add('hidden');
+        }
+    }
+
+    if (moreNotifBadge) {
+        if (count > 0) {
+            moreNotifBadge.textContent = count > 99 ? '99+' : count;
+            moreNotifBadge.classList.remove('hidden');
+        } else {
+            moreNotifBadge.classList.add('hidden');
+        }
+    }
+
+    if (modalCounter) {
+        modalCounter.textContent = `${count} Notice${count === 1 ? '' : 's'}`;
+        modalCounter.className = count > 0 ? 'reg-stat-pill stat-disputed' : 'reg-stat-pill stat-covered';
+    }
+}
+window.updateNotificationBadge = updateNotificationBadge;
+
+function renderNotificationCenter() {
+    const body = document.getElementById('notifications-modal-body');
+    if (!body) return;
+
+    activeNoticeActions.clear();
+    const notices = getOperationalNotices();
+
+    if (notices.length === 0) {
+        body.innerHTML = `
+            <div style="text-align:center; padding:32px 16px; color:var(--text-secondary);">
+                <div style="font-size:36px; margin-bottom:10px;">✨</div>
+                <div style="font-weight:700; font-size:14px; color:var(--text-primary); margin-bottom:4px;">All Systems Operational</div>
+                <div style="font-size:12px; max-width:280px; margin:0 auto; line-height:1.4;">No disputes, clashes, or pending officiating duties for ${state.day}.</div>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    notices.forEach((n) => {
+        activeNoticeActions.set(n.id, n.onAction);
+        html += `
+            <div class="notif-item-card">
+                <div class="notif-item-icon">${n.icon}</div>
+                <div class="notif-item-content">
+                    <div class="notif-item-title">
+                        <span>${n.title}</span>
+                        <span style="font-size:10.5px; font-weight:600; color:var(--text-secondary); margin-left:auto;">${n.meta}</span>
+                    </div>
+                    <div class="notif-item-desc">${n.desc}</div>
+                    <div class="notif-item-actions">
+                        <button type="button" class="notif-action-btn primary" data-notif-action="${n.id}">${n.actionLabel}</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    body.innerHTML = html;
+
+    body.querySelectorAll('[data-notif-action]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = e.currentTarget.getAttribute('data-notif-action');
+            const action = activeNoticeActions.get(id);
+            if (typeof action === 'function') {
+                action();
+            }
+        });
+    });
+}
+window.renderNotificationCenter = renderNotificationCenter;
+
+function openNotificationsModal() {
+    renderNotificationCenter();
+    updateNotificationBadge();
+    const modal = document.getElementById('notifications-modal');
+    const overlay = document.getElementById('notifications-overlay');
+    if (modal) modal.classList.remove('hidden');
+    if (overlay) overlay.classList.add('active');
+}
+window.openNotificationsModal = openNotificationsModal;
+
+function closeNotificationsModal() {
+    const modal = document.getElementById('notifications-modal');
+    const overlay = document.getElementById('notifications-overlay');
+    if (modal) modal.classList.add('hidden');
+    if (overlay) overlay.classList.remove('active');
+}
+window.closeNotificationsModal = closeNotificationsModal;
 
 // --- FEATURE TOUR MODAL ---
 function openTourModal() {
