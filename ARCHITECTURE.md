@@ -1,5 +1,5 @@
 # Front Desk PWA - Architecture & Developer Guide
-**Current Version:** v1.51.0
+**Current Version:** v1.52.0
 **Project Type:** Vanilla JS/HTML/CSS Offline-First PWA
 **Purpose:** School substitution management and daily timetable resolution.
 
@@ -539,3 +539,18 @@ To enable live synchronization from Google Sheets in future releases:
 *   **Narrow 5-Column Table Architecture (FEAT-14.3):**
     *   Merged Period and Class/Subject into a unified stacked column (`.reg-cell-period-class`), reducing table column count from 6 to 5.
     *   Reduced table minimum width from `680px` to `480px` (`440px` on mobile $\le 600\text{px}$), resolving horizontal scroll traps and overflow distortion.
+
+### 11.12 Streamlined Officiating CT, Roster Names, Settings & Hold Affordance (v1.52.0)
+*   **Dual-Context Officiating Class Teacher (Off. CT.) Integration (FEAT-17):**
+    *   **Roster Tab In-Situ:** Injected `.roster-card-offct-row` directly below the teacher card header for any absent Class Teacher, exposing direct 1-tap `[+ Assign Off. CT]`, `[Change]`, and `[✕ Clear]` operations.
+    *   **Substitutions Page Dedicated Table:** Added `#sub-off-ct-container` directly above the summary counter panel (`.bottom-summary-bar`), presenting a clean 5-column ledger of absent class teachers, assigned officiating teachers, status indicators, and quick action buttons. Auto-collapses (`.hidden`) when zero class teachers are absent.
+*   **Responsive Full Formal Names on Roster Cards (FEAT-18):**
+    *   Employs dual markup `<span class="roster-name-abbr">` and `<span class="roster-name-full">` paired with pure CSS media queries (`min-width: 768px`). Displays compact abbreviations on mobile phones and expands to full formal names on wider tablet/desktop displays without JavaScript resize listeners or layout thrashing.
+*   **Settings Hierarchy Reorganization (FEAT-19):**
+    *   Moved "Appearance & Themes" down to section 5 immediately preceding "About & Guides" (section 6), keeping core operational configurations (Staff Profiles, Presence, Cloud Sync, and Timetable Storage) prioritized at the top of the settings modal.
+*   **Roster Card Decluttering & Yamaha-Style Hold Indicator (FEAT-20):**
+    *   Removed redundant gear icon (`⚙`) from Roster cards.
+    *   Replaced with desktop right-click (`contextmenu`) and 500ms touch long-press on the 'Available' action button with tactile vibration (`[45, 60]ms`) to open the availability modal.
+    *   Integrated universal Yamaha keyboard-inspired finger indicator (`<span class="hold-indicator">👆</span>`) with explicit microcopy (`Hold for more`).
+*   **Simplified Staff Availability & Duties Modal (FEAT-21):**
+    *   Decluttered `#sub-avail-modal` with simplified header title `Staff Availability & Duties`, compact 3-column duty grid (`repeat(3, 1fr)`), and removed verbose parenthetical copy.

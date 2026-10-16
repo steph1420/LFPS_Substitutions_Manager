@@ -5920,6 +5920,31 @@ function renderRosterTab() {
         card.className = `roster-teacher-card ${isAbsent ? 'is-absent' : ''} ${isUnavail ? 'is-unavail' : ''}`;
         card.setAttribute('data-teacher', teacher);
 
+        let offCTRowHtml = '';
+        if (isAbsent && isCT) {
+            const currentOffCT = state.officiatingCT?.[state.day]?.[ctSec];
+            const validOffCT = currentOffCT && !state.absentTeachers.has(currentOffCT) ? currentOffCT : null;
+            if (validOffCT) {
+                offCTRowHtml = `
+                    <div class="roster-card-offct-row">
+                        <span class="offct-row-label">Off. CT (${ctSec}):</span>
+                        <span class="offct-assigned-pill">
+                            <strong>📋 ${escapeHtml(validOffCT)}</strong>
+                            <button type="button" class="btn-offct-link change" data-section="${escapeHtml(ctSec)}" data-absent="${escapeHtml(teacher)}" title="Change Officiating CT">Change</button>
+                            <button type="button" class="btn-offct-link clear" data-section="${escapeHtml(ctSec)}" title="Clear Officiating CT">✕</button>
+                        </span>
+                    </div>
+                `;
+            } else {
+                offCTRowHtml = `
+                    <div class="roster-card-offct-row">
+                        <span class="offct-row-label">Off. CT (${ctSec}):</span>
+                        <button type="button" class="btn-offct-prompt" data-section="${escapeHtml(ctSec)}" data-absent="${escapeHtml(teacher)}">+ Assign Off. CT</button>
+                    </div>
+                `;
+            }
+        }
+
         card.innerHTML = `
             <div class="roster-card-header">
                 <div class="roster-card-avatar-wrap">
@@ -5930,7 +5955,10 @@ function renderRosterTab() {
                 </div>
                 <div class="roster-card-info">
                     <div class="roster-card-name-row">
-                        <span class="roster-card-name">${escapeHtml(teacher)}</span>
+                        <span class="roster-card-name">
+                            <span class="roster-name-abbr">${escapeHtml(teacher)}</span>
+                            <span class="roster-name-full">${escapeHtml(staff?.fullName || teacher)}</span>
+                        </span>
                     </div>
                     <div class="roster-card-role">${escapeHtml(roleLabel)}</div>
                     <div class="roster-card-badges">
@@ -5940,10 +5968,9 @@ function renderRosterTab() {
                         ${offCTSecs.length > 0 ? `<span class="ct-badge-mini" style="background:rgba(139,92,246,0.15); color:#7c3aed; font-size:10px; padding:1px 6px;">🏫 Off. CT (${offCTSecs.join(', ')})</span>` : ''}
                     </div>
                 </div>
-                <button type="button" class="roster-card-btn-manage" title="Manage duties, remarks & officiating for ${escapeHtml(teacher)}" aria-label="Manage duties">
-                    ⚙️
-                </button>
             </div>
+
+            ${offCTRowHtml}
 
             <div class="roster-card-schedule-box">
                 <div class="roster-schedule-item">
@@ -5970,12 +5997,12 @@ function renderRosterTab() {
                     </span>
                     <span class="btn-sub-hint">${isAbsent ? 'Tap to mark present' : 'Tap to mark absent'}</span>
                 </button>
-                <button type="button" class="roster-action-toggle-btn avail ${isUnavail ? 'is-unavail' : 'is-avail'}" title="Toggle substitution availability for ${escapeHtml(teacher)}">
+                <button type="button" class="roster-action-toggle-btn avail ${isUnavail ? 'is-unavail' : 'is-avail'}" title="Toggle substitution availability for ${escapeHtml(teacher)} (Hold or right-click for duties)">
                     <span class="btn-main-label">
                         <span>${isUnavail ? '⛔' : '✓'}</span>
                         <span>${isUnavail ? 'Off-Duty' : 'Available'}</span>
                     </span>
-                    <span class="btn-sub-hint">${isUnavail ? (unavailRemark ? escapeHtml(unavailRemark) : 'Set available') : 'Tap for off-duty'}</span>
+                    <span class="btn-sub-hint"><span class="hold-indicator">👆</span>${isUnavail ? (unavailRemark ? escapeHtml(unavailRemark) : 'Hold for duties') : 'Hold for duties'}</span>
                 </button>
             </div>
         `;
@@ -5990,17 +6017,72 @@ function renderRosterTab() {
 
         const availBtn = card.querySelector('.roster-action-toggle-btn.avail');
         if (availBtn) {
+            let longPressTimeout = null;
+            let didLongPress = false;
+
+            availBtn.addEventListener('touchstart', () => {
+                didLongPress = false;
+                longPressTimeout = setTimeout(() => {
+                    didLongPress = true;
+                    if (navigator.vibrate) {
+                        try { navigator.vibrate([45, 60]); } catch (err) {}
+                    }
+                    openSubAvailModal(teacher, 'single');
+                }, 500);
+            }, { passive: true });
+
+            availBtn.addEventListener('touchmove', () => {
+                if (longPressTimeout) {
+                    clearTimeout(longPressTimeout);
+                    longPressTimeout = null;
+                }
+            }, { passive: true });
+
+            availBtn.addEventListener('touchend', () => {
+                if (longPressTimeout) {
+                    clearTimeout(longPressTimeout);
+                    longPressTimeout = null;
+                }
+            });
+
+            availBtn.addEventListener('touchcancel', () => {
+                if (longPressTimeout) {
+                    clearTimeout(longPressTimeout);
+                    longPressTimeout = null;
+                }
+            });
+
+            availBtn.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                openSubAvailModal(teacher, 'single');
+            });
+
             availBtn.addEventListener('click', () => {
+                if (didLongPress) {
+                    didLongPress = false;
+                    return;
+                }
                 toggleSubAvailability(teacher);
             });
         }
 
-        const manageBtn = card.querySelector('.roster-card-btn-manage');
-        if (manageBtn) {
-            manageBtn.addEventListener('click', () => {
-                openTeacherQuickActionModal(teacher);
+        // Wire Officiating CT buttons if present
+        card.querySelectorAll('.btn-offct-prompt, .btn-offct-link.change').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const sec = btn.dataset.section;
+                const absTeacher = btn.dataset.absent;
+                openOfficiatingModal('ct', sec, absTeacher);
             });
-        }
+        });
+
+        card.querySelectorAll('.btn-offct-link.clear').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const sec = btn.dataset.section;
+                clearOfficiatingAssignment('ct', sec);
+            });
+        });
 
         container.appendChild(card);
     });
@@ -6835,6 +6917,7 @@ function renderSubstitutions() {
                 <p style="color:var(--text-secondary); font-size:14px;">No absences marked for ${state.day}. Mark a teacher absent on the Grid tab to populate the Daily Substitution Register.</p>
             </div>
         `;
+        renderSubstitutionsOffCT();
         return;
     }
 
@@ -6888,6 +6971,7 @@ function renderSubstitutions() {
                 ${emptyMsg}
             </div>
         `;
+        renderSubstitutionsOffCT();
         return;
     }
 
@@ -7057,7 +7141,107 @@ function renderSubstitutions() {
     `;
 
     conflictList.innerHTML = tableHtml;
+    renderSubstitutionsOffCT();
 }
+
+function renderSubstitutionsOffCT() {
+    const container = document.getElementById('sub-off-ct-container');
+    if (!container) return;
+
+    const day = state.day;
+    const absentCTs = teachers.filter(t => state.absentTeachers.has(t) && classTeacherMap[t]);
+
+    if (absentCTs.length === 0) {
+        container.classList.add('hidden');
+        container.innerHTML = '';
+        return;
+    }
+
+    container.classList.remove('hidden');
+
+    let rowsHtml = '';
+    absentCTs.forEach(absentCT => {
+        const section = classTeacherMap[absentCT];
+        const assignedOffCT = state.officiatingCT?.[day]?.[section];
+        const validOffCT = assignedOffCT && !state.absentTeachers.has(assignedOffCT) ? assignedOffCT : null;
+        const absentStaff = staffDirectory[absentCT];
+        const absentFull = absentStaff?.fullName || absentCT;
+
+        if (validOffCT) {
+            const offStaff = staffDirectory[validOffCT];
+            const offFull = offStaff?.fullName || validOffCT;
+            rowsHtml += `
+                <tr class="row-offct-assigned">
+                    <td style="font-weight:700; color:var(--text-primary);">
+                        <span class="reg-class-pill">Class ${escapeHtml(section)}</span>
+                    </td>
+                    <td>
+                        <div style="font-weight:600; color:var(--accent-red);">${escapeHtml(absentCT)}</div>
+                        <div style="font-size:10.5px; color:var(--text-secondary);">${escapeHtml(absentFull)} (Absent)</div>
+                    </td>
+                    <td>
+                        <div style="font-weight:700; color:#7c3aed;">📋 ${escapeHtml(validOffCT)}</div>
+                        <div style="font-size:10.5px; color:var(--text-secondary);">${escapeHtml(offFull)}</div>
+                    </td>
+                    <td>
+                        <span class="reg-status-badge status-covered" style="font-size:10.5px;">✓ Covered</span>
+                    </td>
+                    <td style="text-align:right;">
+                        <button type="button" class="btn-table-action" style="padding:4px 8px; font-size:11px;" onclick="openOfficiatingModal('ct', '${escapeHtml(section)}', '${escapeHtml(absentCT)}')">Change</button>
+                        <button type="button" class="btn-table-action danger" style="padding:4px 8px; font-size:11px; margin-left:4px;" title="Clear Officiating CT" onclick="clearOfficiatingAssignment('ct', '${escapeHtml(section)}')">✕</button>
+                    </td>
+                </tr>
+            `;
+        } else {
+            rowsHtml += `
+                <tr class="row-offct-pending">
+                    <td style="font-weight:700; color:var(--text-primary);">
+                        <span class="reg-class-pill" style="color:var(--accent-pink);">Class ${escapeHtml(section)}</span>
+                    </td>
+                    <td>
+                        <div style="font-weight:600; color:var(--accent-red);">${escapeHtml(absentCT)}</div>
+                        <div style="font-size:10.5px; color:var(--text-secondary);">${escapeHtml(absentFull)} (Absent)</div>
+                    </td>
+                    <td>
+                        <span class="reg-unassigned-tag" style="font-size:10.5px;">Not Assigned</span>
+                    </td>
+                    <td>
+                        <span class="reg-status-badge status-pending" style="font-size:10.5px;">⚠ Pending Off. CT</span>
+                    </td>
+                    <td style="text-align:right;">
+                        <button type="button" class="btn-reg-assign" style="font-size:11px; padding:4px 10px;" onclick="openOfficiatingModal('ct', '${escapeHtml(section)}', '${escapeHtml(absentCT)}')">+ Assign Off. CT</button>
+                    </td>
+                </tr>
+            `;
+        }
+    });
+
+    container.innerHTML = `
+        <div class="sub-offct-card">
+            <div class="sub-offct-header">
+                <div class="sub-offct-title">🏫 Officiating Class Teachers (Off. CT.)</div>
+                <div class="sub-offct-desc">Class teachers absent today requiring an officiating teacher for morning assembly & attendance.</div>
+            </div>
+            <div class="sub-offct-table-wrapper">
+                <table class="sub-offct-table">
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Absent Class Teacher</th>
+                            <th>Officiating Class Teacher</th>
+                            <th>Status</th>
+                            <th style="text-align:right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+window.renderSubstitutionsOffCT = renderSubstitutionsOffCT;
 
 // --- INTERACTION MECHANICS ---
 

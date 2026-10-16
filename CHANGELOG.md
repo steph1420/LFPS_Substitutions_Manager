@@ -14,6 +14,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.52.0] - 2026-10-16
+
+### Added
+- **Streamlined Officiating Class Teacher (Off. CT.) Architecture (FEAT-17)**:
+  - Integrated inline Officiating Class Teacher action row (`.roster-card-offct-row`) directly into Roster tab cards for any absent Class Teacher, enabling 1-tap `[+ Assign Off. CT]`, `[Change]`, and `[✕ Clear]` controls without navigating away.
+  - Introduced a dedicated Officiating Class Teachers ledger table (`#sub-off-ct-container`) in the Substitutions page placed right above the bottom counter panel, presenting class sections, absent class teachers, assigned officiating teachers, status badges, and rapid assignment actions.
+- **Responsive Full Formal Names on Roster Cards (FEAT-18)**:
+  - Implemented responsive dual name rendering (`.roster-name-abbr` / `.roster-name-full`) on Roster teacher cards. Compact abbreviations (`Mrs. S. Lakra`) are displayed on mobile screens, and full formal names (`Mrs. Synthia Lakra`) expand automatically on tablet and desktop screens ($\ge 768\text{px}$) with zero JS reflow overhead.
+- **Settings Hierarchy Simplification (FEAT-19)**:
+  - Relocated the "Appearance & Themes" group down to Section 5, positioned immediately above "About & Guides" (Section 6), prioritizing core school operational settings (Profiles, Attendance, Cloud Sync, and Storage) at the top of the modal.
+- **Roster Card Decluttering & Yamaha-Inspired Hold Affordance (FEAT-20)**:
+  - Removed the redundant gear icon (`⚙`) from Roster teacher cards to minimize visual noise.
+  - Enhanced the 'Available' action button with desktop right-click (`contextmenu`) and 500ms touch long-press with tactile haptic feedback (`[45, 60]ms`) to summon the staff availability and duties modal.
+  - Badged long-pressable buttons with a Yamaha keyboard-inspired finger indicator (`<span class="hold-indicator">👆</span>`) and explicit microcopy (`Hold for more`).
+- **Simplified Staff Availability & Duties Modal (FEAT-21)**:
+  - Redesigned `#sub-avail-modal` into a cleaner, decluttered `Staff Availability & Duties` dialog.
+  - Converted common duty chips into a high-density 3-column grid (`repeat(3, 1fr)`) and stripped redundant explanatory text.
+
 ## [v1.51.0] - 2026-10-16
 
 ### Added

@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.51.0">
+    <link rel="stylesheet" href="styles.css?v=1.52.0">
 </head>
 <body>
 
@@ -211,7 +211,7 @@
                 </div>
 
                 <div class="grid-status-footer">
-                    <span class="version-badge">v1.51.0</span>
+                    <span class="version-badge">v1.52.0</span>
                     <span class="grid-status-dot">●</span>
                     <span class="grid-status-label">LFPS Front Desk Offline-First</span>
                     <div id="footer-conflict-pill" class="footer-conflict-pill hidden" title="Click to inspect timetable conflicts">
@@ -438,7 +438,78 @@
                 </div>
             </div>
 
-            <!-- 3. Appearance & Themes -->
+            <!-- 3. Cloud & Synchronization -->
+            <div class="settings-group" id="cloud-sync-settings-group">
+                <div class="settings-group-title">Cloud & Synchronization (2-Way Live Sync)</div>
+                <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:10px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Cloud Operating Mode</span>
+                        <span class="settings-row-desc">Choose between live automated synchronization with Google Sheets or an offline local session.</span>
+                    </div>
+                    <div class="cloud-mode-segmented">
+                        <button type="button" class="cloud-mode-segment active" data-mode="live" id="segment-cloud-live">
+                            <span class="cloud-status-dot"></span>
+                            <span>☁ Live Cloud Mode</span>
+                        </button>
+                        <button type="button" class="cloud-mode-segment" data-mode="local" id="segment-cloud-local">
+                            <span class="cloud-status-dot" style="background-color:var(--accent-yellow,#f59e0b);"></span>
+                            <span>🏠 Local Session</span>
+                        </button>
+                    </div>
+                    <div id="cloud-mode-explanation" class="cloud-mode-explanation">
+                        <strong>Live Cloud:</strong> Automatically checks and syncs routine updates from Google Sheets every 60s. All substitutions are immediately broadcast to staff.
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Mandatory Substitution Broadcast</span>
+                        <span class="settings-row-desc">Substitutions, unassignments, and disputes are always broadcast to Google Sheets so teachers receive live notices regardless of local/cloud mode.</span>
+                    </div>
+                    <span class="badge-broadcast-active">🟢 Active</span>
+                </div>
+                <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:10px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Sync Status & Manual Actions</span>
+                        <span class="settings-row-desc">Push the complete daily ledger or manually refresh the timetable from Google Sheets.</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px; flex-wrap:wrap; gap:8px;">
+                        <div id="cloud-sync-status-text" style="font-size:11px; color:var(--text-secondary);">
+                            Status: <span id="sync-last-time">Local Baseline (Not Synced)</span>
+                        </div>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <button id="btn-push-sheets" class="btn-secondary" style="font-size:12px; padding:6px 12px; font-weight:700; display:flex; align-items:center; gap:6px;" title="Push today's substitutions to Google Sheets Daily_Ledger">
+                                <span>📤</span>
+                                <span>Push Today's Ledger</span>
+                            </button>
+                            <button id="btn-sync-now" class="btn-primary" style="font-size:12px; padding:6px 14px; font-weight:700; background:var(--accent-blue); color:#ffffff; display:flex; align-items:center; gap:6px;">
+                                <span id="sync-spinner" class="sync-icon">☁</span>
+                                <span>Sync Routine</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Timetable Data & Storage -->
+            <div class="settings-group">
+                <div class="settings-group-title">Timetable Data & Storage</div>
+                <div class="settings-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Reset to 2026–2027 Timetable</span>
+                        <span class="settings-row-desc">Restores the official LFPS timetable baseline from the Excel master sheet.</span>
+                    </div>
+                    <button id="btn-pristine-reset" class="btn-secondary" style="font-size:11px; padding:6px 10px; font-weight:700; white-space:nowrap;">Reset Baseline</button>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Action History Buffer</span>
+                        <span class="settings-row-desc">Wipe accumulated undo/redo history stack without altering schedule.</span>
+                    </div>
+                    <button type="button" id="btn-purge-history" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; color:var(--accent-red);">🗑 Purge History</button>
+                </div>
+            </div>
+
+            <!-- 5. Appearance & Themes -->
             <div class="settings-group">
                 <div class="settings-group-title">Appearance & Themes</div>
                 <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:12px;">
@@ -704,77 +775,6 @@
                 </div>
             </div>
 
-            <!-- 4. Cloud & Synchronization -->
-            <div class="settings-group" id="cloud-sync-settings-group">
-                <div class="settings-group-title">Cloud & Synchronization (2-Way Live Sync)</div>
-                <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:10px;">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Cloud Operating Mode</span>
-                        <span class="settings-row-desc">Choose between live automated synchronization with Google Sheets or an offline local session.</span>
-                    </div>
-                    <div class="cloud-mode-segmented">
-                        <button type="button" class="cloud-mode-segment active" data-mode="live" id="segment-cloud-live">
-                            <span class="cloud-status-dot"></span>
-                            <span>☁ Live Cloud Mode</span>
-                        </button>
-                        <button type="button" class="cloud-mode-segment" data-mode="local" id="segment-cloud-local">
-                            <span class="cloud-status-dot" style="background-color:var(--accent-yellow,#f59e0b);"></span>
-                            <span>🏠 Local Session</span>
-                        </button>
-                    </div>
-                    <div id="cloud-mode-explanation" class="cloud-mode-explanation">
-                        <strong>Live Cloud:</strong> Automatically checks and syncs routine updates from Google Sheets every 60s. All substitutions are immediately broadcast to staff.
-                    </div>
-                </div>
-                <div class="settings-row">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Mandatory Substitution Broadcast</span>
-                        <span class="settings-row-desc">Substitutions, unassignments, and disputes are always broadcast to Google Sheets so teachers receive live notices regardless of local/cloud mode.</span>
-                    </div>
-                    <span class="badge-broadcast-active">🟢 Active</span>
-                </div>
-                <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:10px;">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Sync Status & Manual Actions</span>
-                        <span class="settings-row-desc">Push the complete daily ledger or manually refresh the timetable from Google Sheets.</span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px; flex-wrap:wrap; gap:8px;">
-                        <div id="cloud-sync-status-text" style="font-size:11px; color:var(--text-secondary);">
-                            Status: <span id="sync-last-time">Local Baseline (Not Synced)</span>
-                        </div>
-                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                            <button id="btn-push-sheets" class="btn-secondary" style="font-size:12px; padding:6px 12px; font-weight:700; display:flex; align-items:center; gap:6px;" title="Push today's substitutions to Google Sheets Daily_Ledger">
-                                <span>📤</span>
-                                <span>Push Today's Ledger</span>
-                            </button>
-                            <button id="btn-sync-now" class="btn-primary" style="font-size:12px; padding:6px 14px; font-weight:700; background:var(--accent-blue); color:#ffffff; display:flex; align-items:center; gap:6px;">
-                                <span id="sync-spinner" class="sync-icon">☁</span>
-                                <span>Sync Routine</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 5. Timetable Data & Storage -->
-            <div class="settings-group">
-                <div class="settings-group-title">Timetable Data & Storage</div>
-                <div class="settings-row">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Reset to 2026–2027 Timetable</span>
-                        <span class="settings-row-desc">Restores the official LFPS timetable baseline from the Excel master sheet.</span>
-                    </div>
-                    <button id="btn-pristine-reset" class="btn-secondary" style="font-size:11px; padding:6px 10px; font-weight:700; white-space:nowrap;">Reset Baseline</button>
-                </div>
-                <div class="settings-row">
-                    <div class="settings-row-info">
-                        <span class="settings-row-label">Action History Buffer</span>
-                        <span class="settings-row-desc">Wipe accumulated undo/redo history stack without altering schedule.</span>
-                    </div>
-                    <button type="button" id="btn-purge-history" class="btn-secondary" style="font-size:11px; padding:6px 12px; font-weight:700; color:var(--accent-red);">🗑 Purge History</button>
-                </div>
-            </div>
-
             <!-- 6. About & Guides -->
             <div class="settings-group">
                 <div class="settings-group-title">About & Guides</div>
@@ -788,7 +788,7 @@
                 <div class="settings-row" id="settings-version-row" style="cursor:pointer; user-select:none;" title="Tap 5 times to unlock Developer Options">
                     <span class="settings-row-label">Version</span>
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <span class="settings-row-value" id="settings-version-val">v1.51.0 (Timetable Schema 2.0)</span>
+                        <span class="settings-row-value" id="settings-version-val">v1.52.0 (Timetable Schema 2.0)</span>
                         <span id="dev-mode-pill" class="dev-badge-pill hidden">🛠 Dev Unlocked</span>
                     </div>
                 </div>
@@ -1325,12 +1325,12 @@
     </div>
     <div id="master-cell-overlay" class="overlay"></div>
 
-    <!-- Rapid 1-Tap Substitution Availability Modal (Layman / Boomer Ergonomics) -->
+    <!-- Rapid 1-Tap Substitution Availability Modal (Simplified & De-cluttered) -->
     <div id="sub-avail-modal" class="settings-modal sub-avail-modal hidden">
         <div class="settings-modal-header">
             <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-size:18px;">⛔</span>
-                <h3 id="sub-avail-modal-title">Sub-Availability</h3>
+                <h3 id="sub-avail-modal-title">Staff Availability & Duties</h3>
             </div>
             <button id="close-sub-avail-modal-btn" class="settings-close-btn" aria-label="Close">&times;</button>
         </div>
@@ -1368,11 +1368,9 @@
                     </button>
                 </div>
 
-                <!-- 1-Tap Quick Common Duty Chips (Auto-saves immediately on tap!) -->
+                <!-- 1-Tap Quick Common Duty Chips -->
                 <div class="sub-avail-reasons-section">
-                    <div class="sub-avail-section-label">
-                        <span>⚡ 1-Tap Quick Duties <span style="font-weight:400; font-size:10.5px; text-transform:none; color:var(--text-secondary);">(Tapping instantly sets & saves)</span>:</span>
-                    </div>
+                    <div class="sub-avail-section-label">Quick Duties:</div>
                     <div class="sub-avail-fast-chips" id="sub-avail-fast-chips">
                         <button type="button" class="sub-fast-chip" data-remark="Bus Duty">🚌 Bus Duty</button>
                         <button type="button" class="sub-fast-chip" data-remark="CBSE Evaluation">📝 CBSE Duty</button>
@@ -1385,7 +1383,7 @@
 
                 <!-- Custom Note Input for Special Instructions -->
                 <div class="sub-avail-custom-reason" style="margin-top:12px;">
-                    <div class="sub-avail-section-label">Custom Remark (Optional):</div>
+                    <div class="sub-avail-section-label">Custom Remark:</div>
                     <div style="display:flex; gap:6px; margin-top:4px;">
                         <input type="text" id="sub-avail-custom-input" class="apple-input" placeholder="e.g. Lab setup, Principal meeting..." maxlength="60" style="flex:1; font-size:12px;">
                         <button type="button" id="sub-avail-apply-custom-btn" class="btn-secondary" style="font-size:11.5px; font-weight:700; padding:6px 12px; white-space:nowrap;">Apply</button>
@@ -1396,7 +1394,7 @@
             <!-- VIEW 2: ALL-STAFF HIGH-DENSITY RAPID CHECKLIST -->
             <div id="sub-avail-all-view" class="hidden">
                 <p style="font-size:11.5px; color:var(--text-secondary); margin-bottom:10px; line-height:1.35;">
-                    Tap any teacher to instantly toggle between Available and Unavailable.
+                    Tap any teacher to toggle between Available and Unavailable.
                 </p>
                 <div id="sub-avail-all-roster-list" class="sub-avail-roster-list">
                     <!-- Populated dynamically: 9 staff cards with 1-tap toggle buttons -->
@@ -1536,6 +1534,6 @@
     </div>
     <div id="notifications-overlay" class="overlay"></div>
 
-    <script src="app.js?v=1.51.0"></script>
+    <script src="app.js?v=1.52.0"></script>
 </body>
 </html>

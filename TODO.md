@@ -272,29 +272,24 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - Reduced column count from 6 to 5 and reduced table min-width from 680px down to 480px (440px on mobile $\le 600\text{px}$), resolving horizontal scroll traps.
   - Tightened padding, added teacher role subtitles, and streamlined action buttons.
 
-### Job Bundle 15: Streamlined Officiating Class Teacher (Off. CT.), Roster Full Names & Settings Re-Organization
-- **Status**: 🔴 Queued
-- [ ] **FEAT-17 (Streamlined Officiating Class Teacher Workflow)**:
-  - **In Roster Tab**: For any absent Class Teacher, provide an inline 1-tap Off. CT. selector directly on their card. For substitute candidates, show an "Assign as Off. CT." pill.
-  - **In Substitutions Tab**: Add a dedicated Off. CT. management table at the bottom positioned right above the bottom counter panel.
-- [ ] **FEAT-18 (Roster Full Name Display on Responsive Screens)**:
-  - Display full formal names (e.g. `Mrs. Manisha Midha`, `Mr. Stephen Ashish Lakra`) on Roster cards when viewport $\ge 768\text{px}$.
-- [ ] **FEAT-19 (Settings Section Flow: Themes to Bottom Above Version)**:
-  - In Settings modal (`#settings-modal`), move the "Appearance & Themes" section down to the bottom, directly above "About & Guides" (where the Version row is).
-- [ ] **FEAT-20 (Roster Card Action Streamlining & Universal Long-Press Affordance Badge)**:
-  - **Remove Gear Icon**: Remove `.roster-card-btn-manage` (the gear icon `⚙`) from Roster teacher cards to declutter card real estate.
+### Job Bundle 15: Streamlined Officiating Class Teacher (Off. CT.), Roster Full Names & Settings Re-Organization (RESOLVED in v1.52.0)
+- **Status**: 🟢 Resolved (v1.52.0)
+- [x] **FEAT-17 (Streamlined Officiating Class Teacher Workflow)**:
+  - **In Roster Tab**: For any absent Class Teacher, provided an inline 1-tap Off. CT. row (`.roster-card-offct-row`) directly on their card showing either the assigned Off. CT (`Change` / `✕ Clear`) or a 1-tap `[+ Assign Off. CT]` prompt.
+  - **In Substitutions Tab**: Added a dedicated Officiating Class Teachers ledger table (`#sub-off-ct-container`) situated directly above the bottom counter panel, presenting absent class teachers, designated officiating teachers, status indicators, and 1-tap action buttons.
+- [x] **FEAT-18 (Roster Full Name Display on Responsive Screens)**:
+  - Integrated responsive dual-name architecture (`.roster-name-abbr` / `.roster-name-full`) displaying full formal names (e.g. `Mrs. Manisha Midha`, `Mr. Stephen Ashish Lakra`) on Roster cards when viewport $\ge 768\text{px}$ and compact abbreviations on mobile via pure CSS media queries.
+- [x] **FEAT-19 (Settings Section Flow: Themes to Bottom Above Version)**:
+  - Reordered the Settings modal (`#settings-modal`): shifted "Appearance & Themes" down to Section 5, positioned immediately above "About & Guides" (Section 6), keeping core operational configurations (Profiles, Attendance, Cloud Sync, and Storage) prioritized at the top.
+- [x] **FEAT-20 (Roster Card Action Streamlining & Universal Long-Press Affordance Badge)**:
+  - **Removed Gear Icon**: Removed `.roster-card-btn-manage` (gear icon `⚙`) from Roster cards to eliminate visual clutter.
   - **Enhanced 'Available' Button Interactions**:
-    - Primary 1-tap: Toggles substitution availability (`toggleSubAvailability(teacher)`).
+    - Primary 1-tap: Immediately toggles substitution availability (`toggleSubAvailability(teacher)`).
     - Right-Click (desktop) & 500ms Long-Press (mobile/touch) with haptic feedback: Opens the individual teacher's availability & duty remarks modal (`openSubAvailModal(teacher, 'single')`).
-    - Microcopy Affordance: Inside the button, display `"Available"` with subtle subtext microcopy `"Long press for more"`.
-  - **Universal Long-Press Indicator Exploration & Implementation**:
-    - *Hardware Precedent*: Yamaha keyboards/synthesizers (e.g. Montage, Genos) mark dual-function "Hold / Direct Access" keys with a finger glyph touching a circular pad.
-    - *Universal Indicator Standard*: Standardize a clean, non-intrusive hold indicator (subtle corner pip `◢` or tactile finger contact icon `👆` with touch ring) across all right-click/long-press supporting elements (Roster cards, Absence tray avatars, Routine grid cells, and Reset buttons).
-- [ ] **FEAT-21 (Detailed Staff Availability Page Simplification & De-Cluttering)**:
-  - **Issue**: The individual teacher detailed availability modal (`#sub-avail-modal` / `.sub-avail-teacher-card`) is overly cluttered with redundant controls and verbose descriptive copy.
-  - **Simplification Strategy**:
-    - Streamline into a clean, minimalist card: prominent status switch (`Available for Subs` vs `Off-Duty / Unavailable`), rapid 1-tap quick reason chips (`Sick / Medical`, `Exam Duty`, `Special Event`, `Admin Task`), and a single compact custom remark input.
-    - Remove superfluous text walls, redundant headings, and crowded nested borders.
+    - Guarded against trailing click events after touch long-press dismissal.
+  - **Universal Long-Press Indicator Standard**: Standardized Yamaha-inspired finger glyph indicator (`<span class="hold-indicator">👆</span>`) with clear subtext microcopy (`Hold for duties` / `Hold for more`).
+- [x] **FEAT-21 (Detailed Staff Availability Page Simplification & De-Cluttering)**:
+  - Streamlined `#sub-avail-modal` with simplified header title `Staff Availability & Duties`, converted common duty chips into a high-density 3-column grid (`repeat(3, 1fr)`), and removed verbose parenthetical microcopy.
 
 
 
