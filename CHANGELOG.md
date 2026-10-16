@@ -17,6 +17,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.44.0] - 2026-10-16
+
+### Fixed
+- **Substitutions Page & Teacher Names Failure (BUG-06)**:
+  - Eliminated fatal JavaScript runtime crash on page load by removing stale undefined window exports (`window.saveSubAvailModal`, `window.removeTeacherSubUnavailable`).
+  - Added self-healing absence reconciliation in `renderSubstitutions()`, fallback class resolution, and wrapped teacher names in `.reg-teacher-name` spans.
+  - Enforced `min-width: 680px` on `.sub-register-table` so columns never crush teacher names into invisible text across themes or mobile screens.
+- **Smart Auto-Resolve Solver Execution (BUG-06)**:
+  - Safeguarded `simSchedule[period]` object initialization in `generateStrategySolution()`, enabling seamless calculation of all 3 solver proposals (`Subject Match`, `Balanced Load`, `Minimal Splits`) and application via `#auto-resolve-apply-btn`.
+- **Edit Schedule Mode Drag-to-Sub**:
+  - Fixed `executeMove()` to recognize drops onto absent teachers' missing cells (`isTargetSubRelated`), correctly routing to `assignSubstitute()` with Limbo displacement, audit history, and badge updates rather than executing a raw routine swap.
+
+### Added
+- **Live Timetable Conflict Pill**:
+  - Added live conflict pill in `.grid-status-footer` (`#footer-conflict-pill`) and synchronized with `#collision-indicator`.
+  - Clicking the conflict pill smoothly scrolls to the conflicting cell and presents toast diagnostics.
+
+## [v1.43.0] - 2026-10-16
+
+### Added
+- **Compact Context Popover for Absence Tray**:
+  - Right-click / 500ms long-press on teacher card opens lightweight context menu (`#absence-context-popover`) for 1-tap availability toggling.
+- **Squircle Sub-Availability Button**:
+  - Redesigned `#btn-open-sub-avail-modal` with `.btn-squircle-edge` (9px Apple squircle radius).
+- **Desktop Grid Tap Fix**:
+  - Fixed mouse click interception on `.cell-missing` caused by HTML5 `draggable="true"`.
+
+### Changed
+- **iOS-Inspired Settings Screen**:
+  - Restructured Settings into 7 clean iOS-style sections with an Operating Identity dropdown.
+- **Terminology Audit**:
+  - Replaced all instances of `offAC` with **Officiating AC (Off. AC)**.
+- **Header Simplification & Fit-Grid Button**:
+  - Removed `#tour-btn` from header. Replaced "Back to normal" with an inward collapse icon button.
+- **Centered Mobile Day Bar**:
+  - Centered `.day-selector` across mobile portrait and landscape viewports.
+
 ## [v1.42.0] - 2026-10-16
 
 ### Added

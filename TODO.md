@@ -33,16 +33,14 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] **Periodic Background Sync & Selective Diff Patching**: Keep routine rendered and run background poll for Google Sheet cloud updates, selectively updating only cells with actual diffs (`calculateScheduleDiffs`), eliminating full-table redraw lag.
   - [ ] **Compositor & Layer Optimization**: Keep `contain: paint layout` and GPU layer promotion (`transform: translateZ(0)`) warm so scrolling onto the table has zero frame drops.
 
-### BUG-06: Substitutions Page Failure — Missing Teacher Names & Auto-Resolve Inoperative
-- **Status**: 🔴 Open / Critical
-- **Reported**: On the Substitutions tab (`#tab-substitutions` / Daily Substitution Register), teacher names are not rendering or visible, and the Smart Auto-Resolve solver (`#auto-resolve-btn` / `performAutoResolve`) is failing to execute.
-- **Target Solution**:
-  - [ ] **Audit `renderSubstitutions()`**:
-    - Verify data extraction and DOM generation for absent teachers and assigned substitutes in `.sub-register-table`.
-    - Fix color/contrast and text-clipping issues that may cause teacher names to appear invisible or blank across themes and responsive viewports.
-  - [ ] **Audit `performAutoResolve()` & `generateStrategySolution()`**:
-    - Fix runtime exceptions in `generateStrategySolution` (e.g. safeguarding `simSchedule[period]` object initialization, undefined dereferencing, and affinity checks).
-    - Ensure `#auto-resolve-modal` correctly renders 3 solver proposals (`Subject Match`, `Balanced Load`, `Minimal Splits`) and applies assignments cleanly.
+### BUG-06: Substitutions Page Failure — Missing Teacher Names & Auto-Resolve Inoperative (RESOLVED in v1.44.0)
+- **Status**: 🟢 Resolved (v1.44.0)
+- **Solution Delivered**:
+  - [x] **Eliminated Fatal Script Crash**: Removed stale undefined window exports (`window.saveSubAvailModal` and `window.removeTeacherSubUnavailable`) that were halting JavaScript execution on page load.
+  - [x] **Guarded Safe Dropdown Options Check**: Safeguarded `staffSelect.options` in `updateRolePermissionsUI()` against null pointer access.
+  - [x] **Substitutions Register Resilience**: Added self-healing absence reconciliation in `renderSubstitutions()`, fallback class resolution, and wrapped teacher names in `.reg-teacher-name` spans.
+  - [x] **High-Contrast Column Protection**: Enforced `min-width: 680px` on `.sub-register-table` and explicit font styles (`white-space: nowrap; min-width: 110px`) so teacher names are never squished into invisible text across themes or mobile viewports.
+  - [x] **Smart Auto-Resolve Solver Hardening**: Initialized `simSchedule[period]` safely in `generateStrategySolution()`, enabling clean execution of all 3 optimization strategies (`Subject Match`, `Balanced Load`, `Minimal Splits`) and solution application via `#auto-resolve-apply-btn`.
 
 ### BUG-01: Limbo Tray Drag Failure & Click-to-Restore Mechanism (RESOLVED in v1.35.0)
 - **Status**: 🟢 Resolved (v1.35.0)
@@ -178,21 +176,24 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - Redesign the theme selector taking inspiration from iOS settings and Ableton Live's minimalist color themes.
     - Build sleek visual palette chips/swatches displaying true UI background, card surface, and accent/tint colors.
     - Group into cohesive families (`Light`, `Dark`, `Glass Refraction`, `High Contrast`) with instant live-preview on tap, eliminating bulky standard `<select>` dropdowns.
-  - [ ] **Live Timetable Conflict Pill**:
-    - Add a prominent live `⚠️ N Conflicts` pill/badge in the grid status footer/header (matching the Displaced Limbo counter), tapping which scrolls directly to or inspects active timetable clashes.
-  - [ ] **Edit Schedule Mode Drag-to-Sub Fix**:
-    - Fix drag-and-drop handler in 'Edit Schedule' mode (`state.isEditMode === true`): when dropping a card onto an absent teacher's missing period cell (`.cell-missing`), recognize it as a substitution assignment and record it into `state.substitutions` with full audit history and visual badges, rather than treating it as a raw routine swap.
-  - [ ] **Cloud Auto-Sync & Mandatory Substitution Broadcast**:
-    - **Live Cloud vs. Local Mode State Machine**: Respect user choices from connectivity notifications to either "Go Live" or stay in a "Local Session". When "Go Live" is active, resume background auto-sync.
-    - **Unconditional Substitution Cloud Broadcast**: Regardless of whether the app is currently in local or cloud mode, every confirmed substitution event must immediately broadcast to the Google Apps Script cloud endpoint so all school staff are notified in real time.
+  - [x] **Substitutions Page Bug Fixes (BUG-06) (Delivered in v1.44.0)**:
+    - Fixed fatal JavaScript script crash caused by stale undefined window exports.
+    - Added self-healing absence reconciliation and fallback class resolution in `renderSubstitutions()`.
+    - Protected teacher names with `.reg-teacher-name` spans and enforced `min-width: 680px` on `.sub-register-table`.
+    - Fixed Smart Auto-Resolve solver (`#auto-resolve-btn` / `performAutoResolve`) proposal generation and solution application.
+  - [x] **Edit Schedule Mode Drag-to-Sub Fix (Delivered in v1.44.0)**:
+    - Updated `executeMove()` to recognize when the drop target is an absent teacher's missing period cell (`isTargetSubRelated`), properly delegating to `assignSubstitute()` with full displacement, audit history, and badge updates rather than performing a raw routine edit.
+  - [x] **Live Timetable Conflict Pill (Delivered in v1.44.0)**:
+    - Added live conflict pill in `.grid-status-footer` (`#footer-conflict-pill`) and synchronized with `#collision-indicator`.
+    - Clicking the pill smoothly scrolls to conflicting cells and provides instant toast diagnostics.
   - [ ] **Absence Panel Sub-Availability Full-Height Pad Button**:
     - Redesign `#btn-open-sub-avail-modal` to span the entire vertical height of the absence panel (`.absent-tray-container`) instead of sitting inside the top header row.
     - Style it as a tactile hardware-like "pad button" (MPC/Launchpad aesthetic with prominent squircle corners, full vertical stretch, tactile press depth, and clear stacked icon + label) docked against the right edge of the absence tray.
   - [ ] **Subbed Teacher Target Cell Halo Ring Customizer**:
     - Polish visual indicator halo ring on target subbed cells (`sub-halo-active`) with developer options color presets.
-  - [ ] **Substitutions Page Bug Fixes (BUG-06)**:
-    - Fix missing/invisible teacher names in Daily Substitution Register (`.sub-register-table`).
-    - Fix Smart Auto-Resolve solver (`#auto-resolve-btn` / `performAutoResolve`) and proposal generation.
+  - [ ] **Cloud Auto-Sync & Mandatory Substitution Broadcast**:
+    - **Live Cloud vs. Local Mode State Machine**: Respect user choices from connectivity notifications to either "Go Live" or stay in a "Local Session". When "Go Live" is active, resume background auto-sync.
+    - **Unconditional Substitution Cloud Broadcast**: Regardless of whether the app is currently in local or cloud mode, every confirmed substitution event must immediately broadcast to the Google Apps Script cloud endpoint so all school staff are notified in real time.
   - [ ] **Professional Terminology for "Fit-Grid" (Feature Re-branding)**:
     - Select professional terminology: "Fit to Viewport", "Scale to Width", or "Full Bleed Canvas".
 

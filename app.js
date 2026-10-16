@@ -910,6 +910,9 @@ function switchTabSection(targetId) {
     document.querySelectorAll('.tab-section').forEach(t => {
         t.classList.toggle('active', t.id === targetId);
     });
+    if (targetId === 'tab-substitutions') {
+        renderSubstitutions();
+    }
     updateUndoUI();
 }
 window.switchTabSection = switchTabSection;
@@ -1309,7 +1312,7 @@ function bindEvents() {
         renderAll();
     });
 
-    safeBind('collision-indicator', 'click', () => {
+    const handleConflictClick = () => {
         const conflicts = findConflicts();
         if (conflicts.count > 0) {
             const firstCell = document.querySelector('.cell-collision');
@@ -1318,7 +1321,10 @@ function bindEvents() {
             }
             showToast(`Found ${conflicts.count} conflict(s): ${conflicts.details.slice(0, 2).join('; ')}`, true);
         }
-    });
+    };
+
+    safeBind('collision-indicator', 'click', handleConflictClick);
+    safeBind('footer-conflict-pill', 'click', handleConflictClick);
 
     // Theme Family Category Tabs Switcher
     document.querySelectorAll('.theme-cat-btn').forEach(catBtn => {
@@ -2366,8 +2372,6 @@ window.getTeacherSubUnavailableRemark = getTeacherSubUnavailableRemark;
 window.setTeacherSubUnavailable = setTeacherSubUnavailable;
 window.openSubAvailModal = openSubAvailModal;
 window.closeSubAvailModal = closeSubAvailModal;
-window.saveSubAvailModal = saveSubAvailModal;
-window.removeTeacherSubUnavailable = removeTeacherSubUnavailable;
 window.showSubRemarkPopover = showSubRemarkPopover;
 window.hideSubRemarkPopover = hideSubRemarkPopover;
 
@@ -4144,7 +4148,7 @@ function updateRolePermissionsUI() {
     const allowDisputesToggle = document.getElementById('allow-disputes-toggle');
 
     // Populate active staff profile select if needed
-    if (staffSelect && staffSelect.options.length === 0) {
+    if (staffSelect && (!staffSelect.options || staffSelect.options.length === 0)) {
         const adminOpt = document.createElement('option');
         adminOpt.value = 'admin';
         adminOpt.textContent = '🛡 Front Desk Admin (Full Access)';
@@ -4704,15 +4708,29 @@ function renderAll() {
 function renderConflictIndicator() {
     const indicator = document.getElementById('collision-indicator');
     const counterText = document.getElementById('collision-counter-text');
-    if (!indicator || !counterText) return;
+    const footerPill = document.getElementById('footer-conflict-pill');
+    const footerText = document.getElementById('footer-conflict-text');
 
     const conflicts = findConflicts();
-    if (conflicts.count > 0 && (!state.settings || state.settings.detectCollisions !== false)) {
-        indicator.classList.remove('hidden');
-        counterText.textContent = `${conflicts.count} Conflict${conflicts.count > 1 ? 's' : ''}`;
-        indicator.title = `${conflicts.count} Schedule Conflict(s):\n` + conflicts.details.slice(0, 3).join('\n');
+    const hasConflicts = conflicts.count > 0 && (!state.settings || state.settings.detectCollisions !== false);
+
+    if (hasConflicts) {
+        const text = `${conflicts.count} Conflict${conflicts.count > 1 ? 's' : ''}`;
+        const title = `${conflicts.count} Schedule Conflict(s):\n` + conflicts.details.slice(0, 3).join('\n');
+
+        if (indicator) {
+            indicator.classList.remove('hidden');
+            if (counterText) counterText.textContent = text;
+            indicator.title = title;
+        }
+        if (footerPill) {
+            footerPill.classList.remove('hidden');
+            if (footerText) footerText.textContent = text;
+            footerPill.title = title;
+        }
     } else {
-        indicator.classList.add('hidden');
+        if (indicator) indicator.classList.add('hidden');
+        if (footerPill) footerPill.classList.add('hidden');
     }
 }
 
@@ -5607,13 +5625,19 @@ function renderSubstitutions() {
         if (period === 'BREAK' || period === 'BREAKFAST BREAK' || period === 'BREAKFAST') return;
         teachers.forEach(teacher => {
             const isAbsent = state.absentTeachers.has(teacher);
-            if (!isAbsent) return;
+            const subTeacher = state.substitutions[state.day]?.[period]?.[teacher];
+            if (!isAbsent && !subTeacher) return;
+            // Self-heal: ensure teacher is recognized as absent if a sub is currently assigned
+            if (subTeacher && !isAbsent) {
+                state.absentTeachers.add(teacher);
+            }
 
-            const baseTask = state.baseSchedule[state.day]?.[period]?.[teacher];
+            const baseTask = state.baseSchedule[state.day]?.[period]?.[teacher] 
+                          || state.schedule[state.day]?.[period]?.[teacher] 
+                          || 'Class';
             if (!baseTask || baseTask === 'Free' || baseTask === '' || baseTask === '-') return;
 
             totalAbsences++;
-            const subTeacher = state.substitutions[state.day]?.[period]?.[teacher];
             const statusObj = getSubStatusObj(state.day, period, teacher);
             if (subTeacher) {
                 resolvedCount++;
@@ -5781,32 +5805,32 @@ function renderSubstitutions() {
 
             tableHtml += `
                 <tr class="reg-row-covered">
-                    <td><span class="reg-period-badge">${period}</span></td>
-                    <td>
+                    <td class="reg-cell-period"><span class="reg-period-badge">${period}</span></td>
+                    <td class="reg-cell-task">
                         <span class="reg-class-pill">${baseTask}</span>
                         <span class="reg-dept-tag">${taskInfo.dept}</span>
                     </td>
-                    <td style="color:var(--text-secondary); text-decoration:line-through;">${absentTeacher}</td>
-                    <td>
-                        <strong style="color:var(--text-primary);">${subTeacher}</strong>
+                    <td class="reg-cell-absent"><span class="reg-teacher-name absent-name" style="text-decoration:line-through;">${absentTeacher}</span></td>
+                    <td class="reg-cell-sub">
+                        <strong class="reg-teacher-name sub-name">${subTeacher}</strong>
                         <span class="reg-affinity-tag" title="Score: ${affinity.score} pts • Load: ${affinity.teachingLoad}/${affinity.totalSlots} pds">${affinity.primaryBadge}</span>
                     </td>
-                    <td>${statusCellHtml}</td>
-                    <td>${actionsHtml}</td>
+                    <td class="reg-cell-status">${statusCellHtml}</td>
+                    <td class="reg-cell-actions">${actionsHtml}</td>
                 </tr>
             `;
         } else {
             tableHtml += `
                 <tr class="reg-row-pending">
-                    <td><span class="reg-period-badge">${period}</span></td>
-                    <td>
+                    <td class="reg-cell-period"><span class="reg-period-badge">${period}</span></td>
+                    <td class="reg-cell-task">
                         <span class="reg-class-pill" style="color:var(--accent-pink);">${baseTask}</span>
                         <span class="reg-dept-tag">${taskInfo.dept}</span>
                     </td>
-                    <td><strong style="color:var(--text-primary);">${absentTeacher}</strong></td>
-                    <td><span style="color:var(--text-secondary); font-style:italic; font-size:12px;">Unassigned</span></td>
-                    <td><span class="reg-status-badge status-pending">⚠ Needs Sub</span></td>
-                    <td>
+                    <td class="reg-cell-absent"><strong class="reg-teacher-name absent-name">${absentTeacher}</strong></td>
+                    <td class="reg-cell-sub"><span class="reg-teacher-name" style="color:var(--text-secondary); font-style:italic; font-size:12px;">Unassigned</span></td>
+                    <td class="reg-cell-status"><span class="reg-status-badge status-pending">⚠ Needs Sub</span></td>
+                    <td class="reg-cell-actions">
                         <div class="reg-actions-cell">
                             <button class="btn-reg-assign" onclick="openBottomSheet('${period}', '${absentTeacher}')">+ Assign Sub</button>
                         </div>
@@ -5934,6 +5958,10 @@ function executeMove(source, target) {
         const sBaseTask = state.baseSchedule[state.day]?.[sPeriod]?.[sTeacher];
         const sAssignedSub = state.substitutions[state.day]?.[sPeriod]?.[sTeacher];
 
+        const tIsAbsent = state.absentTeachers.has(tTeacher);
+        const tBaseTask = state.baseSchedule[state.day]?.[tPeriod]?.[tTeacher];
+        const tAssignedSub = state.substitutions[state.day]?.[tPeriod]?.[tTeacher];
+
         let sCoveringFor = null;
         const periodSubs = state.substitutions[state.day]?.[sPeriod];
         if (periodSubs) {
@@ -5946,6 +5974,7 @@ function executeMove(source, target) {
         }
 
         const isSourceSubRelated = (sIsAbsent && sBaseTask && sBaseTask !== 'Free') || sCoveringFor || sAssignedSub;
+        const isTargetSubRelated = (tIsAbsent && tBaseTask && tBaseTask !== 'Free') || Boolean(tAssignedSub);
         const isSamePeriod = (sPeriod === tPeriod);
         const allowCrossPeriod = (!state.settings || state.settings.samePeriodLock === false);
 
@@ -5978,9 +6007,42 @@ function executeMove(source, target) {
             }
         }
 
+        // --- SCENARIO 1D: DROPPING A CANDIDATE TEACHER ONTO AN ABSENT TEACHER'S MISSING CELL ---
+        if (!isSourceSubRelated && isTargetSubRelated) {
+            if (sTeacher === tTeacher && sPeriod === tPeriod) return;
+            if (state.absentTeachers.has(sTeacher)) {
+                showToast(`Cannot assign ${sTeacher} as substitute (they are marked absent).`);
+                return;
+            }
+            if (isTeacherSubUnavailable(sTeacher, state.day)) {
+                showToast(`Cannot assign ${sTeacher} (marked unavailable today).`);
+                return;
+            }
+            if (!isSamePeriod && !allowCrossPeriod) {
+                showToast(`Substitutions locked to same period (${tPeriod}).`);
+                return;
+            }
+            assignSubstitute(tPeriod, tTeacher, sTeacher, sPeriod);
+            return;
+        }
+
         // --- SCENARIO 2: ATTEMPTED SUB DRAG ACROSS DIFFERENT PERIODS WHEN LOCKED ---
-        if (isSourceSubRelated && !isSamePeriod && !allowCrossPeriod && !state.isEditMode) {
-            showToast(`Substitutions are locked to the same period (${sPeriod}). Turn off "Same-Period Lock" in Settings to assign across periods.`);
+        if ((isSourceSubRelated || isTargetSubRelated) && !isSamePeriod && !allowCrossPeriod) {
+            showToast(`Substitutions locked to same period (${sPeriod || tPeriod}).`);
+            return;
+        }
+    }
+
+    if (source.type === 'displaced') {
+        const tPeriod = target.period;
+        const tTeacher = target.teacher;
+        const tIsAbsent = state.absentTeachers.has(tTeacher);
+        const tBaseTask = state.baseSchedule[state.day]?.[tPeriod]?.[tTeacher];
+        const isTargetSubRelated = (tIsAbsent && tBaseTask && tBaseTask !== 'Free') || Boolean(state.substitutions[state.day]?.[tPeriod]?.[tTeacher]);
+        if (isTargetSubRelated) {
+            assignSubstitute(tPeriod, tTeacher, source.item.ogTeacher, tPeriod);
+            state.displaced[state.day] = state.displaced[state.day].filter(d => d.id !== source.item.id);
+            renderAll();
             return;
         }
     }
@@ -6503,6 +6565,7 @@ function generateStrategySolution(strategyKey, unresolvedList, day) {
         }
 
         // Apply to simulated schedule
+        if (!simSchedule[period]) simSchedule[period] = {};
         simSchedule[period][chosen.teacher] = task;
         simSchedule[period][absentTeacher] = 'Free';
 
@@ -6595,6 +6658,7 @@ function performAutoResolve() {
             ...opt3
         }
     ];
+    window.generatedProposals = generatedProposals;
 
     activeProposalIndex = 0;
     renderProposalModalUI();
@@ -8010,3 +8074,6 @@ window.parseTimetableFromCSV = parseTimetableFromCSV;
 window.calculateScheduleDiffs = calculateScheduleDiffs;
 window.findConflicts = findConflicts;
 window.findCollisions = findCollisions;
+window.renderAll = renderAll;
+window.renderSubstitutions = renderSubstitutions;
+window.executeMove = executeMove;

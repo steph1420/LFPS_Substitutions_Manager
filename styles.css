@@ -2170,6 +2170,37 @@ input:checked + .slider:before {
     background: rgba(245, 158, 11, 0.22);
 }
 
+.footer-conflict-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(245, 158, 11, 0.16);
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(245, 158, 11, 0.55);
+    color: #b45309;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+[data-theme="dark"] .footer-conflict-pill,
+[data-theme="midnight"] .footer-conflict-pill,
+[data-theme="utopian-night"] .footer-conflict-pill,
+[data-theme="slate-nord"] .footer-conflict-pill,
+[data-theme="retro-glass"] .footer-conflict-pill {
+    background: rgba(245, 158, 11, 0.22);
+    border-color: rgba(245, 158, 11, 0.6);
+    color: #fbbf24;
+}
+
+.footer-conflict-pill:hover {
+    transform: scale(1.05);
+    background: rgba(245, 158, 11, 0.28);
+}
+
 .collision-indicator .text {
     font-size: 11px;
     font-weight: 700;
@@ -3926,14 +3957,38 @@ body.fit-grid-mode .shared-badge {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
 }
 
 .sub-register-table {
     width: 100%;
+    min-width: 680px; /* Guarantees 6 columns never crush teacher names into invisible text */
     border-collapse: collapse;
     text-align: left;
     font-size: 13px;
+}
+
+.reg-teacher-name {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: 110px;
+}
+
+.reg-teacher-name.absent-name {
+    color: var(--text-secondary);
+}
+
+.reg-row-pending .reg-teacher-name.absent-name {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.reg-teacher-name.sub-name {
+    color: var(--accent-green, #10b981);
+    font-weight: 700;
 }
 
 .sub-register-table thead th {
