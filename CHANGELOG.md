@@ -17,6 +17,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.47.0] - 2026-10-16
+
+### Fixed
+- **Circular Undo/Redo Icons Exchanged**:
+  - Exchanged rotation arrows in `getUndoRedoIcons('circular')` and Settings sample preview so Undo uses clockwise `↻` and Redo uses counter-clockwise `↺`.
+- **Bottom Sheet Dismissal in Landscape & Tap-to-Close**:
+  - Added tap-to-close on `#sheet-handle` with an expanded invisible hit area (`::before`) and pointer cursor, closing the bottom sheet on tap or click.
+  - Dynamically lowered the drag-to-dismiss threshold in landscape orientation from 60px down to 25px, ensuring swipe-down dismissal works smoothly even on constrained phone heights.
+
+### Changed
+- **3-Dot Menu Streamlining & Header De-Cluttering**:
+  - Renamed "Reset to Baseline" $\to$ "Reset" (`#more-item-reset`).
+  - On narrow screens ($\le 768\text{px}$), hid `#settings-btn` from the top header bar and added it as an option inside the 3-dot overflow menu (`#more-item-settings`).
+  - Removed redundant items from the 3-dot menu (Notifications, Staff Availability, Scale to Viewport, Features Tour), keeping it ultra-lean and fast.
+  - Hid "Edit Baseline Master Routine" (`#master-lock-btn`) inside the 3-dot menu (`#more-item-master-lock`), decluttering the top header.
+  - Ensured "Edit Schedule" (`#edit-toggle-btn`) is always prominently positioned outside in the top header bar across narrow mobile devices.
+- **Fit-Grid (Scale to Viewport) Scrollability**:
+  - Enabled horizontal scrolling on `.fit-grid-sticky-bar` (`overflow-x: auto; scrollbar-width: none`) so the collapse button (`#exit-fit-grid-btn`) is never pushed out of reach on narrow viewports.
+  - Enabled horizontal scrolling for the timetable grid in portrait mode (`body.fit-grid-mode .table-scroll-container`), pinning the teacher column sticky on the left to preserve text legibility while avoiding crushed columns.
+
 ## [v1.46.0] - 2026-10-16
 
 ### Added

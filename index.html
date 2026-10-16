@@ -60,15 +60,14 @@
                     <button id="edit-toggle-btn" class="btn-primary" title="Toggle Timetable Editing">
                         <span class="btn-icon" id="edit-btn-icon">✎</span><span class="btn-text" id="edit-btn-label"> Edit Schedule</span>
                     </button>
-                    <button id="master-lock-btn" class="btn-secondary" style="padding: 0 9px; font-size: 13px;" title="Master Routine Baseline Locked (Click to enter PIN & edit master routine)">
-                        <span id="master-lock-icon">🔒</span>
-                    </button>
+                    <!-- Hidden reference to master-lock-btn to maintain JS compatibility -->
+                    <button id="master-lock-btn" class="hidden" style="display:none !important;" aria-hidden="true"></button>
                 </div>
                 <button id="notifications-btn" class="btn-icon-circle notifications-btn" aria-label="Notifications" title="Operational Notices & Disputes">
                     <span class="notif-icon">🔔</span>
                     <span id="notif-badge" class="notif-badge hidden">0</span>
                 </button>
-                <button id="settings-btn" class="settings-btn" aria-label="Settings" title="Settings">
+                <button id="settings-btn" class="settings-btn header-desktop-only" aria-label="Settings" title="Settings">
                     <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -80,35 +79,22 @@
                         <span style="font-size:16px; font-weight:bold; line-height:1;">⋮</span>
                     </button>
                     <div id="header-more-popover" class="header-more-popover hidden">
-                        <div class="more-popover-item" id="more-item-notifs">
-                            <span class="more-icon">🔔</span>
-                            <span class="more-text">Notifications</span>
-                            <span id="more-notif-badge" class="more-badge hidden">0</span>
-                        </div>
-                        <div class="more-popover-item" id="more-item-edit">
-                            <span class="more-icon" id="more-item-edit-icon">✎</span>
-                            <span class="more-text" id="more-item-edit-text">Edit Routine</span>
-                            <span class="more-badge" id="more-lock-status">🔒 Locked</span>
-                        </div>
                         <div class="more-popover-item" id="more-item-reset">
                             <span class="more-icon">↺</span>
-                            <span class="more-text">Reset to Baseline</span>
+                            <span class="more-text">Reset</span>
+                        </div>
+                        <div class="more-popover-item" id="more-item-master-lock">
+                            <span class="more-icon" id="more-master-lock-icon">🔒</span>
+                            <span class="more-text" id="more-master-lock-text">Edit Master Routine (PIN)</span>
+                            <span class="more-badge" id="more-lock-status">Admin Only</span>
                         </div>
                         <div class="more-popover-item" id="more-item-fullscreen">
                             <span class="more-icon" id="more-fullscreen-icon">⛶</span>
                             <span class="more-text" id="more-fullscreen-text">Enter Fullscreen</span>
                         </div>
-                        <div class="more-popover-item" id="more-item-subavail">
-                            <span class="more-icon">⛔</span>
-                            <span class="more-text">Staff Availability</span>
-                        </div>
-                        <div class="more-popover-item" id="more-item-fitgrid">
-                            <span class="more-icon">📊</span>
-                            <span class="more-text">Scale to Viewport</span>
-                        </div>
-                        <div class="more-popover-item" id="more-item-tour">
-                            <span class="more-icon">💡</span>
-                            <span class="more-text">Features Tour</span>
+                        <div class="more-popover-item more-item-mobile-only" id="more-item-settings">
+                            <span class="more-icon">⚙️</span>
+                            <span class="more-text">Settings</span>
                         </div>
                     </div>
                 </div>
@@ -221,7 +207,7 @@
                 </div>
 
                 <div class="grid-status-footer">
-                    <span class="version-badge">v1.46.0</span>
+                    <span class="version-badge">v1.47.0</span>
                     <span class="grid-status-dot">●</span>
                     <span class="grid-status-label">LFPS Front Desk Offline-First</span>
                     <div id="footer-conflict-pill" class="footer-conflict-pill hidden" title="Click to inspect timetable conflicts">
@@ -700,7 +686,7 @@
                 <div class="settings-row" id="settings-version-row" style="cursor:pointer; user-select:none;" title="Tap 5 times to unlock Developer Options">
                     <span class="settings-row-label">Version</span>
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <span class="settings-row-value" id="settings-version-val">v1.46.0 (Timetable Schema 2.0)</span>
+                        <span class="settings-row-value" id="settings-version-val">v1.47.0 (Timetable Schema 2.0)</span>
                         <span id="dev-mode-pill" class="dev-badge-pill hidden">🛠 Dev Unlocked</span>
                     </div>
                 </div>
@@ -814,7 +800,7 @@
                             <span class="undo-label">Curved</span>
                         </button>
                         <button type="button" class="undo-style-card" data-style="circular">
-                            <span class="undo-sample">↺ ↻</span>
+                            <span class="undo-sample">↻ ↺</span>
                             <span class="undo-label">Circular</span>
                         </button>
                         <button type="button" class="undo-style-card" data-style="svg">

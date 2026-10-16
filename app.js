@@ -1435,21 +1435,29 @@ function bindEvents() {
             }
         });
 
-        safeBind('more-item-notifs', 'click', () => {
-            morePopover.classList.add('hidden');
-            openNotificationsModal();
-        });
-
-        safeBind('more-item-edit', 'click', () => {
-            morePopover.classList.add('hidden');
-            const editBtn = document.getElementById('edit-toggle-btn');
-            if (editBtn) editBtn.click();
-        });
-
         safeBind('more-item-reset', 'click', () => {
             morePopover.classList.add('hidden');
             const resetBtn = document.getElementById('reset-schedule-btn');
             if (resetBtn) resetBtn.click();
+        });
+
+        safeBind('more-item-master-lock', 'click', () => {
+            morePopover.classList.add('hidden');
+            if (state.isMasterUnlocked) {
+                toggleMasterEditMode();
+            } else {
+                openPinModal('verify', (enteredPin) => {
+                    const correctPin = state.settings.adminPin || '1234';
+                    if (enteredPin === correctPin) {
+                        state.isMasterUnlocked = true;
+                        updateMasterLockUI();
+                        showToast('🔓 Master Routine Unlocked');
+                        toggleMasterEditMode();
+                    } else {
+                        showToast('❌ Incorrect PIN', true);
+                    }
+                });
+            }
         });
 
         safeBind('more-item-fullscreen', 'click', () => {
@@ -1457,21 +1465,9 @@ function bindEvents() {
             toggleBrowserFullscreen();
         });
 
-        safeBind('more-item-subavail', 'click', () => {
+        safeBind('more-item-settings', 'click', () => {
             morePopover.classList.add('hidden');
-            const subAvailBtn = document.getElementById('btn-open-sub-avail-modal');
-            if (subAvailBtn) subAvailBtn.click();
-        });
-
-        safeBind('more-item-fitgrid', 'click', () => {
-            morePopover.classList.add('hidden');
-            const fitBtn = document.getElementById('fit-grid-btn');
-            if (fitBtn) fitBtn.click();
-        });
-
-        safeBind('more-item-tour', 'click', () => {
-            morePopover.classList.add('hidden');
-            openTourModal();
+            openSettingsModal();
         });
     }
 
@@ -1584,12 +1580,14 @@ function bindEvents() {
     const handle = document.getElementById('sheet-handle');
     let startY = 0;
     let currentY = 0;
+    let startTime = 0;
     let isDraggingSheet = false;
 
     if (sheet && handle) {
         handle.addEventListener('touchstart', (e) => {
             startY = e.touches[0].clientY;
             currentY = startY;
+            startTime = Date.now();
             isDraggingSheet = true;
             sheet.style.transition = 'none';
         }, {passive: true});
@@ -1608,7 +1606,18 @@ function bindEvents() {
             isDraggingSheet = false;
             sheet.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)';
             const deltaY = currentY - startY;
-            if (deltaY > 60) {
+            const elapsed = Date.now() - startTime;
+            const isLandscape = window.innerWidth > window.innerHeight;
+            const dismissThreshold = isLandscape ? 25 : 50;
+
+            // Tap Detection on handle: small drag delta and quick touch duration (< 350ms)
+            if (Math.abs(deltaY) < 12 && elapsed < 350) {
+                closeBottomSheet();
+                setTimeout(() => { sheet.style.transform = ''; }, 320);
+                return;
+            }
+
+            if (deltaY > dismissThreshold) {
                 closeBottomSheet();
                 setTimeout(() => { sheet.style.transform = ''; }, 320); 
             } else {
@@ -1616,7 +1625,9 @@ function bindEvents() {
             }
         });
 
-        handle.addEventListener('click', closeBottomSheet);
+        handle.addEventListener('click', () => {
+            closeBottomSheet();
+        });
     }
 
     const tableContainer = document.querySelector('.table-scroll-container');
@@ -3033,9 +3044,9 @@ function updateMasterLockUI() {
     const editBtnIcon = document.getElementById('edit-btn-icon');
     const editBtn = document.getElementById('edit-toggle-btn');
 
-    // 3-Dot popover items
-    const moreEditText = document.getElementById('more-item-edit-text');
-    const moreEditIcon = document.getElementById('more-item-edit-icon');
+    // 3-Dot popover master lock item
+    const moreMasterLockText = document.getElementById('more-master-lock-text');
+    const moreMasterLockIcon = document.getElementById('more-master-lock-icon');
     const moreLockStatus = document.getElementById('more-lock-status');
 
     // Fit-grid sticky bar items
@@ -3065,9 +3076,9 @@ function updateMasterLockUI() {
         if (editBtnLabel) editBtnLabel.textContent = ' 🛠 Master Save';
         if (editBtnIcon) editBtnIcon.textContent = '🛠';
 
-        // 3-Dot Overflow Menu
-        if (moreEditText) moreEditText.textContent = 'Save Master Routine';
-        if (moreEditIcon) moreEditIcon.textContent = '🛠';
+        // 3-Dot Overflow Menu Master Lock Item
+        if (moreMasterLockText) moreMasterLockText.textContent = 'Save Master Routine';
+        if (moreMasterLockIcon) moreMasterLockIcon.textContent = '🛠';
         if (moreLockStatus) {
             moreLockStatus.textContent = '🛠 Master Editing';
             moreLockStatus.className = 'more-badge badge-master-editing';
@@ -3090,12 +3101,12 @@ function updateMasterLockUI() {
         if (editBtnLabel) editBtnLabel.textContent = ' ✓ Done Editing';
         if (editBtnIcon) editBtnIcon.textContent = '✓';
 
-        // 3-Dot Overflow Menu
-        if (moreEditText) moreEditText.textContent = 'Done Editing (Save)';
-        if (moreEditIcon) moreEditIcon.textContent = '✓';
+        // 3-Dot Overflow Menu Master Lock Item
+        if (moreMasterLockText) moreMasterLockText.textContent = state.isMasterUnlocked ? 'Edit Master Routine' : 'Edit Master Routine (PIN)';
+        if (moreMasterLockIcon) moreMasterLockIcon.textContent = state.isMasterUnlocked ? '🔓' : '🔒';
         if (moreLockStatus) {
-            moreLockStatus.textContent = '● In Edit Mode';
-            moreLockStatus.className = 'more-badge badge-active-editing';
+            moreLockStatus.textContent = state.isMasterUnlocked ? 'Unlocked' : 'Admin Only';
+            moreLockStatus.className = 'more-badge';
         }
 
         // Fit Grid Sticky Bar Button
@@ -3114,11 +3125,11 @@ function updateMasterLockUI() {
         if (editBtnLabel) editBtnLabel.textContent = ' Edit Schedule';
         if (editBtnIcon) editBtnIcon.textContent = '✎';
 
-        // 3-Dot Overflow Menu
-        if (moreEditText) moreEditText.textContent = 'Edit Schedule';
-        if (moreEditIcon) moreEditIcon.textContent = '✎';
+        // 3-Dot Overflow Menu Master Lock Item
+        if (moreMasterLockText) moreMasterLockText.textContent = state.isMasterUnlocked ? 'Edit Master Routine' : 'Edit Master Routine (PIN)';
+        if (moreMasterLockIcon) moreMasterLockIcon.textContent = state.isMasterUnlocked ? '🔓' : '🔒';
         if (moreLockStatus) {
-            moreLockStatus.textContent = state.isMasterUnlocked ? '🔓 Unlocked' : '🔒 Locked';
+            moreLockStatus.textContent = state.isMasterUnlocked ? 'Unlocked' : 'Admin Only';
             moreLockStatus.className = 'more-badge';
         }
 
@@ -6915,7 +6926,7 @@ function getActiveRedoStack() {
 function getUndoRedoIcons(style) {
     switch (style) {
         case 'circular':
-            return { undo: '↺', redo: '↻' };
+            return { undo: '↻', redo: '↺' };
         case 'svg':
             return { undo: '◀', redo: '▶' };
         case 'text':

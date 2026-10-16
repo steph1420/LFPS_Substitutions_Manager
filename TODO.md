@@ -201,9 +201,27 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] **Live Timetable Conflict Pill (Delivered in v1.44.0)**:
     - Added live conflict pill in `.grid-status-footer` (`#footer-conflict-pill`) and synchronized with `#collision-indicator`.
     - Clicking the pill smoothly scrolls to conflicting cells and provides instant toast diagnostics.
-  - [ ] **Subbed Teacher Target Cell Halo Ring Customizer**:
-    - Polish visual indicator halo ring on target subbed cells (`sub-halo-active`) with developer options color presets.
-  - [ ] **Cloud Auto-Sync & Mandatory Substitution Broadcast (Job Bundle 10)**:
+  - [x] **Mobile Ergonomics, 3-Dot Header Reorganization & Fit-Grid Scrollability (Job Bundle 10 - Delivered in v1.47.0)**:
+    - **Circular Undo/Redo Icons Exchanged Fix**: Exchanged circular icons in `getUndoRedoIcons('circular')` and sample card so undo (`↻`) and redo (`↺`) match desired rotational flow.
+    - **3-Dot Overflow Menu Streamlining & Header De-Cluttering**:
+      - Renamed "Reset to Baseline" $\to$ "Reset" (`#more-item-reset`).
+      - In narrow view ($\le 768\text{px}$), hid standalone Settings button (`#settings-btn`) from the top header bar and surfaced Settings as an option inside the 3-dot menu (`#more-item-settings`).
+      - Removed Notifications (`#more-item-notifs`) from 3-dot menu (bell button already exists in header).
+      - Hid Edit Baseline Master Routine (`#master-lock-btn`) inside 3-dot menu as `#more-item-master-lock`, keeping the header clean.
+      - Kept Edit Schedule button (`#edit-toggle-btn`) prominently displayed outside in the header bar across narrow mobile screens.
+      - Removed redundant items from 3-dot menu (Staff Availability, Scale to Viewport, Features Tour).
+    - **Fit-Grid (Scale to Viewport) Scrollability**:
+      - Made `.fit-grid-sticky-bar` horizontally scrollable (`overflow-x: auto`) so coordinators on narrow screens can scroll directly to the collapse button (`#exit-fit-grid-btn`).
+      - In portrait orientation, enabled horizontal scrolling for the routine grid (`overflow-x: auto !important`) with sticky teacher column, preventing unreadable column squishing.
+    - **Bottom Sheet Landscape Dismissal & Tap-to-Close**:
+      - Enabled tap-to-close on `#sheet-handle` across touch and mouse interactions with expanded hit area (`::before`).
+      - Adjusted drag-to-dismiss threshold in landscape / short viewports to 25px for effortless swipe-down dismissal.
+    - **Developer Options Verification**:
+      - Ensured Developer Options remains cleanly hidden behind the 5-tap version Easter egg at the very bottom.
+  - [ ] **Roster Management Tab & Grid Absence Panel Toggle (Future Candidate)**:
+    - Dedicated Roster view tab for bulk absence and off-duty unavailability management.
+    - Setting toggle to hide absence panel from grid view for a cleaner, full-height routine.
+  - [ ] **Cloud Auto-Sync & Mandatory Substitution Broadcast (Job Bundle 11)**:
     - **Live Cloud vs. Local Mode State Machine**: Respect user choices from connectivity notifications to either "Go Live" or stay in a "Local Session". When "Go Live" is active, resume background auto-sync.
     - **Unconditional Substitution Cloud Broadcast**: Regardless of whether the app is currently in local or cloud mode, every confirmed substitution event must immediately broadcast to the Google Apps Script cloud endpoint so all school staff are notified in real time.
 
