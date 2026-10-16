@@ -289,6 +289,11 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - **Universal Long-Press Indicator Exploration & Implementation**:
     - *Hardware Precedent*: Yamaha keyboards/synthesizers (e.g. Montage, Genos) mark dual-function "Hold / Direct Access" keys with a finger glyph touching a circular pad.
     - *Universal Indicator Standard*: Standardize a clean, non-intrusive hold indicator (subtle corner pip `◢` or tactile finger contact icon `👆` with touch ring) across all right-click/long-press supporting elements (Roster cards, Absence tray avatars, Routine grid cells, and Reset buttons).
+- [ ] **FEAT-21 (Detailed Staff Availability Page Simplification & De-Cluttering)**:
+  - **Issue**: The individual teacher detailed availability modal (`#sub-avail-modal` / `.sub-avail-teacher-card`) is overly cluttered with redundant controls and verbose descriptive copy.
+  - **Simplification Strategy**:
+    - Streamline into a clean, minimalist card: prominent status switch (`Available for Subs` vs `Off-Duty / Unavailable`), rapid 1-tap quick reason chips (`Sick / Medical`, `Exam Duty`, `Special Event`, `Admin Task`), and a single compact custom remark input.
+    - Remove superfluous text walls, redundant headings, and crowded nested borders.
 
 
 
@@ -410,6 +415,13 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - `state.actionHistory.grid` and `state.actionHistory.subs` currently duplicate every single substitution action into both stacks. Streamline into a single tagged action log with scoped filtering to eliminate memory duplication.
 - [ ] **CSS Theme Rule Consolidation**:
   - Scattered theme overrides (e.g. `[data-theme="dark"]`, `[data-theme="midnight"]` rules repeating at lines 1090, 1180, 1598, 1836, 3383 in `styles.css`) should be consolidated into unified theme-specific component stylesheets.
+
+### 5. Complete UI Harmonisation & Simplification Overhaul (Post-Logic Maturity Milestone)
+- [ ] **Objective**: Execute a comprehensive, whole-application visual harmonisation and radical simplification overhaul once all underlying operational logic, solver engines, and data pipelines are verified 100% stable and complete.
+- [ ] **Key Focus Areas**:
+  - **Aggressive De-Cluttering**: Strip away secondary micro-controls, wordy paragraphs, and nested borders across all tabs (Grid, Substitutions, Roster, Settings).
+  - **Harmonized Design System**: Establish unified typography scale, consistent padding grids, tactile Apple/Ableton button ergonomics, and uniform corner radii.
+  - **Zero Cognitive Friction**: Ensure the morning front-desk administrator can achieve full absence coverage in under 60 seconds with zero visual overwhelm.
 
 ---
 
