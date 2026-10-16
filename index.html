@@ -43,6 +43,10 @@
         <div class="header-top">
             <div class="title-wrapper">
                 <h1>Front Desk</h1>
+                <div id="header-cloud-status" class="header-cloud-pill mode-live" title="Cloud Sync Status: Click for session options" role="button" tabindex="0">
+                    <span class="cloud-status-dot"></span>
+                    <span class="cloud-status-text" id="header-cloud-status-text">☁ Live</span>
+                </div>
             </div>
             <div class="header-controls">
                 <div class="history-btn-group" id="history-btn-group">
@@ -207,7 +211,7 @@
                 </div>
 
                 <div class="grid-status-footer">
-                    <span class="version-badge">v1.47.0</span>
+                    <span class="version-badge">v1.48.0</span>
                     <span class="grid-status-dot">●</span>
                     <span class="grid-status-label">LFPS Front Desk Offline-First</span>
                     <div id="footer-conflict-pill" class="footer-conflict-pill hidden" title="Click to inspect timetable conflicts">
@@ -633,8 +637,34 @@
                 <div class="settings-group-title">Cloud & Synchronization (2-Way Live Sync)</div>
                 <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:10px;">
                     <div class="settings-row-info">
-                        <span class="settings-row-label">Cloud Routine & Daily Ledger Sync</span>
-                        <span class="settings-row-desc">Sync master routine updates and automatically push daily substitution records back to Google Sheets.</span>
+                        <span class="settings-row-label">Cloud Operating Mode</span>
+                        <span class="settings-row-desc">Choose between live automated synchronization with Google Sheets or an offline local session.</span>
+                    </div>
+                    <div class="cloud-mode-segmented">
+                        <button type="button" class="cloud-mode-segment active" data-mode="live" id="segment-cloud-live">
+                            <span class="cloud-status-dot"></span>
+                            <span>☁ Live Cloud Mode</span>
+                        </button>
+                        <button type="button" class="cloud-mode-segment" data-mode="local" id="segment-cloud-local">
+                            <span class="cloud-status-dot" style="background-color:var(--accent-yellow,#f59e0b);"></span>
+                            <span>🏠 Local Session</span>
+                        </button>
+                    </div>
+                    <div id="cloud-mode-explanation" class="cloud-mode-explanation">
+                        <strong>Live Cloud:</strong> Automatically checks and syncs routine updates from Google Sheets every 60s. All substitutions are immediately broadcast to staff.
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Mandatory Substitution Broadcast</span>
+                        <span class="settings-row-desc">Substitutions, unassignments, and disputes are always broadcast to Google Sheets so teachers receive live notices regardless of local/cloud mode.</span>
+                    </div>
+                    <span class="badge-broadcast-active">🟢 Active</span>
+                </div>
+                <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:10px;">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Sync Status & Manual Actions</span>
+                        <span class="settings-row-desc">Push the complete daily ledger or manually refresh the timetable from Google Sheets.</span>
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px; flex-wrap:wrap; gap:8px;">
                         <div id="cloud-sync-status-text" style="font-size:11px; color:var(--text-secondary);">
@@ -686,7 +716,7 @@
                 <div class="settings-row" id="settings-version-row" style="cursor:pointer; user-select:none;" title="Tap 5 times to unlock Developer Options">
                     <span class="settings-row-label">Version</span>
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <span class="settings-row-value" id="settings-version-val">v1.47.0 (Timetable Schema 2.0)</span>
+                        <span class="settings-row-value" id="settings-version-val">v1.48.0 (Timetable Schema 2.0)</span>
                         <span id="dev-mode-pill" class="dev-badge-pill hidden">🛠 Dev Unlocked</span>
                     </div>
                 </div>
@@ -1352,6 +1382,38 @@
     </div>
     <div id="reset-context-overlay" class="reset-context-overlay hidden"></div>
 
+    <!-- Header Cloud Session & Broadcasting Popover -->
+    <div id="cloud-session-popover" class="cloud-session-popover hidden" role="dialog" aria-labelledby="cloud-popover-title">
+        <div class="cloud-popover-header">
+            <div class="cloud-popover-title-row">
+                <span style="font-size:16px;">☁</span>
+                <span id="cloud-popover-title" style="font-weight:700; font-size:13px;">Cloud Sync & Broadcast</span>
+                <span id="cloud-popover-badge" class="cloud-popover-badge mode-live">● Live Cloud</span>
+            </div>
+            <p class="cloud-popover-desc" id="cloud-popover-desc">
+                Routine auto-syncs every 60s. Substitutions broadcast live to all staff.
+            </p>
+        </div>
+        <div class="cloud-popover-actions">
+            <button type="button" id="cloud-toggle-mode-btn" class="cloud-popover-btn primary">
+                <span id="cloud-toggle-mode-icon">🏠</span>
+                <span id="cloud-toggle-mode-label">Switch to Local Session</span>
+            </button>
+            <button type="button" id="cloud-sync-routine-btn" class="cloud-popover-btn">
+                <span>↻</span>
+                <span>Sync Routine Now</span>
+            </button>
+            <button type="button" id="cloud-push-ledger-btn" class="cloud-popover-btn">
+                <span>📤</span>
+                <span>Push Daily Ledger</span>
+            </button>
+        </div>
+        <div class="cloud-popover-footer">
+            Last synced: <span id="cloud-popover-last-time">Just now</span>
+        </div>
+    </div>
+    <div id="cloud-session-overlay" class="reset-context-overlay hidden"></div>
+
     <!-- Header Notification Center Modal -->
     <div id="notifications-modal" class="settings-modal notifications-modal hidden">
         <div class="settings-modal-header" style="padding: 14px 16px;">
@@ -1372,6 +1434,6 @@
     </div>
     <div id="notifications-overlay" class="overlay"></div>
 
-    <script src="app.js?v=1.45.0"></script>
+    <script src="app.js?v=1.48.0"></script>
 </body>
 </html>
