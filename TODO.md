@@ -438,31 +438,40 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - Sleek rightmost-aligned Apple collapse/expand icon button (`ChevronUp` / `ChevronDown`).
     - Tapping anywhere in the free space of the workstation header toggles the collapse/expand state.
 
-### Job Bundle 25: Theme Engine, Developer Options System & Visual Customization
-- **Status**: 🔴 Queued
+### Job Bundle 25: Tactical Matrix Ergonomics, Header Peek Navigation & Golden CT Tokens
+- **Status**: 🔴 Queued (Next Up)
 - **Scope & Work Items**:
+  - [ ] **FEAT-52 (Scroll Peek Header Utility Console)**:
+    - On downward scroll, transition the header into a compact "peek" utility bar that grants instant access to Reset Day, Settings, and Staff Login, alongside the floating Dynamic Island Day Bar pill, while cleanly hiding full branding text (app title & subtitle).
+    - Only when scrolled all the way to the top (`scrollY <= 50`) does the full elevated header console re-expand.
+  - [ ] **FEAT-53 (Horizontal-Scroll Dynamic Teacher Column Collapse on Narrow Screens)**:
+    - On mobile and narrow viewports, horizontally scrolling the routine table automatically triggers a collapsed mode for the sticky leftmost teacher name column.
+    - When collapsed, the teacher column narrows (~65px) and switches to a small, thin font split cleanly over two lines (e.g. `Mrs. S.` on line 1, `Lakra` on line 2), maximizing visible instructional periods while preserving row identity.
+  - [ ] **FEAT-54 (Absent Teacher Routine Grid High-Contrast Crimson Highlight)**:
+    - In `RoutineGrid.tsx`, when a teacher is marked absent for the day, style their sticky first-column name cell in bold crimson red (`bg-rose-950/80 border-r-2 border-r-rose-500/80 text-rose-200 font-bold`) so absences are immediately conspicuous during morning grid reviews.
+  - [ ] **FEAT-55 (Hide Absent Teachers Option in Routine Matrix)**:
+    - Add an interactive "Hide Absent Teachers" toggle switch in the Routine Grid controls toolbar (and Settings console).
+    - When active, filters out rows of absent teachers, consolidating the matrix view strictly to active present faculty.
+  - [ ] **FEAT-56 (Class Teacher Golden Token Overhaul)**:
+    - Update `@lfps/ui` design tokens and component styling: Class Teachers (CT) are color-coded in vibrant **Golden / Amber** (`#f59e0b` / `text-amber-300 bg-amber-500/15 border-amber-500/40`) instead of Teal.
+    - Academic Coordinators (`AC` Mrs. R. Pahwa and `AAC` Mrs. S. Lakra) strictly retain their signature **Purple / Violet** (`#8b5cf6`), even when they hold class teacher responsibilities.
   - [ ] **BUG-17 (Minimal UI Mode Visual Implementation Across All Components)**:
     - Wire `isMinimalUI` store state to apply high-density compact styles across Header, Routine Grid, Substitutions Register, Absence Roster, and TabBar.
   - [ ] **FEAT-45 (Settings Preference: Hide Overviews by Default)**:
     - Add user preference toggle in Settings (`hideOverviewsByDefault: boolean`) that starts the Substitutions and Roster overviews in collapsed state on application boot.
-  - [ ] **FEAT-46 (Complete 12-Theme Engine Adapted from THEMES.md)**:
-    - Implement CSS token engine supporting all 12 curated themes across 4 design families:
-      1. ☀️ **Minimalist Light**: `system`, `light` (iOS Light), `warm-sepia` (Warm Sepia / Parchment).
-      2. 🌙 **Minimalist Night**: `dark` (iOS Dark), `midnight` (Midnight OLED), `slate-nord` (Slate Nord).
-      3. 🪟 **Glass Materials**: `utopian-glass`, `utopian-night`, `aero-frost`, `cyber-glass`, `retro-glass`.
-      4. 🔲 **Studio & Accessibility**: `high-contrast`.
-    - Provide 1-tap theme selector in Settings with visual swatches and instant live preview.
-  - [ ] **FEAT-47 (Hidden Settings & Developer Options Restoration)**:
-    - Restore hidden Developer Options panel (unlocked via 5-tap on Settings version row or developer toggle):
-      - Relocate Cloud Sync connection diagnostics, live latency meter, and manual reconnect button into Dev Options.
-      - Cross-Period substitution policy toggle (`samePeriodLock`, default `true`).
-      - Target cell halo pulse indicator toggle (`subHaloIndicator`) and color palette selector (`Emerald`, `Neon Cyan`, `Amber`, `Violet`).
-      - Acceptance countdown timer toggle and duration selector (`5s`, `10s`, `30s`, `60s`).
-      - Mobile undo/redo icon style selector (`Curved`, `Circular`, `Geometric`, `Micro-Text`).
 
-### Job Bundle 26: Teacher Substitution Acceptance & Dispute Workflow & Notification Center
+### Job Bundle 26: Leadership Chain of Command, Dedicated CT Auto-Resolve & Attention Pulse
 - **Status**: 🔴 Queued
 - **Scope & Work Items**:
+  - [ ] **LOGIC-04 (Academic Coordinator Succession & Officiating Workflow)**:
+    - Automatic chain of command: When AC (Mrs. R. Pahwa) is absent, the Assistant Academic Coordinator (AAC, Mrs. S. Lakra) automatically acts on their behalf as Officiating AC (`Off. AC`).
+    - Only if BOTH the AC and AAC are absent does the system require appointing a 3rd-party Officiating AC.
+    - This leadership assignment cannot be auto-resolved by the algorithm; it surfaces in the Substitutions tab as a dedicated officiating duty card with manual selection.
+    - Whenever an Officiating AC needs appointment, flash both the **Substitutions** and **Staff Roster** navigation tabs in the bottom dock with a soft pulsing amber glow (`@keyframes attentionPulse`) to grab the coordinator's attention.
+  - [ ] **LOGIC-05 (Dedicated Class Teacher Auto-Resolve & Golden Substitution Cards)**:
+    - In `SubstitutionsRegister.tsx`, add a dedicated `[ ⚡ Auto-Resolve CT ]` button that specifically resolves uncovered slots for absent Class Teachers.
+    - In the substitution ledger cards area, render all Class Teacher substitution cards in an eye-catching **golden / amber** theme (`border-amber-400/60 bg-amber-950/30 text-amber-200` with golden glow badge).
+    - When any Class Teacher is absent or has an uncovered class period, flash both the **Substitutions** and **Staff Roster** navigation tabs with a soft pulsing amber glow.
   - [ ] **FEAT-49 (Teacher Substitution Acceptance & Dispute Workflow)**:
     - In `SubstitutionsRegister.tsx` (and dedicated teacher schedule view), when a teacher is logged in (`loggedInTeacher`), any substitution duty assigned to them displays an interactive decision pod:
       - `[ ✓ Accept ]`: Marks the substitution status as `ACCEPTED`, highlights the duty in emerald green, locks the slot, and dispatches an acceptance notice.
@@ -478,7 +487,25 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
       5. **Acceptance Receipts (`✓`)**: Notices when a teacher confirms and accepts their duty.
     - Provide 1-tap "Mark All as Read", clear individual notices, and outside-click / <kbd>Esc</kbd> dismissal.
 
-### Job Bundle 27: Unified Cloud & Google Sheets 2-Way Live Sync Engine
+### Job Bundle 27: Theme Engine, Developer Options System & Visual Customization
+- **Status**: 🔴 Queued
+- **Scope & Work Items**:
+  - [ ] **FEAT-46 (Complete 12-Theme Engine Adapted from THEMES.md)**:
+    - Implement CSS token engine supporting all 12 curated themes across 4 design families:
+      1. ☀️ **Minimalist Light**: `system`, `light` (iOS Light), `warm-sepia` (Warm Sepia / Parchment).
+      2. 🌙 **Minimalist Night**: `dark` (iOS Dark), `midnight` (Midnight OLED), `slate-nord` (Slate Nord).
+      3. 🪟 **Glass Materials**: `utopian-glass`, `utopian-night`, `aero-frost`, `cyber-glass`, `retro-glass`.
+      4. 🔲 **Studio & Accessibility**: `high-contrast`.
+    - Provide 1-tap theme selector in Settings with visual swatches and instant live preview.
+  - [ ] **FEAT-47 (Hidden Settings & Developer Options Restoration)**:
+    - Restore hidden Developer Options panel (unlocked via 5-tap on Settings version row or developer toggle):
+      - Relocate Cloud Sync connection diagnostics, live latency meter, and manual reconnect button into Dev Options.
+      - Cross-Period substitution policy toggle (`samePeriodLock`, default `true`).
+      - Target cell halo pulse indicator toggle (`subHaloIndicator`) and color palette selector (`Emerald`, `Neon Cyan`, `Amber`, `Violet`).
+      - Acceptance countdown timer toggle and duration selector (`5s`, `10s`, `30s`, `60s`).
+      - Mobile undo/redo icon style selector (`Curved`, `Circular`, `Geometric`, `Micro-Text`).
+
+### Job Bundle 28: Unified Cloud & Google Sheets 2-Way Live Sync Engine
 - **Status**: 🔴 Queued
 - **Scope & Work Items**:
   - [ ] **FEAT-51A (Inbound Routine Sync from Google Sheets)**:
@@ -494,7 +521,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - Push live state mutations (`STATE_MUTATION`) on any schedule change, absence toggle, or substitution assignment.
     - Real-time client state reconciliation and server disk persistence hydration with sub-millisecond broadcast.
 
-### Job Bundle 28: Routine Matrix Drag-and-Drop Reordering & Dedicated Class Context Menu
+### Job Bundle 29: Routine Matrix Drag-and-Drop Reordering & Dedicated Class Context Menu
 - **Status**: 🔴 Queued
 - **Scope & Work Items**:
   - [ ] **FEAT-37A (Routine Grid Cell Drag & Drop Reordering)**:

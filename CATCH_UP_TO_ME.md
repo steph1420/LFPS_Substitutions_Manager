@@ -306,22 +306,31 @@ LFPS_Substitutions_Manager/
 
 ### Queued Future Backlog (In Order of Priority)
 
-1. **Job Bundle 25: Theme Engine, Developer Options System & Visual Customization (ACTIVE NEXT)**:
+1. **Job Bundle 25: Tactical Matrix Ergonomics, Header Peek Navigation & Golden CT Tokens (ACTIVE NEXT)**:
+   - **`FEAT-52` (Scroll Peek Header Utility Console)**: On downward scroll, transition the header into a compact "peek" utility bar that grants instant access to Reset Day, Settings, and Staff Login, alongside the floating Dynamic Island Day Bar pill, while cleanly hiding full branding text (app title & subtitle). Full console returns only when scrolled to top.
+   - **`FEAT-53` (Horizontal-Scroll Dynamic Teacher Column Collapse on Narrow Screens)**: On narrow screens, horizontally scrolling the routine table automatically triggers a collapsed mode for the sticky leftmost teacher name column (~65px width, 2-line small thin font).
+   - **`FEAT-54` (Absent Teacher Routine Grid High-Contrast Crimson Highlight)**: Absent teachers have their sticky first-column name cell highlighted in bold crimson red (`bg-rose-950/80 border-r-2 border-r-rose-500/80 text-rose-200 font-bold`).
+   - **`FEAT-55` (Hide Absent Teachers Option in Routine Matrix)**: Interactive toggle switch in Routine Grid toolbar and Settings to hide rows of absent teachers.
+   - **`FEAT-56` (Class Teacher Golden Token Overhaul)**: Update `@lfps/ui` design tokens and component styling: Class Teachers (CT) are color-coded in vibrant **Golden / Amber** (`#f59e0b` / `text-amber-300 bg-amber-500/15 border-amber-500/40`) instead of Teal. Academic Coordinators (`AC` and `AAC`) strictly retain their signature **Purple / Violet** (`#8b5cf6`).
    - **`BUG-17` (Minimal UI Mode Visual Implementation)**: Apply high-density compact styles across Header, Routine Grid, Substitutions Register, Absence Roster, and TabBar when `isMinimalUI` is active.
    - **`FEAT-45` (Settings Preference: Hide Overviews by Default)**: Preference toggle (`hideOverviewsByDefault: boolean`) starting overviews collapsed on boot.
+
+2. **Job Bundle 26: Leadership Chain of Command, Dedicated CT Auto-Resolve & Attention Pulse**:
+   - **`LOGIC-04` (Academic Coordinator Succession & Officiating Workflow)**: Automatic chain of command: When AC (Mrs. R. Pahwa) is absent, the Assistant Academic Coordinator (AAC, Mrs. S. Lakra) automatically acts on their behalf as Officiating AC (`Off. AC`). Only if BOTH AC and AAC are absent does the system require appointing a 3rd-party Officiating AC. Surfaces in Substitutions tab as a dedicated officiating duty card with manual selection. Flashes the Substitutions and Staff Roster navigation tabs with a soft pulsing amber glow (`@keyframes attentionPulse`) when an Off. AC needs appointment.
+   - **`LOGIC-05` (Dedicated Class Teacher Auto-Resolve & Golden Substitution Cards)**: In `SubstitutionsRegister.tsx`, add a dedicated `[ ⚡ Auto-Resolve CT ]` button that specifically resolves uncovered slots for absent Class Teachers. Render all CT substitution cards in golden / amber styling. Flashes the Sub and Roster tabs with a soft pulsing amber glow when a CT is absent or has uncovered slots.
+   - **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**: Logged-in teacher cards display inline `[ ✓ Accept ]` and `[ ⚑ Dispute ]` with optional reason remark field, notifying AC / AAC.
+   - **`FEAT-50` (Universal Notification Center & Live Alert Hub)**: Header Bell icon with live notice counter pill opening `NotificationCenterModal.tsx`.
+
+3. **Job Bundle 27: Theme Engine (12 Themes from `THEMES.md`) & Developer Options System**:
    - **`FEAT-46` (Complete 12-Theme Engine Adapted from THEMES.md)**: Implement CSS token system for all 12 themes across Minimalist Light, Minimalist Night, Glass Materials, and Studio families with instant preview.
    - **`FEAT-47` (Hidden Settings & Developer Options Restoration)**: Restore hidden Developer Options panel (5-tap on version row) with relocated cloud sync diagnostics, same-period lock toggle, target cell halo pulse toggle/colors, countdown timer, and undo/redo icon style selector.
 
-2. **Job Bundle 26: Teacher Substitution Acceptance & Dispute Workflow & Notification Center**:
-   - **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**: Logged-in teacher cards display inline `[ ✓ Accept ]` and `[ ⚑ Dispute ]` with optional reason remark field. Disputing automatically dispatches a prioritized notice to the leadership chain (AC / AAC / Officiating AC).
-   - **`FEAT-50` (Universal Notification Center & Live Alert Hub)**: Header Bell icon with live notice counter pill opening `NotificationCenterModal.tsx` aggregating disputes, clashes, uncovered slots, and officiating reminders with 1-tap actions.
-
-3. **Job Bundle 27: Unified Cloud & Google Sheets 2-Way Live Sync Engine**:
-   - **`FEAT-51A` (Inbound Routine Sync from Google Sheets)**: Pull master schedule diffs from Google Sheets (`/gviz/tq?tqx=out:csv&sheet=OVERVIEW`) with review modal.
+4. **Job Bundle 28: Unified Cloud & Google Sheets 2-Way Live Sync Engine**:
+   - **`FEAT-51A` (Inbound Routine Sync from Google Sheets CSV)**: Pull master schedule diffs from Google Sheets (`/gviz/tq?tqx=out:csv&sheet=OVERVIEW`) with review modal.
    - **`FEAT-51B` (Outbound Daily Ledger Push to Google Sheets)**: Push today's substitutions ledger to Google Sheets via Google Apps Script Web App webhook (`/exec`).
    - **`FEAT-48` (Production Two-Way Full-Duplex Cloud Sync)**: Real-time WebSocket synchronization with Go backend (`/ws`) for sub-millisecond multi-device state updates.
 
-4. **Job Bundle 28: Routine Matrix Drag-and-Drop Reordering & Dedicated Class Context Menu**:
+5. **Job Bundle 29: Routine Matrix Drag-and-Drop Reordering & Dedicated Class Context Menu**:
    - **`FEAT-37A` & `FEAT-37B`**: Routine cell drag-and-drop reordering with undo/redo integration and dedicated Class View context menu.
    - **`FEAT-22`, `FEAT-23`, `FEAT-24`**: Substitution Register interactive column sorting chevrons, desktop/mobile responsive width, and column consolidation.
 
