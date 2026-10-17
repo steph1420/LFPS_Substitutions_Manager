@@ -13,11 +13,32 @@ import {
   DEFAULT_MASTER_SCHEDULE,
 } from '@lfps/core';
 
+export interface ContextMenuTarget {
+  x: number;
+  y: number;
+  teacher: string;
+  period?: PeriodId;
+}
+
+export interface CoTeachSlotTarget {
+  period: PeriodId;
+  teacher: string;
+  partnerTeacher?: string;
+  className: string;
+  subject: string;
+}
+
+export interface OfficiatingTarget {
+  type: 'AC' | 'CT';
+  section?: string;
+}
+
 interface TimetableState {
   // Navigation & View
   selectedDay: DayOfWeek;
   viewMode: 'teachers' | 'classes';
   isMinimalUI: boolean;
+  isFitGrid: boolean;
 
   // Master Data
   directory: StaffDirectory;
@@ -33,10 +54,29 @@ interface TimetableState {
   officiatingAC: Record<DayOfWeek, string | null>;
   officiatingCT: Record<DayOfWeek, Record<string, string>>;
 
+  // Modal & Interaction States
+  activeContextMenu: ContextMenuTarget | null;
+  activeAvailabilityTeacher: string | null;
+  activeCoTeachSlot: CoTeachSlotTarget | null;
+  activeOfficiatingTarget: OfficiatingTarget | null;
+
   // Actions
   setDay: (day: DayOfWeek) => void;
   setViewMode: (mode: 'teachers' | 'classes') => void;
   toggleMinimalUI: () => void;
+  toggleFitGrid: () => void;
+
+  // Context Menu Actions
+  openContextMenu: (target: ContextMenuTarget) => void;
+  closeContextMenu: () => void;
+
+  // Modal Actions
+  openAvailabilityModal: (teacherName: string) => void;
+  closeAvailabilityModal: () => void;
+  openCoTeachModal: (slot: CoTeachSlotTarget) => void;
+  closeCoTeachModal: () => void;
+  openOfficiatingModal: (target: OfficiatingTarget) => void;
+  closeOfficiatingModal: () => void;
 
   toggleAbsence: (
     teacherName: string,
@@ -57,6 +97,9 @@ interface TimetableState {
   assignSubstitution: (sub: Omit<SubstitutionAssignment, 'id' | 'assignedAt'>) => void;
   removeSubstitution: (id: string) => void;
 
+  // FEAT-31: Co-teacher per-period release
+  releaseCoTeacher: (period: PeriodId, teacherName: string) => void;
+
   login: (teacherName: string) => void;
   logout: () => void;
   assignOfficiatingAC: (day: DayOfWeek, teacherName: string) => void;
@@ -67,6 +110,7 @@ export const useTimetableStore = create<TimetableState>((set) => ({
   selectedDay: 'MON',
   viewMode: 'teachers',
   isMinimalUI: true,
+  isFitGrid: false,
 
   directory: DEFAULT_STAFF_DIRECTORY,
   schedule: DEFAULT_MASTER_SCHEDULE,
@@ -79,9 +123,27 @@ export const useTimetableStore = create<TimetableState>((set) => ({
   officiatingAC: { MON: null, TUE: null, WED: null, THU: null, FRI: null, SAT: null },
   officiatingCT: { MON: {}, TUE: {}, WED: {}, THU: {}, FRI: {}, SAT: {} },
 
+  activeContextMenu: null,
+  activeAvailabilityTeacher: null,
+  activeCoTeachSlot: null,
+  activeOfficiatingTarget: null,
+
   setDay: (day) => set({ selectedDay: day }),
   setViewMode: (mode) => set({ viewMode: mode }),
   toggleMinimalUI: () => set((state) => ({ isMinimalUI: !state.isMinimalUI })),
+  toggleFitGrid: () => set((state) => ({ isFitGrid: !state.isFitGrid })),
+
+  openContextMenu: (target) => set({ activeContextMenu: target }),
+  closeContextMenu: () => set({ activeContextMenu: null }),
+
+  openAvailabilityModal: (teacherName) => set({ activeAvailabilityTeacher: teacherName }),
+  closeAvailabilityModal: () => set({ activeAvailabilityTeacher: null }),
+
+  openCoTeachModal: (slot) => set({ activeCoTeachSlot: slot }),
+  closeCoTeachModal: () => set({ activeCoTeachSlot: null }),
+
+  openOfficiatingModal: (target) => set({ activeOfficiatingTarget: target }),
+  closeOfficiatingModal: () => set({ activeOfficiatingTarget: null }),
 
   toggleAbsence: (teacherName, options = {}) =>
     set((state) => {
@@ -150,12 +212,31 @@ export const useTimetableStore = create<TimetableState>((set) => ({
       substitutions: state.substitutions.filter((s) => s.id !== id),
     })),
 
+  // FEAT-31: Co-teacher per-period release only (clears this period's slot, leaves entire day intact)
+  releaseCoTeacher: (period, teacherName) =>
+    set((state) => {
+      const day = state.selectedDay;
+      const currentDaySchedule = { ...(state.schedule[day] || {}) };
+      const periodMap = { ...(currentDaySchedule[period] || {}) };
+      periodMap[teacherName] = 'Free';
+      currentDaySchedule[period] = periodMap;
+
+      return {
+        schedule: {
+          ...state.schedule,
+          [day]: currentDaySchedule,
+        },
+        activeCoTeachSlot: null,
+      };
+    }),
+
   login: (teacherName) => set({ loggedInTeacher: teacherName }),
   logout: () => set({ loggedInTeacher: null }),
 
   assignOfficiatingAC: (day, teacherName) =>
     set((state) => ({
       officiatingAC: { ...state.officiatingAC, [day]: teacherName },
+      activeOfficiatingTarget: null,
     })),
 
   assignOfficiatingCT: (day, section, teacherName) =>
@@ -164,6 +245,6 @@ export const useTimetableStore = create<TimetableState>((set) => ({
         ...state.officiatingCT,
         [day]: { ...(state.officiatingCT[day] || {}), [section]: teacherName },
       },
+      activeOfficiatingTarget: null,
     })),
 }));
-

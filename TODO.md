@@ -388,38 +388,41 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - [x] **FEAT-25 (Dated Server Excel Backup & Audit Logging System)**:
   - Delivered via Excelize v2 in Job Bundle 20 (`/api/v1/export/excel` & `/api/v1/backups`).
 
-### Job Bundle 18: Co-Teacher Free-Day Removal, Away (Official) Engine, Multi-Period Selection & Modal Simplification
-- **Status**: 🔴 Queued
-- [ ] **FEAT-31 (Remove "Free Day" from Co-Teacher Inspector Modal)**:
-  - Remove `.btn-inline-release-day` ("Free Day") button from `#co-teach-modal` (`app.js` line 3134).
-  - Releasing a co-teacher should strictly apply per-period (`releaseTeacher(period, teacher, 'period')`). Wiping their entire schedule for the day clears solo-taught classes as well, which generally does not happen in school operations.
+### Job Bundle 21: Apple-Grade Fluid UI, High-Density Routine Grid & Tactile Interaction Engine (RESOLVED on `next-gen` branch)
+- **Status**: 🟢 Resolved (Phase 3 Complete)
+- **Scope & Solution Delivered**:
+  - [x] **Dual-View High-Density Routine Matrix (`apps/web/src/components/RoutineGrid.tsx`)**:
+    - **Teachers View** (`👨‍🏫`) $\longleftrightarrow$ **Classes View** (`🏫`) instantaneous toggle.
+    - Sticky left column with 100% solid, fully opaque surface backing (`bg-slate-900/98`) and 2.5px solid right border with drop shadow occluding passing period cards (resolving `BUG-05` & `BUG-08`).
+    - Stacked class tag and subject architecture capped to ~40px on mobile (`BUG-03`, `BUG-04`, `FEAT-04`).
+    - Live cell states: Regular classes, absent highlights (`Need Sub!`), covered substitutions, and co-teaching badges.
+    - Quick Fit-Grid View toggle (`⛶` Expand / Collapse) (`FEAT-09`).
+  - [x] **Tactile Micro Context Menus (`apps/web/src/components/MicroContextMenu.tsx`) (FEAT-29)**:
+    - Right-click (desktop) and 500ms touch long-press (mobile) summons an ultra-compact ~170px $\times$ 105px floating micro-menu with auto-clamping to screen edges.
+    - Instant 1-tap `[ 🔴/🟢 Mark Absent ]` & `[ ⏸/🟢 Free from Sub ]` with zero screen clutter.
+  - [x] **Hero Substitution Availability Card (`apps/web/src/components/SubAvailabilityModal.tsx`) (FEAT-34 & FEAT-35)**:
+    - Hero card with inline toggle button next to teacher name: `[ 🟢 Available for Sub • Tap to free ]` $\longleftrightarrow$ `[ ⏸ Free from Sub • Tap to restore ]`.
+    - Exactly 4 clean single-row duty presets: `[ 🚌 Bus Duty ]`, `[ 👥 PTM ]`, `[ 📑 Exam Duty ]`, `[ 🏢 Away (Official) ]`.
+    - 1-tap preset activation sets the remark, excuses from sub, and confirms with tactile spring animation. Compact single-line custom remark input.
+  - [x] **Co-Teacher Inspector Modal (`apps/web/src/components/CoTeacherModal.tsx`) (FEAT-31)**:
+    - Completely removed the dangerous whole-day "Free Day" button.
+    - Implemented strictly per-period release (`releaseCoTeacher(period, teacher)`), keeping all solo classes intact.
+  - [x] **Officiating Leadership Modal (`apps/web/src/components/OfficiatingModal.tsx`) (BUG-09 parity)**:
+    - Temporary leadership designation for Officiating Class Teacher (Off. CT) and Officiating Academic Coordinator (Off. AC) with recommended Class Team partner sorting (`★ Class Team`).
+
+### Job Bundle 18: Away (Official) Deputation Engine & Multi-Period Selection (Phase 4)
+- **Status**: 🔴 Queued (Next Up)
+- [x] **FEAT-31 (Remove "Free Day" from Co-Teacher Inspector Modal)**:
+  - Resolved in Job Bundle 21 via `CoTeacherModal.tsx`.
 - [ ] **FEAT-32 (Away (Official) / Off-Campus Deputation Engine)**:
-  - Implement a dedicated "Away (Official)" status distinct from regular absence (`state.officialDuty: { [day]: { [teacher]: { periods: string[], reason: string, venue: string } } }`).
-  - Caters to real-world school administrative cases: teachers sent out of school on official duty (buying supplies, event reconnaissance, delivering formal invitations, student competition escorts, board visits).
-  - **Attendance Status**: Legally counts as "Present / On-Duty" (distinguished from sick/casual leave), but marks their scheduled periods as requiring substitution.
-  - **Visual Badging**: Distinctive slate-blue/indigo badge (`🏢 Away (Official): [Reason]`) across the Routine Grid, Absence Tray, and Daily Substitution Register instead of red `🔴 Absent`.
-  - Available everywhere the absent or free-from-sub option is provided (Tray, Grid, Roster, Popovers, Modals).
+  - Implement full administrative multi-period deputation booking dialog with venue & purpose picker.
 - [ ] **FEAT-33 (Multi-Period Click-to-Select & Drag-to-Select for Absence / Away)**:
   - Enable selecting multiple specific periods in a teacher's schedule to mark them absent or on official duty for partial days (e.g. Periods 1–3 for morning supply runs, or Periods 4–6).
-  - Implement both intuitive modalities:
-    1. **Mode Toggle Pill (`[✋ Move] [⬚ Select]`) & Desktop `Shift+Drag`**: Marquee drag across period cells in a teacher's row on the routine grid to highlight multiple slots, summoning a floating action pill (`[ 🏢 Away (Official) ]`, `[ 🔴 Mark Absent ]`, `[ ✕ Cancel ]`). Eliminates gesture collision with drag-to-reorder.
-    2. **Quick Period Chip Picker in Context Popover & Modals**: An interactive period strip (`[1st] [2nd] [3rd] [4th] [5th] [6th] [All] [Morning] [Afternoon]`) allowing 1-tap toggling of affected periods before saving.
-- [ ] **FEAT-34 (Substitution Terminology Harmonisation)**:
-  - Eliminate the terms "off-duty" and "Mark Unavailable today" across all tables, pills, and popups.
-  - Standardize on:
-    - **`🟢 Available for Sub`** $\longleftrightarrow$ **`⏸ Free from Sub`**
-- [ ] **FEAT-35 (Staff Availability & Duties Modal Decluttering & Redesign)**:
-  - Eliminate the giant red button (`#sub-avail-main-action-btn`).
-  - Move the action toggle button directly next to the teacher's name inside the hero card:
-    - Active state: `[ 🟢 Available for Sub ]` with microcopy hint **`Tap to free`** (or `• Tap to free`).
-    - Excused state: `[ ⏸ Free from Sub ]` with microcopy hint **`Tap to restore`**.
-  - Streamline duty presets to exactly 4 clean single-row chips:
-    - `[ 🚌 Bus Duty ]`
-    - `[ 👥 PTM ]`
-    - `[ 📑 Exam Duty ]`
-    - `[ 🏢 Away (Official) ]`
-  - Tapping any preset automatically sets the remark and flips status to `Free from Sub` in 1 tap.
-  - Streamline Custom Remark row into an ultra-compact single line input.
+  - Mode toggle pill `[✋ Move] [⬚ Select]` + Desktop `Shift+Drag` marquee + interactive period chip picker strip (`[1st] [2nd] [3rd] [4th] [5th] [6th] [All] [Morning] [Afternoon]`).
+- [x] **FEAT-34 (Substitution Terminology Harmonisation)**:
+  - Resolved in Job Bundle 21: standardized on `🟢 Available for Sub` $\longleftrightarrow$ `⏸ Free from Sub` with contextual hints.
+- [x] **FEAT-35 (Staff Availability & Duties Modal Decluttering & Redesign)**:
+  - Resolved in Job Bundle 21 via `SubAvailabilityModal.tsx`.
 
 
 

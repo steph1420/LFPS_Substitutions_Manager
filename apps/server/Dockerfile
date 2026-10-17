@@ -38,3 +38,4 @@ ENV DATA_DIR=/app/data
 EXPOSE 8080
 
 CMD ["/app/server"]
+
