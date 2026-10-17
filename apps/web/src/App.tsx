@@ -19,8 +19,8 @@ export const App: React.FC = () => {
       {/* Apple HIG Sticky Header with Dynamic Island */}
       <Header />
 
-      {/* Main Content Viewport with generous bottom padding for TabBar dock */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 pb-28">
+      {/* Main Content Viewport with slim mobile margins to maximize table space */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-1.5 sm:px-6 py-3 sm:py-6 pb-28">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}

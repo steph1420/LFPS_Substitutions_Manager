@@ -152,3 +152,4 @@ export const TabBar: React.FC = () => {
     </nav>
   );
 };
+

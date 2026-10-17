@@ -425,6 +425,9 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - Resolved in Job Bundle 21 via `SubAvailabilityModal.tsx`.
 - [x] **FEAT-36 (Staff Hierarchy Ordering by Operational Responsibilities)**:
   - Resolved in Job Bundle 21 & Tab System: ordered staff strictly by operational hierarchy (`AC` → `AAC` → `CT` → `ST`) with dedicated vertical cards in the Staff Roster tab.
+- [ ] **FEAT-37 (Routine Matrix Drag-and-Drop Cell Reordering & Dedicated Class Context Menu)**:
+  - **Drag-and-Drop Cell Moves**: Enable drag-and-drop cell interactions in `RoutineGrid.tsx` to move/swap period assignments and reorder classes with full undo/redo state tracking.
+  - **Dedicated Class-Section Context Menu**: In Classes View (`viewMode === 'classes'`), right-clicking or long-pressing class cells should summon class-specific context actions (e.g., Change Teacher, Inspect Sub, View Section Routine) rather than mirroring the teacher absence/availability menu.
 
 
 

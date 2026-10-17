@@ -9,7 +9,6 @@ import {
   Trash2,
   AlertTriangle,
   CheckCircle2,
-  UserCheck,
   ShieldAlert,
   Search,
 } from 'lucide-react';
@@ -135,20 +134,32 @@ export const SubstitutionsRegister: React.FC = () => {
           )}
         </div>
 
-        {/* KPI Statistics Strip */}
+        {/* KPI Statistics Strip (1st: Covered [Green], 2nd: Uncovered [Red], 3rd: Officiating Staff) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          {/* Card 1: Covered (Green border) */}
+          <div className="bg-emerald-950/20 border border-emerald-500/40 rounded-xl p-3 flex items-center justify-between shadow-sm">
+            <div>
+              <span className="text-[11px] text-emerald-400 font-medium">Covered Substitutions</span>
+              <div className="text-lg font-bold text-emerald-300">{daySubstitutions.length}</div>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </div>
+
+          {/* Card 2: Uncovered (Red border) */}
           <div
-            className={`border rounded-xl p-3 flex items-center justify-between ${
+            className={`border rounded-xl p-3 flex items-center justify-between shadow-sm ${
               uncoveredSlots.length > 0
-                ? 'bg-amber-950/20 border-amber-500/40'
-                : 'bg-emerald-950/20 border-emerald-500/30'
+                ? 'bg-rose-950/20 border-rose-500/50'
+                : 'bg-slate-900/60 border-slate-800'
             }`}
           >
             <div>
               <span className="text-[11px] text-slate-400 font-medium">Uncovered Slots</span>
               <div
                 className={`text-lg font-bold ${
-                  uncoveredSlots.length > 0 ? 'text-amber-400' : 'text-emerald-400'
+                  uncoveredSlots.length > 0 ? 'text-rose-400' : 'text-slate-400'
                 }`}
               >
                 {uncoveredSlots.length > 0 ? `${uncoveredSlots.length} Need Sub` : '0 (Fully Covered)'}
@@ -156,26 +167,17 @@ export const SubstitutionsRegister: React.FC = () => {
             </div>
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                uncoveredSlots.length > 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'
+                uncoveredSlots.length > 0 ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-500'
               }`}
             >
-              {uncoveredSlots.length > 0 ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+              <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
 
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+          {/* Card 3: Officiating Staff */}
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between shadow-sm">
             <div>
-              <span className="text-[11px] text-slate-400 font-medium">Covered Substitutions</span>
-              <div className="text-lg font-bold text-blue-400">{daySubstitutions.length}</div>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-blue-500/15 flex items-center justify-center text-blue-400">
-              <UserCheck className="w-4 h-4" />
-            </div>
-          </div>
-
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-slate-400 font-medium">Officiating Leaders</span>
+              <span className="text-[11px] text-slate-400 font-medium">Officiating Staff</span>
               <div className="text-lg font-bold text-purple-300">
                 {(offAC ? 1 : 0) + Object.keys(offCTMap).length} Active
               </div>

@@ -75,7 +75,10 @@ export const Header: React.FC = () => {
     }, 450);
   };
 
-  // 120fps Uncapped Scroll Observer (requestAnimationFrame + hysteresis)
+  const isTransitioningRef = React.useRef(false);
+  const scrollDeltaAccumulatorRef = React.useRef(0);
+
+  // 120fps Directional Scroll Observer with Hysteresis & Transition Lock
   React.useEffect(() => {
     let rafId: number | null = null;
 
@@ -94,23 +97,49 @@ export const Header: React.FC = () => {
         const currentScrollY = window.scrollY;
         const prevScrollY = lastScrollYRef.current;
         const diff = currentScrollY - prevScrollY;
+        lastScrollYRef.current = currentScrollY;
 
-        // Near top of page: instantly dock and reveal full header
-        if (currentScrollY <= 65) {
-          setIsHeaderHidden(false);
-          setIsIslandExpanded(false);
-          if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
-        } else if (diff > 10) {
-          // Scrolling down: smoothly morph day bar into Dynamic Island
-          setIsHeaderHidden(true);
-        } else if (diff < -14) {
-          // Scrolling up: smoothly reveal full header console
-          setIsHeaderHidden(false);
-          setIsIslandExpanded(false);
-          if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
+        // Top Zone: Always firmly anchored in Full Header Console mode
+        if (currentScrollY <= 50) {
+          scrollDeltaAccumulatorRef.current = 0;
+          if (isHeaderHidden) {
+            setIsHeaderHidden(false);
+            setIsIslandExpanded(false);
+            if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
+          }
+          return;
         }
 
-        lastScrollYRef.current = currentScrollY;
+        // Lock state changes while actively animating between spectrums to prevent fighting
+        if (isTransitioningRef.current) return;
+
+        // Accumulate intentional directional travel
+        if (diff > 0) {
+          scrollDeltaAccumulatorRef.current = Math.max(0, scrollDeltaAccumulatorRef.current) + diff;
+        } else if (diff < 0) {
+          scrollDeltaAccumulatorRef.current = Math.min(0, scrollDeltaAccumulatorRef.current) + diff;
+        }
+
+        // Committed downward scroll: cleanly achieve Dynamic Island mode
+        if (!isHeaderHidden && currentScrollY > 80 && scrollDeltaAccumulatorRef.current > 35) {
+          setIsHeaderHidden(true);
+          scrollDeltaAccumulatorRef.current = 0;
+          isTransitioningRef.current = true;
+          setTimeout(() => {
+            isTransitioningRef.current = false;
+          }, 400);
+        }
+        // Committed upward scroll: cleanly achieve Full Header Console mode
+        else if (isHeaderHidden && scrollDeltaAccumulatorRef.current < -40) {
+          setIsHeaderHidden(false);
+          setIsIslandExpanded(false);
+          if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
+          scrollDeltaAccumulatorRef.current = 0;
+          isTransitioningRef.current = true;
+          setTimeout(() => {
+            isTransitioningRef.current = false;
+          }, 400);
+        }
       });
     };
 
@@ -120,7 +149,7 @@ export const Header: React.FC = () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
       if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
     };
-  }, []);
+  }, [isHeaderHidden]);
 
   return (
     <>
