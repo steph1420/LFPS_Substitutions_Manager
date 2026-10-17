@@ -11,6 +11,9 @@ import { SubAvailabilityModal } from './components/SubAvailabilityModal.js';
 import { CoTeacherModal } from './components/CoTeacherModal.js';
 import { OfficiatingModal } from './components/OfficiatingModal.js';
 import { SettingsModal } from './components/SettingsModal.js';
+import { StaffLoginModal } from './components/StaffLoginModal.js';
+import { ResetPurgeContextMenu } from './components/ResetPurgeContextMenu.js';
+import { AssignSubstituteModal } from './components/AssignSubstituteModal.js';
 
 export const App: React.FC = () => {
   const { activeTab, isFitGrid, undo, redo } = useTimetableStore();
@@ -46,6 +49,9 @@ export const App: React.FC = () => {
         <RoutineGrid isFullscreen />
         {/* Modals & Micro Context Menus remain fully interactive in Fullscreen */}
         <MicroContextMenu />
+        <ResetPurgeContextMenu />
+        <StaffLoginModal />
+        <AssignSubstituteModal />
         <SubAvailabilityModal />
         <CoTeacherModal />
         <OfficiatingModal />
@@ -81,6 +87,9 @@ export const App: React.FC = () => {
 
       {/* Interactive Modals & Micro Context Menus */}
       <MicroContextMenu />
+      <ResetPurgeContextMenu />
+      <StaffLoginModal />
+      <AssignSubstituteModal />
       <SubAvailabilityModal />
       <CoTeacherModal />
       <OfficiatingModal />

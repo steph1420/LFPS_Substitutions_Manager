@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseCellSlot,
+  areTeachersCoTeachingPartners,
+  isTeacherCoTeachingInSlot,
   getDisambiguatedTeacherName,
   findAvailableSubstitutes,
   autoResolveSubstitutions,
@@ -26,6 +28,25 @@ describe('LFPS Core Solver & Domain Engine', () => {
       const parsed = parseCellSlot('GAMES KG A + KG B');
       expect(parsed.isCoTeaching).toBe(true);
       expect(parsed.subject).toBe('GAMES');
+    });
+
+    it('identifies co-teaching partners sharing classes or joint sessions (LOGIC-03)', () => {
+      expect(areTeachersCoTeachingPartners('GAMES KG A + KG B', 'GAMES KG A')).toBe(true);
+      expect(areTeachersCoTeachingPartners('GAMES KG A + KG B', 'GAMES KG B')).toBe(true);
+      expect(areTeachersCoTeachingPartners('ENG. REC. KG A', 'ENG. REC. KG A')).toBe(true);
+      expect(areTeachersCoTeachingPartners('ENG. REC. KG A', 'MATH KG B')).toBe(false);
+
+      const monSchedule = DEFAULT_MASTER_SCHEDULE['MON'];
+      // Mr. S. A. Lakra, Ms. A. Amira, Mrs. S. Bage in G/PD
+      const lakraSlot = isTeacherCoTeachingInSlot('Mr. S. A. Lakra', 'G/PD', monSchedule);
+      const amiraSlot = isTeacherCoTeachingInSlot('Ms. A. Amira', 'G/PD', monSchedule);
+      const bageSlot = isTeacherCoTeachingInSlot('Mrs. S. Bage', 'G/PD', monSchedule);
+
+      expect(lakraSlot.isCoTeaching).toBe(true);
+      expect(amiraSlot.isCoTeaching).toBe(true);
+      expect(bageSlot.isCoTeaching).toBe(true);
+      expect(amiraSlot.partners).toContain('Mr. S. A. Lakra');
+      expect(bageSlot.partners).toContain('Mr. S. A. Lakra');
     });
 
     it('recognizes Free and Break slots', () => {

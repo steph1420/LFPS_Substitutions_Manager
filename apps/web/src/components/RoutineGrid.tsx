@@ -1,5 +1,5 @@
 import React from 'react';
-import { DEFAULT_PERIODS, PeriodId, DayOfWeek, parseCellSlot } from '@lfps/core';
+import { DEFAULT_PERIODS, PeriodId, DayOfWeek, parseCellSlot, isTeacherCoTeachingInSlot } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
 import { Maximize2, Minimize2, Users, School } from 'lucide-react';
 import { UndoRedoControls } from './UndoRedoControls.js';
@@ -141,7 +141,8 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                   const originalTask = currentSchedule[period.id]?.[teacher.abbr] || 'Free';
                   const parsed = parseCellSlot(originalTask);
                   const isBusy = !parsed.isFree && !parsed.isBreak;
-                  const isCoTeaching = parsed.isCoTeaching;
+                  const coTeachInfo = isTeacherCoTeachingInSlot(teacher.abbr, period.id, currentSchedule);
+                  const isCoTeaching = parsed.isCoTeaching || coTeachInfo.isCoTeaching;
 
                   // Sub coverage checks
                   const sub = substitutions.find(
@@ -161,7 +162,6 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                   return (
                     <td
                       key={period.id}
-                      onContextMenu={(e) => handleContextMenu(e, teacher.abbr, period.id)}
                       onClick={() => {
                         if (isCoTeaching) {
                           openCoTeachModal({

@@ -71,6 +71,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Global Reset Day & Contextual History Purge Engine (FEAT-41, Job Bundle 23)**:
   - Built tactile `ResetDayButton.tsx` in header: single-tap resets the current day's modifications back to master baseline with automatic undo snapshot capture (making reset fully reversible with `⌘Z`).
   - Added 500ms touch long-press (mobile) and desktop right-click context popover allowing administrators to completely purge all undo/redo history buffers across all tabs.
+- **Tactile Front-Desk Polish & Manual Substitute Workflow (Job Bundle 24)**:
+  - **Auto-Reset Substitutions on Teacher Present (`BUG-12`)**: When marking an absent teacher back to present, `toggleAbsence()` automatically scans and removes all substitution assignments involving that teacher (as either absent teacher or substitute), restoring original baseline schedule slots and updating live counters with undo snapshot preservation.
+  - **Routine Instructional Period Cell Freedom (`BUG-13`)**: Scoped the `MicroContextMenu` trigger strictly to the sticky teacher name column cells, freeing instructional period cells for cell inspection, co-teaching modals, and future hold-and-drag reordering gestures.
+  - **Staff Login Root Modal (`BUG-14`)**: Hoisted `StaffLoginModal.tsx` to application root in `App.tsx`, eliminating CSS transform containing block collisions that previously positioned the panel awkwardly at the top-middle off-screen. Added outside-click and <kbd>Escape</kbd> dismissal (`LOGIC-02`).
+  - **Screen-Clamped History Purge Context Menu (`BUG-15`)**: Hoisted `ResetPurgeContextMenu.tsx` to application root in `App.tsx` with screen-space edge clamping, tactile spring animations, and outside-click dismissal (`LOGIC-02`).
+  - **120fps GPU Spring Accordion Easing (`BUG-16`)**: Replaced jerky accordion animation on Substitutions and Roster overviews with `SPRING_TRANSITIONS.snappy`, strict `overflow-hidden`, and `will-change-[height,opacity]`.
+  - **Away (Official) Classified Under 'Free' (`LOGIC-01`)**: Counted and filtered teachers on `Away (Official)` deputations under 'Free' in attendance roster metrics and filters.
+  - **Universal Dismissal on Outside Click (`LOGIC-02`)**: Ensured all popovers, context menus, modals, and dropdowns close on outside click/tap and <kbd>Escape</kbd>.
+  - **Equalized Co-Teacher Semantic Color-Coding (`LOGIC-03`)**: Built `areTeachersCoTeachingPartners` and `isTeacherCoTeachingInSlot` in `@lfps/core` with cross-partner inspection so all co-teachers' cells receive identical semantic color styling and badge indicators.
+  - **Interactive Candidate Substitute Selection Drawer (`FEAT-42`)**: Added 1-tap `[ Assign Substitute ]` on uncovered teacher cards in `SubstitutionsRegister.tsx` opening `AssignSubstituteModal.tsx` with ranked candidate substitutes from `@lfps/core`.
+  - **Substitutions Overview Cards Reordered (`FEAT-43`)**: Reordered KPI cards to 1st Covered (green border), 2nd Uncovered (red border), 3rd Officiating Staff (`border-purple-500/40`).
+  - **Header Overview Collapse Ergonomics (`FEAT-44`)**: Replaced verbose text buttons with a sleek, rightmost-aligned Apple collapse/expand icon button (`ChevronUp`/`ChevronDown`) and enabled tapping empty header space to toggle collapse/expand state.
 
 ## [v1.53.0] - 2026-10-17
 

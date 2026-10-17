@@ -33,6 +33,15 @@ export interface OfficiatingTarget {
   section?: string;
 }
 
+export interface AssignSubSlotTarget {
+  day: DayOfWeek;
+  period: PeriodId;
+  originalTeacher: string;
+  className: string;
+  subject: string;
+  task: string;
+}
+
 export type ActiveTab = 'routine' | 'substitutions' | 'roster';
 
 export interface HistoryStack<T> {
@@ -74,6 +83,7 @@ interface TimetableState {
   isMinimalUI: boolean;
   isFitGrid: boolean;
   isSettingsOpen: boolean;
+  isStaffLoginOpen: boolean;
 
   // Master Data
   directory: StaffDirectory;
@@ -96,9 +106,11 @@ interface TimetableState {
 
   // Modal & Interaction States
   activeContextMenu: ContextMenuTarget | null;
+  activeResetPurgeMenu: { x: number; y: number } | null;
   activeAvailabilityTeacher: string | null;
   activeCoTeachSlot: CoTeachSlotTarget | null;
   activeOfficiatingTarget: OfficiatingTarget | null;
+  activeAssignSubSlot: AssignSubSlotTarget | null;
 
   // Actions
   setDay: (day: DayOfWeek) => void;
@@ -108,10 +120,14 @@ interface TimetableState {
   toggleFitGrid: () => void;
   openSettings: () => void;
   closeSettings: () => void;
+  openStaffLogin: () => void;
+  closeStaffLogin: () => void;
 
   // Context Menu Actions
   openContextMenu: (target: ContextMenuTarget) => void;
   closeContextMenu: () => void;
+  openResetPurgeMenu: (coords: { x: number; y: number }) => void;
+  closeResetPurgeMenu: () => void;
 
   // Modal Actions
   openAvailabilityModal: (teacherName: string) => void;
@@ -120,6 +136,8 @@ interface TimetableState {
   closeCoTeachModal: () => void;
   openOfficiatingModal: (target: OfficiatingTarget) => void;
   closeOfficiatingModal: () => void;
+  openAssignSubModal: (slot: AssignSubSlotTarget) => void;
+  closeAssignSubModal: () => void;
 
   toggleAbsence: (
     teacherName: string,
@@ -166,6 +184,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   isMinimalUI: true,
   isFitGrid: false,
   isSettingsOpen: false,
+  isStaffLoginOpen: false,
 
   directory: DEFAULT_STAFF_DIRECTORY,
   schedule: DEFAULT_MASTER_SCHEDULE,
@@ -183,9 +202,11 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   rosterHistory: { past: [], future: [] },
 
   activeContextMenu: null,
+  activeResetPurgeMenu: null,
   activeAvailabilityTeacher: null,
   activeCoTeachSlot: null,
   activeOfficiatingTarget: null,
+  activeAssignSubSlot: null,
 
   setDay: (day) => set({ selectedDay: day }),
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -194,9 +215,13 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   toggleFitGrid: () => set((state) => ({ isFitGrid: !state.isFitGrid })),
   openSettings: () => set({ isSettingsOpen: true }),
   closeSettings: () => set({ isSettingsOpen: false }),
+  openStaffLogin: () => set({ isStaffLoginOpen: true }),
+  closeStaffLogin: () => set({ isStaffLoginOpen: false }),
 
   openContextMenu: (target) => set({ activeContextMenu: target }),
   closeContextMenu: () => set({ activeContextMenu: null }),
+  openResetPurgeMenu: (coords) => set({ activeResetPurgeMenu: coords }),
+  closeResetPurgeMenu: () => set({ activeResetPurgeMenu: null }),
 
   openAvailabilityModal: (teacherName) => set({ activeAvailabilityTeacher: teacherName }),
   closeAvailabilityModal: () => set({ activeAvailabilityTeacher: null }),
@@ -206,6 +231,9 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
   openOfficiatingModal: (target) => set({ activeOfficiatingTarget: target }),
   closeOfficiatingModal: () => set({ activeOfficiatingTarget: null }),
+
+  openAssignSubModal: (slot) => set({ activeAssignSubSlot: slot }),
+  closeAssignSubModal: () => set({ activeAssignSubSlot: null }),
 
   toggleAbsence: (teacherName, options = {}) =>
     set((state) => {
@@ -221,10 +249,27 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         (a) => a.teacherName === teacherName && a.day === state.selectedDay
       );
       if (exists) {
+        // Teacher is being marked PRESENT again!
+        // Automatically clean up all substitutions involving this teacher on this day (BUG-12)
+        const updatedSubs = state.substitutions.filter(
+          (s) =>
+            !(
+              s.day === state.selectedDay &&
+              (s.originalTeacher === teacherName || s.substituteTeacher === teacherName)
+            )
+        );
+
+        const substitutionsHistory =
+          updatedSubs.length !== state.substitutions.length
+            ? pushSnapshot(state.substitutionsHistory, { substitutions: state.substitutions })
+            : state.substitutionsHistory;
+
         return {
           absences: state.absences.filter(
             (a) => !(a.teacherName === teacherName && a.day === state.selectedDay)
           ),
+          substitutions: updatedSubs,
+          substitutionsHistory,
           rosterHistory,
         };
       }

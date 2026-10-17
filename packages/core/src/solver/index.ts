@@ -31,6 +31,76 @@ export function extractClassSection(task: string): string | undefined {
 }
 
 /**
+ * Extracts all matching class sections from a task string
+ */
+export function extractClassSections(task: string): string[] {
+  if (!task) return [];
+  const upper = task.toUpperCase();
+  return KNOWN_CLASSES.filter((cls) => upper.includes(cls));
+}
+
+/**
+ * Checks if two teachers' assigned tasks in the same period represent co-teaching partners (LOGIC-03)
+ */
+export function areTeachersCoTeachingPartners(taskA: string, taskB: string): boolean {
+  if (!taskA || !taskB) return false;
+  const a = taskA.trim().toUpperCase();
+  const b = taskB.trim().toUpperCase();
+  if (a === 'FREE' || b === 'FREE' || a === '-' || b === '-') return false;
+
+  // Identical tasks (e.g. both assigned "GAMES KG A")
+  if (a === b) return true;
+
+  // Joint classes (e.g. "GAMES KG A + KG B" sharing with "GAMES KG A" or "GAMES KG B")
+  const aHasJoint = a.includes('+') || a.includes('&');
+  const bHasJoint = b.includes('+') || b.includes('&');
+  if (aHasJoint || bHasJoint) {
+    const aSections = extractClassSections(a);
+    const bSections = extractClassSections(b);
+    const sharedSection = aSections.some((s) => bSections.includes(s));
+
+    const aPrefix = a.replace(/^(1ST|2ND|3RD|4TH)\s+/i, '').split(' ')[0];
+    const bPrefix = b.replace(/^(1ST|2ND|3RD|4TH)\s+/i, '').split(' ')[0];
+    if (sharedSection && (aPrefix === bPrefix || aPrefix.includes(bPrefix) || bPrefix.includes(aPrefix))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Checks if a teacher is actively co-teaching in a period and returns all partners (LOGIC-03)
+ */
+export function isTeacherCoTeachingInSlot(
+  teacherName: string,
+  period: PeriodId,
+  schedule: DailySchedule
+): { isCoTeaching: boolean; partners: string[] } {
+  const currentTask = schedule[period]?.[teacherName];
+  if (!currentTask || currentTask.trim().toLowerCase() === 'free' || currentTask === '-') {
+    return { isCoTeaching: false, partners: [] };
+  }
+
+  const partners: string[] = [];
+  const periodSchedule = schedule[period] || {};
+
+  for (const [otherTeacher, otherTask] of Object.entries(periodSchedule)) {
+    if (otherTeacher === teacherName) continue;
+    if (areTeachersCoTeachingPartners(currentTask, otherTask)) {
+      partners.push(otherTeacher);
+    }
+  }
+
+  const isJoint = currentTask.includes('+') || currentTask.includes('&');
+
+  return {
+    isCoTeaching: partners.length > 0 || isJoint,
+    partners,
+  };
+}
+
+/**
  * Parses a raw timetable cell string into structured slot details
  */
 export function parseCellSlot(raw: string): ParsedCellSlot {

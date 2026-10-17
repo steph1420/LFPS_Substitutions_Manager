@@ -22,13 +22,11 @@ export const Header: React.FC = () => {
     selectedDay,
     setDay,
     loggedInTeacher,
-    login,
     logout,
-    directory,
     openSettings,
+    openStaffLogin,
   } = useTimetableStore();
 
-  const [showLoginModal, setShowLoginModal] = React.useState(false);
   const [isHeaderHidden, setIsHeaderHidden] = React.useState(false);
   const [isIslandExpanded, setIsIslandExpanded] = React.useState(false);
 
@@ -300,7 +298,7 @@ export const Header: React.FC = () => {
                 <SlidersHorizontal className="w-3.5 h-3.5 text-blue-400" />
               </button>
               <button
-                onClick={() => (loggedInTeacher ? logout() : setShowLoginModal(true))}
+                onClick={() => (loggedInTeacher ? logout() : openStaffLogin())}
                 className="glass-pill px-2.5 py-1 rounded-full text-xs flex items-center gap-1.5 text-slate-200 active:scale-95 transition-transform"
               >
                 <User className="w-3.5 h-3.5 text-blue-400" />
@@ -399,7 +397,7 @@ export const Header: React.FC = () => {
               </div>
             ) : (
               <button
-                onClick={() => setShowLoginModal(true)}
+                onClick={openStaffLogin}
                 className="flex items-center gap-1.5 glass-pill px-3 py-1.5 rounded-full text-xs font-medium text-slate-200 hover:bg-slate-800 transition-colors"
               >
                 <User className="w-3.5 h-3.5 text-blue-400" />
@@ -408,59 +406,6 @@ export const Header: React.FC = () => {
             )}
           </div>
         </div>
-
-        {/* Staff Login Modal */}
-        {showLoginModal && (
-          <div
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto"
-            onClick={() => setShowLoginModal(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={SPRING_TRANSITIONS.bouncy}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-4"
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <User className="w-4 h-4 text-blue-400" />
-                  Select Staff Identity
-                </h3>
-                <button
-                  onClick={() => setShowLoginModal(false)}
-                  className="text-slate-400 hover:text-white text-xs"
-                >
-                  ✕
-                </button>
-              </div>
-              <p className="text-xs text-slate-400">
-                Select your profile to view personal duty schedules and manage substitutions.
-              </p>
-              <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
-                {Object.values(directory).map((teacher) => (
-                  <button
-                    key={teacher.id}
-                    onClick={() => {
-                      login(teacher.abbr);
-                      setShowLoginModal(false);
-                    }}
-                    className="w-full text-left px-3 py-2 rounded-xl bg-slate-800/60 hover:bg-blue-600/20 border border-slate-700/40 hover:border-blue-500/40 transition-all flex items-center justify-between text-xs"
-                  >
-                    <div>
-                      <div className="font-semibold text-slate-200">{teacher.abbr}</div>
-                      <div className="text-[11px] text-slate-400">{teacher.role}</div>
-                    </div>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-950 text-slate-400">
-                      {teacher.id}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        )}
       </motion.header>
     </>
   );

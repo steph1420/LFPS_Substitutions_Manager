@@ -58,7 +58,9 @@ export const AbsenceRoster: React.FC = () => {
   const presentCount = allTeachers.length - absentCount - awayCount;
   const freeFromSubCount = allTeachers.filter((t) => {
     const avail = availabilities[t.abbr];
-    return avail && (!avail.isAvailable || avail.status === 'FREE_FROM_SUB');
+    const isFreeExplicit = avail && (!avail.isAvailable || avail.status === 'FREE_FROM_SUB');
+    const isAway = activeAbsences.some((a) => a.teacherName === t.abbr && a.type === 'AWAY_OFFICIAL');
+    return isFreeExplicit || isAway;
   }).length;
 
   // Filter staff by search and status tab
@@ -69,10 +71,10 @@ export const AbsenceRoster: React.FC = () => {
     const isPresent = !isAbsent && !isAway;
 
     const avail = availabilities[teacher.abbr];
-    const isFree = avail && (!avail.isAvailable || avail.status === 'FREE_FROM_SUB');
+    const isFree = (avail && (!avail.isAvailable || avail.status === 'FREE_FROM_SUB')) || isAway;
 
     if (statusFilter === 'present' && !isPresent) return false;
-    if (statusFilter === 'absent' && !isAbsent && !isAway) return false;
+    if (statusFilter === 'absent' && !isAbsent) return false;
     if (statusFilter === 'free_from_sub' && !isFree) return false;
 
     if (searchQuery.trim()) {
@@ -97,7 +99,14 @@ export const AbsenceRoster: React.FC = () => {
     <div className="w-full space-y-5 animate-in fade-in duration-200">
       {/* Top Header & KPI Summary Bar */}
       <section className="w-full glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-xl space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800/80 pb-3.5">
+        <div
+          onClick={(e) => {
+            // Tapping header in free space triggers collapse/expand (FEAT-44)
+            if ((e.target as HTMLElement).closest('button, input, select, a')) return;
+            setIsOverviewCollapsed((prev) => !prev);
+          }}
+          className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800/80 pb-3.5 cursor-pointer select-none"
+        >
           <div>
             <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50" />
@@ -108,26 +117,7 @@ export const AbsenceRoster: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Overview Collapse/Expand Toggle (FEAT-39) */}
-            <button
-              onClick={() => setIsOverviewCollapsed((prev) => !prev)}
-              className="px-2.5 py-1.5 rounded-xl glass-pill border-slate-700/60 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
-              title={isOverviewCollapsed ? 'Show Overview & Attendance KPI Summary' : 'Collapse Overview'}
-            >
-              {isOverviewCollapsed ? (
-                <>
-                  <ChevronDown className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Show Overview</span>
-                </>
-              ) : (
-                <>
-                  <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Collapse Overview</span>
-                </>
-              )}
-            </button>
-
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-between md:justify-end w-full md:w-auto">
             {/* Staff Roster Tab Undo / Redo Controls (FEAT-40) */}
             <UndoRedoControls tab="roster" />
 
@@ -140,18 +130,32 @@ export const AbsenceRoster: React.FC = () => {
                 Mark All Present
               </button>
             )}
+
+            {/* Rightmost Aligned Collapse Icon Button (FEAT-44) */}
+            <button
+              onClick={() => setIsOverviewCollapsed((prev) => !prev)}
+              className="p-1.5 rounded-xl glass-pill border-slate-700/60 text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center active:scale-95 transition-all cursor-pointer ml-auto md:ml-0"
+              title={isOverviewCollapsed ? 'Show Overview & Attendance KPI Summary' : 'Collapse Overview'}
+              aria-label={isOverviewCollapsed ? 'Expand Overview' : 'Collapse Overview'}
+            >
+              {isOverviewCollapsed ? (
+                <ChevronDown className="w-4 h-4 text-blue-400" />
+              ) : (
+                <ChevronUp className="w-4 h-4 text-slate-400" />
+              )}
+            </button>
           </div>
         </div>
 
-        {/* Collapsible Overview: KPI Strip (FEAT-39) */}
+        {/* Collapsible Overview: KPI Strip (BUG-16: 120fps GPU Spring Easing) */}
         <AnimatePresence initial={false}>
           {!isOverviewCollapsed && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.22, ease: [0.2, 0.9, 0.3, 1] }}
-              className="overflow-hidden"
+              transition={SPRING_TRANSITIONS.snappy}
+              className="overflow-hidden will-change-[height,opacity]"
             >
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 text-xs pt-1 pb-1">
                 <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">

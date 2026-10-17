@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
-import { autoResolveSubstitutions, PeriodId } from '@lfps/core';
+import { autoResolveSubstitutions, PeriodId, parseCellSlot } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
 import {
   Sparkles,
@@ -13,6 +13,7 @@ import {
   Search,
   ChevronDown,
   ChevronUp,
+  UserCheck,
 } from 'lucide-react';
 import { UndoRedoControls } from './UndoRedoControls.js';
 
@@ -25,6 +26,7 @@ export const SubstitutionsRegister: React.FC = () => {
     substitutions,
     assignSubstitution,
     removeSubstitution,
+    openAssignSubModal,
     loggedInTeacher,
     officiatingAC,
     officiatingCT,
@@ -116,7 +118,14 @@ export const SubstitutionsRegister: React.FC = () => {
     <div className="w-full space-y-5 animate-in fade-in duration-200">
       {/* Header & KPI Summary Panel */}
       <section className="w-full glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-xl space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800/80 pb-3.5">
+        <div
+          onClick={(e) => {
+            // Tapping header in free space triggers collapse/expand (FEAT-44)
+            if ((e.target as HTMLElement).closest('button, input, select, a')) return;
+            setIsOverviewCollapsed((prev) => !prev);
+          }}
+          className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800/80 pb-3.5 cursor-pointer select-none"
+        >
           <div>
             <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
@@ -127,26 +136,7 @@ export const SubstitutionsRegister: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Overview Collapse/Expand Toggle (FEAT-38) */}
-            <button
-              onClick={() => setIsOverviewCollapsed((prev) => !prev)}
-              className="px-2.5 py-1.5 rounded-xl glass-pill border-slate-700/60 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
-              title={isOverviewCollapsed ? 'Show Overview & KPI Summary' : 'Collapse Overview'}
-            >
-              {isOverviewCollapsed ? (
-                <>
-                  <ChevronDown className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Show Overview</span>
-                </>
-              ) : (
-                <>
-                  <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Collapse Overview</span>
-                </>
-              )}
-            </button>
-
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-between md:justify-end w-full md:w-auto">
             {/* Substitutions Tab Undo / Redo Controls (FEAT-40) */}
             <UndoRedoControls tab="substitutions" />
 
@@ -159,22 +149,36 @@ export const SubstitutionsRegister: React.FC = () => {
                 Auto-Resolve ({uncoveredSlots.length} Slots)
               </button>
             )}
+
+            {/* Rightmost Aligned Collapse Icon Button (FEAT-44) */}
+            <button
+              onClick={() => setIsOverviewCollapsed((prev) => !prev)}
+              className="p-1.5 rounded-xl glass-pill border-slate-700/60 text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center active:scale-95 transition-all cursor-pointer ml-auto md:ml-0"
+              title={isOverviewCollapsed ? 'Show Overview & KPI Summary' : 'Collapse Overview'}
+              aria-label={isOverviewCollapsed ? 'Expand Overview' : 'Collapse Overview'}
+            >
+              {isOverviewCollapsed ? (
+                <ChevronDown className="w-4 h-4 text-blue-400" />
+              ) : (
+                <ChevronUp className="w-4 h-4 text-slate-400" />
+              )}
+            </button>
           </div>
         </div>
 
-        {/* Collapsible Overview: KPI Statistics Strip (FEAT-38) */}
+        {/* Collapsible Overview: KPI Statistics Strip (BUG-16: 120fps GPU Spring Easing) */}
         <AnimatePresence initial={false}>
           {!isOverviewCollapsed && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.22, ease: [0.2, 0.9, 0.3, 1] }}
-              className="overflow-hidden"
+              transition={SPRING_TRANSITIONS.snappy}
+              className="overflow-hidden will-change-[height,opacity]"
             >
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1 pb-1">
-                {/* Card 1: Covered (Green border) */}
-                <div className="bg-emerald-950/20 border border-emerald-500/40 rounded-xl p-3 flex items-center justify-between shadow-sm">
+                {/* Card 1: Covered (Green border - FEAT-43) */}
+                <div className="bg-emerald-950/20 border border-emerald-500/50 rounded-xl p-3 flex items-center justify-between shadow-sm">
                   <div>
                     <span className="text-[11px] text-emerald-400 font-medium">Covered Substitutions</span>
                     <div className="text-lg font-bold text-emerald-300">{daySubstitutions.length}</div>
@@ -184,11 +188,11 @@ export const SubstitutionsRegister: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Card 2: Uncovered (Red border) */}
+                {/* Card 2: Uncovered (Red border - FEAT-43) */}
                 <div
                   className={`border rounded-xl p-3 flex items-center justify-between shadow-sm ${
                     uncoveredSlots.length > 0
-                      ? 'bg-rose-950/20 border-rose-500/50'
+                      ? 'bg-rose-950/20 border-rose-500/60'
                       : 'bg-slate-900/60 border-slate-800'
                   }`}
                 >
@@ -211,8 +215,8 @@ export const SubstitutionsRegister: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Card 3: Officiating Staff */}
-                <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between shadow-sm">
+                {/* Card 3: Officiating Staff (FEAT-43) */}
+                <div className="bg-purple-950/20 border border-purple-500/40 rounded-xl p-3 flex items-center justify-between shadow-sm">
                   <div>
                     <span className="text-[11px] text-slate-400 font-medium">Officiating Staff</span>
                     <div className="text-lg font-bold text-purple-300">
@@ -305,29 +309,53 @@ export const SubstitutionsRegister: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {uncoveredSlots.map((slot, idx) => (
-              <div
-                key={`${slot.period}-${slot.originalTeacher}-${idx}`}
-                className="bg-amber-950/20 border border-amber-500/40 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                    {slot.period} Period
-                  </span>
-                  <span className="text-xs font-semibold text-slate-300">{slot.task}</span>
-                </div>
+            {uncoveredSlots.map((slot, idx) => {
+              const parsed = parseCellSlot(slot.task);
+              const targetClassName = parsed.className || slot.task;
+              const handleOpenAssign = () => {
+                openAssignSubModal({
+                  day: selectedDay,
+                  period: slot.period,
+                  originalTeacher: slot.originalTeacher,
+                  className: targetClassName,
+                  subject: parsed.subject || slot.task,
+                  task: slot.task,
+                });
+              };
 
-                <div className="text-xs">
-                  <div className="text-[11px] text-slate-400">Absent Teacher:</div>
-                  <div className="font-bold text-rose-300">{slot.originalTeacher}</div>
-                </div>
+              return (
+                <div
+                  key={`${slot.period}-${slot.originalTeacher}-${idx}`}
+                  onClick={handleOpenAssign}
+                  className="bg-amber-950/20 hover:bg-amber-950/30 border border-amber-500/40 hover:border-blue-500/60 rounded-2xl p-4 flex flex-col justify-between space-y-3.5 shadow-lg cursor-pointer transition-all active:scale-[0.99] group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      {slot.period} Period
+                    </span>
+                    <span className="text-xs font-semibold text-slate-300 group-hover:text-blue-300 transition-colors">
+                      {slot.task}
+                    </span>
+                  </div>
 
-                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 font-medium flex items-center justify-between">
-                  <span>Coverage Needed</span>
-                  <span className="text-[10px] opacity-75">Click Auto-Resolve above</span>
+                  <div className="text-xs">
+                    <div className="text-[11px] text-slate-400">Absent Teacher:</div>
+                    <div className="font-bold text-rose-300">{slot.originalTeacher}</div>
+                  </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenAssign();
+                    }}
+                    className="w-full py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/30 transition-all cursor-pointer group-hover:bg-blue-500"
+                  >
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span>Assign Substitute</span>
+                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
