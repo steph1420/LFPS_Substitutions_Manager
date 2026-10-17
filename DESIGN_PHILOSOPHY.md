@@ -113,3 +113,4 @@ Organize codebases as modular, loosely coupled layers:
 1. **Living Architecture Blueprint (`ARCHITECTURE.md`)**: Maintain an authoritative document describing system topologies, package boundaries, data flows, and state synchronization lifecycles.
 2. **Exhaustive Changelog (`CHANGELOG.md`)**: Follow [Keep a Changelog](https://keepachangelog.com/) standards. Document every bug fix, feature addition, and performance optimization with release dates and version tags.
 3. **Structured Task Tracking (`TODO.md`)**: Maintain active, queued, and resolved bugs and features with explicit IDs (`BUG-XX`, `FEAT-XX`, `PERF-XX`) to preserve project momentum across development sessions.
+

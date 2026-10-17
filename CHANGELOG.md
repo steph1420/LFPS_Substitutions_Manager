@@ -34,9 +34,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Full-viewport spreadsheet overlay (`fixed inset-0 z-50 bg-slate-950/98 backdrop-blur-2xl`) for wide table management.
   - Pinned multi-axial headers: period columns stay pinned at `sticky top-0 z-30`, teacher column stays pinned at `sticky left-0 z-20`, and corner cell anchors at `sticky top-0 left-0 z-40`.
   - Body scroll lock during fullscreen and instant <kbd>Esc</kbd> dismissal.
-- **Roster Tray Wording & Decluttering (`apps/web`)**:
-  - Standardized on **`Present`** status badges (`<Check /> Present`), eliminating ambiguous "On Campus" wording.
-  - Removed color-coding dots legend above the roster tray to maximize vertical screen space.
+- **Apple HIG Floating Tab Navigation Dock & View Partitioning (`apps/web`)**:
+  - Floating bottom navigation dock (`TabBar.tsx`) with animated pill indicator (`layoutId="activeNavDockPill"`), live notification count badges (amber for uncovered slots, rose for absent staff), and keyboard shortcuts (`1`, `2`, `3`).
+  - Separated the congested vertical page flow into three high-velocity dedicated tabs: **Routine Matrix**, **Substitutions**, and **Staff Roster**.
+  - Restored immediate, top-of-screen visibility for the Master Routine Matrix on mobile without requiring users to scroll past other tables.
+- **Dedicated Vertical Staff Attendance & Availability Workstation (`apps/web`)**:
+  - Replaced the horizontal scrolling tray with a spacious, dedicated vertical workstation.
+  - Implemented operational responsibility hierarchy sorting (FEAT-36): `AC` (Mrs. R. Pahwa) → `AAC` (Mrs. S. Lakra) → `CT` (Mrs. M. Midha, Mrs. R. Narayan) → `ST` (Ms. N. Horo, Ms. K. Sanga, etc.).
+  - Added KPI metrics strip (Present, Marked Absent, Free from Sub, Away Official), quick search bar, category filters, and 1-tap "Mark All Present".
+- **Dedicated Vertical Substitution Coverage Engine (`apps/web`)**:
+  - Dedicated workstation featuring high-visibility action-required cards for uncovered slots, 1-tap Smart Auto-Resolve solver, active covered duties ledger, and temporary officiating summaries.
 - **Tactile Interaction Modals & Micro Context Menus (`apps/web`)**:
   - Ultra-compact floating micro context menu on right-click or 500ms long-press.
   - Hero Substitution Availability Modal with 4 clean presets (`Bus Duty`, `PTM`, `Exam Duty`, `Away Official`) and inline status toggle.

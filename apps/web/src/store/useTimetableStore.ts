@@ -33,9 +33,12 @@ export interface OfficiatingTarget {
   section?: string;
 }
 
+export type ActiveTab = 'routine' | 'substitutions' | 'roster';
+
 interface TimetableState {
   // Navigation & View
   selectedDay: DayOfWeek;
+  activeTab: ActiveTab;
   viewMode: 'teachers' | 'classes';
   isMinimalUI: boolean;
   isFitGrid: boolean;
@@ -62,6 +65,7 @@ interface TimetableState {
 
   // Actions
   setDay: (day: DayOfWeek) => void;
+  setActiveTab: (tab: ActiveTab) => void;
   setViewMode: (mode: 'teachers' | 'classes') => void;
   toggleMinimalUI: () => void;
   toggleFitGrid: () => void;
@@ -108,6 +112,7 @@ interface TimetableState {
 
 export const useTimetableStore = create<TimetableState>((set) => ({
   selectedDay: 'MON',
+  activeTab: 'routine',
   viewMode: 'teachers',
   isMinimalUI: true,
   isFitGrid: false,
@@ -129,6 +134,7 @@ export const useTimetableStore = create<TimetableState>((set) => ({
   activeOfficiatingTarget: null,
 
   setDay: (day) => set({ selectedDay: day }),
+  setActiveTab: (tab) => set({ activeTab: tab }),
   setViewMode: (mode) => set({ viewMode: mode }),
   toggleMinimalUI: () => set((state) => ({ isMinimalUI: !state.isMinimalUI })),
   toggleFitGrid: () => set((state) => ({ isFitGrid: !state.isFitGrid })),
