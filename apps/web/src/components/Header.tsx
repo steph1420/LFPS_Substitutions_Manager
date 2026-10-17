@@ -6,12 +6,11 @@ import { useTimetableStore } from '../store/useTimetableStore.js';
 import { User, LogOut, SlidersHorizontal, FileSpreadsheet, ChevronDown, X } from 'lucide-react';
 import { useLiveSync } from '../hooks/useLiveSync.js';
 
-// Relaxed Apple-grade spring physics for graceful, unhurried island transitions
+// Perfectly symmetrical Apple-grade spring physics (timed equally for expand and collapse)
 const ISLAND_SPRING = {
   type: 'spring' as const,
-  stiffness: 220,
-  damping: 26,
-  mass: 1.1,
+  duration: 0.6,
+  bounce: 0.12,
 };
 
 const DAYS: DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -66,7 +65,7 @@ export const Header: React.FC = () => {
     setDay(day);
 
     if (isHeaderHidden) {
-      // Keep expanded and reset the 3.5s countdown
+      // Keep expanded and reset the 4.8s countdown
       resetAutoCollapseTimer();
     }
 
@@ -153,23 +152,33 @@ export const Header: React.FC = () => {
                   layoutId="dynamic-island-day-bar"
                   key="island-pill"
                   transition={ISLAND_SPRING}
+                  whileTap={{ scale: 0.94 }}
                   onClick={() => {
                     triggerHaptic(20);
                     setIsIslandExpanded(true);
                     resetAutoCollapseTimer();
                   }}
-                  className="bg-slate-950/98 border border-slate-700/80 shadow-[0_14px_32px_rgba(0,0,0,0.85)] backdrop-blur-2xl px-3.5 py-1.5 rounded-full flex items-center gap-2 text-xs font-semibold text-white active:scale-95 transition-transform cursor-pointer group will-change-transform select-none"
+                  className="bg-slate-950/98 border border-slate-700/80 shadow-[0_14px_32px_rgba(0,0,0,0.85)] backdrop-blur-2xl px-3.5 py-1.5 rounded-full flex items-center gap-2 text-xs font-semibold text-white cursor-pointer group will-change-transform select-none"
                   title="Tap to change timetable day"
                 >
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      sync.status.isConnected
-                        ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
-                        : 'bg-slate-500'
-                    }`}
-                  />
-                  <span className="font-bold tracking-wider">{selectedDay}</span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-400 transition-colors" />
+                  <motion.div
+                    key="pill-content"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center gap-2"
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        sync.status.isConnected
+                          ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
+                          : 'bg-slate-500'
+                      }`}
+                    />
+                    <span className="font-bold tracking-wider">{selectedDay}</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-400 transition-colors" />
+                  </motion.div>
                 </motion.button>
               ) : (
                 // Expanded Floating Day Selector (Active day ALREADY highlighted in blue from frame 1)
@@ -179,35 +188,44 @@ export const Header: React.FC = () => {
                   transition={ISLAND_SPRING}
                   className="bg-slate-950/98 border border-slate-700/90 shadow-[0_20px_48px_rgba(0,0,0,0.9)] rounded-full p-1.5 flex items-center gap-1 backdrop-blur-2xl will-change-transform"
                 >
-                  <div className="flex items-center gap-0.5 sm:gap-1">
-                    {DAYS.map((day) => {
-                      const isActive = selectedDay === day;
-                      return (
-                        <button
-                          key={day}
-                          onClick={() => handleSelectDay(day)}
-                          className={`relative px-3 sm:px-3.5 py-1 text-xs font-bold rounded-full transition-colors select-none ${
-                            isActive
-                              ? 'text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-600/40'
-                              : 'text-slate-400 hover:text-slate-200'
-                          }`}
-                        >
-                          {day}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setIsIslandExpanded(false);
-                      if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
-                    }}
-                    className="ml-1 p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                    title="Close Day Selector"
+                  <motion.div
+                    key="expanded-content"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center gap-1"
                   >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                    <div className="flex items-center gap-0.5 sm:gap-1">
+                      {DAYS.map((day) => {
+                        const isActive = selectedDay === day;
+                        return (
+                          <button
+                            key={day}
+                            onClick={() => handleSelectDay(day)}
+                            className={`relative px-3 sm:px-3.5 py-1 text-xs font-bold rounded-full transition-colors select-none ${
+                              isActive
+                                ? 'text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-600/40'
+                                : 'text-slate-400 hover:text-slate-200'
+                            }`}
+                          >
+                            {day}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setIsIslandExpanded(false);
+                        if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
+                      }}
+                      className="ml-1 p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                      title="Close Day Selector"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </motion.div>
                 </motion.div>
               )}
             </div>

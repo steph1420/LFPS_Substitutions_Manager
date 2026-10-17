@@ -12,7 +12,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Simple Mode**:
   - Streamlined view option presenting strictly basic manual substitution logic.
 - **Codebase Technical Debt & Bloat Elimination**:
-  - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
+## [v2.0.0-alpha.1] - 2026-10-18
+
+### Added
+- **Monorepo Architecture & Package Separation (Job Bundle 19)**:
+  - Migrated legacy single-file codebase to modern NPM workspaces monorepo:
+    - `@lfps/core`: Pure TypeScript domain engine, types, and substitution solver.
+    - `@lfps/ui`: Apple HIG design tokens, spring physics curves, and semantic role palettes.
+    - `apps/web`: React 19 + Vite 6 + Tailwind CSS + Framer Motion high-speed PWA.
+    - `apps/server`: Go 1.23 high-concurrency microservice with WebSocket hub and Excel generation.
+- **Pure TypeScript Substitution Solver & Domain Engine (`@lfps/core`)**:
+  - Strict domain contracts: `Teacher`, `DailySchedule`, `MasterSchedule`, `AbsenceRecord`, `StaffAvailabilityRecord`, `SubstitutionAssignment`, `AutoResolvePlan`.
+  - Deterministic solver scoring candidates by subject specialization, class familiarity, and daily load balance with 100% Vitest coverage.
+  - Staff disambiguation engine resolving shared staff surnames.
+- **Dynamic Island Day Bar with Symmetrical Spring Physics (`apps/web`)**:
+  - Floating top-bar capsule that automatically morphs from the docked console to a floating capsule at `top-3` when scrolling down.
+  - Symmetrical 600ms duration-based spring timing (`duration: 0.6`, `bounce: 0.12`) ensuring expand and collapse animate with identical fluidity.
+  - Relaxed 4.8s auto-collapse countdown giving comfortable breathing room.
+  - Full-screen backdrop enabling instant 1-tap outside dismissal.
+- **Master Routine Matrix Fullscreen Workstation (`isFitGrid`, `apps/web`)**:
+  - Full-viewport spreadsheet overlay (`fixed inset-0 z-50 bg-slate-950/98 backdrop-blur-2xl`) for wide table management.
+  - Pinned multi-axial headers: period columns stay pinned at `sticky top-0 z-30`, teacher column stays pinned at `sticky left-0 z-20`, and corner cell anchors at `sticky top-0 left-0 z-40`.
+  - Body scroll lock during fullscreen and instant <kbd>Esc</kbd> dismissal.
+- **Roster Tray Wording & Decluttering (`apps/web`)**:
+  - Standardized on **`Present`** status badges (`<Check /> Present`), eliminating ambiguous "On Campus" wording.
+  - Removed color-coding dots legend above the roster tray to maximize vertical screen space.
+- **Tactile Interaction Modals & Micro Context Menus (`apps/web`)**:
+  - Ultra-compact floating micro context menu on right-click or 500ms long-press.
+  - Hero Substitution Availability Modal with 4 clean presets (`Bus Duty`, `PTM`, `Exam Duty`, `Away Official`) and inline status toggle.
+  - Co-Teacher Inspector Modal with strictly per-period release (`releaseCoTeacher`), preserving teachers' solo classes.
+  - Officiating Leadership Modal designating temporary Off. AC and Off. CT roles with class team partner recommendation.
+- **Go 1.23 Cloud Backend & WebSocket Hub (`apps/server`, Job Bundle 20)**:
+  - Gorilla WebSocket hub broadcasting `STATE_MUTATION` events across all connected tablets and phones with sub-millisecond latency.
+  - Thread-safe RWMutex disk JSON storage (`data/state.json`) persisting state across restarts.
+  - Excelize v2 XLSX engine generating publication-ready daily substitution tables with formal navy branding and Principal signature lines.
+  - Production multi-stage Docker container (`~15MB`) deployed to Render.
 
 ## [v1.53.0] - 2026-10-17
 
