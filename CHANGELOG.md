@@ -12,7 +12,77 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Simple Mode**:
   - Streamlined view option presenting strictly basic manual substitution logic.
 - **Codebase Technical Debt & Bloat Elimination**:
-  - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
+## [v2.0.0-alpha.1] - 2026-10-18
+
+### Added
+- **Monorepo Architecture & Package Separation (Job Bundle 19)**:
+  - Migrated legacy single-file codebase to modern NPM workspaces monorepo:
+    - `@lfps/core`: Pure TypeScript domain engine, types, and substitution solver.
+    - `@lfps/ui`: Apple HIG design tokens, spring physics curves, and semantic role palettes.
+    - `apps/web`: React 19 + Vite 6 + Tailwind CSS + Framer Motion high-speed PWA.
+    - `apps/server`: Go 1.23 high-concurrency microservice with WebSocket hub and Excel generation.
+- **Pure TypeScript Substitution Solver & Domain Engine (`@lfps/core`)**:
+  - Strict domain contracts: `Teacher`, `DailySchedule`, `MasterSchedule`, `AbsenceRecord`, `StaffAvailabilityRecord`, `SubstitutionAssignment`, `AutoResolvePlan`.
+  - Deterministic solver scoring candidates by subject specialization, class familiarity, and daily load balance with 100% Vitest coverage.
+  - Staff disambiguation engine resolving shared staff surnames.
+- **Dynamic Island Day Bar with Symmetrical Spring Physics (`apps/web`)**:
+  - Floating top-bar capsule that automatically morphs from the docked console to a floating capsule at `top-3` when scrolling down.
+  - Symmetrical 600ms duration-based spring timing (`duration: 0.6`, `bounce: 0.12`) ensuring expand and collapse animate with identical fluidity.
+  - Relaxed 4.8s auto-collapse countdown giving comfortable breathing room.
+  - Full-screen backdrop enabling instant 1-tap outside dismissal.
+- **Master Routine Matrix Fullscreen Workstation (`isFitGrid`, `apps/web`)**:
+  - Full-viewport spreadsheet overlay (`fixed inset-0 z-50 bg-slate-950/98 backdrop-blur-2xl`) for wide table management.
+  - Pinned multi-axial headers: period columns stay pinned at `sticky top-0 z-30`, teacher column stays pinned at `sticky left-0 z-20`, and corner cell anchors at `sticky top-0 left-0 z-40`.
+  - Body scroll lock during fullscreen and instant <kbd>Esc</kbd> dismissal.
+- **Apple HIG Floating Tab Navigation Dock & View Partitioning (`apps/web`)**:
+  - Floating bottom navigation dock (`TabBar.tsx`) with animated pill indicator (`layoutId="activeNavDockPill"`), live notification count badges (amber for uncovered slots, rose for absent staff), and keyboard shortcuts (`1`, `2`, `3`).
+  - Separated the congested vertical page flow into three high-velocity dedicated tabs: **Routine Matrix**, **Substitutions**, and **Staff Roster**.
+  - Restored immediate, top-of-screen visibility for the Master Routine Matrix on mobile without requiring users to scroll past other tables.
+- **Tab Overview Collapsible Controls (FEAT-38 & FEAT-39)**:
+  - Added tactile Apple HIG collapse/expand toggle buttons (`[ ▾ Collapse Overview ]` / `[ ▸ Show Overview ]`) to both the **Substitutions** and **Staff Roster** workstation headers.
+  - Smooth Framer Motion spring-animated accordion folding reclaims ~160px+ of vertical space on mobile screens, bringing the primary data tables and staff cards directly into immediate view.
+- **Routine Fullscreen Workstation Root View Architecture (BUG-10)**:
+  - Eliminated the Expand Grid blank screen error across mobile and desktop by hoisting fullscreen workstation rendering to the top-level application root in `App.tsx` (`h-screen h-[100dvh] w-screen z-[100] bg-slate-950`).
+  - Eliminated CSS transform containing block collisions and portal attachment quirks.
+  - Integrated direct MON..SAT day navigation pills into the fullscreen controls bar alongside the dual Teachers/Classes view toggle and <kbd>Esc</kbd> dismissal.
+- **Dedicated Vertical Staff Attendance & Availability Workstation (`apps/web`)**:
+  - Replaced the horizontal scrolling tray with a spacious, dedicated vertical workstation.
+  - Implemented operational responsibility hierarchy sorting (FEAT-36): `AC` (Mrs. R. Pahwa) → `AAC` (Mrs. S. Lakra) → `CT` (Mrs. M. Midha, Mrs. R. Narayan) → `ST` (Ms. N. Horo, Ms. K. Sanga, etc.).
+  - Added KPI metrics strip (Present, Marked Absent, Free from Sub, Away Official), quick search bar, category filters, and 1-tap "Mark All Present".
+- **Dedicated Vertical Substitution Coverage Engine (`apps/web`)**:
+  - Dedicated workstation featuring high-visibility action-required cards for uncovered slots, 1-tap Smart Auto-Resolve solver, active covered duties ledger, and temporary officiating summaries.
+- **Tactile Interaction Modals & Micro Context Menus (`apps/web`)**:
+  - Ultra-compact floating micro context menu on right-click or 500ms long-press.
+  - Hero Substitution Availability Modal with 4 clean presets (`Bus Duty`, `PTM`, `Exam Duty`, `Away Official`) and inline status toggle.
+  - Co-Teacher Inspector Modal with strictly per-period release (`releaseCoTeacher`), preserving teachers' solo classes.
+  - Officiating Leadership Modal designating temporary Off. AC and Off. CT roles with class team partner recommendation.
+- **Go 1.23 Cloud Backend & WebSocket Hub (`apps/server`, Job Bundle 20)**:
+  - Gorilla WebSocket hub broadcasting `STATE_MUTATION` events across all connected tablets and phones with sub-millisecond latency.
+  - Thread-safe RWMutex disk JSON storage (`data/state.json`) persisting state across restarts.
+  - Excelize v2 XLSX engine generating publication-ready daily substitution tables with formal navy branding and Principal signature lines.
+  - Production multi-stage Docker container (`~15MB`) deployed to Render.
+- **Interactive Settings Console Modal & Mobile Affordance (BUG-11, Job Bundle 23)**:
+  - Replaced the minimal UI boolean toggle in the header with an Apple HIG `SettingsModal.tsx` console featuring 5 distinct control groups: Operating Identity (Staff login/logout), Interface & 120fps GPU compositing status, Cloud & Live Sync diagnostics with manual reconnect, Data Management (Export Excel, Reset Day, Purge Buffers), and System Version metadata.
+  - Added dedicated Settings button in mobile header navigation for parity with desktop.
+- **Per-Tab Isolated Undo/Redo Engine (FEAT-40, Job Bundle 23)**:
+  - Implemented three independent FIFO history stacks in `useTimetableStore.ts` (`routineHistory`, `substitutionsHistory`, `rosterHistory`) capped at 30 snapshots each, ensuring actions on one tab never corrupt or undo actions on another tab.
+  - Bound global keyboard shortcuts (`⌘Z` / `Ctrl+Z`, `⌘⇧Z` / `Ctrl+Y`) dynamically routed to the active tab.
+  - Embedded tactile `<UndoRedoControls />` button pairs on Routine Grid, Substitutions Register, and Staff Roster toolbars with live disabled states.
+- **Global Reset Day & Contextual History Purge Engine (FEAT-41, Job Bundle 23)**:
+  - Built tactile `ResetDayButton.tsx` in header: single-tap resets the current day's modifications back to master baseline with automatic undo snapshot capture (making reset fully reversible with `⌘Z`).
+  - Added 500ms touch long-press (mobile) and desktop right-click context popover allowing administrators to completely purge all undo/redo history buffers across all tabs.
+- **Tactile Front-Desk Polish & Manual Substitute Workflow (Job Bundle 24)**:
+  - **Auto-Reset Substitutions on Teacher Present (`BUG-12`)**: When marking an absent teacher back to present, `toggleAbsence()` automatically scans and removes all substitution assignments involving that teacher (as either absent teacher or substitute), restoring original baseline schedule slots and updating live counters with undo snapshot preservation.
+  - **Routine Instructional Period Cell Freedom (`BUG-13`)**: Scoped the `MicroContextMenu` trigger strictly to the sticky teacher name column cells, freeing instructional period cells for cell inspection, co-teaching modals, and future hold-and-drag reordering gestures.
+  - **Staff Login Root Modal (`BUG-14`)**: Hoisted `StaffLoginModal.tsx` to application root in `App.tsx`, eliminating CSS transform containing block collisions that previously positioned the panel awkwardly at the top-middle off-screen. Added outside-click and <kbd>Escape</kbd> dismissal (`LOGIC-02`).
+  - **Screen-Clamped History Purge Context Menu (`BUG-15`)**: Hoisted `ResetPurgeContextMenu.tsx` to application root in `App.tsx` with screen-space edge clamping, tactile spring animations, and outside-click dismissal (`LOGIC-02`).
+  - **120fps GPU Spring Accordion Easing (`BUG-16`)**: Replaced jerky accordion animation on Substitutions and Roster overviews with `SPRING_TRANSITIONS.snappy`, strict `overflow-hidden`, and `will-change-[height,opacity]`.
+  - **Away (Official) Classified Under 'Free' (`LOGIC-01`)**: Counted and filtered teachers on `Away (Official)` deputations under 'Free' in attendance roster metrics and filters.
+  - **Universal Dismissal on Outside Click (`LOGIC-02`)**: Ensured all popovers, context menus, modals, and dropdowns close on outside click/tap and <kbd>Escape</kbd>.
+  - **Equalized Co-Teacher Semantic Color-Coding (`LOGIC-03`)**: Built `areTeachersCoTeachingPartners` and `isTeacherCoTeachingInSlot` in `@lfps/core` with cross-partner inspection so all co-teachers' cells receive identical semantic color styling and badge indicators.
+  - **Interactive Candidate Substitute Selection Drawer (`FEAT-42`)**: Added 1-tap `[ Assign Substitute ]` on uncovered teacher cards in `SubstitutionsRegister.tsx` opening `AssignSubstituteModal.tsx` with ranked candidate substitutes from `@lfps/core`.
+  - **Substitutions Overview Cards Reordered (`FEAT-43`)**: Reordered KPI cards to 1st Covered (green border), 2nd Uncovered (red border), 3rd Officiating Staff (`border-purple-500/40`).
+  - **Header Overview Collapse Ergonomics (`FEAT-44`)**: Replaced verbose text buttons with a sleek, rightmost-aligned Apple collapse/expand icon button (`ChevronUp`/`ChevronDown`) and enabled tapping empty header space to toggle collapse/expand state.
 
 ## [v1.53.0] - 2026-10-17
 

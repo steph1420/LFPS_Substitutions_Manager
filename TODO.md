@@ -8,6 +8,36 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 
 ## 🐛 Critical Bug & Performance Tracker
 
+### BUG-12: Marking Teacher Present Does Not Reset Their Active Substitutions
+- **Status**: 🟢 Resolved (Job Bundle 24)
+- **Reported**: If a teacher who was marked absent has their absence untoggled (marked present), their previously assigned substitutions remain in the substitutions register and timetable instead of being reset/reverted.
+- **Solution Delivered**: In `useTimetableStore.ts`, `toggleAbsence()` checks if the teacher was previously absent; if so, it automatically purges all substitutions for `selectedDay` where `originalTeacher === teacherName || substituteTeacher === teacherName`, restoring baseline timetable slots and updating live counters, with full undo snapshot preservation.
+
+### BUG-13: Routine Grid Period Cells Trigger Teacher Absence Menu on Right-Click / Long-Press
+- **Status**: 🟢 Resolved (Job Bundle 24)
+- **Reported**: Right-clicking or long-pressing cells in Routine currently mirrors the teacher absence menu. This blocks standard timetable interactions and prevents smooth hold-and-drag gestures.
+- **Solution Delivered**: Removed `onContextMenu` from instructional period cells (`<td>`) in `RoutineGrid.tsx`. The `MicroContextMenu` is strictly scoped to the sticky teacher name column cells. Instructional cells are free for slot inspection, co-teach modals, and hold-and-drag gestures.
+
+### BUG-14: Staff Login Panel Positioning Glitch (Partially Off-Screen at Top-Middle)
+- **Status**: 🟢 Resolved (Job Bundle 24)
+- **Reported**: Tapping the staff profile pill in the header opens a popover that appears awkwardly positioned at top-middle and is partially clipped off the top of the viewport.
+- **Root Cause & Fix**: The modal was nested inside `<motion.header>`, whose CSS transform (`will-change-transform`, `animate={{ y: ... }}`) created a local CSS containing block trapping `position: fixed` modals. Created standalone `StaffLoginModal.tsx` mounted at root in `App.tsx` with outside-click and <kbd>Escape</kbd> dismissal.
+
+### BUG-15: Reset History Purge Context Menu Clipped & Inverted Coordinate Alignment
+- **Status**: 🟢 Resolved (Job Bundle 24)
+- **Reported**: Long-pressing or right-clicking the Reset Day button summons a purge context menu that gets clipped off-screen or positioned improperly compared to the clean micro context menus on teacher cells.
+- **Solution Delivered**: Created `ResetPurgeContextMenu.tsx` mounted at root in `App.tsx`. `ResetDayButton.tsx` delegates to `openResetPurgeMenu({ x, y })` with touch/cursor screen-space coordinates, clamping within viewport boundaries, and outside-click/<kbd>Escape</kbd> dismissal.
+
+### BUG-16: Tab Overview Accordion Collapse Animation Jerkiness
+- **Status**: 🟢 Resolved (Job Bundle 24)
+- **Reported**: The collapse/expand animation of the metric overviews on the Substitutions and Roster tabs is jerky and snaps rather than gliding smoothly.
+- **Solution Delivered**: Wrapped overview containers with `overflow-hidden will-change-[height,opacity]`, applied `SPRING_TRANSITIONS.snappy` easing in `AnimatePresence`, isolated inner container padding from the animating element to eliminate subpixel layout reflow jitter, and enabled tapping empty header space to toggle.
+
+### BUG-17: Minimal UI Mode Toggle Has No Visual Effect
+- **Status**: 🔴 Open
+- **Reported**: Toggling "Minimal UI Mode" in Settings or Header changes store state but components do not visually alter their layout or density.
+- **Fix**: Wire `isMinimalUI` across `Header.tsx`, `RoutineGrid.tsx`, `TabBar.tsx`, `SubstitutionsRegister.tsx`, and `AbsenceRoster.tsx` to conditionally compact padding, hide secondary explanatory copy, and activate high-velocity compact card views.
+
 ### BUG-04: Fit-Grid Portrait Mode Screen Overflow & Cell Height Distortion (RESOLVED in v1.40.0)
 - **Status**: 🟢 Resolved (v1.40.0)
 - **Solution Delivered**:
@@ -327,58 +357,233 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - [x] **FEAT-30 ('Minimal UI Mode' Hidden Developer Setting)**:
   - Added `#minimal-ui-toggle` to Developer Options (`state.settings.minimalUI: true` by default). Enabling renders the ultra-compact micro-menus, while disabling restores full elaborate cards and extended details.
 
-### Job Bundle 16: Substitution Table Sorting, Desktop Width Responsiveness, Class/Teacher Consolidation & Dated Excel Server Backup
-- **Status**: 🔴 Queued (Next Up)
-- [ ] **FEAT-22 (Interactive Column Header Sorting in Substitution Tables)**:
-  - Make each column header in the Substitution Register table (and Off. CT ledger table) interactive and tappable.
-  - Sorting criteria:
-    - **Period**: Chronological sort by period order (`1st Pd`, `2nd Pd`, `3rd Pd`, etc.).
-    - **Class / Section**: Alphabetical class sort (`NUR A`, `PREP A`, `KG A`, etc.).
-    - **Teacher Name**: Alphabetical sort by absent teacher or substitute name.
-    - **Status**: Group by pending vs covered vs accepted/disputed.
-  - Clear visual indicator: Directional sort chevron (`▲` / `▼`) next to the active sorted column header with ascending/descending toggle on re-tap.
-- [ ] **FEAT-23 (Responsive Substitution Table Width Behavior: Narrow on Mobile, Spacious on Desktop)**:
-  - Clarification: The narrow condensed table structure was requested strictly for narrower viewports (mobile / small tablets).
-  - On wider screens / desktop viewports, restore a generous layout: remove forced horizontal squeezing, allow natural table expansion (`width: 100%`), restore comfortable column padding and spacious cell breathing room, while preserving the compact layout on narrow screens (`@media (max-width: 768px)`).
-- [ ] **FEAT-24 (Class / Teacher Column Consolidation & Elimination of Standalone Absent Column)**:
-  - Consolidate columns: instead of "Class / Dept" and separate "Absent" teacher column, combine them into a unified **Class / Teacher** column displaying the target class and the associated absent teacher (e.g. `PREP A • Mrs. S. Lakra (Absent)` or stacked class badge + teacher name).
-  - Eliminate the standalone "Absent Teacher" column completely, reducing column clutter and providing more breathing room for Substitute assignments and Actions.
-- [ ] **FEAT-25 (Dated Server Excel Backup & Audit Logging System)**:
-  - Implement a robust server/cloud Excel backup pipeline that automatically archives timetable and substitution snapshots with standardized date-stamped naming (e.g., `LFPS_Substitutions_Backup_YYYY-MM-DD.xlsx` / Google Sheets versioned backup).
-  - Add an audit logging system in Settings / Cloud Sync displaying a historical list of backup snapshots with timestamps, status, row counts, and 1-tap download or restore links.
+### Job Bundle 19: Next-Gen Monorepo Workspace, Core TS Domain Engine & Go Service Scaffold (RESOLVED on `next-gen` branch)
+- **Status**: 🟢 Resolved (Phase 1 Complete)
+- **Scope & Solution Delivered**:
+  - [x] **NPM Workspace Monorepo Architecture**:
+    - Created clean multi-package layout: `packages/core`, `packages/ui`, `apps/web`, `apps/server`.
+    - Archived v1.53.0 vanilla build into `legacy-v1/` for side-by-side verification and zero disruption to production `main` branch.
+    - Set up root `package.json` with workspace orchestration (`npm run dev:web`, `npm run build:web`, `npm run test:core`).
+  - [x] **`@lfps/core` Domain Engine & Pure TS Solver**:
+    - Strict TypeScript contracts: `Teacher`, `DailySchedule`, `MasterSchedule`, `AbsenceRecord` (including `AWAY_OFFICIAL`), `StaffAvailabilityRecord` (`AVAILABLE` vs `FREE_FROM_SUB`), `SubstitutionAssignment`, `AutoResolvePlan`.
+    - Ported full 2026–2027 timetable seed data (`DEFAULT_MASTER_SCHEDULE`) and all 9 staff records (`DEFAULT_STAFF_DIRECTORY`) with full departments and subject pools.
+    - Staff Disambiguation Engine: `getDisambiguatedTeacherName()`, `resolveTeacherById()`.
+    - Pure TS Substitution Solver: `parseCellSlot()`, `findAvailableSubstitutes()`, `calculateCandidateAffinity()`, and `autoResolveSubstitutions()`.
+    - **Vitest Test Suite**: 100% passing tests (10/10 specs) in 383ms validating cell parsing, disambiguation, absence filters, Away Official checks, Free from Sub toggles, and multi-period auto-resolve plans.
+  - [x] **`@lfps/ui` Apple HIG Design Tokens**:
+    - Shared spring physics configs (`snappy`, `bouncy`, `smooth`) and CSS easing curve (`cubic-bezier(0.2, 0.9, 0.3, 1)`).
+    - Scoped role palettes: Class Teachers in Teal Sky (`#0284c7`), Subject Teachers in iOS Blue (`#007aff`), Coordinators in Royal Violet (`#8b5cf6`), Absent in Crimson (`#ff3b30`), Away (Official) in Slate Indigo (`#475569`).
+  - [x] **`apps/web` React 19 + Tailwind v4 + Framer Motion Scaffold**:
+    - Lightning-fast Vite 6 + React 19 setup building clean bundle in 1.26s.
+    - Zustand store (`useTimetableStore`) connecting `@lfps/core` models and state mutations.
+    - Apple-grade Header with animated day pill (`layoutId="activeDay"`), profile login modal, and minimal UI toggle.
+    - Tactile Absence Roster with horizontal smooth scrolling and 1-tap `[🟢 Available • Tap to free]` / `[⏸ Free from Sub • Tap to restore]` pills.
+    - Live Substitution Register with 1-tap Auto-Resolve solver.
+    - Master Routine Grid preview with sticky teacher column.
+  - [x] **`apps/server` Go 1.23 High-Performance Service Skeleton**:
+    - Go module initialized (`lfps/server`).
+    - Handlers: `GET /api/v1/health` and `GET /api/v1/meta`.
+    - WebSocket hub architecture (`ws/hub.go`) ready for live multi-staff broadcast synchronization in Phase 2.
+    - Sub-millisecond execution with single static binary compilation.
 
-### Job Bundle 18: Co-Teacher Free-Day Removal, Away (Official) Engine, Multi-Period Selection & Modal Simplification
+### Job Bundle 20: Cloud-Ready Go Backend, WebSocket Hub, Excelize Engine & Live Client Sync (RESOLVED on `next-gen` branch)
+- **Status**: 🟢 Resolved (Phase 2 Complete)
+- **Scope & Solution Delivered**:
+  - [x] **Production Multi-Stage Dockerfile (`apps/server/Dockerfile`)**:
+    - Configured for 1-click cloud deployment on Render, Koyeb, Fly.io, or Railway with $0 hosting cost.
+    - Generates tiny ~15MB scratch/alpine container with zero school computer load.
+  - [x] **Thread-Safe Disk Persistence (`apps/server/internal/storage`)**:
+    - Embedded file/JSON persistence engine preserving daily absences, availability toggles, substitutions, and officiating assignments across server reboots.
+  - [x] **Full-Duplex WebSocket Engine (`apps/server/internal/ws`)**:
+    - Upgraded via `github.com/gorilla/websocket` with ping/pong keepalives.
+    - Whenever an absence is toggled or a sub assigned, a `STATE_MUTATION` broadcast packet is instantly pushed to all connected coordinator tablets and teacher phones in < 1 millisecond.
+  - [x] **High-Speed Excelize Engine & Dated Backups (FEAT-25)**:
+    - Built publication-ready Excel workbook generator (`internal/excel/generator.go`) using `github.com/xuri/excelize/v2` (pinned to v2.8.1 for native Go 1.23 compatibility).
+    - Formats professional header banner, dark navy accents, period columns, status highlights, and Principal / Coordinator signature lines in under 20ms.
+    - Automatically saves dated server backup snapshots (`data/backups/LFPS_Daily_Substitutions_YYYY-MM-DD.xlsx`) with audit logging endpoint `GET /api/v1/backups`.
+  - [x] **React 19 Client Live-Sync Hook (`apps/web/src/hooks/useLiveSync.ts`)**:
+    - Automatic WebSocket connection to the Go server with 3-second auto-reconnect backoff.
+    - Added "Cloud Live" status indicator pill in Header.
+    - Added 1-tap "Excel" export button in Header triggering instantaneous browser download from the Go backend.
+
+### Job Bundle 24: Core Interaction Fixes, Substitutions Workstation Polish & Overview Ergonomics
+- **Status**: 🟢 Resolved (v2.0.0-alpha.1)
+- **Scope & Work Items**:
+  - [x] **BUG-12 (Auto-Reset Substitutions When Marking Teacher Present)**:
+    - In `useTimetableStore.ts`, when `toggleAbsence` marks a teacher present, automatically cleans up all substitution assignments involving that teacher (as either absent teacher or substitute).
+    - Restores original baseline schedule slots and updates live coverage counters without leaving orphan substitution rows.
+  - [x] **BUG-13 (Routine Grid Period Cell Gesture Freedom & Context Menu Separation)**:
+    - Scoped `MicroContextMenu` listeners strictly to the sticky left teacher name cells in `RoutineGrid.tsx`.
+    - Instructional period cells are completely unencumbered so touch hold-and-drag and click interactions operate without conflict.
+  - [x] **BUG-14 (Staff Login Panel Off-Screen Positioning Glitch)**:
+    - Created root-level `StaffLoginModal.tsx` in `App.tsx` free from header `will-change-transform` containing block traps with safe viewport boundaries and outside-click dismissal.
+  - [x] **BUG-15 (Reset Purge Context Popover Alignment & Clipping Fix)**:
+    - Created root-level `ResetPurgeContextMenu.tsx` in `App.tsx` with screen-space edge clamping, tactile spring animations, and outside-click dismissal.
+  - [x] **BUG-16 (Smooth GPU Spring Animation for Tab Overview Collapse)**:
+    - Fixed jerky accordion animation on Substitutions and Roster KPI overviews using `SPRING_TRANSITIONS.snappy`, `overflow-hidden`, and `will-change-[height,opacity]`.
+  - [x] **LOGIC-01 (Away Official Classified Under 'Free from Sub')**:
+    - Staff marked as `Away (Official)` are counted under the 'Free' / off-duty pool in attendance metrics and included in the 'Free' filter.
+  - [x] **LOGIC-02 (Universal Dismissal on Outside Click)**:
+    - All open popovers, context menus, modals, and dropdowns (Staff Login, Reset Purge, Micro Context Menu, Settings Modal) immediately close when clicking or tapping outside or pressing <kbd>Escape</kbd>.
+  - [x] **LOGIC-03 (Equalized Semantic Color-Coding for All Co-Teachers' Cells)**:
+    - Built `areTeachersCoTeachingPartners` and `isTeacherCoTeachingInSlot` in `@lfps/core` with cross-partner inspection so all co-teachers' cells receive identical semantic color styling and badge indicators.
+  - [x] **FEAT-42 (Substitutions Tab Interactive Teacher Sub Assignment Drawer/Modal)**:
+    - Uncovered teacher cards in `SubstitutionsRegister.tsx` allow 1-tap substitute assignment opening `AssignSubstituteModal.tsx` with ranked candidate substitutes from `@lfps/core`.
+  - [x] **FEAT-43 (Substitutions Overview Cards Reordering & Terminology Polish)**:
+    - Reordered overview KPI cards:
+      - 1st Card: **Covered** with green border (`border-emerald-500/50`) and emerald badge.
+      - 2nd Card: **Uncovered** with red border (`border-rose-500/60`) and rose badge.
+      - 3rd Card: **"Officiating Staff"** (`border-purple-500/40`).
+  - [x] **FEAT-44 (Header Overview Collapse Ergonomics: Rightmost Icon & Free-Space Tap Trigger)**:
+    - Sleek rightmost-aligned Apple collapse/expand icon button (`ChevronUp` / `ChevronDown`).
+    - Tapping anywhere in the free space of the workstation header toggles the collapse/expand state.
+
+### Job Bundle 25: Theme Engine, Developer Options System & Visual Customization
 - **Status**: 🔴 Queued
-- [ ] **FEAT-31 (Remove "Free Day" from Co-Teacher Inspector Modal)**:
-  - Remove `.btn-inline-release-day` ("Free Day") button from `#co-teach-modal` (`app.js` line 3134).
-  - Releasing a co-teacher should strictly apply per-period (`releaseTeacher(period, teacher, 'period')`). Wiping their entire schedule for the day clears solo-taught classes as well, which generally does not happen in school operations.
+- **Scope & Work Items**:
+  - [ ] **BUG-17 (Minimal UI Mode Visual Implementation Across All Components)**:
+    - Wire `isMinimalUI` store state to apply high-density compact styles across Header, Routine Grid, Substitutions Register, Absence Roster, and TabBar.
+  - [ ] **FEAT-45 (Settings Preference: Hide Overviews by Default)**:
+    - Add user preference toggle in Settings (`hideOverviewsByDefault: boolean`) that starts the Substitutions and Roster overviews in collapsed state on application boot.
+  - [ ] **FEAT-46 (Complete 12-Theme Engine Adapted from THEMES.md)**:
+    - Implement CSS token engine supporting all 12 curated themes across 4 design families:
+      1. ☀️ **Minimalist Light**: `system`, `light` (iOS Light), `warm-sepia` (Warm Sepia / Parchment).
+      2. 🌙 **Minimalist Night**: `dark` (iOS Dark), `midnight` (Midnight OLED), `slate-nord` (Slate Nord).
+      3. 🪟 **Glass Materials**: `utopian-glass`, `utopian-night`, `aero-frost`, `cyber-glass`, `retro-glass`.
+      4. 🔲 **Studio & Accessibility**: `high-contrast`.
+    - Provide 1-tap theme selector in Settings with visual swatches and instant live preview.
+  - [ ] **FEAT-47 (Hidden Settings & Developer Options Restoration)**:
+    - Restore hidden Developer Options panel (unlocked via 5-tap on Settings version row or developer toggle):
+      - Relocate Cloud Sync connection diagnostics, live latency meter, and manual reconnect button into Dev Options.
+      - Cross-Period substitution policy toggle (`samePeriodLock`, default `true`).
+      - Target cell halo pulse indicator toggle (`subHaloIndicator`) and color palette selector (`Emerald`, `Neon Cyan`, `Amber`, `Violet`).
+      - Acceptance countdown timer toggle and duration selector (`5s`, `10s`, `30s`, `60s`).
+      - Mobile undo/redo icon style selector (`Curved`, `Circular`, `Geometric`, `Micro-Text`).
+
+### Job Bundle 26: Teacher Substitution Acceptance & Dispute Workflow & Notification Center
+- **Status**: 🔴 Queued
+- **Scope & Work Items**:
+  - [ ] **FEAT-49 (Teacher Substitution Acceptance & Dispute Workflow)**:
+    - In `SubstitutionsRegister.tsx` (and dedicated teacher schedule view), when a teacher is logged in (`loggedInTeacher`), any substitution duty assigned to them displays an interactive decision pod:
+      - `[ ✓ Accept ]`: Marks the substitution status as `ACCEPTED`, highlights the duty in emerald green, locks the slot, and dispatches an acceptance notice.
+      - `[ ⚑ Dispute ]`: Expands an inline tactile micro-remark textbox (`"Reason for dispute (optional, e.g. Lab duty, Library inventory)"`) with `[ Confirm Dispute ]` and `[ Cancel ]`.
+      - On confirm, marks the substitution status as `DISPUTED` (amber/rose badge), stores the dispute remark, and automatically dispatches a high-priority alert to the leadership chain: Academic Coordinator (Mrs. R. Pahwa), Assistant AC (Mrs. S. Lakra), or designated Officiating AC.
+  - [ ] **FEAT-50 (Universal Notification Center & Live Alert Hub)**:
+    - Add an Apple HIG Notification Bell button (`🔔`) to `Header.tsx` with a live reactive notice counter pill (`notif-badge`).
+    - Build `NotificationCenterModal.tsx`: an elevated slide-over drawer / floating modal aggregating real-time operational notices:
+      1. **Disputes (`⚑`)**: Alerts when a teacher disputes a substitution with their name, period, class, remark, and a 1-tap `[ Reassign Sub ]` action.
+      2. **Timetable Clashes & Conflicts (`⚠️`)**: Real-time warnings when a teacher is double-booked across sections.
+      3. **Uncovered Period Warnings (`🕒`)**: Alerts for unassigned substitution duties.
+      4. **Officiating Leadership Prompts (`⭐` / `🏫`)**: Reminders when AC or CT are absent and require temporary officiating assignment.
+      5. **Acceptance Receipts (`✓`)**: Notices when a teacher confirms and accepts their duty.
+    - Provide 1-tap "Mark All as Read", clear individual notices, and outside-click / <kbd>Esc</kbd> dismissal.
+
+### Job Bundle 27: Unified Cloud & Google Sheets 2-Way Live Sync Engine
+- **Status**: 🔴 Queued
+- **Scope & Work Items**:
+  - [ ] **FEAT-51A (Inbound Routine Sync from Google Sheets)**:
+    - Allow desk staff to provide a standard Google Sheet sharing link or published CSV URL in Settings.
+    - Automatically normalize URL to Google Sheets Visualization CSV endpoint (`/gviz/tq?tqx=out:csv&sheet=OVERVIEW`).
+    - Parse RFC 4180 CSV, detect teacher/period headers, and calculate diffs against local baseline.
+    - Show non-blocking diff notification in the Notification Center: "Google Sheet has 3 updated periods. [ Review & Merge ]".
+  - [ ] **FEAT-51B (Outbound Daily Ledger Push to Google Sheets)**:
+    - Allow 1-tap manual and automatic background broadcast to Google Sheets via Google Apps Script Web App webhook (`/exec`).
+    - Appends today's substitution records (Date, Period, Class, Absent Teacher, Substitute, Status, Dispute Remark, Timestamp) into the `Daily_Ledger` sheet tab for school archiving.
+  - [ ] **FEAT-48 (Production Two-Way Full-Duplex Cloud Sync Implementation)**:
+    - Connect React client store with Go server WebSocket hub (`/ws`).
+    - Push live state mutations (`STATE_MUTATION`) on any schedule change, absence toggle, or substitution assignment.
+    - Real-time client state reconciliation and server disk persistence hydration with sub-millisecond broadcast.
+
+### Job Bundle 28: Routine Matrix Drag-and-Drop Reordering & Dedicated Class Context Menu
+- **Status**: 🔴 Queued
+- **Scope & Work Items**:
+  - [ ] **FEAT-37A (Routine Grid Cell Drag & Drop Reordering)**:
+    - Enable intuitive drag-and-drop cell interactions in `RoutineGrid.tsx` allowing coordinators to move or swap period assignments with instant undo/redo tracking.
+  - [ ] **FEAT-37B (Dedicated Class View Context Menu)**:
+    - In Classes View (`viewMode === 'classes'`), right-clicking or long-pressing provides class-specific actions (`[ Change Subject/Teacher ]`, `[ Inspect Substitutions ]`, `[ View Section Schedule ]`).
+  - [ ] **FEAT-22, FEAT-23, FEAT-24 (Substitution Table Sorting & Column Polish)**:
+    - Clickable column headers with sorting chevrons (`▲`/`▼`) for Period, Class, Teacher, Status.
+    - Responsive desktop/mobile widths and column consolidation.
+
+### Job Bundle 23: Interactive Settings Console, Per-Tab Undo/Redo Engine & Global Reset Controls (RESOLVED on `next-gen` branch)
+- **Status**: 🟢 Resolved
+- **Scope & Work Items**:
+  - [x] **BUG-11 (Settings Console Modal & Mobile Navigation Parity)**:
+    - Root-cause fix for broken Settings button in Header: replaced the stubbed `toggleMinimalUI` action with an Apple HIG `SettingsModal.tsx` console.
+    - Added matching Settings button affordance to mobile header navigation alongside the staff profile pill.
+    - Grouped iOS-style sections:
+      1. **Active Staff Profile**: Login / Logout, role badge, operating permissions.
+      2. **Appearance & Performance**: Minimal UI Mode toggle, 120fps GPU compositing status.
+      3. **Cloud & Live Synchronization**: WebSocket connectivity status, peer count, manual sync button.
+      4. **Data Management & History**: Baseline Reset, Export Excel register (`FEAT-25`), Purge Undo/Redo History.
+      5. **About & Version Info**: Next-Gen v2.0-alpha.1 build metadata.
+  - [x] **FEAT-40 (Per-Tab Isolated Undo/Redo Engine)**:
+    - Created three isolated undo/redo history stacks in `useTimetableStore.ts`:
+      1. `routineHistory`: Routine grid period assignments, moves, co-teaching allocations.
+      2. `substitutionsHistory`: Substitution assignments, auto-resolve plans, removals.
+      3. `rosterHistory`: Attendance absence marks, official deputations, duty statuses.
+    - Ensured undo/redo operations in one tab never pollute or mutate state in another tab.
+    - Global keyboard shortcuts (`⌘Z` / `Ctrl+Z` for Undo, `⌘⇧Z` / `Ctrl+Y` for Redo) dynamically dispatched to the currently active tab.
+    - Added tactile, compact Undo/Redo button pairs to each tab's control toolbar with automatic disabled opacity when stacks are empty.
+  - [x] **FEAT-41 (One-Tap Global Reset with Long-Press History Purge)**:
+    - Added a high-visibility, safe Global Reset button (`[ ↺ Reset Day ]`) accessible from the header and settings console.
+    - **Single Tap**: Resets current day modifications (substitutions, absences, custom remarks) back to master timetable baseline with undoability via `⌘Z`.
+    - **500ms Long-Press (Mobile) / Right-Click (Desktop)**: Summons contextual safety popover: `[ 🗑 Purge All Undo/Redo History ]`, wiping past and future history stacks across all three tabs.
+
+### Job Bundle 22: Routine Fullscreen Workstation Hardening & Tab Overview Collapse Controls (RESOLVED on `next-gen` branch)
+- **Status**: 🟢 Resolved
+- **Scope & Solution Delivered**:
+  - [x] **BUG-10 (Routine Matrix Fullscreen Workstation Root View Architecture)**:
+    - Root-cause fix for Expand Grid blank screen on mobile & desktop: eliminated portal-attachment clipping, flex basis collapse, and CSS transform containing block collisions.
+    - Hoisted fullscreen matrix to top-level root rendering in `App.tsx` (`h-screen h-[100dvh] w-screen z-[100] bg-slate-950 flex flex-col p-2.5 sm:p-4 overflow-hidden`) with full modal access and integrated MON..SAT day navigation controls.
+    - Table container uses `flex-1 min-h-0 w-full overflow-auto` with sticky headers and 120fps GPU scrolling.
+  - [x] **FEAT-38 (Substitutions Tab Overview Collapsible Panel)**:
+    - Provided tactile Apple HIG collapse/expand toggle button (`[ ▾ Collapse Overview ]` / `[ ▸ Show Overview ]`) in the Substitutions workstation header.
+    - Animated KPI metrics strip with Framer Motion `AnimatePresence` and spring easing to reclaim vertical reading space on mobile viewports while preserving access to search/filter controls.
+  - [x] **FEAT-39 (Staff Roster Tab Overview Collapsible Panel)**:
+    - Provided tactile Apple HIG collapse/expand toggle button (`[ ▾ Collapse Overview ]` / `[ ▸ Show Overview ]`) in the Staff Roster workstation header.
+    - Wrapped the 4-card attendance KPI strip with Framer Motion `AnimatePresence` and spring easing, reclaiming 160px+ of vertical space for the vertical staff cards.
+
+### Job Bundle 21: Apple-Grade Fluid UI, High-Density Routine Grid & Tactile Interaction Engine (RESOLVED on `next-gen` branch)
+- **Status**: 🟢 Resolved (Phase 3 Complete)
+- **Scope & Solution Delivered**:
+  - [x] **Dual-View High-Density Routine Matrix (`apps/web/src/components/RoutineGrid.tsx`)**:
+    - **Teachers View** (`👨‍🏫`) $\longleftrightarrow$ **Classes View** (`🏫`) instantaneous toggle.
+    - Sticky left column with 100% solid, fully opaque surface backing (`bg-slate-900/98`) and 2.5px solid right border with drop shadow occluding passing period cards (resolving `BUG-05` & `BUG-08`).
+    - Stacked class tag and subject architecture capped to ~40px on mobile (`BUG-03`, `BUG-04`, `FEAT-04`).
+    - Live cell states: Regular classes, absent highlights (`Need Sub!`), covered substitutions, and co-teaching badges.
+    - Quick Fit-Grid View toggle (`⛶` Expand / Collapse) (`FEAT-09`).
+  - [x] **Tactile Micro Context Menus (`apps/web/src/components/MicroContextMenu.tsx`) (FEAT-29)**:
+    - Right-click (desktop) and 500ms touch long-press (mobile) summons an ultra-compact ~170px $\times$ 105px floating micro-menu with auto-clamping to screen edges.
+    - Instant 1-tap `[ 🔴/🟢 Mark Absent ]` & `[ ⏸/🟢 Free from Sub ]` with zero screen clutter.
+  - [x] **Hero Substitution Availability Card (`apps/web/src/components/SubAvailabilityModal.tsx`) (FEAT-34 & FEAT-35)**:
+    - Hero card with inline toggle button next to teacher name: `[ 🟢 Available for Sub • Tap to free ]` $\longleftrightarrow$ `[ ⏸ Free from Sub • Tap to restore ]`.
+    - Exactly 4 clean single-row duty presets: `[ 🚌 Bus Duty ]`, `[ 👥 PTM ]`, `[ 📑 Exam Duty ]`, `[ 🏢 Away (Official) ]`.
+    - 1-tap preset activation sets the remark, excuses from sub, and confirms with tactile spring animation. Compact single-line custom remark input.
+  - [x] **Co-Teacher Inspector Modal (`apps/web/src/components/CoTeacherModal.tsx`) (FEAT-31)**:
+    - Completely removed the dangerous whole-day "Free Day" button.
+    - Implemented strictly per-period release (`releaseCoTeacher(period, teacher)`), keeping all solo classes intact.
+  - [x] **Officiating Leadership Modal (`apps/web/src/components/OfficiatingModal.tsx`) (BUG-09 parity)**:
+    - Temporary leadership designation for Officiating Class Teacher (Off. CT) and Officiating Academic Coordinator (Off. AC) with recommended Class Team partner sorting (`★ Class Team`).
+
+### Job Bundle 18: Away (Official) Deputation Engine & Multi-Period Selection (Phase 4)
+- **Status**: 🔴 Queued (Next Up)
+- [x] **FEAT-31 (Remove "Free Day" from Co-Teacher Inspector Modal)**:
+  - Resolved in Job Bundle 21 via `CoTeacherModal.tsx`.
 - [ ] **FEAT-32 (Away (Official) / Off-Campus Deputation Engine)**:
-  - Implement a dedicated "Away (Official)" status distinct from regular absence (`state.officialDuty: { [day]: { [teacher]: { periods: string[], reason: string, venue: string } } }`).
-  - Caters to real-world school administrative cases: teachers sent out of school on official duty (buying supplies, event reconnaissance, delivering formal invitations, student competition escorts, board visits).
-  - **Attendance Status**: Legally counts as "Present / On-Duty" (distinguished from sick/casual leave), but marks their scheduled periods as requiring substitution.
-  - **Visual Badging**: Distinctive slate-blue/indigo badge (`🏢 Away (Official): [Reason]`) across the Routine Grid, Absence Tray, and Daily Substitution Register instead of red `🔴 Absent`.
-  - Available everywhere the absent or free-from-sub option is provided (Tray, Grid, Roster, Popovers, Modals).
+  - Implement full administrative multi-period deputation booking dialog with venue & purpose picker.
 - [ ] **FEAT-33 (Multi-Period Click-to-Select & Drag-to-Select for Absence / Away)**:
   - Enable selecting multiple specific periods in a teacher's schedule to mark them absent or on official duty for partial days (e.g. Periods 1–3 for morning supply runs, or Periods 4–6).
-  - Implement both intuitive modalities:
-    1. **Mode Toggle Pill (`[✋ Move] [⬚ Select]`) & Desktop `Shift+Drag`**: Marquee drag across period cells in a teacher's row on the routine grid to highlight multiple slots, summoning a floating action pill (`[ 🏢 Away (Official) ]`, `[ 🔴 Mark Absent ]`, `[ ✕ Cancel ]`). Eliminates gesture collision with drag-to-reorder.
-    2. **Quick Period Chip Picker in Context Popover & Modals**: An interactive period strip (`[1st] [2nd] [3rd] [4th] [5th] [6th] [All] [Morning] [Afternoon]`) allowing 1-tap toggling of affected periods before saving.
-- [ ] **FEAT-34 (Substitution Terminology Harmonisation)**:
-  - Eliminate the terms "off-duty" and "Mark Unavailable today" across all tables, pills, and popups.
-  - Standardize on:
-    - **`🟢 Available for Sub`** $\longleftrightarrow$ **`⏸ Free from Sub`**
-- [ ] **FEAT-35 (Staff Availability & Duties Modal Decluttering & Redesign)**:
-  - Eliminate the giant red button (`#sub-avail-main-action-btn`).
-  - Move the action toggle button directly next to the teacher's name inside the hero card:
-    - Active state: `[ 🟢 Available for Sub ]` with microcopy hint **`Tap to free`** (or `• Tap to free`).
-    - Excused state: `[ ⏸ Free from Sub ]` with microcopy hint **`Tap to restore`**.
-  - Streamline duty presets to exactly 4 clean single-row chips:
-    - `[ 🚌 Bus Duty ]`
-    - `[ 👥 PTM ]`
-    - `[ 📑 Exam Duty ]`
-    - `[ 🏢 Away (Official) ]`
-  - Tapping any preset automatically sets the remark and flips status to `Free from Sub` in 1 tap.
-  - Streamline Custom Remark row into an ultra-compact single line input.
+  - Mode toggle pill `[✋ Move] [⬚ Select]` + Desktop `Shift+Drag` marquee + interactive period chip picker strip (`[1st] [2nd] [3rd] [4th] [5th] [6th] [All] [Morning] [Afternoon]`).
+- [x] **FEAT-34 (Substitution Terminology Harmonisation)**:
+  - Resolved in Job Bundle 21: standardized on `🟢 Available for Sub` $\longleftrightarrow$ `⏸ Free from Sub` with contextual hints.
+- [x] **FEAT-35 (Staff Availability & Duties Modal Decluttering & Redesign)**:
+  - Resolved in Job Bundle 21 via `SubAvailabilityModal.tsx`.
+- [x] **FEAT-36 (Staff Hierarchy Ordering by Operational Responsibilities)**:
+  - Resolved in Job Bundle 21 & Tab System: ordered staff strictly by operational hierarchy (`AC` → `AAC` → `CT` → `ST`) with dedicated vertical cards in the Staff Roster tab.
+- [ ] **FEAT-37 (Routine Matrix Drag-and-Drop Cell Reordering & Dedicated Class Context Menu)**:
+  - **Drag-and-Drop Cell Moves**: Enable drag-and-drop cell interactions in `RoutineGrid.tsx` to move/swap period assignments and reorder classes with full undo/redo state tracking.
+  - **Dedicated Class-Section Context Menu**: In Classes View (`viewMode === 'classes'`), right-clicking or long-pressing class cells should summon class-specific context actions (e.g., Change Teacher, Inspect Sub, View Section Routine) rather than mirroring the teacher absence/availability menu.
 
 
 
