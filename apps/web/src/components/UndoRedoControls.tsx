@@ -79,3 +79,4 @@ export const UndoRedoControls: React.FC<UndoRedoControlsProps> = ({ tab, compact
     </div>
   );
 };
+

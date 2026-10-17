@@ -275,21 +275,28 @@ LFPS_Substitutions_Manager/
 
 ### Queued Future Backlog (In Order of Priority)
 
-1. **Job Bundle 24: Routine Drag-and-Drop Cell Reordering & Class View Context Menu Parity**:
-   - **`FEAT-37A` (Routine Grid Cell Drag & Drop Reordering)**:
-     - Enable intuitive drag-and-drop cell interactions in `RoutineGrid.tsx` allowing coordinators to move or swap period assignments with instant undo/redo tracking.
-   - **`FEAT-37B` (Dedicated Class Context Menu)**:
-     - In Classes View (`viewMode === 'classes'`), right-clicking or long-pressing currently mirrors the teacher absence menu. Implement a dedicated class context menu (`[ Change Subject/Teacher ]`, `[ Inspect Substitutions ]`, `[ View Section Schedule ]`).
-2. **Substitutions Card Polish & Terminology Alignment**:
-   - Make "Uncovered" the second card cell with red border.
-   - Make "Covered" the first cell with green border.
-   - Rename "Officiating Leader" to "Officiating Staff".
-3. **FEAT-32 & FEAT-33 (Away (Official) Deputation Engine & Multi-Period Selection Marquee)**:
-   - Implement administrative multi-period deputation booking dialog with venue and purpose picker.
-   - Add Desktop `Shift+Drag` marquee and period chip picker strip (`[1st] [2nd] [3rd] ... [Morning] [Afternoon] [All]`).
-4. **FEAT-22, FEAT-23, FEAT-24 (Substitution Register Interactive Header Sorting & Column Polish)**:
-   - Add clickable column headers with sorting chevrons (`▲`/`▼`) for Period, Class, Teacher, Status.
-   - Consolidate class section and absent teacher into a unified stacked column.
+1. **Job Bundle 24: Core Interaction Fixes, Substitutions Workstation Polish & Overview Ergonomics**:
+   - **`BUG-12` (Auto-Reset Substitutions on Teacher Present)**: When marking an absent teacher back to present, automatically revert all substitutions involving that teacher (as either absent teacher or substitute), clearing orphan rows and updating coverage status.
+   - **`BUG-13` (Routine Matrix Period Cell Gesture Separation)**: Restrict the `MicroContextMenu` trigger strictly to teacher name cells in `RoutineGrid.tsx`, freeing instructional period cells for drag-and-drop cell swapping and selection.
+   - **`BUG-14` & `BUG-15` (Staff Login & Reset Purge Popover Alignment & Clipping Fixes)**: Anchor staff login cleanly below the trigger pill with outside-click dismissal; re-anchor the Reset Day purge menu as a proper Apple HIG context menu with pointer arrow and edge clamping.
+   - **`BUG-16` (Smooth GPU Spring Animation for Tab Overview Collapse)**: Eliminate accordion jerkiness on Substitutions and Roster KPI overviews using GPU-accelerated spring curves and overflow masks.
+   - **`LOGIC-01` (Away Official Counted Under 'Free')**: Treat staff on `Away (Official)` deputations as part of the 'Free' / off-duty pool in attendance metrics and exclude them from candidate solver pools.
+   - **`LOGIC-02` (Universal Dismissal on Outside Click)**: Ensure all popovers, dropdowns, context menus, and modal dialogs close when clicking or tapping outside.
+   - **`LOGIC-03` (Equalized Semantic Color-Coding for All Co-Teachers' Cells)**: Standardize color-coding and badges across all co-teachers' cells so partners have consistent visual parity.
+   - **`FEAT-42` (Substitutions Tab Interactive Teacher Sub Assignment Drawer/Modal)**: Allow tapping on uncovered teacher cards to open an interactive candidate substitute selection drawer with ranked candidates, load meters, and 1-tap confirmation.
+   - **`FEAT-43` (Substitutions Overview Cards Reordering & Terminology)**: Covered = 1st card with green border, Uncovered = 2nd card with red border, rename "Officiating Leader" to "Officiating Staff".
+   - **`FEAT-44` (Overview Collapse Header Ergonomics)**: Sleek rightmost-aligned collapse icon button (`ChevronUp`/`ChevronDown`) and tapping empty header space triggers collapse/expand.
+   - **`FEAT-45` (Settings Preference: Hide Overviews by Default)**: Preference toggle (`hideOverviewsByDefault: boolean`) starting overviews collapsed on boot.
+
+2. **Job Bundle 25: Theme Engine, Developer Options System & Production Cloud Sync**:
+   - **`BUG-17` (Minimal UI Mode Visual Implementation)**: Apply high-density compact styles across Header, Routine Grid, Substitutions Register, Absence Roster, and TabBar when `isMinimalUI` is active.
+   - **`FEAT-46` (Complete 12-Theme Engine Adapted from THEMES.md)**: Implement CSS token system for all 12 themes across Minimalist Light, Minimalist Night, Glass Materials, and Studio families with instant preview.
+   - **`FEAT-47` (Hidden Settings & Developer Options Restoration)**: Restore hidden Developer Options panel (5-tap on version row) with relocated cloud sync diagnostics, same-period lock toggle, target cell halo pulse toggle/colors, countdown timer, and undo/redo icon style selector.
+   - **`FEAT-48` (Production Two-Way Full-Duplex Cloud Sync)**: Real-time WebSocket synchronization with Go backend (`/ws`) for sub-millisecond multi-device state updates.
+
+3. **Job Bundle 26: Routine Cell Drag-and-Drop & Table Responsiveness**:
+   - **`FEAT-37A` & `FEAT-37B`**: Routine cell drag-and-drop reordering with undo/redo integration and dedicated Class View context menu.
+   - **`FEAT-22`, `FEAT-23`, `FEAT-24`**: Substitution Register interactive column sorting chevrons, desktop/mobile responsive width, and column consolidation.
 
 ---
 
