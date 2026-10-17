@@ -61,6 +61,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Thread-safe RWMutex disk JSON storage (`data/state.json`) persisting state across restarts.
   - Excelize v2 XLSX engine generating publication-ready daily substitution tables with formal navy branding and Principal signature lines.
   - Production multi-stage Docker container (`~15MB`) deployed to Render.
+- **Interactive Settings Console Modal & Mobile Affordance (BUG-11, Job Bundle 23)**:
+  - Replaced the minimal UI boolean toggle in the header with an Apple HIG `SettingsModal.tsx` console featuring 5 distinct control groups: Operating Identity (Staff login/logout), Interface & 120fps GPU compositing status, Cloud & Live Sync diagnostics with manual reconnect, Data Management (Export Excel, Reset Day, Purge Buffers), and System Version metadata.
+  - Added dedicated Settings button in mobile header navigation for parity with desktop.
+- **Per-Tab Isolated Undo/Redo Engine (FEAT-40, Job Bundle 23)**:
+  - Implemented three independent FIFO history stacks in `useTimetableStore.ts` (`routineHistory`, `substitutionsHistory`, `rosterHistory`) capped at 30 snapshots each, ensuring actions on one tab never corrupt or undo actions on another tab.
+  - Bound global keyboard shortcuts (`⌘Z` / `Ctrl+Z`, `⌘⇧Z` / `Ctrl+Y`) dynamically routed to the active tab.
+  - Embedded tactile `<UndoRedoControls />` button pairs on Routine Grid, Substitutions Register, and Staff Roster toolbars with live disabled states.
+- **Global Reset Day & Contextual History Purge Engine (FEAT-41, Job Bundle 23)**:
+  - Built tactile `ResetDayButton.tsx` in header: single-tap resets the current day's modifications back to master baseline with automatic undo snapshot capture (making reset fully reversible with `⌘Z`).
+  - Added 500ms touch long-press (mobile) and desktop right-click context popover allowing administrators to completely purge all undo/redo history buffers across all tabs.
 
 ## [v1.53.0] - 2026-10-17
 

@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import { UndoRedoControls } from './UndoRedoControls.js';
 
 export const AbsenceRoster: React.FC = () => {
   const {
@@ -126,6 +127,9 @@ export const AbsenceRoster: React.FC = () => {
                 </>
               )}
             </button>
+
+            {/* Staff Roster Tab Undo / Redo Controls (FEAT-40) */}
+            <UndoRedoControls tab="roster" />
 
             {absentCount + awayCount > 0 && (
               <button

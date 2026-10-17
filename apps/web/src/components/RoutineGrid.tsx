@@ -2,6 +2,7 @@ import React from 'react';
 import { DEFAULT_PERIODS, PeriodId, DayOfWeek, parseCellSlot } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
 import { Maximize2, Minimize2, Users, School } from 'lucide-react';
+import { UndoRedoControls } from './UndoRedoControls.js';
 
 const DAYS: DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
@@ -358,6 +359,9 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
             <span>Classes</span>
           </button>
         </div>
+
+        {/* Routine Tab Undo / Redo Controls (FEAT-40) */}
+        <UndoRedoControls tab="routine" />
 
         {/* Fit Grid Toggle (FEAT-09) */}
         <button

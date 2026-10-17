@@ -188,6 +188,25 @@ flowchart TD
     - Added tactile toggle button `[ ▾ Collapse Overview ]` $\longleftrightarrow$ `[ ▸ Show Overview ]` to the header.
     - Wrapped the 4 attendance KPI cards in `<AnimatePresence>`, reclaiming ~160px+ of vertical space so staff cards are immediately visible.
 
+### Milestone 6: Interactive Settings Console, Per-Tab Undo/Redo Engine & Global Reset Controls (Job Bundle 23)
+- **When**: 2026-10-18
+- **Why**:
+  1. The header settings button only toggled `isMinimalUI` with no visual console or mobile entrypoint (`BUG-11`).
+  2. The user required independent undo/redo functionality for each of the three tabs (Routine, Substitutions, Roster) without cross-tab state pollution (`FEAT-40`).
+  3. The user requested a safe global reset button with undo support, plus a 500ms long-press / right-click action to purge all undo/redo history buffers across all tabs (`FEAT-41`).
+- **Where**:
+  - [`apps/web/src/store/useTimetableStore.ts`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/store/useTimetableStore.ts): Added isolated `HistoryStack<T>` for `routineHistory`, `substitutionsHistory`, `rosterHistory`. Pushed undo snapshots to all mutating actions capped at 30 FIFO entries. Added `undo(tab)`, `redo(tab)`, `canUndo(tab)`, `canRedo(tab)`, `resetDay(day)`, `purgeHistory()`, and `isSettingsOpen` controls.
+  - [`apps/web/src/components/SettingsModal.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/SettingsModal.tsx): Created Apple HIG settings console with 5 grouped sections (Operating Identity / Staff login, Interface & GPU status, Live Cloud Sync & diagnostics, Data Management / Excel Export / Reset Day / Purge Buffers, About & version info).
+  - [`apps/web/src/components/ResetDayButton.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/ResetDayButton.tsx): Created tactile header reset button with single-click reset and 500ms long-press / right-click context menu to purge all undo/redo history.
+  - [`apps/web/src/components/UndoRedoControls.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/UndoRedoControls.tsx): Created reusable toolbar button pair (`[ ↶ Undo ]` / `[ ↷ Redo ]`) with live disabled state.
+  - [`apps/web/src/components/Header.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/Header.tsx): Integrated `ResetDayButton` and settings modal trigger for both desktop and mobile viewports.
+  - [`apps/web/src/App.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/App.tsx): Mounted `<SettingsModal />` and registered global `⌘Z` / `⌘⇧Z` / `Ctrl+Y` keyboard listener scoped dynamically to the active tab.
+  - [`apps/web/src/components/RoutineGrid.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/RoutineGrid.tsx), [`apps/web/src/components/SubstitutionsRegister.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/SubstitutionsRegister.tsx), [`apps/web/src/components/AbsenceRoster.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/AbsenceRoster.tsx): Embedded `<UndoRedoControls />` on each tab's toolbar.
+- **How**:
+  - Independent slices: each tab's history only captures the state belonging to that slice, ensuring undoing a substitution does not alter staff attendance marks or routine schedule.
+  - `resetDay` captures an undo snapshot before clearing data, making accidental resets immediately undoable via `⌘Z` or the Undo button.
+  - History purge popover provides safe confirmation before clearing past/future arrays.
+
 ---
 
 ## 4. Key Files Map & System Architecture
@@ -219,7 +238,7 @@ LFPS_Substitutions_Manager/
     ├── web/                         # React 19 Client PWA
     │   ├── src/
     │   │   ├── App.tsx              # Root app component (handles Fullscreen Workstation & tab switcher)
-    │   │   ├── store/useTimetableStore.ts # Central Zustand store with reactive state
+    │   │   ├── store/useTimetableStore.ts # Central Zustand store with reactive state & isolated undo/redo
     │   │   ├── hooks/useLiveSync.ts # Full-duplex WebSocket client with optimistic broadcast
     │   │   └── components/
     │   │       ├── TabBar.tsx       # Floating Apple-grade navigation dock
@@ -227,6 +246,9 @@ LFPS_Substitutions_Manager/
     │   │       ├── RoutineGrid.tsx  # Dual-view matrix (Teachers/Classes) & Fullscreen workstation
     │   │       ├── SubstitutionsRegister.tsx # Daily substitutions ledger & collapsible KPI strip
     │   │       ├── AbsenceRoster.tsx# Vertical staff workstation with hierarchy sorting
+    │   │       ├── SettingsModal.tsx# Apple HIG 5-section console (Identity, GPU, Cloud, Data, Version)
+    │   │       ├── ResetDayButton.tsx# Tactile reset button with 500ms history purge long-press
+    │   │       ├── UndoRedoControls.tsx# Reusable tab-scoped undo & redo button pair
     │   │       ├── MicroContextMenu.tsx # Ultra-compact popover (Mark Absent / Free from Sub)
     │   │       ├── SubAvailabilityModal.tsx # Hero staff duty and unavailability dialog
     │   │       ├── CoTeacherModal.tsx # Per-period co-teacher release inspector
@@ -246,21 +268,22 @@ LFPS_Substitutions_Manager/
 
 ### Current Git State
 - **Branch**: `next-gen`
-- **Head Commit**: `d9504eb` (`fix(routine): harden Fullscreen Workstation root architecture and add tab overview collapse controls`)
-- **Working Tree**: Clean (`git status` reports nothing to commit).
+- **Head Commit**: Job Bundle 23 Complete (`BUG-11`, `FEAT-40`, `FEAT-41`)
+- **Working Tree**: Clean.
 - **All Unit Tests**: 10/10 Passing (`npm test`).
 - **Production Build**: Passes cleanly (`npm run build`).
 
 ### Queued Future Backlog (In Order of Priority)
 
-1. **Job Bundle 23 (Interactive Settings Console, Per-Tab Undo/Redo Engine & Global Reset Controls)**:
-   - **`BUG-11` (Settings Console Modal)**: The header `SlidersHorizontal` button currently only toggles `isMinimalUI` with no visual console or mobile entrypoint. Implement Apple HIG `SettingsModal.tsx` covering Staff Profile, Minimal UI mode, Cloud Live diagnostics, Reset Day, and History Purge.
-   - **`FEAT-40` (Per-Tab Isolated Undo/Redo Engine)**: Three isolated history stacks (`routineHistory`, `substitutionsHistory`, `rosterHistory`) in `useTimetableStore.ts`. Undo/redo in one tab never mutates another. Keyboard shortcuts (`⌘Z`, `⌘⇧Z`) scoped to active tab + tactile UI toolbar controls.
-   - **`FEAT-41` (One-Tap Global Reset with Long-Press History Purge)**: Single tap reverts day modifications to master timetable baseline. 500ms long-press / right-click reveals context menu to purge all undo/redo history buffers.
-2. **FEAT-37 (Routine Matrix Drag-and-Drop Cell Reordering & Dedicated Class Context Menu)**:
-   - *Problem*: Coordinators previously could drag timetable cells to swap or reassign periods. Currently, cells are static.
-   - *Requirement 1*: Enable tactile drag-and-drop cell interactions in `RoutineGrid.tsx` to move/swap period assignments with undo/redo capability.
-   - *Requirement 2*: In Classes View (`viewMode === 'classes'`), right-clicking or long-pressing class cells currently mirrors the teacher absence menu. It needs a dedicated class-specific context menu (`[ Change Teacher ]`, `[ Inspect Substitution ]`, `[ View Section Routine ]`).
+1. **Job Bundle 24: Routine Drag-and-Drop Cell Reordering & Class View Context Menu Parity**:
+   - **`FEAT-37A` (Routine Grid Cell Drag & Drop Reordering)**:
+     - Enable intuitive drag-and-drop cell interactions in `RoutineGrid.tsx` allowing coordinators to move or swap period assignments with instant undo/redo tracking.
+   - **`FEAT-37B` (Dedicated Class Context Menu)**:
+     - In Classes View (`viewMode === 'classes'`), right-clicking or long-pressing currently mirrors the teacher absence menu. Implement a dedicated class context menu (`[ Change Subject/Teacher ]`, `[ Inspect Substitutions ]`, `[ View Section Schedule ]`).
+2. **Substitutions Card Polish & Terminology Alignment**:
+   - Make "Uncovered" the second card cell with red border.
+   - Make "Covered" the first cell with green border.
+   - Rename "Officiating Leader" to "Officiating Staff".
 3. **FEAT-32 & FEAT-33 (Away (Official) Deputation Engine & Multi-Period Selection Marquee)**:
    - Implement administrative multi-period deputation booking dialog with venue and purpose picker.
    - Add Desktop `Shift+Drag` marquee and period chip picker strip (`[1st] [2nd] [3rd] ... [Morning] [Afternoon] [All]`).

@@ -14,6 +14,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import { UndoRedoControls } from './UndoRedoControls.js';
 
 export const SubstitutionsRegister: React.FC = () => {
   const {
@@ -145,6 +146,9 @@ export const SubstitutionsRegister: React.FC = () => {
                 </>
               )}
             </button>
+
+            {/* Substitutions Tab Undo / Redo Controls (FEAT-40) */}
+            <UndoRedoControls tab="substitutions" />
 
             {uncoveredSlots.length > 0 && (
               <button

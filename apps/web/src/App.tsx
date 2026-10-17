@@ -10,9 +10,34 @@ import { MicroContextMenu } from './components/MicroContextMenu.js';
 import { SubAvailabilityModal } from './components/SubAvailabilityModal.js';
 import { CoTeacherModal } from './components/CoTeacherModal.js';
 import { OfficiatingModal } from './components/OfficiatingModal.js';
+import { SettingsModal } from './components/SettingsModal.js';
 
 export const App: React.FC = () => {
-  const { activeTab, isFitGrid } = useTimetableStore();
+  const { activeTab, isFitGrid, undo, redo } = useTimetableStore();
+
+  // Global Undo / Redo Keyboard Listener scoped to active tab (FEAT-40)
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
 
   // Fullscreen Workstation Mode: Render directly at root, immune to containing blocks and mobile viewport clipping (BUG-10)
   if (isFitGrid) {
@@ -24,6 +49,7 @@ export const App: React.FC = () => {
         <SubAvailabilityModal />
         <CoTeacherModal />
         <OfficiatingModal />
+        <SettingsModal />
       </div>
     );
   }
@@ -58,6 +84,7 @@ export const App: React.FC = () => {
       <SubAvailabilityModal />
       <CoTeacherModal />
       <OfficiatingModal />
+      <SettingsModal />
 
       {/* Footer Status Bar */}
       <footer className="w-full glass-panel border-t border-slate-800/80 px-6 py-3 text-center text-xs text-slate-500 pb-20 sm:pb-3">

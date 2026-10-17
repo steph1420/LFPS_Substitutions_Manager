@@ -5,6 +5,7 @@ import { DayOfWeek } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
 import { User, LogOut, SlidersHorizontal, FileSpreadsheet, ChevronDown, X } from 'lucide-react';
 import { useLiveSync } from '../hooks/useLiveSync.js';
+import { ResetDayButton } from './ResetDayButton.js';
 
 // Perfectly symmetrical Apple-grade spring physics (timed equally for expand and collapse)
 const ISLAND_SPRING = {
@@ -24,8 +25,7 @@ export const Header: React.FC = () => {
     login,
     logout,
     directory,
-    isMinimalUI,
-    toggleMinimalUI,
+    openSettings,
   } = useTimetableStore();
 
   const [showLoginModal, setShowLoginModal] = React.useState(false);
@@ -289,14 +289,22 @@ export const Header: React.FC = () => {
               </div>
             </div>
 
-            {/* Mobile Profile Pill */}
-            <div className="md:hidden flex items-center gap-2">
+            {/* Mobile Actions: Reset Button, Settings & Profile Pill */}
+            <div className="md:hidden flex items-center gap-1.5">
+              <ResetDayButton compact />
+              <button
+                onClick={openSettings}
+                className="p-1.5 rounded-full glass-pill border-slate-800 text-slate-300 hover:text-white transition-colors active:scale-95"
+                title="Console & Settings"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 text-blue-400" />
+              </button>
               <button
                 onClick={() => (loggedInTeacher ? logout() : setShowLoginModal(true))}
                 className="glass-pill px-2.5 py-1 rounded-full text-xs flex items-center gap-1.5 text-slate-200 active:scale-95 transition-transform"
               >
                 <User className="w-3.5 h-3.5 text-blue-400" />
-                <span className="truncate max-w-[90px]">{loggedInTeacher || 'Login'}</span>
+                <span className="truncate max-w-[80px]">{loggedInTeacher || 'Login'}</span>
               </button>
             </div>
           </div>
@@ -355,6 +363,9 @@ export const Header: React.FC = () => {
               <span>{sync.status.isConnected ? 'Cloud Live' : 'Offline'}</span>
             </div>
 
+            {/* Reset Day Button (FEAT-41) */}
+            <ResetDayButton />
+
             {/* Export Excel Button (FEAT-25) */}
             <button
               onClick={() => sync.downloadExcel()}
@@ -365,14 +376,11 @@ export const Header: React.FC = () => {
               <span>Excel</span>
             </button>
 
+            {/* Settings Console Button (BUG-11) */}
             <button
-              onClick={toggleMinimalUI}
-              className={`p-1.5 rounded-lg border transition-colors ${
-                isMinimalUI
-                  ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
-                  : 'glass-pill border-slate-800 text-slate-400 hover:text-slate-200'
-              }`}
-              title="Toggle Minimal UI Mode"
+              onClick={openSettings}
+              className="p-1.5 rounded-lg border glass-pill border-slate-700 hover:border-blue-500/40 text-slate-300 hover:text-blue-400 transition-colors active:scale-95"
+              title="Console & Settings"
             >
               <SlidersHorizontal className="w-4 h-4" />
             </button>

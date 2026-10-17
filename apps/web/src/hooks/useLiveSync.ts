@@ -131,6 +131,7 @@ export function useLiveSync() {
 
   return {
     status,
+    connect,
     downloadExcel,
     pushAbsence,
     pushSubstitution,

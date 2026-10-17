@@ -388,29 +388,29 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - [x] **FEAT-25 (Dated Server Excel Backup & Audit Logging System)**:
   - Delivered via Excelize v2 in Job Bundle 20 (`/api/v1/export/excel` & `/api/v1/backups`).
 
-### Job Bundle 23: Interactive Settings Console, Per-Tab Undo/Redo Engine & Global Reset Controls (PROPOSED on `next-gen` branch)
-- **Status**: 🟡 Proposed / Queued (Awaiting Confirmation)
+### Job Bundle 23: Interactive Settings Console, Per-Tab Undo/Redo Engine & Global Reset Controls (RESOLVED on `next-gen` branch)
+- **Status**: 🟢 Resolved
 - **Scope & Work Items**:
-  - [ ] **BUG-11 (Settings Console Modal & Mobile Navigation Parity)**:
-    - Root-cause fix for broken Settings button in Header: replace the stubbed `toggleMinimalUI` action with an Apple HIG `SettingsModal.tsx` console.
-    - Add matching Settings button affordance to mobile header navigation alongside the staff profile pill.
+  - [x] **BUG-11 (Settings Console Modal & Mobile Navigation Parity)**:
+    - Root-cause fix for broken Settings button in Header: replaced the stubbed `toggleMinimalUI` action with an Apple HIG `SettingsModal.tsx` console.
+    - Added matching Settings button affordance to mobile header navigation alongside the staff profile pill.
     - Grouped iOS-style sections:
       1. **Active Staff Profile**: Login / Logout, role badge, operating permissions.
       2. **Appearance & Performance**: Minimal UI Mode toggle, 120fps GPU compositing status.
       3. **Cloud & Live Synchronization**: WebSocket connectivity status, peer count, manual sync button.
       4. **Data Management & History**: Baseline Reset, Export Excel register (`FEAT-25`), Purge Undo/Redo History.
       5. **About & Version Info**: Next-Gen v2.0-alpha.1 build metadata.
-  - [ ] **FEAT-40 (Per-Tab Isolated Undo/Redo Engine)**:
-    - Create three isolated undo/redo history stacks in `useTimetableStore.ts`:
+  - [x] **FEAT-40 (Per-Tab Isolated Undo/Redo Engine)**:
+    - Created three isolated undo/redo history stacks in `useTimetableStore.ts`:
       1. `routineHistory`: Routine grid period assignments, moves, co-teaching allocations.
       2. `substitutionsHistory`: Substitution assignments, auto-resolve plans, removals.
       3. `rosterHistory`: Attendance absence marks, official deputations, duty statuses.
-    - Ensure undo/redo operations in one tab never pollute or mutate state in another tab.
+    - Ensured undo/redo operations in one tab never pollute or mutate state in another tab.
     - Global keyboard shortcuts (`⌘Z` / `Ctrl+Z` for Undo, `⌘⇧Z` / `Ctrl+Y` for Redo) dynamically dispatched to the currently active tab.
-    - Add tactile, compact Undo/Redo button pairs to each tab's control toolbar with automatic disabled opacity when stacks are empty.
-  - [ ] **FEAT-41 (One-Tap Global Reset with Long-Press History Purge)**:
-    - Add a high-visibility, safe Global Reset button (`[ ↺ Reset Day ]`) accessible from the header or settings console.
-    - **Single Tap**: Resets current day modifications (substitutions, absences, custom remarks) back to master timetable baseline with Apple spring confirmation toast.
+    - Added tactile, compact Undo/Redo button pairs to each tab's control toolbar with automatic disabled opacity when stacks are empty.
+  - [x] **FEAT-41 (One-Tap Global Reset with Long-Press History Purge)**:
+    - Added a high-visibility, safe Global Reset button (`[ ↺ Reset Day ]`) accessible from the header and settings console.
+    - **Single Tap**: Resets current day modifications (substitutions, absences, custom remarks) back to master timetable baseline with undoability via `⌘Z`.
     - **500ms Long-Press (Mobile) / Right-Click (Desktop)**: Summons contextual safety popover: `[ 🗑 Purge All Undo/Redo History ]`, wiping past and future history stacks across all three tabs.
 
 ### Job Bundle 22: Routine Fullscreen Workstation Hardening & Tab Overview Collapse Controls (RESOLVED on `next-gen` branch)
