@@ -29,7 +29,7 @@ export const Header: React.FC = () => {
   const isDayChangingRef = React.useRef(false);
   const autoCollapseTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Auto-collapse timer (3.5s of inactivity after day selection)
+  // Auto-collapse timer (3.5s of inactivity after day selection in island mode)
   const resetAutoCollapseTimer = React.useCallback(() => {
     if (autoCollapseTimerRef.current) {
       clearTimeout(autoCollapseTimerRef.current);
@@ -49,11 +49,11 @@ export const Header: React.FC = () => {
     }
   };
 
-  // Day selection with layout freeze guard & 3.5s auto-collapse
+  // Day selection with layout freeze guard & auto-collapse reset
   const handleSelectDay = (day: DayOfWeek) => {
     triggerHaptic(30);
 
-    // Freeze scroll event delta calculation so day height diffs don't trigger false header reveal
+    // Freeze scroll delta calculations so day height diffs don't trigger false header reveal
     isDayChangingRef.current = true;
     setDay(day);
 
@@ -65,10 +65,10 @@ export const Header: React.FC = () => {
     setTimeout(() => {
       isDayChangingRef.current = false;
       lastScrollYRef.current = window.scrollY;
-    }, 500);
+    }, 450);
   };
 
-  // 120fps Uncapped Scroll Observer (requestAnimationFrame + near-top sensitivity)
+  // 120fps Uncapped Scroll Observer (requestAnimationFrame + hysteresis)
   React.useEffect(() => {
     let rafId: number | null = null;
 
@@ -89,14 +89,14 @@ export const Header: React.FC = () => {
         const diff = currentScrollY - prevScrollY;
 
         // Near top of page: instantly dock and reveal full header
-        if (currentScrollY <= 70) {
+        if (currentScrollY <= 65) {
           setIsHeaderHidden(false);
           setIsIslandExpanded(false);
           if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
-        } else if (diff > 5) {
+        } else if (diff > 10) {
           // Scrolling down: smoothly morph day bar into Dynamic Island
           setIsHeaderHidden(true);
-        } else if (diff < -8) {
+        } else if (diff < -14) {
           // Scrolling up: smoothly reveal full header console
           setIsHeaderHidden(false);
           setIsIslandExpanded(false);
@@ -117,7 +117,7 @@ export const Header: React.FC = () => {
 
   return (
     <>
-      {/* Full-Screen Backdrop: Tapping ANYWHERE outside collapses the day bar instantly */}
+      {/* Full-Screen Backdrop: Tapping ANYWHERE outside collapses the island day bar instantly */}
       <AnimatePresence>
         {isHeaderHidden && isIslandExpanded && (
           <motion.div
@@ -134,23 +134,91 @@ export const Header: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Main Elevated Header with Persistent Morphing Day Bar */}
-      <header
-        className={`sticky top-0 z-40 w-full transition-colors duration-300 ${
-          isHeaderHidden
-            ? 'bg-transparent border-transparent shadow-none pointer-events-none py-2.5'
-            : 'header-elevated px-4 py-3 sm:px-6 pointer-events-auto'
-        }`}
+      {/* Floating Dynamic Island Container (Fixed top-3, zero transform containing block issues) */}
+      <div className="fixed top-3 left-0 right-0 z-50 flex justify-center pointer-events-none">
+        <AnimatePresence>
+          {isHeaderHidden && (
+            <div className="pointer-events-auto">
+              {!isIslandExpanded ? (
+                // Collapsed Dynamic Island Capsule
+                <motion.button
+                  layoutId="dynamic-island-day-bar"
+                  key="island-pill"
+                  transition={SPRING_TRANSITIONS.snappy}
+                  onClick={() => {
+                    triggerHaptic(20);
+                    setIsIslandExpanded(true);
+                    resetAutoCollapseTimer();
+                  }}
+                  className="bg-slate-950/98 border border-slate-700/80 shadow-[0_14px_32px_rgba(0,0,0,0.85)] backdrop-blur-2xl px-3.5 py-1.5 rounded-full flex items-center gap-2 text-xs font-semibold text-white active:scale-95 transition-transform cursor-pointer group will-change-transform select-none"
+                  title="Tap to change timetable day"
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      sync.status.isConnected
+                        ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
+                        : 'bg-slate-500'
+                    }`}
+                  />
+                  <span className="font-bold tracking-wider">{selectedDay}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-400 transition-colors" />
+                </motion.button>
+              ) : (
+                // Expanded Floating Day Selector (Active day ALREADY highlighted in blue from frame 1)
+                <motion.div
+                  layoutId="dynamic-island-day-bar"
+                  key="island-expanded"
+                  transition={SPRING_TRANSITIONS.snappy}
+                  className="bg-slate-950/98 border border-slate-700/90 shadow-[0_20px_48px_rgba(0,0,0,0.9)] rounded-full p-1.5 flex items-center gap-1 backdrop-blur-2xl will-change-transform"
+                >
+                  <div className="flex items-center gap-0.5 sm:gap-1">
+                    {DAYS.map((day) => {
+                      const isActive = selectedDay === day;
+                      return (
+                        <button
+                          key={day}
+                          onClick={() => handleSelectDay(day)}
+                          className={`relative px-3 sm:px-3.5 py-1 text-xs font-bold rounded-full transition-colors select-none ${
+                            isActive
+                              ? 'text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-600/40'
+                              : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setIsIslandExpanded(false);
+                      if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
+                    }}
+                    className="ml-1 p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                    title="Close Day Selector"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </motion.div>
+              )}
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Main Elevated Header Console (Synchronized GPU Translation with Spring Physics) */}
+      <motion.header
+        animate={{
+          y: isHeaderHidden ? -120 : 0,
+          opacity: isHeaderHidden ? 0 : 1,
+        }}
+        transition={SPRING_TRANSITIONS.snappy}
+        className="sticky top-0 z-40 w-full header-elevated px-4 py-3 sm:px-6 pointer-events-auto will-change-transform"
       >
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
-          {/* Brand & Identity (Smoothly collapses when scrolling down) */}
-          <div
-            className={`flex items-center justify-between w-full md:w-auto transition-all duration-300 overflow-hidden ${
-              isHeaderHidden
-                ? 'max-h-0 opacity-0 pointer-events-none'
-                : 'max-h-24 opacity-100 pointer-events-auto'
-            }`}
-          >
+          {/* Brand & Identity */}
+          <div className="flex items-center justify-between w-full md:w-auto">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
                 L
@@ -178,98 +246,39 @@ export const Header: React.FC = () => {
             </div>
           </div>
 
-          {/* Persistent Morphing Day Bar (Smooth Continuous Spring Animation in BOTH directions) */}
-          <div className="pointer-events-auto flex items-center justify-center">
+          {/* Docked Day Bar inside Header (Morphs directly to floating island via layoutId) */}
+          {!isHeaderHidden && (
             <motion.div
-              layout
+              layoutId="dynamic-island-day-bar"
               transition={SPRING_TRANSITIONS.snappy}
-              className={`flex items-center rounded-full border transition-all duration-300 will-change-transform ${
-                isHeaderHidden
-                  ? 'bg-slate-950/98 border-slate-700/90 shadow-[0_16px_36px_rgba(0,0,0,0.85)] backdrop-blur-2xl p-1'
-                  : 'bg-slate-900/90 border-slate-800 shadow-inner p-1'
-              }`}
+              className="flex items-center bg-slate-900/90 p-1 rounded-full border border-slate-800 shadow-inner will-change-transform"
             >
-              <AnimatePresence mode="wait">
-                {isHeaderHidden && !isIslandExpanded ? (
-                  // Collapsed Dynamic Island Pill Mode
-                  <motion.button
-                    key="collapsed-pill"
-                    initial={{ opacity: 0, scale: 0.85 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.85 }}
-                    transition={SPRING_TRANSITIONS.snappy}
-                    onClick={() => {
-                      triggerHaptic(20);
-                      setIsIslandExpanded(true);
-                      resetAutoCollapseTimer();
-                    }}
-                    className="flex items-center gap-2 px-3.5 py-1 text-xs font-semibold text-white active:scale-95 transition-transform cursor-pointer group select-none"
-                    title="Tap to change timetable day"
+              {DAYS.map((day) => {
+                const isActive = selectedDay === day;
+                return (
+                  <button
+                    key={day}
+                    onClick={() => handleSelectDay(day)}
+                    className={`relative px-3.5 py-1 text-xs font-semibold rounded-full transition-colors z-10 select-none ${
+                      isActive ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+                    }`}
                   >
-                    <span
-                      className={`w-2 h-2 rounded-full ${
-                        sync.status.isConnected
-                          ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
-                          : 'bg-slate-500'
-                      }`}
-                    />
-                    <span className="font-bold tracking-wider">{selectedDay}</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-400 transition-colors" />
-                  </motion.button>
-                ) : (
-                  // Full 6-Day Selector (Docked Header Mode OR Expanded Island Popover)
-                  <motion.div
-                    key="expanded-days"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={SPRING_TRANSITIONS.snappy}
-                    className="flex items-center gap-0.5 sm:gap-1"
-                  >
-                    {DAYS.map((day) => {
-                      const isActive = selectedDay === day;
-                      return (
-                        <button
-                          key={day}
-                          onClick={() => handleSelectDay(day)}
-                          className={`relative px-3 sm:px-3.5 py-1 text-xs font-semibold rounded-full transition-all select-none ${
-                            isActive
-                              ? 'text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-600/40 font-bold'
-                              : 'text-slate-400 hover:text-slate-200'
-                          }`}
-                        >
-                          {day}
-                        </button>
-                      );
-                    })}
-
-                    {/* Quick Close Button when Expanded in Island Mode */}
-                    {isHeaderHidden && (
-                      <button
-                        onClick={() => {
-                          setIsIslandExpanded(false);
-                          if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
-                        }}
-                        className="p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ml-0.5"
-                        title="Close Day Selector"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeDockedDayHighlight"
+                        transition={SPRING_TRANSITIONS.snappy}
+                        className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-600/30 -z-10"
+                      />
                     )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    {day}
+                  </button>
+                );
+              })}
             </motion.div>
-          </div>
+          )}
 
-          {/* Desktop Controls (Smoothly collapses when scrolling down) */}
-          <div
-            className={`hidden md:flex items-center gap-2.5 transition-all duration-300 overflow-hidden ${
-              isHeaderHidden
-                ? 'max-h-0 opacity-0 pointer-events-none'
-                : 'max-h-24 opacity-100 pointer-events-auto'
-            }`}
-          >
+          {/* Desktop Controls, Cloud Sync & Login Pill */}
+          <div className="hidden md:flex items-center gap-2.5">
             {/* Cloud WebSocket Status Pill */}
             <div
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${
@@ -389,7 +398,7 @@ export const Header: React.FC = () => {
             </motion.div>
           </div>
         )}
-      </header>
+      </motion.header>
     </>
   );
 };
