@@ -347,6 +347,22 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - Implement a robust server/cloud Excel backup pipeline that automatically archives timetable and substitution snapshots with standardized date-stamped naming (e.g., `LFPS_Substitutions_Backup_YYYY-MM-DD.xlsx` / Google Sheets versioned backup).
   - Add an audit logging system in Settings / Cloud Sync displaying a historical list of backup snapshots with timestamps, status, row counts, and 1-tap download or restore links.
 
+### Job Bundle 18: Co-Teacher Free-Day Removal, Official Duty (OD) Engine & Multi-Period Selection
+- **Status**: 🔴 Queued
+- [ ] **FEAT-31 (Remove "Free Day" from Co-Teacher Inspector Modal)**:
+  - Remove `.btn-inline-release-day` ("Free Day") button from `#co-teach-modal` (`app.js` line 3134).
+  - Releasing a co-teacher should strictly apply per-period (`releaseTeacher(period, teacher, 'period')`). Wiping their entire schedule for the day clears solo-taught classes as well, which generally does not happen in school operations.
+- [ ] **FEAT-32 (Official Duty / Off-Campus Deputation Engine — "OD")**:
+  - Implement a dedicated "Official Duty (OD)" status distinct from regular absence (`state.officialDuty: { [day]: { [teacher]: { periods: string[], reason: string, venue: string } } }`).
+  - Caters to real-world school administrative cases: teachers sent out of school on official duty (buying supplies, event reconnaissance, delivering formal invitations, student competition escorts, board visits).
+  - **Attendance Status**: Legally counts as "Present / On-Duty" (distinguished from sick/casual leave), but marks their scheduled periods as requiring substitution.
+  - **Visual Badging**: Distinctive blue/amber badge (`🏢 Official Duty: [Reason]` or `💼 OD`) across the Routine Grid, Absence Tray, and Daily Substitution Register instead of red `🔴 Absent`.
+- [ ] **FEAT-33 (Multi-Period Click-to-Select & Drag-to-Select for Absence / OD)**:
+  - Enable selecting multiple specific periods in a teacher's schedule to mark them absent or on official duty for partial days (e.g. Periods 1–3 for morning supply runs, or Periods 4–6).
+  - Implement both intuitive modalities:
+    1. **Grid Drag-to-Select / Range Click**: Click or drag across period cells in a teacher's row on the routine grid to marquee-highlight multiple slots, summoning a floating action pill (`[ 🏢 Mark OD ]`, `[ 🔴 Mark Absent ]`, `[ ✕ Cancel ]`).
+    2. **Quick Period Chip Picker in Context Popover & Modals**: An interactive period strip (`[1st] [2nd] [3rd] [4th] [5th] [6th] [All] [Morning] [Afternoon]`) in the context popover allowing 1-tap toggling of affected periods before saving.
+
 
 
 
