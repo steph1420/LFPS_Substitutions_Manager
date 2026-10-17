@@ -7,9 +7,10 @@ node_modules/
 dist/
 build/
 
-# Go Binaries
+# Go Binaries & Data
 apps/server/server
 apps/server/bin/
+apps/server/data/
 *.exe
 *.exe~
 *.dll
@@ -33,3 +34,4 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+

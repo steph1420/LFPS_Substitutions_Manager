@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/components/absenceroster.tsx","./src/components/header.tsx","./src/components/routinepreview.tsx","./src/components/substitutionsregister.tsx","./src/store/usetimetablestore.ts"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/absenceroster.tsx","./src/components/header.tsx","./src/components/routinepreview.tsx","./src/components/substitutionsregister.tsx","./src/hooks/uselivesync.ts","./src/store/usetimetablestore.ts"],"version":"5.9.3"}

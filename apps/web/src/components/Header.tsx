@@ -3,11 +3,13 @@ import { motion } from 'framer-motion';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
 import { DayOfWeek } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
-import { User, LogOut, SlidersHorizontal } from 'lucide-react';
+import { User, LogOut, SlidersHorizontal, FileSpreadsheet } from 'lucide-react';
+import { useLiveSync } from '../hooks/useLiveSync.js';
 
 const DAYS: DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
 export const Header: React.FC = () => {
+  const sync = useLiveSync();
   const {
     selectedDay,
     setDay,
@@ -78,8 +80,35 @@ export const Header: React.FC = () => {
           })}
         </div>
 
-        {/* Desktop Controls & Login Pill */}
-        <div className="hidden md:flex items-center gap-3">
+        {/* Desktop Controls, Cloud Sync & Login Pill */}
+        <div className="hidden md:flex items-center gap-2.5">
+          {/* Cloud WebSocket Status Pill */}
+          <div
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${
+              sync.status.isConnected
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                : 'bg-slate-800/60 border-slate-700/40 text-slate-400'
+            }`}
+            title={sync.status.isConnected ? `Connected (${sync.status.activeClients} peers)` : 'Disconnected / Reconnecting'}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                sync.status.isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'
+              }`}
+            />
+            <span>{sync.status.isConnected ? 'Cloud Live' : 'Offline'}</span>
+          </div>
+
+          {/* Export Excel Button (FEAT-25) */}
+          <button
+            onClick={() => sync.downloadExcel()}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg glass-pill border-slate-700 hover:border-emerald-500/40 text-xs font-semibold text-slate-300 hover:text-emerald-400 transition-colors"
+            title="Download Dated Excel Register (FEAT-25)"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Excel</span>
+          </button>
+
           <button
             onClick={toggleMinimalUI}
             className={`p-1.5 rounded-lg border transition-colors ${
