@@ -294,7 +294,12 @@ LFPS_Substitutions_Manager/
    - **`FEAT-47` (Hidden Settings & Developer Options Restoration)**: Restore hidden Developer Options panel (5-tap on version row) with relocated cloud sync diagnostics, same-period lock toggle, target cell halo pulse toggle/colors, countdown timer, and undo/redo icon style selector.
    - **`FEAT-48` (Production Two-Way Full-Duplex Cloud Sync)**: Real-time WebSocket synchronization with Go backend (`/ws`) for sub-millisecond multi-device state updates.
 
-3. **Job Bundle 26: Routine Cell Drag-and-Drop & Table Responsiveness**:
+3. **Job Bundle 26: Teacher Substitution Acceptance & Dispute Engine, Notification Center & Google Sheets 2-Way Sync**:
+   - **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**: Logged-in teacher cards display inline `[ ✓ Accept ]` and `[ ⚑ Dispute ]` with optional reason remark field. Disputing automatically dispatches a prioritized notice to the leadership chain (AC / AAC / Officiating AC).
+   - **`FEAT-50` (Universal Notification Center & Live Alert Hub)**: Header Bell icon with live notice counter pill opening `NotificationCenterModal.tsx` aggregating disputes, clashes, uncovered slots, and officiating reminders with 1-tap actions.
+   - **`FEAT-51` (Google Sheets 2-Way Live Cloud Sync Engine)**: Inbound routine sync pulling master schedule diffs from Google Sheets (`/gviz/tq?tqx=out:csv&sheet=OVERVIEW`) with review modal, and outbound auto-push of today's substitutions ledger to Google Sheets via Google Apps Script Web App webhook (`/exec`).
+
+4. **Job Bundle 27: Routine Cell Drag-and-Drop & Table Responsiveness**:
    - **`FEAT-37A` & `FEAT-37B`**: Routine cell drag-and-drop reordering with undo/redo integration and dedicated Class View context menu.
    - **`FEAT-22`, `FEAT-23`, `FEAT-24`**: Substitution Register interactive column sorting chevrons, desktop/mobile responsive width, and column consolidation.
 

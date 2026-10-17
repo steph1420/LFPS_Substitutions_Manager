@@ -466,6 +466,33 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - Push live state mutations (`STATE_MUTATION`) on any schedule change, absence toggle, or substitution assignment.
     - Real-time client state reconciliation and server disk persistence hydration with sub-millisecond broadcast.
 
+### Job Bundle 26: Teacher Substitution Acceptance & Dispute Engine, Notification Center & Google Sheets 2-Way Sync
+- **Status**: 🔴 Queued (Next Up)
+- **Scope & Work Items**:
+  - [ ] **FEAT-49 (Teacher Substitution Acceptance & Dispute Workflow)**:
+    - In `SubstitutionsRegister.tsx` (and dedicated teacher schedule view), when a teacher is logged in (`loggedInTeacher`), any substitution duty assigned to them displays an interactive decision pod:
+      - `[ ✓ Accept ]`: Marks the substitution status as `ACCEPTED`, highlights the duty in emerald green, locks the slot, and dispatches an acceptance notice.
+      - `[ ⚑ Dispute ]`: Expands an inline tactile micro-remark textbox (`"Reason for dispute (optional, e.g. Lab duty, Library inventory)"`) with `[ Confirm Dispute ]` and `[ Cancel ]`.
+      - On confirm, marks the substitution status as `DISPUTED` (amber/rose badge), stores the dispute remark, and automatically dispatches a high-priority alert to the leadership chain: Academic Coordinator (Mrs. R. Pahwa), Assistant AC (Mrs. S. Lakra), or designated Officiating AC.
+  - [ ] **FEAT-50 (Universal Notification Center & Live Alert Hub)**:
+    - Add an Apple HIG Notification Bell button (`🔔`) to `Header.tsx` with a live reactive notice counter pill (`notif-badge`).
+    - Build `NotificationCenterModal.tsx`: an elevated slide-over drawer / floating modal aggregating real-time operational notices:
+      1. **Disputes (`⚑`)**: Alerts when a teacher disputes a substitution with their name, period, class, remark, and a 1-tap `[ Reassign Sub ]` action.
+      2. **Timetable Clashes & Conflicts (`⚠️`)**: Real-time warnings when a teacher is double-booked across sections.
+      3. **Uncovered Period Warnings (`🕒`)**: Alerts for unassigned substitution duties.
+      4. **Officiating Leadership Prompts (`⭐` / `🏫`)**: Reminders when AC or CT are absent and require temporary officiating assignment.
+      5. **Acceptance Receipts (`✓`)**: Notices when a teacher confirms and accepts their duty.
+    - Provide 1-tap "Mark All as Read", clear individual notices, and outside-click / <kbd>Esc</kbd> dismissal.
+  - [ ] **FEAT-51 (Google Sheets 2-Way Live Cloud Sync Engine)**:
+    - **Inbound Routine Sync (Pull from Sheets)**:
+      - Allow desk staff to provide a standard Google Sheet sharing link or published CSV URL in Settings.
+      - Automatically normalize URL to Google Sheets Visualization CSV endpoint (`/gviz/tq?tqx=out:csv&sheet=OVERVIEW`).
+      - Parse RFC 4180 CSV, detect teacher/period headers, and calculate diffs against local baseline.
+      - Show non-blocking diff notification in the Notification Center: "Google Sheet has 3 updated periods. [ Review & Merge ]".
+    - **Outbound Daily Ledger Push (Push to Sheets)**:
+      - Allow 1-tap manual and automatic background broadcast to Google Sheets via Google Apps Script Web App webhook (`/exec`).
+      - Appends today's substitution records (Date, Period, Class, Absent Teacher, Substitute, Status, Dispute Remark, Timestamp) into the `Daily_Ledger` sheet tab for school archiving.
+
 ### Job Bundle 16: Substitution Table Sorting, Desktop Width Responsiveness, Class/Teacher Consolidation
 - **Status**: 🔴 Queued (Next Up)
 - [ ] **FEAT-22 (Interactive Column Header Sorting in Substitution Tables)**:
