@@ -253,14 +253,18 @@ LFPS_Substitutions_Manager/
 
 ### Queued Future Backlog (In Order of Priority)
 
-1. **FEAT-37 (Routine Matrix Drag-and-Drop Cell Reordering & Dedicated Class Context Menu)**:
+1. **Job Bundle 23 (Interactive Settings Console, Per-Tab Undo/Redo Engine & Global Reset Controls)**:
+   - **`BUG-11` (Settings Console Modal)**: The header `SlidersHorizontal` button currently only toggles `isMinimalUI` with no visual console or mobile entrypoint. Implement Apple HIG `SettingsModal.tsx` covering Staff Profile, Minimal UI mode, Cloud Live diagnostics, Reset Day, and History Purge.
+   - **`FEAT-40` (Per-Tab Isolated Undo/Redo Engine)**: Three isolated history stacks (`routineHistory`, `substitutionsHistory`, `rosterHistory`) in `useTimetableStore.ts`. Undo/redo in one tab never mutates another. Keyboard shortcuts (`⌘Z`, `⌘⇧Z`) scoped to active tab + tactile UI toolbar controls.
+   - **`FEAT-41` (One-Tap Global Reset with Long-Press History Purge)**: Single tap reverts day modifications to master timetable baseline. 500ms long-press / right-click reveals context menu to purge all undo/redo history buffers.
+2. **FEAT-37 (Routine Matrix Drag-and-Drop Cell Reordering & Dedicated Class Context Menu)**:
    - *Problem*: Coordinators previously could drag timetable cells to swap or reassign periods. Currently, cells are static.
    - *Requirement 1*: Enable tactile drag-and-drop cell interactions in `RoutineGrid.tsx` to move/swap period assignments with undo/redo capability.
    - *Requirement 2*: In Classes View (`viewMode === 'classes'`), right-clicking or long-pressing class cells currently mirrors the teacher absence menu. It needs a dedicated class-specific context menu (`[ Change Teacher ]`, `[ Inspect Substitution ]`, `[ View Section Routine ]`).
-2. **FEAT-32 & FEAT-33 (Away (Official) Deputation Engine & Multi-Period Selection Marquee)**:
+3. **FEAT-32 & FEAT-33 (Away (Official) Deputation Engine & Multi-Period Selection Marquee)**:
    - Implement administrative multi-period deputation booking dialog with venue and purpose picker.
    - Add Desktop `Shift+Drag` marquee and period chip picker strip (`[1st] [2nd] [3rd] ... [Morning] [Afternoon] [All]`).
-3. **FEAT-22, FEAT-23, FEAT-24 (Substitution Register Interactive Header Sorting & Column Polish)**:
+4. **FEAT-22, FEAT-23, FEAT-24 (Substitution Register Interactive Header Sorting & Column Polish)**:
    - Add clickable column headers with sorting chevrons (`▲`/`▼`) for Period, Class, Teacher, Status.
    - Consolidate class section and absent teacher into a unified stacked column.
 
@@ -280,3 +284,4 @@ LFPS_Substitutions_Manager/
 
 ---
 *Maintained with pride under Apple HIG standards for Little Flower Preparatory School.*
+
