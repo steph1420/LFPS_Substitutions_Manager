@@ -24,7 +24,7 @@ export const Header: React.FC = () => {
   const [showLoginModal, setShowLoginModal] = React.useState(false);
 
   return (
-    <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80 px-4 py-3 sm:px-6">
+    <header className="sticky top-0 z-40 w-full header-elevated px-4 py-3 sm:px-6">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
         {/* Brand & Identity */}
         <div className="flex items-center justify-between w-full md:w-auto">
