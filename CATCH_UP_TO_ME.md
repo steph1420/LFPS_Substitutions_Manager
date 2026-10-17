@@ -286,20 +286,23 @@ LFPS_Substitutions_Manager/
    - **`FEAT-42` (Substitutions Tab Interactive Teacher Sub Assignment Drawer/Modal)**: Allow tapping on uncovered teacher cards to open an interactive candidate substitute selection drawer with ranked candidates, load meters, and 1-tap confirmation.
    - **`FEAT-43` (Substitutions Overview Cards Reordering & Terminology)**: Covered = 1st card with green border, Uncovered = 2nd card with red border, rename "Officiating Leader" to "Officiating Staff".
    - **`FEAT-44` (Overview Collapse Header Ergonomics)**: Sleek rightmost-aligned collapse icon button (`ChevronUp`/`ChevronDown`) and tapping empty header space triggers collapse/expand.
-   - **`FEAT-45` (Settings Preference: Hide Overviews by Default)**: Preference toggle (`hideOverviewsByDefault: boolean`) starting overviews collapsed on boot.
 
-2. **Job Bundle 25: Theme Engine, Developer Options System & Production Cloud Sync**:
+2. **Job Bundle 25: Theme Engine, Developer Options System & Visual Customization**:
    - **`BUG-17` (Minimal UI Mode Visual Implementation)**: Apply high-density compact styles across Header, Routine Grid, Substitutions Register, Absence Roster, and TabBar when `isMinimalUI` is active.
+   - **`FEAT-45` (Settings Preference: Hide Overviews by Default)**: Preference toggle (`hideOverviewsByDefault: boolean`) starting overviews collapsed on boot.
    - **`FEAT-46` (Complete 12-Theme Engine Adapted from THEMES.md)**: Implement CSS token system for all 12 themes across Minimalist Light, Minimalist Night, Glass Materials, and Studio families with instant preview.
    - **`FEAT-47` (Hidden Settings & Developer Options Restoration)**: Restore hidden Developer Options panel (5-tap on version row) with relocated cloud sync diagnostics, same-period lock toggle, target cell halo pulse toggle/colors, countdown timer, and undo/redo icon style selector.
-   - **`FEAT-48` (Production Two-Way Full-Duplex Cloud Sync)**: Real-time WebSocket synchronization with Go backend (`/ws`) for sub-millisecond multi-device state updates.
 
-3. **Job Bundle 26: Teacher Substitution Acceptance & Dispute Engine, Notification Center & Google Sheets 2-Way Sync**:
+3. **Job Bundle 26: Teacher Substitution Acceptance & Dispute Workflow & Notification Center**:
    - **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**: Logged-in teacher cards display inline `[ ✓ Accept ]` and `[ ⚑ Dispute ]` with optional reason remark field. Disputing automatically dispatches a prioritized notice to the leadership chain (AC / AAC / Officiating AC).
    - **`FEAT-50` (Universal Notification Center & Live Alert Hub)**: Header Bell icon with live notice counter pill opening `NotificationCenterModal.tsx` aggregating disputes, clashes, uncovered slots, and officiating reminders with 1-tap actions.
-   - **`FEAT-51` (Google Sheets 2-Way Live Cloud Sync Engine)**: Inbound routine sync pulling master schedule diffs from Google Sheets (`/gviz/tq?tqx=out:csv&sheet=OVERVIEW`) with review modal, and outbound auto-push of today's substitutions ledger to Google Sheets via Google Apps Script Web App webhook (`/exec`).
 
-4. **Job Bundle 27: Routine Cell Drag-and-Drop & Table Responsiveness**:
+4. **Job Bundle 27: Unified Cloud & Google Sheets 2-Way Live Sync Engine**:
+   - **`FEAT-51A` (Inbound Routine Sync from Google Sheets)**: Pull master schedule diffs from Google Sheets (`/gviz/tq?tqx=out:csv&sheet=OVERVIEW`) with review modal.
+   - **`FEAT-51B` (Outbound Daily Ledger Push to Google Sheets)**: Push today's substitutions ledger to Google Sheets via Google Apps Script Web App webhook (`/exec`).
+   - **`FEAT-48` (Production Two-Way Full-Duplex Cloud Sync)**: Real-time WebSocket synchronization with Go backend (`/ws`) for sub-millisecond multi-device state updates.
+
+5. **Job Bundle 28: Routine Matrix Drag-and-Drop Reordering & Dedicated Class Context Menu**:
    - **`FEAT-37A` & `FEAT-37B`**: Routine cell drag-and-drop reordering with undo/redo integration and dedicated Class View context menu.
    - **`FEAT-22`, `FEAT-23`, `FEAT-24`**: Substitution Register interactive column sorting chevrons, desktop/mobile responsive width, and column consolidation.
 

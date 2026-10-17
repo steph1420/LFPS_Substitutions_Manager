@@ -407,7 +407,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - Added 1-tap "Excel" export button in Header triggering instantaneous browser download from the Go backend.
 
 ### Job Bundle 24: Core Interaction Fixes, Substitutions Workstation Polish & Overview Ergonomics
-- **Status**: 🔴 Queued (Active Backlog)
+- **Status**: 🔴 Queued (Active Next Up)
 - **Scope & Work Items**:
   - [ ] **BUG-12 (Auto-Reset Substitutions When Marking Teacher Present)**:
     - In `useTimetableStore.ts`, when `toggleAbsence` marks a teacher present, automatically clean up all substitution assignments involving that teacher (as either absent teacher or substitute).
@@ -439,14 +439,14 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] **FEAT-44 (Header Overview Collapse Ergonomics: Rightmost Icon & Free-Space Tap Trigger)**:
     - Replace verbose text buttons with a sleek, rightmost-aligned Apple collapse/expand icon button (`ChevronUp` / `ChevronDown`).
     - Make tapping anywhere in the free space of the workstation header toggle the collapse/expand state.
-  - [ ] **FEAT-45 (Settings Preference: Hide Overviews by Default)**:
-    - Add user preference toggle in Settings (`hideOverviewsByDefault: boolean`) that starts the Substitutions and Roster overviews in collapsed state on application boot.
 
-### Job Bundle 25: Theme Engine, Developer Options System & Production Cloud Sync
-- **Status**: 🔴 Queued (Next Up)
+### Job Bundle 25: Theme Engine, Developer Options System & Visual Customization
+- **Status**: 🔴 Queued
 - **Scope & Work Items**:
   - [ ] **BUG-17 (Minimal UI Mode Visual Implementation Across All Components)**:
     - Wire `isMinimalUI` store state to apply high-density compact styles across Header, Routine Grid, Substitutions Register, Absence Roster, and TabBar.
+  - [ ] **FEAT-45 (Settings Preference: Hide Overviews by Default)**:
+    - Add user preference toggle in Settings (`hideOverviewsByDefault: boolean`) that starts the Substitutions and Roster overviews in collapsed state on application boot.
   - [ ] **FEAT-46 (Complete 12-Theme Engine Adapted from THEMES.md)**:
     - Implement CSS token engine supporting all 12 curated themes across 4 design families:
       1. ☀️ **Minimalist Light**: `system`, `light` (iOS Light), `warm-sepia` (Warm Sepia / Parchment).
@@ -461,13 +461,9 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
       - Target cell halo pulse indicator toggle (`subHaloIndicator`) and color palette selector (`Emerald`, `Neon Cyan`, `Amber`, `Violet`).
       - Acceptance countdown timer toggle and duration selector (`5s`, `10s`, `30s`, `60s`).
       - Mobile undo/redo icon style selector (`Curved`, `Circular`, `Geometric`, `Micro-Text`).
-  - [ ] **FEAT-48 (Production Two-Way Full-Duplex Cloud Sync Implementation)**:
-    - Connect React client store with Go server WebSocket hub (`/ws`).
-    - Push live state mutations (`STATE_MUTATION`) on any schedule change, absence toggle, or substitution assignment.
-    - Real-time client state reconciliation and server disk persistence hydration with sub-millisecond broadcast.
 
-### Job Bundle 26: Teacher Substitution Acceptance & Dispute Engine, Notification Center & Google Sheets 2-Way Sync
-- **Status**: 🔴 Queued (Next Up)
+### Job Bundle 26: Teacher Substitution Acceptance & Dispute Workflow & Notification Center
+- **Status**: 🔴 Queued
 - **Scope & Work Items**:
   - [ ] **FEAT-49 (Teacher Substitution Acceptance & Dispute Workflow)**:
     - In `SubstitutionsRegister.tsx` (and dedicated teacher schedule view), when a teacher is logged in (`loggedInTeacher`), any substitution duty assigned to them displays an interactive decision pod:
@@ -483,27 +479,33 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
       4. **Officiating Leadership Prompts (`⭐` / `🏫`)**: Reminders when AC or CT are absent and require temporary officiating assignment.
       5. **Acceptance Receipts (`✓`)**: Notices when a teacher confirms and accepts their duty.
     - Provide 1-tap "Mark All as Read", clear individual notices, and outside-click / <kbd>Esc</kbd> dismissal.
-  - [ ] **FEAT-51 (Google Sheets 2-Way Live Cloud Sync Engine)**:
-    - **Inbound Routine Sync (Pull from Sheets)**:
-      - Allow desk staff to provide a standard Google Sheet sharing link or published CSV URL in Settings.
-      - Automatically normalize URL to Google Sheets Visualization CSV endpoint (`/gviz/tq?tqx=out:csv&sheet=OVERVIEW`).
-      - Parse RFC 4180 CSV, detect teacher/period headers, and calculate diffs against local baseline.
-      - Show non-blocking diff notification in the Notification Center: "Google Sheet has 3 updated periods. [ Review & Merge ]".
-    - **Outbound Daily Ledger Push (Push to Sheets)**:
-      - Allow 1-tap manual and automatic background broadcast to Google Sheets via Google Apps Script Web App webhook (`/exec`).
-      - Appends today's substitution records (Date, Period, Class, Absent Teacher, Substitute, Status, Dispute Remark, Timestamp) into the `Daily_Ledger` sheet tab for school archiving.
 
-### Job Bundle 16: Substitution Table Sorting, Desktop Width Responsiveness, Class/Teacher Consolidation
-- **Status**: 🔴 Queued (Next Up)
-- [ ] **FEAT-22 (Interactive Column Header Sorting in Substitution Tables)**:
-  - Make each column header in the Substitution Register table (and Off. CT ledger table) interactive and tappable.
-  - Sorting criteria: Period, Class, Teacher Name, Status with directional chevrons (`▲` / `▼`).
-- [ ] **FEAT-23 (Responsive Substitution Table Width Behavior: Narrow on Mobile, Spacious on Desktop)**:
-  - Restore generous layout on desktop while preserving compact high-density view on mobile (`@media (max-width: 768px)`).
-- [ ] **FEAT-24 (Class / Teacher Column Consolidation & Elimination of Standalone Absent Column)**:
-  - Combine class section and absent teacher into a unified stacked column, eliminating redundant standalone absent column.
-- [x] **FEAT-25 (Dated Server Excel Backup & Audit Logging System)**:
-  - Delivered via Excelize v2 in Job Bundle 20 (`/api/v1/export/excel` & `/api/v1/backups`).
+### Job Bundle 27: Unified Cloud & Google Sheets 2-Way Live Sync Engine
+- **Status**: 🔴 Queued
+- **Scope & Work Items**:
+  - [ ] **FEAT-51A (Inbound Routine Sync from Google Sheets)**:
+    - Allow desk staff to provide a standard Google Sheet sharing link or published CSV URL in Settings.
+    - Automatically normalize URL to Google Sheets Visualization CSV endpoint (`/gviz/tq?tqx=out:csv&sheet=OVERVIEW`).
+    - Parse RFC 4180 CSV, detect teacher/period headers, and calculate diffs against local baseline.
+    - Show non-blocking diff notification in the Notification Center: "Google Sheet has 3 updated periods. [ Review & Merge ]".
+  - [ ] **FEAT-51B (Outbound Daily Ledger Push to Google Sheets)**:
+    - Allow 1-tap manual and automatic background broadcast to Google Sheets via Google Apps Script Web App webhook (`/exec`).
+    - Appends today's substitution records (Date, Period, Class, Absent Teacher, Substitute, Status, Dispute Remark, Timestamp) into the `Daily_Ledger` sheet tab for school archiving.
+  - [ ] **FEAT-48 (Production Two-Way Full-Duplex Cloud Sync Implementation)**:
+    - Connect React client store with Go server WebSocket hub (`/ws`).
+    - Push live state mutations (`STATE_MUTATION`) on any schedule change, absence toggle, or substitution assignment.
+    - Real-time client state reconciliation and server disk persistence hydration with sub-millisecond broadcast.
+
+### Job Bundle 28: Routine Matrix Drag-and-Drop Reordering & Dedicated Class Context Menu
+- **Status**: 🔴 Queued
+- **Scope & Work Items**:
+  - [ ] **FEAT-37A (Routine Grid Cell Drag & Drop Reordering)**:
+    - Enable intuitive drag-and-drop cell interactions in `RoutineGrid.tsx` allowing coordinators to move or swap period assignments with instant undo/redo tracking.
+  - [ ] **FEAT-37B (Dedicated Class View Context Menu)**:
+    - In Classes View (`viewMode === 'classes'`), right-clicking or long-pressing provides class-specific actions (`[ Change Subject/Teacher ]`, `[ Inspect Substitutions ]`, `[ View Section Schedule ]`).
+  - [ ] **FEAT-22, FEAT-23, FEAT-24 (Substitution Table Sorting & Column Polish)**:
+    - Clickable column headers with sorting chevrons (`▲`/`▼`) for Period, Class, Teacher, Status.
+    - Responsive desktop/mobile widths and column consolidation.
 
 ### Job Bundle 23: Interactive Settings Console, Per-Tab Undo/Redo Engine & Global Reset Controls (RESOLVED on `next-gen` branch)
 - **Status**: 🟢 Resolved
