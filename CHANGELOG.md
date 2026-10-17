@@ -38,6 +38,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Floating bottom navigation dock (`TabBar.tsx`) with animated pill indicator (`layoutId="activeNavDockPill"`), live notification count badges (amber for uncovered slots, rose for absent staff), and keyboard shortcuts (`1`, `2`, `3`).
   - Separated the congested vertical page flow into three high-velocity dedicated tabs: **Routine Matrix**, **Substitutions**, and **Staff Roster**.
   - Restored immediate, top-of-screen visibility for the Master Routine Matrix on mobile without requiring users to scroll past other tables.
+- **Tab Overview Collapsible Controls (FEAT-38 & FEAT-39)**:
+  - Added tactile Apple HIG collapse/expand toggle buttons (`[ ▾ Collapse Overview ]` / `[ ▸ Show Overview ]`) to both the **Substitutions** and **Staff Roster** workstation headers.
+  - Smooth Framer Motion spring-animated accordion folding reclaims ~160px+ of vertical space on mobile screens, bringing the primary data tables and staff cards directly into immediate view.
+- **Routine Fullscreen Workstation Root View Architecture (BUG-10)**:
+  - Eliminated the Expand Grid blank screen error across mobile and desktop by hoisting fullscreen workstation rendering to the top-level application root in `App.tsx` (`h-screen h-[100dvh] w-screen z-[100] bg-slate-950`).
+  - Eliminated CSS transform containing block collisions and portal attachment quirks.
+  - Integrated direct MON..SAT day navigation pills into the fullscreen controls bar alongside the dual Teachers/Classes view toggle and <kbd>Esc</kbd> dismissal.
 - **Dedicated Vertical Staff Attendance & Availability Workstation (`apps/web`)**:
   - Replaced the horizontal scrolling tray with a spacious, dedicated vertical workstation.
   - Implemented operational responsibility hierarchy sorting (FEAT-36): `AC` (Mrs. R. Pahwa) → `AAC` (Mrs. S. Lakra) → `CT` (Mrs. M. Midha, Mrs. R. Narayan) → `ST` (Ms. N. Horo, Ms. K. Sanga, etc.).

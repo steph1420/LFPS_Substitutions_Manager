@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { SPRING_TRANSITIONS, COLOR_ROLES } from '@lfps/ui';
 import { Teacher } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
@@ -13,6 +13,8 @@ import {
   GraduationCap,
   Clock,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 export const AbsenceRoster: React.FC = () => {
@@ -32,6 +34,7 @@ export const AbsenceRoster: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'present' | 'absent' | 'free_from_sub'>('all');
+  const [isOverviewCollapsed, setIsOverviewCollapsed] = React.useState(false);
 
   // Hierarchy Sorting: AC -> AAC -> CT -> ST (FEAT-36)
   const getHierarchyRank = (t: Teacher): number => {
@@ -104,59 +107,92 @@ export const AbsenceRoster: React.FC = () => {
             </p>
           </div>
 
-          {absentCount + awayCount > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Overview Collapse/Expand Toggle (FEAT-39) */}
             <button
-              onClick={handleMarkAllPresent}
-              className="w-fit px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
+              onClick={() => setIsOverviewCollapsed((prev) => !prev)}
+              className="px-2.5 py-1.5 rounded-xl glass-pill border-slate-700/60 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+              title={isOverviewCollapsed ? 'Show Overview & Attendance KPI Summary' : 'Collapse Overview'}
             >
-              <Check className="w-3.5 h-3.5" />
-              Mark All Present
+              {isOverviewCollapsed ? (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Show Overview</span>
+                </>
+              ) : (
+                <>
+                  <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Collapse Overview</span>
+                </>
+              )}
             </button>
+
+            {absentCount + awayCount > 0 && (
+              <button
+                onClick={handleMarkAllPresent}
+                className="w-fit px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
+              >
+                <Check className="w-3.5 h-3.5" />
+                Mark All Present
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Collapsible Overview: KPI Strip (FEAT-39) */}
+        <AnimatePresence initial={false}>
+          {!isOverviewCollapsed && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.2, 0.9, 0.3, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 text-xs pt-1 pb-1">
+                <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] text-slate-400 font-medium">Present Today</span>
+                    <div className="text-lg font-bold text-emerald-400">{presentCount}</div>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/15 flex items-center justify-center text-emerald-400">
+                    <Check className="w-4 h-4" />
+                  </div>
+                </div>
+
+                <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] text-slate-400 font-medium">Marked Absent</span>
+                    <div className="text-lg font-bold text-rose-400">{absentCount}</div>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-rose-500/15 flex items-center justify-center text-rose-400">
+                    <UserX className="w-4 h-4" />
+                  </div>
+                </div>
+
+                <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] text-slate-400 font-medium">Free from Sub</span>
+                    <div className="text-lg font-bold text-amber-400">{freeFromSubCount}</div>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-400">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                </div>
+
+                <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] text-slate-400 font-medium">Away (Official)</span>
+                    <div className="text-lg font-bold text-indigo-300">{awayCount}</div>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-indigo-500/15 flex items-center justify-center text-indigo-300">
+                    <Building2 className="w-4 h-4" />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           )}
-        </div>
-
-        {/* KPI Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 text-xs">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-slate-400 font-medium">Present Today</span>
-              <div className="text-lg font-bold text-emerald-400">{presentCount}</div>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-emerald-500/15 flex items-center justify-center text-emerald-400">
-              <Check className="w-4 h-4" />
-            </div>
-          </div>
-
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-slate-400 font-medium">Marked Absent</span>
-              <div className="text-lg font-bold text-rose-400">{absentCount}</div>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-rose-500/15 flex items-center justify-center text-rose-400">
-              <UserX className="w-4 h-4" />
-            </div>
-          </div>
-
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-slate-400 font-medium">Free from Sub</span>
-              <div className="text-lg font-bold text-amber-400">{freeFromSubCount}</div>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-400">
-              <Clock className="w-4 h-4" />
-            </div>
-          </div>
-
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-slate-400 font-medium">Away (Official)</span>
-              <div className="text-lg font-bold text-indigo-300">{awayCount}</div>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-indigo-500/15 flex items-center justify-center text-indigo-300">
-              <Building2 className="w-4 h-4" />
-            </div>
-          </div>
-        </div>
+        </AnimatePresence>
 
         {/* Search & Category Filter Controls */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">

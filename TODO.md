@@ -388,6 +388,20 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - [x] **FEAT-25 (Dated Server Excel Backup & Audit Logging System)**:
   - Delivered via Excelize v2 in Job Bundle 20 (`/api/v1/export/excel` & `/api/v1/backups`).
 
+### Job Bundle 22: Routine Fullscreen Workstation Hardening & Tab Overview Collapse Controls (RESOLVED on `next-gen` branch)
+- **Status**: 🟢 Resolved
+- **Scope & Solution Delivered**:
+  - [x] **BUG-10 (Routine Matrix Fullscreen Workstation Root View Architecture)**:
+    - Root-cause fix for Expand Grid blank screen on mobile & desktop: eliminated portal-attachment clipping, flex basis collapse, and CSS transform containing block collisions.
+    - Hoisted fullscreen matrix to top-level root rendering in `App.tsx` (`h-screen h-[100dvh] w-screen z-[100] bg-slate-950 flex flex-col p-2.5 sm:p-4 overflow-hidden`) with full modal access and integrated MON..SAT day navigation controls.
+    - Table container uses `flex-1 min-h-0 w-full overflow-auto` with sticky headers and 120fps GPU scrolling.
+  - [x] **FEAT-38 (Substitutions Tab Overview Collapsible Panel)**:
+    - Provided tactile Apple HIG collapse/expand toggle button (`[ ▾ Collapse Overview ]` / `[ ▸ Show Overview ]`) in the Substitutions workstation header.
+    - Animated KPI metrics strip with Framer Motion `AnimatePresence` and spring easing to reclaim vertical reading space on mobile viewports while preserving access to search/filter controls.
+  - [x] **FEAT-39 (Staff Roster Tab Overview Collapsible Panel)**:
+    - Provided tactile Apple HIG collapse/expand toggle button (`[ ▾ Collapse Overview ]` / `[ ▸ Show Overview ]`) in the Staff Roster workstation header.
+    - Wrapped the 4-card attendance KPI strip with Framer Motion `AnimatePresence` and spring easing, reclaiming 160px+ of vertical space for the vertical staff cards.
+
 ### Job Bundle 21: Apple-Grade Fluid UI, High-Density Routine Grid & Tactile Interaction Engine (RESOLVED on `next-gen` branch)
 - **Status**: 🟢 Resolved (Phase 3 Complete)
 - **Scope & Solution Delivered**:

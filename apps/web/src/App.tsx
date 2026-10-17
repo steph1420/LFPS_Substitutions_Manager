@@ -12,7 +12,21 @@ import { CoTeacherModal } from './components/CoTeacherModal.js';
 import { OfficiatingModal } from './components/OfficiatingModal.js';
 
 export const App: React.FC = () => {
-  const { activeTab } = useTimetableStore();
+  const { activeTab, isFitGrid } = useTimetableStore();
+
+  // Fullscreen Workstation Mode: Render directly at root, immune to containing blocks and mobile viewport clipping (BUG-10)
+  if (isFitGrid) {
+    return (
+      <div className="fixed inset-0 h-screen h-[100dvh] w-screen bg-slate-950 flex flex-col p-2.5 sm:p-4 overflow-hidden z-[100] select-none">
+        <RoutineGrid isFullscreen />
+        {/* Modals & Micro Context Menus remain fully interactive in Fullscreen */}
+        <MicroContextMenu />
+        <SubAvailabilityModal />
+        <CoTeacherModal />
+        <OfficiatingModal />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white relative">

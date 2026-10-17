@@ -1,12 +1,18 @@
 import React from 'react';
-import { createPortal } from 'react-dom';
-import { DEFAULT_PERIODS, PeriodId, parseCellSlot } from '@lfps/core';
+import { DEFAULT_PERIODS, PeriodId, DayOfWeek, parseCellSlot } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
 import { Maximize2, Minimize2, Users, School } from 'lucide-react';
 
-export const RoutineGrid: React.FC = () => {
+const DAYS: DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+export interface RoutineGridProps {
+  isFullscreen?: boolean;
+}
+
+export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }) => {
   const {
     selectedDay,
+    setDay,
     schedule,
     directory,
     absences,
@@ -19,18 +25,16 @@ export const RoutineGrid: React.FC = () => {
     openCoTeachModal,
   } = useTimetableStore();
 
+  const isExpanded = isFitGrid || isFullscreen;
   const currentSchedule = schedule[selectedDay] || {};
   const teachers = Object.values(directory);
 
   // List of distinct classes for Class View
   const classSections = ['KG A', 'KG B', 'PREP A', 'PREP B', 'NUR A', 'NUR B'];
 
-  // Handle body scroll lock & Escape key when Grid is expanded to Fullscreen (FEAT-09)
+  // Handle Escape key when Grid is expanded to Fullscreen (FEAT-09)
   React.useEffect(() => {
-    if (isFitGrid) {
-      const originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-
+    if (isExpanded) {
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
           toggleFitGrid();
@@ -39,11 +43,10 @@ export const RoutineGrid: React.FC = () => {
 
       window.addEventListener('keydown', handleKeyDown);
       return () => {
-        document.body.style.overflow = originalOverflow;
         window.removeEventListener('keydown', handleKeyDown);
       };
     }
-  }, [isFitGrid, toggleFitGrid]);
+  }, [isExpanded, toggleFitGrid]);
 
   // Handle right-click or long-press for micro context menu (FEAT-29)
   const handleContextMenu = (e: React.MouseEvent, teacherName: string, period?: PeriodId) => {
@@ -297,7 +300,7 @@ export const RoutineGrid: React.FC = () => {
         <div>
           <h2 className="text-sm font-bold text-white flex items-center gap-2">
             Master Routine Matrix ({selectedDay})
-            {isFitGrid && (
+            {isExpanded && (
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
                 Fullscreen Workstation
               </span>
@@ -309,8 +312,27 @@ export const RoutineGrid: React.FC = () => {
         </div>
       </div>
 
-      {/* View Switcher & Fit Grid Controls */}
-      <div className="flex items-center gap-2">
+      {/* View Switcher, Day Switcher & Fit Grid Controls */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Fullscreen Day Switcher Pills */}
+        {isExpanded && (
+          <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs font-semibold overflow-x-auto">
+            {DAYS.map((d) => (
+              <button
+                key={d}
+                onClick={() => setDay(d)}
+                className={`px-2 py-0.5 rounded-lg transition-colors ${
+                  selectedDay === d
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Dual View Toggle */}
         <div className="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
           <button
@@ -341,13 +363,13 @@ export const RoutineGrid: React.FC = () => {
         <button
           onClick={toggleFitGrid}
           className={`px-2.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 text-xs font-semibold active:scale-95 ${
-            isFitGrid
+            isExpanded
               ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-600/40'
               : 'glass-pill border-slate-700/60 text-slate-300 hover:text-white hover:border-slate-600'
           }`}
-          title={isFitGrid ? 'Exit Fullscreen (Esc)' : 'Expand Matrix to Fullscreen'}
+          title={isExpanded ? 'Exit Fullscreen (Esc)' : 'Expand Matrix to Fullscreen'}
         >
-          {isFitGrid ? (
+          {isExpanded ? (
             <>
               <Minimize2 className="w-4 h-4 text-white" />
               <span className="hidden sm:inline">Exit Fullscreen</span>
@@ -366,16 +388,15 @@ export const RoutineGrid: React.FC = () => {
     </div>
   );
 
-  // When Fullscreen Workstation is active, render via Portal to document.body (immune to transform clipping)
-  if (isFitGrid && typeof document !== 'undefined') {
-    return createPortal(
-      <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col p-2.5 sm:p-5 overflow-hidden animate-in fade-in duration-150">
+  // When Fullscreen Workstation is active, render full-bleed flex column (BUG-10)
+  if (isExpanded) {
+    return (
+      <section className="flex-1 w-full h-full flex flex-col min-h-0 overflow-hidden space-y-2 sm:space-y-3">
         {controlsBar}
-        <div className="flex-1 w-full overflow-auto rounded-xl border border-slate-800 bg-slate-900/60 relative scrollbar-thin">
+        <div className="flex-1 w-full min-h-0 overflow-auto rounded-xl border border-slate-800 bg-slate-900/60 relative scrollbar-thin">
           {renderTable()}
         </div>
-      </div>,
-      document.body
+      </section>
     );
   }
 
