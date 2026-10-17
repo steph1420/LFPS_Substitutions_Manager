@@ -24,6 +24,26 @@ export const RoutineGrid: React.FC = () => {
   // List of distinct classes for Class View
   const classSections = ['KG A', 'KG B', 'PREP A', 'PREP B', 'NUR A', 'NUR B'];
 
+  // Handle body scroll lock & Escape key when Grid is expanded to Fullscreen (FEAT-09)
+  React.useEffect(() => {
+    if (isFitGrid) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          toggleFitGrid();
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [isFitGrid, toggleFitGrid]);
+
   // Handle right-click or long-press for micro context menu (FEAT-29)
   const handleContextMenu = (e: React.MouseEvent, teacherName: string, period?: PeriodId) => {
     e.preventDefault();
@@ -36,14 +56,25 @@ export const RoutineGrid: React.FC = () => {
   };
 
   return (
-    <section className="w-full glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-xl space-y-3.5">
+    <section
+      className={
+        isFitGrid
+          ? 'fixed inset-0 z-50 bg-slate-950/98 backdrop-blur-2xl p-3 sm:p-6 flex flex-col space-y-3.5 overflow-hidden shadow-2xl'
+          : 'w-full glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-xl space-y-3.5'
+      }
+    >
       {/* Header & Controls Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3 flex-shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50" />
           <div>
             <h2 className="text-sm font-bold text-white flex items-center gap-2">
               Master Routine Matrix ({selectedDay})
+              {isFitGrid && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                  Fullscreen Workstation
+                </span>
+              )}
             </h2>
             <p className="text-[11px] text-slate-400">
               Interactive high-density spreadsheet with sticky staff headers and live sub states.
@@ -82,33 +113,52 @@ export const RoutineGrid: React.FC = () => {
           {/* Fit Grid Toggle (FEAT-09) */}
           <button
             onClick={toggleFitGrid}
-            className={`p-1.5 rounded-xl border transition-colors ${
+            className={`px-2.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 text-xs font-semibold active:scale-95 ${
               isFitGrid
-                ? 'bg-blue-500/20 border-blue-500/40 text-blue-400'
-                : 'glass-pill border-slate-700/60 text-slate-400 hover:text-slate-200'
+                ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-600/40'
+                : 'glass-pill border-slate-700/60 text-slate-300 hover:text-white hover:border-slate-600'
             }`}
-            title={isFitGrid ? 'Exit Fit Grid Mode' : 'Fit Grid to Screen'}
+            title={isFitGrid ? 'Exit Fullscreen (Esc)' : 'Expand Matrix to Fullscreen'}
           >
-            {isFitGrid ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            {isFitGrid ? (
+              <>
+                <Minimize2 className="w-4 h-4 text-white" />
+                <span className="hidden sm:inline">Exit Fullscreen</span>
+                <kbd className="hidden sm:inline text-[9px] px-1.5 py-0.5 rounded bg-blue-700 text-blue-100 font-mono">
+                  Esc
+                </kbd>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="w-4 h-4 text-blue-400" />
+                <span className="hidden sm:inline">Expand Grid</span>
+              </>
+            )}
           </button>
         </div>
       </div>
 
       {/* Grid Table Container */}
-      <div className="w-full overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60 relative scrollbar-thin">
+      <div
+        className={
+          isFitGrid
+            ? 'flex-1 w-full overflow-auto rounded-xl border border-slate-800 bg-slate-900/60 relative scrollbar-thin'
+            : 'w-full overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60 relative scrollbar-thin'
+        }
+      >
         <table className="w-full text-left border-collapse select-none">
-          <thead>
-            <tr className="bg-slate-900 border-b border-slate-800 text-slate-300 font-semibold text-xs">
+          <thead className="sticky top-0 z-30 bg-slate-900 shadow-sm">
+            <tr className="border-b border-slate-800 text-slate-300 font-semibold text-xs">
               {/* Sticky Corner Header with solid masking flange (BUG-05, BUG-08) */}
-              <th className="sticky left-0 z-30 bg-slate-900 px-3.5 py-2.5 min-w-[125px] sm:min-w-[140px] border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)]">
+              <th className="sticky top-0 left-0 z-40 bg-slate-900 px-3.5 py-2.5 min-w-[125px] sm:min-w-[140px] border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)]">
                 {viewMode === 'teachers' ? 'Teacher' : 'Class / Section'}
               </th>
 
               {DEFAULT_PERIODS.map((period) => (
                 <th
                   key={period.id}
-                  className={`px-2.5 py-2 min-w-[96px] sm:min-w-[110px] text-center border-l border-slate-800/80 ${
-                    period.id === 'BREAK' ? 'bg-slate-950/80 text-slate-500' : ''
+                  className={`sticky top-0 z-30 bg-slate-900 px-2.5 py-2 min-w-[96px] sm:min-w-[110px] text-center border-l border-slate-800/80 ${
+                    period.id === 'BREAK' ? 'bg-slate-950/90 text-slate-500' : ''
                   }`}
                 >
                   <div className="text-[11px] font-bold">{period.name}</div>

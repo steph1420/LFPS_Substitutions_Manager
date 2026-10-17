@@ -6,6 +6,14 @@ import { useTimetableStore } from '../store/useTimetableStore.js';
 import { User, LogOut, SlidersHorizontal, FileSpreadsheet, ChevronDown, X } from 'lucide-react';
 import { useLiveSync } from '../hooks/useLiveSync.js';
 
+// Relaxed Apple-grade spring physics for graceful, unhurried island transitions
+const ISLAND_SPRING = {
+  type: 'spring' as const,
+  stiffness: 220,
+  damping: 26,
+  mass: 1.1,
+};
+
 const DAYS: DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
 export const Header: React.FC = () => {
@@ -29,14 +37,14 @@ export const Header: React.FC = () => {
   const isDayChangingRef = React.useRef(false);
   const autoCollapseTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Auto-collapse timer (3.5s of inactivity after day selection in island mode)
+  // Auto-collapse timer: relaxed 4.8s countdown gives ample breathing room
   const resetAutoCollapseTimer = React.useCallback(() => {
     if (autoCollapseTimerRef.current) {
       clearTimeout(autoCollapseTimerRef.current);
     }
     autoCollapseTimerRef.current = setTimeout(() => {
       setIsIslandExpanded(false);
-    }, 3500);
+    }, 4800);
   }, []);
 
   const triggerHaptic = (ms = 25) => {
@@ -144,7 +152,7 @@ export const Header: React.FC = () => {
                 <motion.button
                   layoutId="dynamic-island-day-bar"
                   key="island-pill"
-                  transition={SPRING_TRANSITIONS.snappy}
+                  transition={ISLAND_SPRING}
                   onClick={() => {
                     triggerHaptic(20);
                     setIsIslandExpanded(true);
@@ -168,7 +176,7 @@ export const Header: React.FC = () => {
                 <motion.div
                   layoutId="dynamic-island-day-bar"
                   key="island-expanded"
-                  transition={SPRING_TRANSITIONS.snappy}
+                  transition={ISLAND_SPRING}
                   className="bg-slate-950/98 border border-slate-700/90 shadow-[0_20px_48px_rgba(0,0,0,0.9)] rounded-full p-1.5 flex items-center gap-1 backdrop-blur-2xl will-change-transform"
                 >
                   <div className="flex items-center gap-0.5 sm:gap-1">
@@ -213,7 +221,7 @@ export const Header: React.FC = () => {
           y: isHeaderHidden ? -120 : 0,
           opacity: isHeaderHidden ? 0 : 1,
         }}
-        transition={SPRING_TRANSITIONS.snappy}
+        transition={SPRING_TRANSITIONS.smooth}
         className="sticky top-0 z-40 w-full header-elevated px-4 py-3 sm:px-6 pointer-events-auto will-change-transform"
       >
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
@@ -250,7 +258,7 @@ export const Header: React.FC = () => {
           {!isHeaderHidden && (
             <motion.div
               layoutId="dynamic-island-day-bar"
-              transition={SPRING_TRANSITIONS.snappy}
+              transition={ISLAND_SPRING}
               className="flex items-center bg-slate-900/90 p-1 rounded-full border border-slate-800 shadow-inner will-change-transform"
             >
               {DAYS.map((day) => {

@@ -423,6 +423,12 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - Resolved in Job Bundle 21: standardized on `🟢 Available for Sub` $\longleftrightarrow$ `⏸ Free from Sub` with contextual hints.
 - [x] **FEAT-35 (Staff Availability & Duties Modal Decluttering & Redesign)**:
   - Resolved in Job Bundle 21 via `SubAvailabilityModal.tsx`.
+- [ ] **FEAT-36 (Staff Hierarchy Ordering by Operational Responsibilities)**:
+  - Order staff across all displays (Roster trays, Grid teacher rows, selection dropdowns, officiating pickers) strictly in hierarchy of school operational responsibilities:
+    1. **AC** — Academic Coordinator (Unified Purple)
+    2. **AAC** / **A.AC** — Assistant Academic Coordinator (Unified Purple)
+    3. **CT** — Class Teachers (Teal-ish / `#0284c7`)
+    4. **ST** — Subject Teachers (iOS Blue / `#007aff`)
 
 
 

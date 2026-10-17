@@ -29,17 +29,6 @@ export const AbsenceRoster: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-[11px] text-slate-400">
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-sky-500" /> Class Teacher
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-purple-500" /> Coordinator
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-rose-500" /> Absent
-          </span>
-        </div>
       </div>
 
       {/* Horizontal Scroll Roster Tray */}
@@ -140,7 +129,7 @@ export const AbsenceRoster: React.FC = () => {
                   </div>
                 ) : (
                   <div className="text-[10px] font-medium text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                    <Check className="w-3 h-3" /> On Campus
+                    <Check className="w-3 h-3" /> Present
                   </div>
                 )}
 
