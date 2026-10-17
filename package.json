@@ -10,9 +10,10 @@
     "dev:web": "npm run dev --workspace=@lfps/web",
     "build:web": "npm run build --workspace=@lfps/web",
     "build:core": "npm run build --workspace=@lfps/core",
+    "build:pages": "npm run build:core && npm run build:web && node -e \"const fs = require('fs'); fs.cpSync('apps/web/dist', '.', { recursive: true });\"",
     "test:core": "npm test --workspace=@lfps/core",
     "test": "npm run test --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present"
+    "build": "npm run build:core && npm run build:web && node -e \"const fs = require('fs'); fs.cpSync('apps/web/dist', '.', { recursive: true });\""
   },
   "devDependencies": {
     "typescript": "^5.7.3"

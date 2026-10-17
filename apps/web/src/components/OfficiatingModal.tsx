@@ -133,3 +133,4 @@ export const OfficiatingModal: React.FC = () => {
     </AnimatePresence>
   );
 };
+
