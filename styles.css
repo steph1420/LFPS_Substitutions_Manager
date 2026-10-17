@@ -5953,6 +5953,30 @@ body.master-edit-mode .routine-table tbody td:hover:not(:first-child) {
     text-decoration: underline;
 }
 
+/* --- ULTRA-COMPACT MICRO CONTEXT MENU (FEAT-29 & FEAT-30) --- */
+.absence-context-popover.ctx-micro-menu,
+.grid-cell-context-popover.ctx-micro-menu {
+    min-width: 154px;
+    max-width: 185px;
+    padding: 4px;
+    gap: 3px;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.ctx-micro-menu .ctx-action-btn {
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 6px;
+    gap: 6px;
+    justify-content: flex-start;
+}
+
+.ctx-micro-menu .ctx-action-btn span.emoji {
+    font-size: 12px;
+}
+
 /* Status Pill with ? Button */
 .sub-unavail-pill {
     display: inline-flex;
@@ -6436,6 +6460,55 @@ body.master-edit-mode .routine-table tbody td:hover:not(:first-child) {
     transform: scale(0.96);
 }
 
+/* --- HEADER PROFILE / TEACHER LOGIN PILL (FEAT-26 & FEAT-28) --- */
+.header-profile-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    background: var(--surface-secondary, rgba(0, 0, 0, 0.05));
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    white-space: nowrap;
+    line-height: 1.2;
+    flex-shrink: 0;
+}
+
+.header-profile-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    border-color: var(--accent-blue);
+}
+
+.header-profile-pill:active {
+    transform: scale(0.96);
+}
+
+.header-profile-pill.is-logged-in {
+    background: rgba(0, 122, 255, 0.1);
+    border-color: rgba(0, 122, 255, 0.35);
+    color: var(--accent-blue, #007aff);
+}
+
+.profile-pill-icon {
+    font-size: 11.5px;
+    display: inline-block;
+    line-height: 1;
+}
+
+.profile-pill-text {
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .cloud-status-dot {
     width: 7px;
     height: 7px;
@@ -6651,16 +6724,24 @@ body.master-edit-mode .routine-table tbody td:hover:not(:first-child) {
 }
 
 @media (max-width: 500px) {
-    .header-cloud-pill {
-        padding: 2.5px 6px;
+    .header-cloud-pill,
+    .header-profile-pill {
+        padding: 2.5px 6.5px;
         font-size: 10px;
+    }
+    .profile-pill-text {
+        max-width: 85px;
     }
 }
 
 @media (orientation: landscape) and (max-height: 500px) {
-    .header-cloud-pill {
+    .header-cloud-pill,
+    .header-profile-pill {
         padding: 2px 5.5px;
         font-size: 9.5px;
+    }
+    .profile-pill-text {
+        max-width: 75px;
     }
 }
 

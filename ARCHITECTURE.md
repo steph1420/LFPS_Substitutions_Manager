@@ -1,5 +1,5 @@
 # Front Desk PWA - Architecture & Developer Guide
-**Current Version:** v1.52.0
+**Current Version:** v1.53.0
 **Project Type:** Vanilla JS/HTML/CSS Offline-First PWA
 **Purpose:** School substitution management and daily timetable resolution.
 
@@ -554,3 +554,29 @@ To enable live synchronization from Google Sheets in future releases:
     *   Integrated universal Yamaha keyboard-inspired finger indicator (`<span class="hold-indicator">👆</span>`) with explicit microcopy (`Hold for more`).
 *   **Simplified Staff Availability & Duties Modal (FEAT-21):**
     *   Decluttered `#sub-avail-modal` with simplified header title `Staff Availability & Duties`, compact 3-column duty grid (`repeat(3, 1fr)`), and removed verbose parenthetical copy.
+
+### 11.13 Teacher Login, Conditional Features, Micro Context Menus & Off. CT Repair (v1.53.0)
+*   **Non-Blocking Teacher Login & Operating Profile (`FEAT-26`):**
+    *   Added dedicated profile selector in Settings Group 1 ("Teacher Login & Operating Identity") and top header profile pill (`#header-profile-pill`).
+    *   Grid browsing, routine manipulation, and front-desk viewing remain 100% accessible to anyone without requiring login (guest / front-desk mode).
+    *   Logging in as a teacher personalizes the interface (substitutions action buttons, personal duty alerts, `'My Subs'` filter). Explicit logout (`#btn-profile-logout`) resets `state.loggedInTeacher = null` to restore guest mode.
+*   **Identical Name Disambiguation Engine (`FEAT-27`):**
+    *   Assigned unique staff IDs (`id: "STAFF-01"`, etc.) in `staffDirectory`.
+    *   Created `getDisambiguatedTeacherName(teacher)` helper: detects duplicate teacher names or initials across the system and heuristically appends primary class section or department qualifiers (e.g. `Mrs. S. Lakra (KG A)`).
+*   **Conditional Feature Visibility When Logged Out (`FEAT-28`):**
+    *   When `state.loggedInTeacher` is `null`:
+        *   `#reg-filter-btn-my` ('My Subs') is hidden (`.hidden`). If the user was viewing `'my'`, it falls back safely to `'all'`.
+        *   Inline row action buttons `[Accept]` and `[Dispute]` are hidden (`canTeacherAct = false`), preserving a clean, read-only front desk overview.
+        *   Personal teacher duty alerts in the notification center are hidden.
+    *   When logged in, personal action buttons and duty count badges are activated for that teacher.
+*   **Ultra-Compact Micro Context Menus (`FEAT-29`):**
+    *   Desktop right-click and 500ms touch long-press on Absence Panel cards or Routine Grid teacher column cells summon an ultra-compact ~160px $\times$ 74px 2-button micro-menu (`.ctx-micro-menu`).
+    *   Provides instant, friction-free toggling: `[ 🔴/🟢 Mark Absent ]` & `[ ⛔/🟢 Mark Off-Duty ]` with zero layout clutter.
+*   **'Minimal UI Mode' Hidden Developer Setting (`FEAT-30`):**
+    *   Introduced `state.settings.minimalUI` (enabled by default) wired to `#minimal-ui-toggle` in Developer Options.
+    *   When enabled, context menus render as ultra-compact micro-menus. When disabled, full elaborate cards and extended details are restored.
+*   **Assign Off. CT Modal Self-Healing & Off-Duty Tagging (`BUG-09`):**
+    *   Fixed silent abort where missing `#officiating-teacher-list` and `#officiating-modal-subtitle` in the DOM prevented `openOfficiatingModal()` from opening.
+    *   Added self-healing dynamic DOM injection fallback in `openOfficiatingModal()` if container elements are missing.
+    *   Filtered candidate pool, tagged off-duty candidates with `⛔ Off-Duty`, and sorted available candidates first.
+    *   Bound `#close-officiating-modal-footer-btn` and wired Notification Center Off. CT and Off. AC notices to directly launch `openOfficiatingModal()`.

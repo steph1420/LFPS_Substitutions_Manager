@@ -8,6 +8,7 @@ const state = {
     isMasterUnlocked: false,
     routineViewMode: 'teacher', // 'teacher' | 'class'
     currentRole: 'admin', // 'admin' | 'ac' | 'asst_ac' | 'teacher'
+    loggedInTeacher: null, // null (guest / front-desk mode) | string (e.g. 'Mrs. S. Lakra')
     activeTeacher: 'Mrs. R. Pahwa',
     absentTeachers: new Set(),
     baseSchedule: {}, 
@@ -20,6 +21,7 @@ const state = {
     displaced: { 'MON': [], 'TUE': [], 'WED': [], 'THU': [], 'FRI': [], 'SAT': [] },
     pendingBroadcasts: [],
     settings: {
+        minimalUI: true,
         cloudMode: 'live',
         autoSyncInterval: 60,
         samePeriodLock: true,
@@ -67,6 +69,7 @@ const ASSISTANT_AC = 'Mrs. S. Lakra';
 
 const staffDirectory = {
     "Mrs. S. Lakra": {
+        id: "STAFF-01",
         fullName: "Mrs. Synthia Lakra",
         abbr: "Mrs. S. Lakra",
         role: "Class Teacher / Asst. Academic Coordinator",
@@ -77,6 +80,7 @@ const staffDirectory = {
         assignedSubjectPool: ["ENG. REC.", "M. SC.", "ENG. ORAL", "ENG. WR.", "SUB. TABLE", "M. ORAL", "M. PR.", "M. ACT.", "SING.", "M. NO. WK.", "ENG. STORY", "ENG. CONV.", "ENG. ACT."]
     },
     "Mrs. M. Midha": {
+        id: "STAFF-02",
         fullName: "Mrs. Manisha Midha",
         abbr: "Mrs. M. Midha",
         role: "Class Teacher",
@@ -87,6 +91,7 @@ const staffDirectory = {
         assignedSubjectPool: ["ENG. REC.", "M. SC.", "ENG. ORAL", "ENG. WR.", "SUB. TABLE", "M. ACT.", "M. ORAL", "M. PR.", "SING.", "M. NO. WK.", "ENG. STORY", "ENG. CONV.", "ENG. ACT."]
     },
     "Mrs. R. Pahwa": {
+        id: "STAFF-03",
         fullName: "Mrs. Riya Pahwa",
         abbr: "Mrs. R. Pahwa",
         role: "Class Teacher / Academic Coordinator",
@@ -97,6 +102,7 @@ const staffDirectory = {
         assignedSubjectPool: ["ENG. REC.", "M. SC.", "M. Bas.", "ENG. WR.", "ST. TIME.", "M. GEN.", "ENG. SPELL.", "ENG. LANG.", "M. NO. WK.", "ENG.", "ENG. LIT.", "SING.", "ENG. CR. WR."]
     },
     "Mrs. R. Narayan": {
+        id: "STAFF-04",
         fullName: "Mrs. Ritika Narayan",
         abbr: "Mrs. R. Narayan",
         role: "Class Teacher",
@@ -107,6 +113,7 @@ const staffDirectory = {
         assignedSubjectPool: ["ENG. REC.", "M. SC.", "ENG. WR.", "M. Bas.", "ENG. SPELL.", "M. GEN.", "ST. TIME.", "ENG. LANG.", "M. NO. WK.", "ENG.", "ENG. LIT.", "ENG. CR. WR.", "SING."]
     },
     "Ms. N. Horo": {
+        id: "STAFF-05",
         fullName: "Ms. Namlen Horo",
         abbr: "Ms. N. Horo",
         role: "2nd Teacher",
@@ -117,6 +124,7 @@ const staffDirectory = {
         assignedSubjectPool: ["HIN. KAV./GEET", "HIN. LIK. KAR.", "HIN. KAH.", "HIN. VYAK.", "HIN. SUL.", "HIN. KAR. PUS.", "HIN. SAHIT."]
     },
     "Ms. K. Sanga": {
+        id: "STAFF-06",
         fullName: "Ms. Kalista Sanga",
         abbr: "Ms. K. Sanga",
         role: "2nd Teacher",
@@ -127,6 +135,7 @@ const staffDirectory = {
         assignedSubjectPool: ["HIN. KAV./GEET", "HIN. LIK. KAR.", "HIN. KAH.", "HIN. VYAK.", "HIN. KAR. PUS.", "HIN. SUL.", "HIN. SAHIT."]
     },
     "Ms. A. Amira": {
+        id: "STAFF-07",
         fullName: "Ms. Ashna Amira",
         abbr: "Ms. A. Amira",
         role: "2nd Teacher",
@@ -137,6 +146,7 @@ const staffDirectory = {
         assignedSubjectPool: ["GAMES", "NT", "HT", "GK", "1ST DRILL", "CR.", "DR.", "DRILL"]
     },
     "Mrs. S. Bage": {
+        id: "STAFF-08",
         fullName: "Mrs. Suman Bage",
         abbr: "Mrs. S. Bage",
         role: "2nd Teacher",
@@ -147,6 +157,7 @@ const staffDirectory = {
         assignedSubjectPool: ["GAMES", "HT", "GK", "NT", "2ND DRILL", "CR.", "DR.", "DRILL"]
     },
     "Mr. S. A. Lakra": {
+        id: "STAFF-09",
         fullName: "Mr. Stephen Ashish Lakra",
         abbr: "Mr. S. A. Lakra",
         role: "3rd Teacher",
@@ -157,6 +168,26 @@ const staffDirectory = {
         assignedSubjectPool: ["GAMES", "HIN. KAV./GEET", "DRILL", "SING.", "GK"]
     }
 };
+
+// --- STAFF DISAMBIGUATION ENGINE (FEAT-27) ---
+function getDisambiguatedTeacherName(teacherName, forceQualify = false) {
+    if (!teacherName) return '';
+    const staff = staffDirectory[teacherName];
+    // Check if duplicate names exist across the directory
+    const duplicateCount = Object.keys(staffDirectory).filter(key => {
+        const item = staffDirectory[key];
+        return key === teacherName || item.abbr === teacherName || item.fullName === teacherName;
+    }).length;
+
+    if (duplicateCount > 1 || forceQualify) {
+        if (staff) {
+            const qualifier = staff.primaryClass ? staff.primaryClass : (staff.department || staff.role || staff.id);
+            return `${teacherName} (${qualifier})`;
+        }
+    }
+    return teacherName;
+}
+window.getDisambiguatedTeacherName = getDisambiguatedTeacherName;
 
 // --- 1. SUBJECT CATALOG (49 SUBJECTS FROM LFPS EXCEL SHEET 2) ---
 const subjectsCatalog = [
@@ -535,6 +566,7 @@ function saveStateToStorage() {
         day: state.day,
         routineViewMode: state.routineViewMode || 'teacher',
         currentRole: state.currentRole,
+        loggedInTeacher: state.loggedInTeacher,
         activeTeacher: state.activeTeacher,
         baseSchedule: state.baseSchedule,
         schedule: state.schedule,
@@ -596,6 +628,7 @@ function loadStateFromStorage() {
             state.day = parsed.day || 'MON';
             state.routineViewMode = parsed.routineViewMode || 'teacher';
             state.currentRole = parsed.currentRole || 'admin';
+            state.loggedInTeacher = parsed.loggedInTeacher !== undefined ? parsed.loggedInTeacher : null;
             state.activeTeacher = parsed.activeTeacher || 'Mrs. R. Pahwa';
             state.baseSchedule = parsed.baseSchedule || JSON.parse(JSON.stringify(parsed.schedule)); 
             state.schedule = parsed.schedule;
@@ -608,6 +641,7 @@ function loadStateFromStorage() {
             state.pendingBroadcasts = parsed.pendingBroadcasts || [];
             state.absentTeachers = new Set(parsed.absentTeachers || []);
             state.settings = Object.assign({ 
+                minimalUI: true,
                 cloudMode: 'live',
                 autoSyncInterval: 60,
                 samePeriodLock: true, 
@@ -1240,6 +1274,7 @@ function bindEvents() {
 
     // Officiating Role Picker Modal (Off. AC & Off. CT.)
     safeBind('close-officiating-modal-btn', 'click', closeOfficiatingModal);
+    safeBind('close-officiating-modal-footer-btn', 'click', closeOfficiatingModal);
     safeBind('officiating-overlay', 'click', closeOfficiatingModal);
 
     // Substitution Dispute Modal
@@ -1248,8 +1283,16 @@ function bindEvents() {
     safeBind('dispute-cancel-btn', 'click', closeDisputeModal);
     safeBind('dispute-submit-btn', 'click', submitDisputeReason);
 
-    // Header Role Badge Button -> opens Settings to switch role
+    // Header Role Badge Button & Header Profile Pill
     safeBind('role-badge-btn', 'click', openSettingsModal);
+    safeBind('header-profile-pill', 'click', () => {
+        openSettingsModal();
+        const selectEl = document.getElementById('active-staff-profile-select');
+        if (selectEl) {
+            selectEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            selectEl.focus();
+        }
+    });
 
     // Role Option Buttons in Settings
     document.querySelectorAll('.role-option-btn').forEach(btn => {
@@ -1259,25 +1302,51 @@ function bindEvents() {
         });
     });
 
-    // Seamless Automatic Role & Permission Inheritance
+    // Seamless Teacher Login & Operating Profile Mechanism (FEAT-26)
     safeBind('active-staff-profile-select', 'change', (e) => {
         const val = e.target.value;
-        if (val === 'admin') {
+        if (!val || val === 'guest') {
+            state.loggedInTeacher = null;
+            state.currentRole = 'admin';
+            saveStateToStorage();
+            updateRolePermissionsUI();
+            renderAll();
+            showToast('Guest / Front Desk Mode: Open view & editing');
+        } else if (val === 'admin') {
+            state.loggedInTeacher = null;
             setActiveRole('admin');
-            showToast('Role: Administrator');
+            showToast('Role: Administrator (Full Access)');
         } else if (val === PRIMARY_AC) {
+            state.loggedInTeacher = PRIMARY_AC;
             state.activeTeacher = PRIMARY_AC;
             setActiveRole('ac');
-            showToast(`Role: AC (${PRIMARY_AC})`);
+            showToast(`Logged in as: AC (${PRIMARY_AC})`);
         } else if (val === ASSISTANT_AC) {
+            state.loggedInTeacher = ASSISTANT_AC;
             state.activeTeacher = ASSISTANT_AC;
             setActiveRole('asst_ac');
-            showToast(`Role: Asst AC (${ASSISTANT_AC})`);
+            showToast(`Logged in as: Asst AC (${ASSISTANT_AC})`);
         } else {
+            state.loggedInTeacher = val;
             state.activeTeacher = val;
             setActiveRole('teacher');
-            showToast(`Viewing: ${val}`);
+            showToast(`Logged in as: ${val}`);
         }
+    });
+
+    safeBind('btn-profile-logout', 'click', () => {
+        state.loggedInTeacher = null;
+        state.currentRole = 'admin';
+        saveStateToStorage();
+        updateRolePermissionsUI();
+        renderAll();
+        showToast('Logged out: Operating in Guest / Front Desk mode');
+    });
+
+    safeBind('minimal-ui-toggle', 'change', (e) => {
+        state.settings.minimalUI = e.target.checked;
+        saveStateToStorage();
+        showToast(state.settings.minimalUI ? 'Minimal UI Mode enabled' : 'Elaborate UI Mode restored');
     });
 
     safeBind('absence-context-overlay', 'click', closeAbsenceContextMenu);
@@ -2463,36 +2532,52 @@ function openAbsenceContextMenu(teacher, anchorEl, clientX, clientY) {
     const isCT = !!ctSec;
     const roleLabel = isCT ? `Class Teacher (${ctSec})` : (staff?.role || 'Teacher');
 
-    popover.innerHTML = `
-        <div class="ctx-teacher-header">
-            <div>
-                <div class="ctx-teacher-name">${escapeHtml(teacher)}</div>
-                <div class="ctx-teacher-status">${roleLabel} • ${isAbsent ? '🔴 Absent' : '🟢 Present'} • ${isUnavail ? '⛔ Unavailable' : '🟢 Available'}</div>
+    const isMinimal = state.settings.minimalUI !== false;
+    if (isMinimal) {
+        popover.classList.add('ctx-micro-menu');
+        popover.innerHTML = `
+            <button type="button" class="ctx-action-btn ${isAbsent ? 'present-toggle' : 'absent-toggle'}" id="ctx-btn-toggle-absence">
+                <span class="emoji">${isAbsent ? '🟢' : '🔴'}</span>
+                <span>${isAbsent ? 'Mark Present' : 'Mark Absent'}</span>
+            </button>
+            <button type="button" class="ctx-action-btn ${isUnavail ? 'avail-toggle' : 'unavail-toggle'}" id="ctx-btn-toggle-avail">
+                <span class="emoji">${isUnavail ? '🟢' : '⛔'}</span>
+                <span>${isUnavail ? 'Mark Available' : 'Mark Off-Duty'}</span>
+            </button>
+        `;
+    } else {
+        popover.classList.remove('ctx-micro-menu');
+        popover.innerHTML = `
+            <div class="ctx-teacher-header">
+                <div>
+                    <div class="ctx-teacher-name">${escapeHtml(teacher)}</div>
+                    <div class="ctx-teacher-status">${roleLabel} • ${isAbsent ? '🔴 Absent' : '🟢 Present'} • ${isUnavail ? '⛔ Unavailable' : '🟢 Available'}</div>
+                </div>
             </div>
-        </div>
-        <button type="button" class="ctx-action-btn ${isAbsent ? 'present-toggle' : 'absent-toggle'}" id="ctx-btn-toggle-absence">
-            <span>${isAbsent ? '🟢' : '🔴'}</span>
-            <span>${isAbsent ? 'Mark Present Today' : 'Mark Absent Today'}</span>
-        </button>
-        ${isUnavail ? `
-            <button type="button" class="ctx-action-btn avail-toggle" id="ctx-btn-toggle-avail">
-                <span>🟢</span>
-                <span>Mark Available for Sub</span>
+            <button type="button" class="ctx-action-btn ${isAbsent ? 'present-toggle' : 'absent-toggle'}" id="ctx-btn-toggle-absence">
+                <span>${isAbsent ? '🟢' : '🔴'}</span>
+                <span>${isAbsent ? 'Mark Present Today' : 'Mark Absent Today'}</span>
             </button>
-        ` : `
-            <button type="button" class="ctx-action-btn unavail-toggle" id="ctx-btn-toggle-avail">
-                <span>⛔</span>
-                <span>Mark Unavailable Today</span>
-            </button>
-        `}
-        <button type="button" class="ctx-more-link" id="ctx-btn-more-options">More duty options & remarks...</button>
-    `;
+            ${isUnavail ? `
+                <button type="button" class="ctx-action-btn avail-toggle" id="ctx-btn-toggle-avail">
+                    <span>🟢</span>
+                    <span>Mark Available for Sub</span>
+                </button>
+            ` : `
+                <button type="button" class="ctx-action-btn unavail-toggle" id="ctx-btn-toggle-avail">
+                    <span>⛔</span>
+                    <span>Mark Unavailable Today</span>
+                </button>
+            `}
+            <button type="button" class="ctx-more-link" id="ctx-btn-more-options">More duty options & remarks...</button>
+        `;
+    }
 
     popover.classList.remove('hidden');
     overlay.classList.remove('hidden');
 
-    const popWidth = 250;
-    const popHeight = 175;
+    const popWidth = isMinimal ? 160 : 250;
+    const popHeight = isMinimal ? 74 : 175;
     let top = 80;
     let left = 20;
 
@@ -2555,7 +2640,10 @@ function closeAbsenceContextMenu() {
     currentAbsenceCtxTeacher = null;
     const popover = document.getElementById('absence-context-popover');
     const overlay = document.getElementById('absence-context-overlay');
-    if (popover) popover.classList.add('hidden');
+    if (popover) {
+        popover.classList.add('hidden');
+        popover.classList.remove('ctx-micro-menu');
+    }
     if (overlay) overlay.classList.add('hidden');
 }
 
@@ -2648,42 +2736,60 @@ function openGridCellContextMenu(teacher, period = null, anchorEl = null, client
         }
     }
 
-    popover.innerHTML = `
-        <div class="ctx-teacher-header" style="flex-direction:column; align-items:flex-start; gap:2px;">
-            <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                <div class="ctx-teacher-name">${escapeHtml(teacher)}</div>
-                <span style="font-size:11px; font-weight:700; color:${isAbsent ? 'var(--accent-red)' : 'var(--accent-green)'};">${isAbsent ? '🔴 Absent' : '🟢 Present'}</span>
-            </div>
-            <div class="ctx-teacher-status">${escapeHtml(fullName !== teacher ? fullName + ' • ' : '')}${escapeHtml(roleLabel)} • ${isUnavail ? '⛔ Off-Duty' : '🟢 Available'}</div>
-            ${periodTaskInfo}
-        </div>
+    const isMinimal = state.settings.minimalUI !== false;
+    const isMicroTeacherMode = isMinimal && !period;
 
-        <div style="display:flex; flex-direction:column; gap:6px;">
+    if (isMicroTeacherMode) {
+        popover.classList.add('ctx-micro-menu');
+        popover.innerHTML = `
             <button type="button" class="ctx-action-btn ${isAbsent ? 'present-toggle' : 'absent-toggle'}" id="grid-ctx-btn-absence">
-                <span>${isAbsent ? '🟢' : '🔴'}</span>
-                <span>${isAbsent ? 'Mark Present Today' : 'Mark Absent Today'}</span>
+                <span class="emoji">${isAbsent ? '🟢' : '🔴'}</span>
+                <span>${isAbsent ? 'Mark Present' : 'Mark Absent'}</span>
             </button>
-
             <button type="button" class="ctx-action-btn ${isUnavail ? 'avail-toggle' : 'unavail-toggle'}" id="grid-ctx-btn-avail">
-                <span>${isUnavail ? '🟢' : '⛔'}</span>
-                <span>${isUnavail ? 'Set Available for Substitution' : 'Set Unavailable for Sub (Off-Duty)'}</span>
+                <span class="emoji">${isUnavail ? '🟢' : '⛔'}</span>
+                <span>${isUnavail ? 'Mark Available' : 'Mark Off-Duty'}</span>
             </button>
+        `;
+    } else {
+        popover.classList.remove('ctx-micro-menu');
+        popover.innerHTML = `
+            <div class="ctx-teacher-header" style="flex-direction:column; align-items:flex-start; gap:2px;">
+                <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                    <div class="ctx-teacher-name">${escapeHtml(teacher)}</div>
+                    <span style="font-size:11px; font-weight:700; color:${isAbsent ? 'var(--accent-red)' : 'var(--accent-green)'};">${isAbsent ? '🔴 Absent' : '🟢 Present'}</span>
+                </div>
+                <div class="ctx-teacher-status">${escapeHtml(fullName !== teacher ? fullName + ' • ' : '')}${escapeHtml(roleLabel)} • ${isUnavail ? '⛔ Off-Duty' : '🟢 Available'}</div>
+                ${periodTaskInfo}
+            </div>
 
-            ${roleActionBtnHtml}
-            ${periodActionBtnHtml}
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <button type="button" class="ctx-action-btn ${isAbsent ? 'present-toggle' : 'absent-toggle'}" id="grid-ctx-btn-absence">
+                    <span>${isAbsent ? '🟢' : '🔴'}</span>
+                    <span>${isAbsent ? 'Mark Present Today' : 'Mark Absent Today'}</span>
+                </button>
 
-            <button type="button" class="ctx-more-link" id="grid-ctx-btn-more">
-                Duty remarks & schedule settings →
-            </button>
-        </div>
-    `;
+                <button type="button" class="ctx-action-btn ${isUnavail ? 'avail-toggle' : 'unavail-toggle'}" id="grid-ctx-btn-avail">
+                    <span>${isUnavail ? '🟢' : '⛔'}</span>
+                    <span>${isUnavail ? 'Set Available for Substitution' : 'Set Unavailable for Sub (Off-Duty)'}</span>
+                </button>
+
+                ${roleActionBtnHtml}
+                ${periodActionBtnHtml}
+
+                <button type="button" class="ctx-more-link" id="grid-ctx-btn-more">
+                    Duty remarks & schedule settings →
+                </button>
+            </div>
+        `;
+    }
 
     popover.classList.remove('hidden');
     overlay.classList.remove('hidden');
 
     // Viewport positioning & boundary clamping
-    const popoverWidth = 260;
-    const popoverHeight = 240;
+    const popoverWidth = isMicroTeacherMode ? 160 : 260;
+    const popoverHeight = isMicroTeacherMode ? 74 : (period ? 240 : 180);
     let top = 100;
     let left = 20;
 
@@ -2792,7 +2898,10 @@ function closeGridCellContextMenu() {
     currentGridCtxTarget = null;
     const popover = document.getElementById('grid-cell-context-popover');
     const overlay = document.getElementById('grid-cell-context-overlay');
-    if (popover) popover.classList.add('hidden');
+    if (popover) {
+        popover.classList.add('hidden');
+        popover.classList.remove('ctx-micro-menu');
+    }
     if (overlay) overlay.classList.add('hidden');
 }
 window.closeGridCellContextMenu = closeGridCellContextMenu;
@@ -5021,6 +5130,12 @@ function updateRolePermissionsUI() {
 
     // Populate active staff profile select if needed
     if (staffSelect && (!staffSelect.options || staffSelect.options.length === 0)) {
+        staffSelect.innerHTML = '';
+        const guestOpt = document.createElement('option');
+        guestOpt.value = '';
+        guestOpt.textContent = '📱 Not Logged In (Guest / Front Desk Mode)';
+        staffSelect.appendChild(guestOpt);
+
         const adminOpt = document.createElement('option');
         adminOpt.value = 'admin';
         adminOpt.textContent = '🛡 Front Desk Admin (Full Access)';
@@ -5030,28 +5145,32 @@ function updateRolePermissionsUI() {
             const opt = document.createElement('option');
             opt.value = t;
             const ctSec = classTeacherMap[t];
+            const disambiguated = getDisambiguatedTeacherName(t);
             if (t === PRIMARY_AC) {
-                opt.textContent = `🎓 ${t} (Academic Coordinator)`;
+                opt.textContent = `🎓 ${disambiguated} (Academic Coordinator)`;
             } else if (t === ASSISTANT_AC) {
-                opt.textContent = `🎓 ${t} (Asst. Academic Coord.)`;
+                opt.textContent = `🎓 ${disambiguated} (Asst. Academic Coord.)`;
             } else if (ctSec) {
-                opt.textContent = `👤 ${t} (Class Teacher ${ctSec})`;
+                opt.textContent = `👤 ${disambiguated} (Class Teacher ${ctSec})`;
             } else {
-                opt.textContent = `👤 ${t} (Subject Teacher)`;
+                opt.textContent = `👤 ${disambiguated} (Subject Teacher)`;
             }
             staffSelect.appendChild(opt);
         });
     }
     if (staffSelect) {
-        if (state.currentRole === 'admin') {
+        if (state.loggedInTeacher) {
+            staffSelect.value = state.loggedInTeacher;
+        } else if (state.currentRole === 'admin') {
             staffSelect.value = 'admin';
-        } else if (state.currentRole === 'ac') {
-            staffSelect.value = PRIMARY_AC;
-        } else if (state.currentRole === 'asst_ac') {
-            staffSelect.value = ASSISTANT_AC;
         } else {
-            staffSelect.value = state.activeTeacher;
+            staffSelect.value = '';
         }
+    }
+
+    const logoutBtn = document.getElementById('btn-profile-logout');
+    if (logoutBtn) {
+        logoutBtn.style.display = state.loggedInTeacher ? 'inline-block' : 'none';
     }
 
     // Populate legacy teacher select dropdown if needed
@@ -5059,7 +5178,7 @@ function updateRolePermissionsUI() {
         teachers.forEach(t => {
             const opt = document.createElement('option');
             opt.value = t;
-            opt.textContent = `${t} (CT ${classTeacherMap[t] || '-'})`;
+            opt.textContent = `${getDisambiguatedTeacherName(t)} (CT ${classTeacherMap[t] || '-'})`;
             teacherSelect.appendChild(opt);
         });
     }
@@ -5075,6 +5194,22 @@ function updateRolePermissionsUI() {
     // Show/hide Teacher identity selector row in Settings
     if (teacherRow) {
         teacherRow.classList.toggle('hidden', state.currentRole !== 'teacher');
+    }
+
+    // Update Header Profile Pill (FEAT-26)
+    const headerProfilePill = document.getElementById('header-profile-pill');
+    const headerProfileName = document.getElementById('header-profile-name');
+    if (headerProfilePill && headerProfileName) {
+        if (state.loggedInTeacher) {
+            headerProfilePill.classList.add('is-logged-in');
+            const shortName = state.loggedInTeacher.replace(/^(Mrs\.|Ms\.|Mr\.)\s*/, '');
+            headerProfileName.textContent = shortName;
+            headerProfilePill.title = `Logged in as ${state.loggedInTeacher}. Click to switch profile.`;
+        } else {
+            headerProfilePill.classList.remove('is-logged-in');
+            headerProfileName.textContent = 'Log In';
+            headerProfilePill.title = 'Teacher Login: Click to log in or switch profile';
+        }
     }
 
     // Update header Role Badge button
@@ -5103,6 +5238,10 @@ function updateRolePermissionsUI() {
     }
     if (allowDisputesToggle) {
         allowDisputesToggle.checked = state.settings.allowDisputes !== false;
+    }
+    const minimalToggle = document.getElementById('minimal-ui-toggle');
+    if (minimalToggle) {
+        minimalToggle.checked = state.settings.minimalUI !== false;
     }
     const pinSettingRow = document.getElementById('admin-pin-setting-row');
     if (pinSettingRow) {
@@ -5200,8 +5339,25 @@ function openOfficiatingModal(type, section = null, absentCT = null) {
     const modal = document.getElementById('officiating-modal');
     const overlay = document.getElementById('officiating-overlay');
     const titleEl = document.getElementById('officiating-modal-title');
-    const subtitleEl = document.getElementById('officiating-modal-subtitle');
-    const listEl = document.getElementById('officiating-teacher-list');
+    let subtitleEl = document.getElementById('officiating-modal-subtitle');
+    let listEl = document.getElementById('officiating-teacher-list');
+    const bodyEl = document.getElementById('officiating-modal-body');
+
+    // Self-healing check: guarantee modal body container elements exist
+    if (bodyEl && (!subtitleEl || !listEl)) {
+        bodyEl.innerHTML = `
+            <p id="officiating-modal-subtitle" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px; line-height:1.45;"></p>
+            <div id="officiating-teacher-list" style="display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto; padding-right:2px;"></div>
+            <div style="display:flex; justify-content:flex-end; margin-top:14px; border-top:1px solid var(--border-color); padding-top:10px;">
+                <button type="button" id="close-officiating-modal-footer-btn" class="btn-secondary" style="font-size:11.5px; padding:6px 14px; font-weight:700;">Cancel</button>
+            </div>
+        `;
+        subtitleEl = document.getElementById('officiating-modal-subtitle');
+        listEl = document.getElementById('officiating-teacher-list');
+    }
+    const footerCancel = document.getElementById('close-officiating-modal-footer-btn');
+    if (footerCancel) footerCancel.onclick = closeOfficiatingModal;
+
     if (!modal || !overlay || !listEl) return;
 
     pendingOfficiatingTarget = { type, section, absentCT };
@@ -5223,9 +5379,12 @@ function openOfficiatingModal(type, section = null, absentCT = null) {
             const isGoldenFree = (state.schedule[state.day]?.['G/PD']?.[t] || 'Free') === 'Free';
             const teachesSec = section ? doesTeacherTeachSection(t, section, state.day) : false;
             const isPreferred = (t === preferredOffCT);
-            return { name: t, stats, isGoldenFree, teachesSec, isPreferred };
+            const isUnavail = isTeacherSubUnavailable(t, state.day);
+            return { name: t, stats, isGoldenFree, teachesSec, isPreferred, isUnavail };
         })
         .sort((a, b) => {
+            // 1. Available candidates ranked before off-duty candidates
+            if (a.isUnavail !== b.isUnavail) return a.isUnavail ? 1 : -1;
             if (type === 'ct') {
                 if (a.isPreferred !== b.isPreferred) return a.isPreferred ? -1 : 1;
                 if (a.teachesSec !== b.teachesSec) return a.teachesSec ? -1 : 1;
@@ -5238,13 +5397,15 @@ function openOfficiatingModal(type, section = null, absentCT = null) {
         const currentOffAC = state.officiatingAC?.[state.day];
         const currentOffCT = section ? state.officiatingCT?.[state.day]?.[section] : null;
         const isSelected = (type === 'ac' && currentOffAC === c.name) || (type === 'ct' && currentOffCT === c.name);
+        const icon = isSelected ? '✓ ' : (c.isUnavail ? '⛔ ' : (c.isPreferred ? '★ ' : '🟢 '));
 
         const row = document.createElement('div');
-        row.style.cssText = `display:flex; justify-content:space-between; align-items:center; padding:11px 14px; background:var(--bg-color); border:1px solid ${isSelected ? 'var(--accent-blue)' : (c.isPreferred ? 'rgba(52,199,89,0.4)' : 'var(--border-color)')}; border-radius:10px; cursor:pointer;`;
+        row.style.cssText = `display:flex; justify-content:space-between; align-items:center; padding:11px 14px; background:var(--bg-color); border:1px solid ${isSelected ? 'var(--accent-blue)' : (c.isPreferred ? 'rgba(52,199,89,0.4)' : 'var(--border-color)')}; border-radius:10px; cursor:pointer; opacity:${c.isUnavail ? '0.75' : '1'};`;
         row.innerHTML = `
             <div>
-                <strong style="color:var(--text-primary); font-size:13px;">${isSelected ? '✓ ' : (c.isPreferred ? '★ ' : '🟢 ')}${c.name}</strong>
+                <strong style="color:var(--text-primary); font-size:13px;">${icon}${getDisambiguatedTeacherName(c.name)}</strong>
                 ${c.isPreferred ? `<span class="reg-affinity-tag" style="background:rgba(52,199,89,0.18); color:var(--accent-green); font-weight:700;">★ Class Team (Recommended)</span>` : ''}
+                ${c.isUnavail ? `<span class="sub-unavail-pill" style="font-size:10px; padding:1px 6px;">⛔ Off-Duty</span>` : ''}
                 <span class="ct-badge-mini">${classTeacherMap[c.name] ? `CT ${classTeacherMap[c.name]}` : (staffDirectory[c.name]?.role || 'Support')}</span>
                 ${(c.teachesSec && !c.isPreferred) ? `<span class="reg-affinity-tag">Teaches ${section}</span>` : ''}
             </div>
@@ -6933,19 +7094,28 @@ function renderSubstitutions() {
         `;
     }
 
-    const activeTeacher = state.activeTeacher;
-    let mySubsCount = 0;
-    rowsData.forEach(r => {
-        if (activeTeacher && (r.subTeacher === activeTeacher || r.absentTeacher === activeTeacher)) {
-            mySubsCount++;
-        }
-    });
-
+    const activeTeacher = state.loggedInTeacher;
     const myBtn = document.getElementById('reg-filter-btn-my');
+
+    // FEAT-28: If not logged in as a teacher, hide 'My Subs' filter
     if (myBtn) {
-        myBtn.innerHTML = mySubsCount > 0 
-            ? `My Subs <span class="reg-filter-count">${mySubsCount}</span>` 
-            : 'My Subs';
+        if (!activeTeacher) {
+            myBtn.classList.add('hidden');
+            if (registerFilter === 'my') {
+                registerFilter = 'all';
+            }
+        } else {
+            myBtn.classList.remove('hidden');
+            let mySubsCount = 0;
+            rowsData.forEach(r => {
+                if (r.subTeacher === activeTeacher || r.absentTeacher === activeTeacher) {
+                    mySubsCount++;
+                }
+            });
+            myBtn.innerHTML = mySubsCount > 0 
+                ? `My Subs <span class="reg-filter-count">${mySubsCount}</span>` 
+                : 'My Subs';
+        }
     }
 
     document.querySelectorAll('.reg-filter-btn').forEach(b => {
@@ -7003,7 +7173,7 @@ function renderSubstitutions() {
 
         const absentCellHtml = `
             <div class="reg-teacher-block">
-                <span class="reg-teacher-name absent-name ${subTeacher ? 'struck' : ''}">${absentTeacher}</span>
+                <span class="reg-teacher-name absent-name ${subTeacher ? 'struck' : ''}">${getDisambiguatedTeacherName(absentTeacher)}</span>
                 <span class="reg-teacher-role-sub">${absentRole}</span>
             </div>
         `;
@@ -7016,8 +7186,10 @@ function renderSubstitutions() {
             const activeTimer = activeAcceptTimers.get(timerKey);
             const subRole = staffDirectory[subTeacher]?.role ? staffDirectory[subTeacher].role.split('/')[0].trim() : 'Staff';
 
-            // Check whether current user can press Accept/Dispute for this row
-            const canTeacherAct = (state.currentRole !== 'teacher') || (state.activeTeacher === subTeacher) || isCoord;
+            // Check whether current user can press Accept/Dispute for this row (FEAT-28)
+            const canTeacherAct = Boolean(state.loggedInTeacher && (
+                (state.loggedInTeacher === subTeacher) || isCoord
+            ));
 
             let statusCellHtml = '';
             if (activeTimer) {
@@ -8786,7 +8958,7 @@ function getOperationalNotices() {
             actionLabel: 'Designate Off. AC',
             onAction: () => {
                 closeNotificationsModal();
-                openTeacherQuickActionModal(PRIMARY_AC);
+                openOfficiatingModal('ac');
             }
         });
     }
@@ -8808,11 +8980,42 @@ function getOperationalNotices() {
                         actionLabel: 'Assign Off. CT.',
                         onAction: () => {
                             closeNotificationsModal();
-                            openTeacherQuickActionModal(team.ct);
+                            openOfficiatingModal('ct', sec, team.ct);
                         }
                     });
                 }
             }
+        });
+    }
+
+    // 5b. Personal Substitution Duty Alerts for Logged-In Teacher (FEAT-26 & FEAT-28)
+    if (state.loggedInTeacher) {
+        periods.forEach(p => {
+            if (p === 'BREAK' || p === 'BREAKFAST' || p === 'BREAKFAST BREAK') return;
+            teachers.forEach(absentTeacher => {
+                if (state.absentTeachers.has(absentTeacher)) {
+                    const assignedSub = state.substitutions?.[day]?.[p]?.[absentTeacher];
+                    if (assignedSub === state.loggedInTeacher) {
+                        const statusObj = getSubStatusObj(day, p, absentTeacher);
+                        const baseTask = state.baseSchedule?.[day]?.[p]?.[absentTeacher] || 'Class';
+                        if (statusObj.status !== 'accepted') {
+                            notices.push({
+                                id: `personal-sub-${day}-${p}-${absentTeacher}`,
+                                type: 'personal-sub',
+                                icon: '🔔',
+                                title: `Substitution Duty: ${p} (${baseTask})`,
+                                desc: `You are assigned to cover for ${absentTeacher} during ${p}.`,
+                                meta: `${day} • Action Required`,
+                                actionLabel: 'Go to Subs',
+                                onAction: () => {
+                                    closeNotificationsModal();
+                                    switchTabSection('tab-substitutions');
+                                }
+                            });
+                        }
+                    }
+                }
+            });
         });
     }
 

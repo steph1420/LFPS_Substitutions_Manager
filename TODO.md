@@ -33,6 +33,16 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] **Solid Right-Edge Separation**: Implemented `.routine-table th:first-child::after, td:first-child::after` pseudo-element with dedicated high `z-index: 25`, pinned to the right edge with a 2.5px solid border and soft drop shadow across all light, dark, and glass themes. It cannot be collapsed or erased by passing period cards.
   - [x] **Eliminate Leftmost Gap & Under-Slide Peeking**: Implemented a 34px opaque masking flange (`::before`) extending to `left: -32px` with `z-index: 12`. Updated `.table-scroll-container` to `overflow-x: auto !important; overflow-y: hidden !important; overflow-y: clip !important; padding: 0 !important;` across all viewport sizes, fixing the WebKit horizontal scrollport leak where period cells bled outside the table to the screen's left edge.
 
+### BUG-09: Assign Officiating Class Teacher (Off. CT.) Modal Silent Failure (RESOLVED in v1.53.0)
+- **Status**: 🟢 Resolved (v1.53.0)
+- **Reported**: Clicking "Assign Off. CT." or "Change" across Roster cards, Substitutions page, Grid headers, and Quick Action modals failed silently with zero feedback.
+- **Root Cause**: `app.js` line 5205 aborted early (`if (!modal || !overlay || !listEl) return;`) because `#officiating-teacher-list` and `#officiating-modal-subtitle` were missing from `#officiating-modal-body` in `index.html`.
+- **Solution Delivered**:
+  - [x] Injected `#officiating-modal-subtitle`, `#officiating-teacher-list`, and `#close-officiating-modal-footer-btn` directly into `index.html`.
+  - [x] Added self-healing DOM injection inside `openOfficiatingModal()` ensuring elements are dynamically created if missing.
+  - [x] Filtered candidate pool, tagged off-duty candidates with `⛔ Off-Duty`, and sorted available candidates first.
+  - [x] Wired Notification Center Off. CT and Off. AC notices to directly open `openOfficiatingModal()`.
+
 ### PERF-01: Master Routine Initial Render Stutter & In-Memory Pre-Render ("Keep-Warm" Engine)
 - **Status**: 🔴 Open
 - **Reported**: The Master Routine table draws noticeably slow / stutters when the page is first loaded and scrolled down into view.
@@ -290,6 +300,32 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - **Universal Long-Press Indicator Standard**: Standardized Yamaha-inspired finger glyph indicator (`<span class="hold-indicator">👆</span>`) with clear subtext microcopy (`Hold for duties` / `Hold for more`).
 - [x] **FEAT-21 (Detailed Staff Availability Page Simplification & De-Cluttering)**:
   - Streamlined `#sub-avail-modal` with simplified header title `Staff Availability & Duties`, converted common duty chips into a high-density 3-column grid (`repeat(3, 1fr)`), and removed verbose parenthetical microcopy.
+
+### Job Bundle 17: Teacher Login Mechanism, Conditional Visibility, Disambiguation Engine, Micro Context Menus & Off. CT Repair (RESOLVED in v1.53.0)
+- **Status**: 🟢 Resolved (v1.53.0)
+- [x] **BUG-09 (Assign Officiating Class Teacher Modal Silent Failure)**:
+  - Repaired missing `#officiating-teacher-list` and `#officiating-modal-subtitle` in `#officiating-modal-body` inside `index.html`.
+  - Added self-healing DOM creation in `openOfficiatingModal()` if elements are missing.
+  - Filtered candidate pool, tagged off-duty teachers with `⛔ Off-Duty`, and sorted available candidates ahead of unavailable ones.
+  - Bound `#close-officiating-modal-footer-btn` and wired Notification Center Off. CT and Off. AC notices to directly launch `openOfficiatingModal()`.
+- [x] **FEAT-26 (Non-Blocking Teacher Login Mechanism & Header Profile Pill)**:
+  - Added dedicated login selector in Settings Group 1 ("Teacher Login & Operating Identity") and interactive top header profile pill (`#header-profile-pill`).
+  - System remains 100% accessible to anyone in guest / front-desk mode without logging in.
+  - Added explicit "Log Out" button (`#btn-profile-logout`) returning session cleanly to front-desk mode.
+- [x] **FEAT-27 (Identical / Same-Name Disambiguation Engine)**:
+  - Assigned internal unique Staff IDs (`id: "STAFF-01"` through `STAFF-09`) in `staffDirectory`.
+  - Implemented `getDisambiguatedTeacherName(teacher)` helper detecting duplicate names and appending primary class or department qualifiers (e.g. `Mrs. S. Lakra (KG A)`).
+- [x] **FEAT-28 (Conditional Visibility for Logged-In Teacher Features)**:
+  - When not logged in (`state.loggedInTeacher = null`):
+    - `'My Subs'` filter button (`#reg-filter-btn-my`) is hidden (`.hidden`). If viewing `'my'`, automatically falls back safely to `'all'`.
+    - Inline row action buttons `[Accept]` and `[Dispute]` are hidden (`canTeacherAct = false`), preserving a clean front-desk overview.
+    - Personal substitution duty alerts are suppressed in the notification center.
+  - When logged in, `'My Subs'` appears with a live duty badge, and personal action buttons activate for the teacher's own duties.
+- [x] **FEAT-29 (Ultra-Compact Micro Context Menus)**:
+  - Right-click (desktop) and 500ms touch long-press (mobile) on absence tray cards and routine grid teacher column cells summon an ultra-compact ~160px $\times$ 74px 2-button micro-menu (`.ctx-micro-menu`).
+  - Provides instant 1-tap `[ 🔴/🟢 Mark Absent ]` & `[ ⛔/🟢 Mark Off-Duty ]` with zero screen clutter.
+- [x] **FEAT-30 ('Minimal UI Mode' Hidden Developer Setting)**:
+  - Added `#minimal-ui-toggle` to Developer Options (`state.settings.minimalUI: true` by default). Enabling renders the ultra-compact micro-menus, while disabling restores full elaborate cards and extended details.
 
 ### Job Bundle 16: Substitution Table Sorting, Desktop Width Responsiveness, Class/Teacher Consolidation & Dated Excel Server Backup
 - **Status**: 🔴 Queued (Next Up)

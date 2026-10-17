@@ -14,6 +14,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Codebase Technical Debt & Bloat Elimination**:
   - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
 
+## [v1.53.0] - 2026-10-17
+
+### Added
+- **Teacher Login & Non-Blocking Front-Desk Operation (FEAT-26)**:
+  - Added dedicated login selector in Settings Group 1 ("Teacher Login & Operating Identity") and interactive top header profile pill (`#header-profile-pill`).
+  - Completely non-blocking: timetable grid, absence tray, and routine viewing remain 100% accessible to anyone in guest / front-desk mode without logging in.
+  - Added explicit "Log Out" action button (`#btn-profile-logout`) returning the session cleanly to front-desk mode.
+- **Identical / Same-Name Disambiguation Engine (FEAT-27)**:
+  - Safeguarded against identical staff names by assigning internal unique Staff IDs (`id: "STAFF-01"` through `STAFF-09`) in `staffDirectory`.
+  - Implemented `getDisambiguatedTeacherName(teacher)` helper that detects duplicate names and appends primary class or department/role qualifiers (e.g. `Mrs. S. Lakra (KG A)` vs `Mrs. S. Lakra (Prep B)`).
+- **Conditional Visibility for Logged-In Teacher Features (FEAT-28)**:
+  - When not logged in (`state.loggedInTeacher = null`), teacher-specific controls disappear:
+    - `'My Subs'` filter button (`#reg-filter-btn-my`) is hidden (`.hidden`). If currently viewing `'my'`, automatically falls back safely to `'all'`.
+    - Inline row action buttons `[Accept]` and `[Dispute]` are hidden (`canTeacherAct = false`), preserving a clean front-desk overview.
+    - Personal substitution duty alerts are suppressed in the notification center.
+  - When logged in, `'My Subs'` appears with a live duty badge, and personal action buttons activate.
+- **Ultra-Compact Micro Context Menus (FEAT-29)**:
+  - Right-click (desktop) and 500ms touch long-press (mobile) on absence tray cards and routine grid teacher column cells summon an ultra-compact ~160px $\times$ 74px 2-button micro-menu (`.ctx-micro-menu`).
+  - Provides instant 1-tap `[ 🔴/🟢 Mark Absent ]` & `[ ⛔/🟢 Mark Off-Duty ]` with zero screen clutter.
+- **'Minimal UI Mode' Hidden Developer Setting (FEAT-30)**:
+  - Added `#minimal-ui-toggle` to Developer Options (`state.settings.minimalUI: true` by default). Enabling renders the ultra-compact micro-menus, while disabling restores full elaborate cards and extended details.
+
+### Fixed
+- **Assign Officiating Class Teacher (Off. CT.) Modal Silent Failure (BUG-09)**:
+  - Resolved bug where clicking "Assign Off. CT." failed silently across Roster tab cards, Substitutions page, Grid headers, and Quick Action modals due to missing container elements `#officiating-teacher-list` and `#officiating-modal-subtitle` in `#officiating-modal-body`.
+  - Injected container elements directly in `index.html` and added self-healing dynamic fallback in `openOfficiatingModal()`.
+  - Filtered candidate pool, tagged off-duty candidates with `⛔ Off-Duty`, and sorted available candidates ahead of unavailable ones.
+  - Bound `#close-officiating-modal-footer-btn` and wired Notification Center Off. CT and Off. AC notices to directly launch `openOfficiatingModal()`.
+
 ## [v1.52.0] - 2026-10-16
 
 ### Added

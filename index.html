@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Substitution Generator</title>
-    <link rel="stylesheet" href="styles.css?v=1.52.0">
+    <link rel="stylesheet" href="styles.css?v=1.53.0">
 </head>
 <body>
 
@@ -46,6 +46,10 @@
                 <div id="header-cloud-status" class="header-cloud-pill mode-live" title="Cloud Sync Status: Click for session options" role="button" tabindex="0">
                     <span class="cloud-status-dot"></span>
                     <span class="cloud-status-text" id="header-cloud-status-text">☁ Live</span>
+                </div>
+                <div id="header-profile-pill" class="header-profile-pill" title="Teacher Login: Click to switch operating profile" role="button" tabindex="0">
+                    <span class="profile-pill-icon">👤</span>
+                    <span class="profile-pill-text" id="header-profile-name">Log In</span>
                 </div>
             </div>
             <div class="header-controls">
@@ -211,7 +215,7 @@
                 </div>
 
                 <div class="grid-status-footer">
-                    <span class="version-badge">v1.52.0</span>
+                    <span class="version-badge">v1.53.0</span>
                     <span class="grid-status-dot">●</span>
                     <span class="grid-status-label">LFPS Front Desk Offline-First</span>
                     <div id="footer-conflict-pill" class="footer-conflict-pill hidden" title="Click to inspect timetable conflicts">
@@ -367,17 +371,20 @@
             <button id="close-settings-btn" class="settings-close-btn" aria-label="Close Settings">✕</button>
         </div>
         <div class="settings-modal-body">
-            <!-- 1. Active Staff Profile & Auto-Permissions -->
+            <!-- 1. Teacher Login & Operating Profile -->
             <div class="settings-group">
-                <div class="settings-group-title">Active Staff Profile</div>
+                <div class="settings-group-title">Teacher Login & Operating Identity</div>
                 <div class="settings-row" style="flex-wrap:wrap; gap:10px;">
                     <div class="settings-row-info" style="min-width:200px;">
                         <span class="settings-row-label">Operating Identity</span>
-                        <span class="settings-row-desc">Permissions (Administrator, Coordinator, or Class Teacher) are inherited automatically from staff records.</span>
+                        <span class="settings-row-desc">Log in as a teacher to unlock personal substitution actions (My Subs, Accept/Dispute duties, personal alerts). When logged out, the app runs in front-desk mode.</span>
                     </div>
-                    <select id="active-staff-profile-select" class="apple-select" style="min-width:200px; font-weight:600;">
-                        <!-- Populated by JS -->
-                    </select>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <select id="active-staff-profile-select" class="apple-select" style="min-width:200px; font-weight:600;">
+                            <!-- Populated by JS -->
+                        </select>
+                        <button type="button" id="btn-profile-logout" class="btn-secondary" style="font-size:11px; font-weight:700; padding:6px 12px; display:none;">Log Out</button>
+                    </div>
                 </div>
                 <!-- Hidden legacy role grid and teacher identity row to preserve full compatibility -->
                 <div class="role-selector-grid hidden" id="settings-role-grid" style="display:none !important;">
@@ -788,7 +795,7 @@
                 <div class="settings-row" id="settings-version-row" style="cursor:pointer; user-select:none;" title="Tap 5 times to unlock Developer Options">
                     <span class="settings-row-label">Version</span>
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <span class="settings-row-value" id="settings-version-val">v1.52.0 (Timetable Schema 2.0)</span>
+                        <span class="settings-row-value" id="settings-version-val">v1.53.0 (Timetable Schema 2.0)</span>
                         <span id="dev-mode-pill" class="dev-badge-pill hidden">🛠 Dev Unlocked</span>
                     </div>
                 </div>
@@ -816,6 +823,18 @@
                     </div>
                     <label class="toggle-switch">
                         <input type="checkbox" id="routine-edit-lock-toggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <!-- Developer Option: Minimal UI Mode (FEAT-30) -->
+                <div class="settings-row" id="minimal-ui-setting-row">
+                    <div class="settings-row-info">
+                        <span class="settings-row-label">Minimal UI Mode (Concise Menus & Popups)</span>
+                        <span class="settings-row-desc">When enabled (default), context menus on the absence panel and routine grid render as ultra-compact 2-action micro-menus. Disable this to restore full elaborate cards and extended details.</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="minimal-ui-toggle" checked>
                         <span class="slider round"></span>
                     </label>
                 </div>
@@ -1018,8 +1037,14 @@
             </div>
             <button id="close-officiating-modal-btn" class="settings-close-btn" aria-label="Close">✕</button>
         </div>
-        <div class="settings-modal-body" id="officiating-modal-body">
-            <!-- Populated by JS -->
+        <div class="settings-modal-body" id="officiating-modal-body" style="padding:14px 16px;">
+            <p id="officiating-modal-subtitle" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px; line-height:1.45;"></p>
+            <div id="officiating-teacher-list" style="display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto; padding-right:2px;">
+                <!-- Populated dynamically by JS -->
+            </div>
+            <div style="display:flex; justify-content:flex-end; margin-top:14px; border-top:1px solid var(--border-color); padding-top:10px;">
+                <button type="button" id="close-officiating-modal-footer-btn" class="btn-secondary" style="font-size:11.5px; padding:6px 14px; font-weight:700;">Cancel</button>
+            </div>
         </div>
     </div>
     <div id="officiating-overlay" class="overlay"></div>
@@ -1534,6 +1559,6 @@
     </div>
     <div id="notifications-overlay" class="overlay"></div>
 
-    <script src="app.js?v=1.52.0"></script>
+    <script src="app.js?v=1.53.0"></script>
 </body>
 </html>
