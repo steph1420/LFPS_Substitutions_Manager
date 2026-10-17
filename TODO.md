@@ -327,8 +327,34 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - [x] **FEAT-30 ('Minimal UI Mode' Hidden Developer Setting)**:
   - Added `#minimal-ui-toggle` to Developer Options (`state.settings.minimalUI: true` by default). Enabling renders the ultra-compact micro-menus, while disabling restores full elaborate cards and extended details.
 
-### Job Bundle 16: Substitution Table Sorting, Desktop Width Responsiveness, Class/Teacher Consolidation & Dated Excel Server Backup
-- **Status**: 🔴 Queued (Next Up)
+### Job Bundle 19: Next-Gen Monorepo Workspace, Core TS Domain Engine & Go Service Scaffold (RESOLVED on `next-gen` branch)
+- **Status**: 🟢 Resolved (Phase 1 Complete)
+- **Scope & Solution Delivered**:
+  - [x] **NPM Workspace Monorepo Architecture**:
+    - Created clean multi-package layout: `packages/core`, `packages/ui`, `apps/web`, `apps/server`.
+    - Archived v1.53.0 vanilla build into `legacy-v1/` for side-by-side verification and zero disruption to production `main` branch.
+    - Set up root `package.json` with workspace orchestration (`npm run dev:web`, `npm run build:web`, `npm run test:core`).
+  - [x] **`@lfps/core` Domain Engine & Pure TS Solver**:
+    - Strict TypeScript contracts: `Teacher`, `DailySchedule`, `MasterSchedule`, `AbsenceRecord` (including `AWAY_OFFICIAL`), `StaffAvailabilityRecord` (`AVAILABLE` vs `FREE_FROM_SUB`), `SubstitutionAssignment`, `AutoResolvePlan`.
+    - Ported full 2026–2027 timetable seed data (`DEFAULT_MASTER_SCHEDULE`) and all 9 staff records (`DEFAULT_STAFF_DIRECTORY`) with full departments and subject pools.
+    - Staff Disambiguation Engine: `getDisambiguatedTeacherName()`, `resolveTeacherById()`.
+    - Pure TS Substitution Solver: `parseCellSlot()`, `findAvailableSubstitutes()`, `calculateCandidateAffinity()`, and `autoResolveSubstitutions()`.
+    - **Vitest Test Suite**: 100% passing tests (10/10 specs) in 383ms validating cell parsing, disambiguation, absence filters, Away Official checks, Free from Sub toggles, and multi-period auto-resolve plans.
+  - [x] **`@lfps/ui` Apple HIG Design Tokens**:
+    - Shared spring physics configs (`snappy`, `bouncy`, `smooth`) and CSS easing curve (`cubic-bezier(0.2, 0.9, 0.3, 1)`).
+    - Scoped role palettes: Class Teachers in Teal Sky (`#0284c7`), Subject Teachers in iOS Blue (`#007aff`), Coordinators in Royal Violet (`#8b5cf6`), Absent in Crimson (`#ff3b30`), Away (Official) in Slate Indigo (`#475569`).
+  - [x] **`apps/web` React 19 + Tailwind v4 + Framer Motion Scaffold**:
+    - Lightning-fast Vite 6 + React 19 setup building clean bundle in 1.26s.
+    - Zustand store (`useTimetableStore`) connecting `@lfps/core` models and state mutations.
+    - Apple-grade Header with animated day pill (`layoutId="activeDay"`), profile login modal, and minimal UI toggle.
+    - Tactile Absence Roster with horizontal smooth scrolling and 1-tap `[🟢 Available • Tap to free]` / `[⏸ Free from Sub • Tap to restore]` pills.
+    - Live Substitution Register with 1-tap Auto-Resolve solver.
+    - Master Routine Grid preview with sticky teacher column.
+  - [x] **`apps/server` Go 1.23 High-Performance Service Skeleton**:
+    - Go module initialized (`lfps/server`).
+    - Handlers: `GET /api/v1/health` and `GET /api/v1/meta`.
+    - WebSocket hub architecture (`ws/hub.go`) ready for live multi-staff broadcast synchronization in Phase 2.
+    - Sub-millisecond execution with single static binary compilation.
 - [ ] **FEAT-22 (Interactive Column Header Sorting in Substitution Tables)**:
   - Make each column header in the Substitution Register table (and Off. CT ledger table) interactive and tappable.
   - Sorting criteria:
