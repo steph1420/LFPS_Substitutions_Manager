@@ -45,6 +45,7 @@ export const Header: React.FC = () => {
 
   const lastScrollYRef = React.useRef(0);
   const scrollDeltaAccumulatorRef = React.useRef(0);
+  const isTransitioningRef = React.useRef(false);
   const isDayChangingRef = React.useRef(false);
   const isViewportResizingRef = React.useRef(false);
   const autoCollapseTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -119,7 +120,7 @@ export const Header: React.FC = () => {
     };
   }, []);
 
-  // 120fps Directional Scroll Observer with Strict 4-State Cycle
+  // 120fps Directional Scroll Observer with Strict Hysteresis & Transition Lock
   React.useEffect(() => {
     let rafId: number | null = null;
 
@@ -136,17 +137,27 @@ export const Header: React.FC = () => {
         }
 
         const currentScrollY = window.scrollY;
-        const diff = currentScrollY - lastScrollYRef.current;
+        const prevScrollY = lastScrollYRef.current;
+        const diff = currentScrollY - prevScrollY;
         lastScrollYRef.current = currentScrollY;
 
         // State 1: TOP OF PAGE (scrollY <= 50) -> Full Header Console
         if (currentScrollY <= 50) {
           scrollDeltaAccumulatorRef.current = 0;
-          setHeaderState((prev) => (prev !== 'FULL' ? 'FULL' : prev));
-          setIsIslandExpanded(false);
-          if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
+          if (headerState !== 'FULL') {
+            setHeaderState('FULL');
+            setIsIslandExpanded(false);
+            if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
+            isTransitioningRef.current = true;
+            setTimeout(() => {
+              isTransitioningRef.current = false;
+            }, 350);
+          }
           return;
         }
+
+        // Lock state changes while actively animating between modes to eliminate flickering
+        if (isTransitioningRef.current) return;
 
         // Accumulate directional scroll delta
         if (diff > 0) {
@@ -155,15 +166,23 @@ export const Header: React.FC = () => {
           scrollDeltaAccumulatorRef.current = Math.min(0, scrollDeltaAccumulatorRef.current) + diff;
         }
 
-        // State 2: SCROLLING DOWN (scrollY > 50 and delta > 25) -> Header Completely Gone, only lone pill
-        if (scrollDeltaAccumulatorRef.current > 25) {
+        // State 2: SCROLLING DOWN (scrollY > 80 and accumulated delta > 35) -> Header Completely Gone, only lone pill
+        if (headerState !== 'HIDDEN' && currentScrollY > 80 && scrollDeltaAccumulatorRef.current > 35) {
           scrollDeltaAccumulatorRef.current = 0;
-          setHeaderState((prev) => (prev !== 'HIDDEN' ? 'HIDDEN' : prev));
+          setHeaderState('HIDDEN');
+          isTransitioningRef.current = true;
+          setTimeout(() => {
+            isTransitioningRef.current = false;
+          }, 350);
         }
-        // State 3: SCROLLING UP WHILE DOWN (scrollY > 50 and delta < -30) -> Slim Peek Strip (Not full header)
-        else if (scrollDeltaAccumulatorRef.current < -30) {
+        // State 3: SCROLLING UP WHILE DOWN (scrollY > 80 and accumulated delta < -40) -> Slim Peek Strip
+        else if (headerState !== 'PEEK' && currentScrollY > 80 && scrollDeltaAccumulatorRef.current < -40) {
           scrollDeltaAccumulatorRef.current = 0;
-          setHeaderState((prev) => (prev !== 'PEEK' ? 'PEEK' : prev));
+          setHeaderState('PEEK');
+          isTransitioningRef.current = true;
+          setTimeout(() => {
+            isTransitioningRef.current = false;
+          }, 350);
         }
       });
     };
@@ -174,7 +193,7 @@ export const Header: React.FC = () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
       if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
     };
-  }, []);
+  }, [headerState]);
 
   // Shared Floating Island Capsule / Expanded Day Selector Component
   const renderIslandContent = () => (
@@ -269,16 +288,28 @@ export const Header: React.FC = () => {
         deferredPrompt={deferredPrompt}
       />
 
-      {/* STATE 2: LONE FLOATING ISLAND CAPSULE (When scrolling down, header completely gone) */}
+      {/* FLOATING DAY BAR PILL: Stays outside/below the thin strip, only joins the full header at the top */}
       <AnimatePresence>
-        {headerState === 'HIDDEN' && (
-          <div className="fixed top-3 left-0 right-0 z-50 flex justify-center pointer-events-none">
+        {headerState !== 'FULL' && (
+          <motion.div
+            key="floating-day-pill-container"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{
+              opacity: 1,
+              // When in PEEK mode, the pill stays BELOW the 44px thin strip (y: 46px -> top: 58px).
+              // When in HIDDEN mode, the pill floats at top-3 (y: 0).
+              y: headerState === 'PEEK' ? 46 : 0,
+            }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={ISLAND_SPRING}
+            className="fixed top-3 left-0 right-0 z-50 flex justify-center pointer-events-none will-change-transform"
+          >
             <div className="pointer-events-auto">{renderIslandContent()}</div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* STATE 3: SLIM PEEK STRIP (When far down and scrolling UP, day bar stays as pill) */}
+      {/* STATE 3: SLIM PEEK STRIP (When far down and scrolling UP, pill stays BELOW, NOT inside) */}
       <AnimatePresence>
         {headerState === 'PEEK' && (
           <motion.div
@@ -287,19 +318,17 @@ export const Header: React.FC = () => {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -65, opacity: 0 }}
             transition={SPRING_TRANSITIONS.snappy}
-            className="fixed top-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/90 h-11 sm:h-12 px-3 sm:px-6 flex items-center justify-between shadow-[0_8px_24px_rgba(0,0,0,0.7)] select-none will-change-transform"
+            className="fixed top-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/90 h-11 sm:h-12 px-3 sm:px-6 flex items-center justify-between shadow-[0_8px_24px_rgba(0,0,0,0.7)] select-none will-change-transform"
           >
             {/* Left: Compact Reset Day Button */}
             <div className="flex items-center">
               <ResetDayButton compact />
             </div>
 
-            {/* Center: Day Bar Pill Capsule (Stays like a pill as requested) */}
-            <div className="flex items-center justify-center">
-              {renderIslandContent()}
-            </div>
+            {/* Center: Open breathing space — the pill floats cleanly BELOW this strip */}
+            <div className="flex-1" />
 
-            {/* Right: Quick Utilities (Settings, PWA, Profile) */}
+            {/* Right: Quick Utilities (PWA, Settings, Profile) */}
             <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 onClick={() => setIsPwaModalOpen(true)}
@@ -351,7 +380,9 @@ export const Header: React.FC = () => {
                     v2.0
                   </span>
                 </h1>
-                <p className="text-[11px] text-slate-400">Preparatory Timetable & Substitutions</p>
+                <p className="text-[11px] text-slate-400 hidden xs:block">
+                  Preparatory Timetable & Substitutions
+                </p>
               </div>
             </div>
 
@@ -375,7 +406,7 @@ export const Header: React.FC = () => {
             </div>
           </div>
 
-          {/* Center: Full Docked Day Bar inside Header (Joined back inside header when at top) */}
+          {/* Center: Full Docked Day Bar inside Header (Joined back inside header ONLY when at top) */}
           {headerState === 'FULL' && (
             <motion.div
               layoutId="dynamic-island-day-bar"
