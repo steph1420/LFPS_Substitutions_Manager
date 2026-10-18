@@ -444,6 +444,9 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] **FEAT-52 (Scroll Peek Header Utility Console)**:
     - On downward scroll, transition the header into a compact "peek" utility bar that grants instant access to Reset Day, Settings, and Staff Login, alongside the floating Dynamic Island Day Bar pill, while cleanly hiding full branding text (app title & subtitle).
     - Only when scrolled all the way to the top (`scrollY <= 50`) does the full elevated header console re-expand.
+  - [ ] **FEAT-57 (Mobile Browser URL Bar & Header Scroll Synchronization)**:
+    - Eliminate the jerky "double jump" on mobile viewports (Chromium, Firefox, Opera, Safari, Edge) where the browser address bar expansion fights with our custom header reveal.
+    - Synchronize scroll delta thresholds with `window.visualViewport` resize listener and CSS dynamic viewport units (`100dvh`), introducing directional hysteresis so the browser bar and peek header glide in perfect lockstep.
   - [ ] **FEAT-53 (Horizontal-Scroll Dynamic Teacher Column Collapse on Narrow Screens)**:
     - On mobile and narrow viewports, horizontally scrolling the routine table automatically triggers a collapsed mode for the sticky leftmost teacher name column.
     - When collapsed, the teacher column narrows (~65px) and switches to a small, thin font split cleanly over two lines (e.g. `Mrs. S.` on line 1, `Lakra` on line 2), maximizing visible instructional periods while preserving row identity.
@@ -455,6 +458,17 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] **FEAT-56 (Class Teacher Golden Token Overhaul)**:
     - Update `@lfps/ui` design tokens and component styling: Class Teachers (CT) are color-coded in vibrant **Golden / Amber** (`#f59e0b` / `text-amber-300 bg-amber-500/15 border-amber-500/40`) instead of Teal.
     - Academic Coordinators (`AC` Mrs. R. Pahwa and `AAC` Mrs. S. Lakra) strictly retain their signature **Purple / Violet** (`#8b5cf6`), even when they hold class teacher responsibilities.
+  - [ ] **FEAT-58 (Substitutions & Roster List/Grid View Types & Multi-Criteria Sorting)**:
+    - Add a tactile View Toggle (`[ ⊞ Grid ]` / `[ ☰ List ]`) to both the Substitutions Register and Staff Roster tab toolbars.
+    - Add Sorting dropdown or segmented selector:
+      - **By Name**: Alphabetical (A-Z / Z-A).
+      - **By Role**: Hierarchy rank (AC → AAC → Class Teachers → Subject Teachers).
+  - [ ] **FEAT-59 (Add to Home Screen PWA Installation & iOS Guidance)**:
+    - Implement `beforeinstallprompt` listener with an interactive "Install App / Add to Home Screen" button in Settings and header.
+    - Provide an Apple-style step-by-step guidance sheet for iOS Safari users (Share $\to$ "Add to Home Screen").
+  - [ ] **FEAT-60 (Unified Preferences Persistence Engine)**:
+    - Auto-persist all view preferences (active tab view type, sort orders, hidden overviews, hide absent staff toggle, minimal UI) to `localStorage`.
+    - Add explicit `[ Save Preferences ]` and `[ Reset to Defaults ]` actions in Settings Modal.
   - [ ] **BUG-17 (Minimal UI Mode Visual Implementation Across All Components)**:
     - Wire `isMinimalUI` store state to apply high-density compact styles across Header, Routine Grid, Substitutions Register, Absence Roster, and TabBar.
   - [ ] **FEAT-45 (Settings Preference: Hide Overviews by Default)**:
@@ -472,6 +486,12 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - In `SubstitutionsRegister.tsx`, add a dedicated `[ ⚡ Auto-Resolve CT ]` button that specifically resolves uncovered slots for absent Class Teachers.
     - In the substitution ledger cards area, render all Class Teacher substitution cards in an eye-catching **golden / amber** theme (`border-amber-400/60 bg-amber-950/30 text-amber-200` with golden glow badge).
     - When any Class Teacher is absent or has an uncovered class period, flash both the **Substitutions** and **Staff Roster** navigation tabs with a soft pulsing amber glow.
+  - [ ] **SEC-01 (Three-Tier Role-Based Access Control Architecture: Admin, Teacher, Guest)**:
+    - Strict rights segregation before drawing any logical element:
+      1. **`Admin` (Full Rights)**: Can edit master routine, assign substitutions, baseline reset, purge history, configure solver policy, and appoint officiating roles.
+      2. **`Teacher` (Logged-In Identity Rights)**: Can view personal duty schedule, accept/dispute their own substitutions, edit their own availability remark. Cannot modify baseline routine, reset days, or purge history.
+      3. **`Guest` (Viewer Rights)**: Read-only inspection of routine matrix, substitutions register, and roster. Destructive mutations and dispute actions are suppressed.
+    - Build `<PermissionGuard requiredRole={...}>` and `canPerform(action, role)` helper checking permissions before rendering action buttons or executing store mutations.
   - [ ] **FEAT-49 (Teacher Substitution Acceptance & Dispute Workflow)**:
     - In `SubstitutionsRegister.tsx` (and dedicated teacher schedule view), when a teacher is logged in (`loggedInTeacher`), any substitution duty assigned to them displays an interactive decision pod:
       - `[ ✓ Accept ]`: Marks the substitution status as `ACCEPTED`, highlights the duty in emerald green, locks the slot, and dispatches an acceptance notice.
@@ -487,9 +507,16 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
       5. **Acceptance Receipts (`✓`)**: Notices when a teacher confirms and accepts their duty.
     - Provide 1-tap "Mark All as Read", clear individual notices, and outside-click / <kbd>Esc</kbd> dismissal.
 
-### Job Bundle 27: Theme Engine, Developer Options System & Visual Customization
+### Job Bundle 27: Auto-Resolve Brain Studio, Theme Engine & Developer Options
 - **Status**: 🔴 Queued
 - **Scope & Work Items**:
+  - [ ] **FEAT-61 (Auto-Resolve Brain Studio & Solver Policy Configuration)**:
+    - In the Substitutions tab header (beside the Auto-Resolve button), add an intelligent Head-with-Brain icon (`Brain` from `lucide-react`).
+    - Tapping opens the **Auto-Resolve Policy & Heuristics Studio**:
+      - **Criteria Weighting**: Configure priority sliders for *Same Subject Match*, *Same Class / Department Alignment*, and *Different Class Fair-Share*.
+      - **Assignment Sequence**: Order of allocation toggle (*Class Teachers First* vs. *Subject Teachers First*).
+      - **Subject-Specific Priority Overrides**: Add custom subject assignment rules (e.g. *"For Mathematics, prioritize Teacher X"*, *"For Science, prioritize Teacher Y"*).
+    - Wire solver policies directly into `@lfps/core`'s `calculateCandidateAffinity` and auto-resolve engines.
   - [ ] **FEAT-46 (Complete 12-Theme Engine Adapted from THEMES.md)**:
     - Implement CSS token engine supporting all 12 curated themes across 4 design families:
       1. ☀️ **Minimalist Light**: `system`, `light` (iOS Light), `warm-sepia` (Warm Sepia / Parchment).
