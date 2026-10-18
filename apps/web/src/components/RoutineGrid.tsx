@@ -1,13 +1,21 @@
 import React from 'react';
 import { DEFAULT_PERIODS, PeriodId, DayOfWeek, parseCellSlot, isTeacherCoTeachingInSlot } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
-import { Maximize2, Minimize2, Users, School } from 'lucide-react';
+import { Maximize2, Minimize2, Users, School, Eye, EyeOff } from 'lucide-react';
 import { UndoRedoControls } from './UndoRedoControls.js';
 
 const DAYS: DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
 export interface RoutineGridProps {
   isFullscreen?: boolean;
+}
+
+function splitTeacherName(name: string): { line1: string; line2: string } {
+  const parts = name.trim().split(' ');
+  if (parts.length <= 1) return { line1: name, line2: '' };
+  const line2 = parts[parts.length - 1];
+  const line1 = parts.slice(0, parts.length - 1).join(' ');
+  return { line1, line2 };
 }
 
 export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }) => {
@@ -24,14 +32,44 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
     toggleFitGrid,
     openContextMenu,
     openCoTeachModal,
+    hideAbsentStaff,
+    toggleHideAbsentStaff,
+    isMinimalUI,
   } = useTimetableStore();
+
+  const [isColumnCollapsed, setIsColumnCollapsed] = React.useState(false);
+  const tableWrapperRef = React.useRef<HTMLDivElement>(null);
 
   const isExpanded = isFitGrid || isFullscreen;
   const currentSchedule = schedule[selectedDay] || {};
-  const teachers = Object.values(directory);
+  const allTeachers = Object.values(directory);
+
+  // Filter teachers when hideAbsentStaff is active (FEAT-55)
+  const teachers = React.useMemo(() => {
+    if (!hideAbsentStaff) return allTeachers;
+    return allTeachers.filter((t) => {
+      const abs = absences.find((a) => a.teacherName === t.abbr && a.day === selectedDay);
+      return !abs || abs.type === 'AWAY_OFFICIAL';
+    });
+  }, [allTeachers, hideAbsentStaff, absences, selectedDay]);
 
   // List of distinct classes for Class View
   const classSections = ['KG A', 'KG B', 'PREP A', 'PREP B', 'NUR A', 'NUR B'];
+
+  // Handle Horizontal Scroll for Sticky Column Collapse on Narrow Screens (FEAT-53)
+  const handleTableScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const scrollLeft = e.currentTarget.scrollLeft;
+    const isNarrowScreen = typeof window !== 'undefined' && window.innerWidth < 768;
+    if (isNarrowScreen) {
+      if (scrollLeft > 15 && !isColumnCollapsed) {
+        setIsColumnCollapsed(true);
+      } else if (scrollLeft <= 5 && isColumnCollapsed) {
+        setIsColumnCollapsed(false);
+      }
+    } else if (isColumnCollapsed) {
+      setIsColumnCollapsed(false);
+    }
+  };
 
   // Handle Escape key when Grid is expanded to Fullscreen (FEAT-09)
   React.useEffect(() => {
@@ -65,9 +103,23 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
     <table className="w-full text-left border-collapse select-none">
       <thead className="sticky top-0 z-30 bg-slate-900 shadow-sm">
         <tr className="border-b border-slate-800 text-slate-300 font-semibold text-xs">
-          {/* Sticky Corner Header with solid masking flange (BUG-05, BUG-08) */}
-          <th className="sticky top-0 left-0 z-40 bg-slate-900 px-2 sm:px-3.5 py-2 sm:py-2.5 min-w-[80px] sm:min-w-[130px] border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)]">
-            <span className="truncate">{viewMode === 'teachers' ? 'Faculty' : 'Class / Sec'}</span>
+          {/* Sticky Corner Header with solid masking flange (BUG-05, BUG-08, FEAT-53) */}
+          <th
+            className={`sticky top-0 left-0 z-40 bg-slate-900 py-2 sm:py-2.5 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)] transition-all ${
+              isColumnCollapsed
+                ? 'w-[64px] min-w-[64px] max-w-[64px] px-1 text-center'
+                : 'px-2 sm:px-3.5 min-w-[84px] sm:min-w-[130px]'
+            }`}
+          >
+            <span className="truncate">
+              {isColumnCollapsed
+                ? viewMode === 'teachers'
+                  ? 'Fac.'
+                  : 'Sec.'
+                : viewMode === 'teachers'
+                ? 'Faculty'
+                : 'Class / Sec'}
+            </span>
           </th>
 
           {DEFAULT_PERIODS.map((period) => (
@@ -94,35 +146,91 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
             const isAbsent = !!absence && absence.type !== 'AWAY_OFFICIAL';
             const isAwayOfficial = !!absence && absence.type === 'AWAY_OFFICIAL';
 
+            // Role classifications (FEAT-56)
+            const isAC = teacher.abbr === 'Mrs. R. Pahwa' || teacher.role.includes('Academic Coordinator') && !teacher.role.includes('Asst.');
+            const isAAC = teacher.abbr === 'Mrs. S. Lakra' || teacher.role.includes('Asst. Academic Coordinator');
+            const isCT = teacher.role.includes('Class Teacher') && !isAC && !isAAC;
+
+            const { line1, line2 } = splitTeacherName(teacher.abbr);
+
             return (
               <tr
                 key={teacher.id}
                 className={`transition-colors ${
                   isAbsent
-                    ? 'bg-rose-950/10'
+                    ? 'bg-rose-950/15'
                     : isAwayOfficial
                     ? 'bg-slate-900/30'
                     : 'hover:bg-slate-900/40'
                 }`}
               >
-                {/* Sticky Teacher Header Cell (BUG-05 & BUG-08) */}
+                {/* Sticky Teacher Header Cell (FEAT-53 2-line collapse & FEAT-54 crimson highlight) */}
                 <td
                   onContextMenu={(e) => handleContextMenu(e, teacher.abbr)}
-                  className="sticky left-0 z-20 bg-slate-900/98 px-2 sm:px-3.5 py-1.5 sm:py-2 font-semibold text-slate-200 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)] truncate cursor-context-menu"
+                  className={`sticky left-0 z-20 transition-all cursor-context-menu select-none ${
+                    isColumnCollapsed
+                      ? 'w-[64px] min-w-[64px] max-w-[64px] px-1 py-1 text-center'
+                      : 'px-2 sm:px-3.5 py-1.5 sm:py-2'
+                  } ${
+                    isAbsent
+                      ? 'bg-rose-950/90 border-r-2 border-r-rose-500 text-rose-200 font-bold shadow-[3px_0_12px_rgba(244,63,94,0.35)]'
+                      : 'bg-slate-900/98 font-semibold text-slate-200 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)]'
+                  }`}
+                  title={teacher.fullName}
                 >
-                  <div className="flex items-center gap-1">
-                    <span className="truncate text-xs font-bold">{teacher.abbr}</span>
-                    {isAbsent && (
-                      <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
-                        ABS
+                  {isColumnCollapsed ? (
+                    // 2-line collapsed split font on narrow screen horizontal scroll (FEAT-53)
+                    <div className="flex flex-col items-center justify-center leading-tight">
+                      <span className="text-[10px] text-slate-300 font-medium truncate max-w-full">
+                        {line1}
                       </span>
-                    )}
-                    {isAwayOfficial && (
-                      <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                        AWAY
+                      <span
+                        className={`text-[10px] font-bold truncate max-w-full ${
+                          isAbsent
+                            ? 'text-rose-200'
+                            : isCT
+                            ? 'text-amber-400'
+                            : isAC || isAAC
+                            ? 'text-purple-300'
+                            : 'text-slate-100'
+                        }`}
+                      >
+                        {line2}
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    // Normal full name display
+                    <div className="flex items-center gap-1">
+                      <span
+                        className={`truncate text-xs font-bold ${
+                          isAbsent
+                            ? 'text-rose-100'
+                            : isCT
+                            ? 'text-amber-300'
+                            : isAC || isAAC
+                            ? 'text-purple-300'
+                            : 'text-slate-100'
+                        }`}
+                      >
+                        {teacher.abbr}
+                      </span>
+                      {isAbsent && (
+                        <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-rose-500/30 text-rose-200 border border-rose-400/40">
+                          ABS
+                        </span>
+                      )}
+                      {isAwayOfficial && (
+                        <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                          AWAY
+                        </span>
+                      )}
+                      {isCT && !isAbsent && (
+                        <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 hidden sm:inline">
+                          CT
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </td>
 
                 {/* Period Cells */}
@@ -172,7 +280,9 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                           });
                         }
                       }}
-                      className="px-1 py-1 sm:px-1.5 sm:py-1.5 text-center border-l border-slate-800/60"
+                      className={`text-center border-l border-slate-800/60 ${
+                        isMinimalUI ? 'px-0.5 py-0.5' : 'px-1 py-1 sm:px-1.5 sm:py-1.5'
+                      }`}
                     >
                       {covering ? (
                         <div className="rounded-lg bg-emerald-500/15 border border-emerald-500/30 p-1 text-[11px] font-semibold text-emerald-300 shadow-sm">
@@ -230,7 +340,13 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
           // --- CLASSES VIEW ---
           classSections.map((sec) => (
             <tr key={sec} className="hover:bg-slate-900/40 transition-colors">
-              <td className="sticky left-0 z-20 bg-slate-900/98 px-2 sm:px-3.5 py-1.5 sm:py-2 font-bold text-blue-400 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)] truncate">
+              <td
+                className={`sticky left-0 z-20 bg-slate-900/98 font-bold text-blue-400 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)] truncate ${
+                  isColumnCollapsed
+                    ? 'w-[64px] min-w-[64px] max-w-[64px] px-1 py-1 text-center text-xs'
+                    : 'px-2 sm:px-3.5 py-1.5 sm:py-2'
+                }`}
+              >
                 {sec}
               </td>
 
@@ -270,7 +386,12 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                 const parsed = taskString ? parseCellSlot(taskString) : null;
 
                 return (
-                  <td key={period.id} className="px-1 py-1 sm:px-1.5 sm:py-1.5 text-center border-l border-slate-800/60">
+                  <td
+                    key={period.id}
+                    className={`text-center border-l border-slate-800/60 ${
+                      isMinimalUI ? 'px-0.5 py-0.5' : 'px-1 py-1 sm:px-1.5 sm:py-1.5'
+                    }`}
+                  >
                     {sub ? (
                       <div className="rounded-lg bg-emerald-500/15 border border-emerald-500/30 p-1 text-[11px] font-semibold text-emerald-300">
                         <div className="text-[9px] text-slate-400 line-through truncate">{assignedTeacher}</div>
@@ -295,7 +416,11 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
   );
 
   const controlsBar = (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-800/80 pb-3 flex-shrink-0">
+    <div
+      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-800/80 flex-shrink-0 ${
+        isMinimalUI ? 'pb-1.5' : 'pb-3'
+      }`}
+    >
       <div className="flex items-center gap-2">
         <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50" />
         <div>
@@ -313,8 +438,8 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
         </div>
       </div>
 
-      {/* View Switcher, Day Switcher & Fit Grid Controls */}
-      <div className="flex items-center gap-2 flex-wrap">
+      {/* View Switcher, Hide Absent, Day Switcher & Fit Grid Controls */}
+      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
         {/* Fullscreen Day Switcher Pills */}
         {isExpanded && (
           <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs font-semibold overflow-x-auto">
@@ -335,30 +460,46 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
         )}
 
         {/* Dual View Toggle */}
-        <div className="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+        <div className="flex items-center bg-slate-900/90 p-0.5 sm:p-1 rounded-xl border border-slate-800 text-xs font-semibold">
           <button
             onClick={() => setViewMode('teachers')}
-            className={`px-3 py-1 rounded-lg transition-colors flex items-center gap-1.5 ${
+            className={`px-2.5 sm:px-3 py-1 rounded-lg transition-colors flex items-center gap-1.5 ${
               viewMode === 'teachers'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>Teachers</span>
+            <span className="hidden xs:inline">Teachers</span>
           </button>
           <button
             onClick={() => setViewMode('classes')}
-            className={`px-3 py-1 rounded-lg transition-colors flex items-center gap-1.5 ${
+            className={`px-2.5 sm:px-3 py-1 rounded-lg transition-colors flex items-center gap-1.5 ${
               viewMode === 'classes'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <School className="w-3.5 h-3.5" />
-            <span>Classes</span>
+            <span className="hidden xs:inline">Classes</span>
           </button>
         </div>
+
+        {/* Hide Absent Staff Toggle Button (FEAT-55) */}
+        {viewMode === 'teachers' && (
+          <button
+            onClick={toggleHideAbsentStaff}
+            className={`px-2.5 py-1 rounded-xl border transition-colors flex items-center gap-1.5 text-xs font-semibold active:scale-95 ${
+              hideAbsentStaff
+                ? 'bg-rose-500/20 border-rose-500/40 text-rose-300'
+                : 'glass-pill border-slate-700/60 text-slate-400 hover:text-slate-200'
+            }`}
+            title={hideAbsentStaff ? 'Show absent faculty rows' : 'Hide absent faculty rows from routine matrix'}
+          >
+            {hideAbsentStaff ? <EyeOff className="w-3.5 h-3.5 text-rose-400" /> : <Eye className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{hideAbsentStaff ? 'Absent Hidden' : 'Hide Absent'}</span>
+          </button>
+        )}
 
         {/* Routine Tab Undo / Redo Controls (FEAT-40) */}
         <UndoRedoControls tab="routine" />
@@ -397,7 +538,11 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
     return (
       <section className="flex-1 w-full h-full flex flex-col min-h-0 overflow-hidden space-y-2 sm:space-y-3">
         {controlsBar}
-        <div className="flex-1 w-full min-h-0 overflow-auto rounded-xl border border-slate-800 bg-slate-900/60 relative scrollbar-thin">
+        <div
+          ref={tableWrapperRef}
+          onScroll={handleTableScroll}
+          className="flex-1 w-full min-h-0 overflow-auto rounded-xl border border-slate-800 bg-slate-900/60 relative scrollbar-thin"
+        >
           {renderTable()}
         </div>
       </section>
@@ -406,9 +551,17 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
 
   // Normal inline card view with compact mobile padding
   return (
-    <section className="w-full glass-panel rounded-xl sm:rounded-2xl p-2 sm:p-5 border border-slate-800 shadow-xl space-y-3">
+    <section
+      className={`w-full glass-panel rounded-xl sm:rounded-2xl border border-slate-800 shadow-xl space-y-3 ${
+        isMinimalUI ? 'p-2 sm:p-3' : 'p-2 sm:p-5'
+      }`}
+    >
       {controlsBar}
-      <div className="w-full overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60 relative scrollbar-thin">
+      <div
+        ref={tableWrapperRef}
+        onScroll={handleTableScroll}
+        className="w-full overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60 relative scrollbar-thin"
+      >
         {renderTable()}
       </div>
     </section>

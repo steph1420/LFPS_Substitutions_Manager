@@ -14,6 +14,9 @@ import {
   ChevronDown,
   ChevronUp,
   UserCheck,
+  LayoutGrid,
+  List,
+  ArrowUpDown,
 } from 'lucide-react';
 import { UndoRedoControls } from './UndoRedoControls.js';
 
@@ -24,17 +27,24 @@ export const SubstitutionsRegister: React.FC = () => {
     absences,
     availabilities,
     substitutions,
+    directory,
     assignSubstitution,
     removeSubstitution,
     openAssignSubModal,
     loggedInTeacher,
     officiatingAC,
     officiatingCT,
+    substitutionsViewMode,
+    setSubstitutionsViewMode,
+    substitutionsSortBy,
+    setSubstitutionsSortBy,
+    hideOverviewsByDefault,
+    isMinimalUI,
   } = useTimetableStore();
 
   const [filterMode, setFilterMode] = React.useState<'all' | 'uncovered' | 'covered' | 'my'>('all');
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [isOverviewCollapsed, setIsOverviewCollapsed] = React.useState(false);
+  const [isOverviewCollapsed, setIsOverviewCollapsed] = React.useState(hideOverviewsByDefault);
 
   const currentSchedule = schedule[selectedDay] || {};
 
@@ -92,8 +102,34 @@ export const SubstitutionsRegister: React.FC = () => {
 
   const daySubstitutions = substitutions.filter((s) => s.day === selectedDay);
 
+  // Sorting helper for covered substitutions (FEAT-58)
+  const sortedSubstitutions = React.useMemo(() => {
+    const list = [...daySubstitutions];
+    if (substitutionsSortBy === 'name') {
+      return list.sort((a, b) => a.originalTeacher.localeCompare(b.originalTeacher));
+    }
+    if (substitutionsSortBy === 'role') {
+      return list.sort((a, b) => {
+        const roleA = directory[a.originalTeacher]?.role || '';
+        const roleB = directory[b.originalTeacher]?.role || '';
+        return roleA.localeCompare(roleB);
+      });
+    }
+    // Default: 'period'
+    const periodOrder: Record<string, number> = {
+      'G/PD': 0,
+      '1st': 1,
+      '2nd': 2,
+      '3rd': 3,
+      '4th': 4,
+      '5th': 5,
+      '6th': 6,
+    };
+    return list.sort((a, b) => (periodOrder[a.period] ?? 99) - (periodOrder[b.period] ?? 99));
+  }, [daySubstitutions, substitutionsSortBy, directory]);
+
   // Filtered lists
-  const filteredSubstitutions = daySubstitutions.filter((sub) => {
+  const filteredSubstitutions = sortedSubstitutions.filter((sub) => {
     if (filterMode === 'uncovered') return false;
     if (filterMode === 'my' && loggedInTeacher) {
       return sub.substituteTeacher === loggedInTeacher || sub.originalTeacher === loggedInTeacher;
@@ -114,10 +150,23 @@ export const SubstitutionsRegister: React.FC = () => {
   const offAC = officiatingAC[selectedDay];
   const offCTMap = officiatingCT[selectedDay] || {};
 
+  // Check if a teacher is a Class Teacher (FEAT-56)
+  const isClassTeacher = (teacherName: string): boolean => {
+    const teacher = directory[teacherName];
+    if (!teacher) return false;
+    const isAC = teacher.abbr === 'Mrs. R. Pahwa' || (teacher.role.includes('Academic Coordinator') && !teacher.role.includes('Asst.'));
+    const isAAC = teacher.abbr === 'Mrs. S. Lakra' || teacher.role.includes('Asst. Academic Coordinator');
+    return teacher.role.includes('Class Teacher') && !isAC && !isAAC;
+  };
+
   return (
-    <div className="w-full space-y-5 animate-in fade-in duration-200">
+    <div className={`w-full animate-in fade-in duration-200 ${isMinimalUI ? 'space-y-3' : 'space-y-5'}`}>
       {/* Header & KPI Summary Panel */}
-      <section className="w-full glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-xl space-y-4">
+      <section
+        className={`w-full glass-panel rounded-2xl border border-slate-800 shadow-xl ${
+          isMinimalUI ? 'p-3 sm:p-4 space-y-3' : 'p-4 sm:p-5 space-y-4'
+        }`}
+      >
         <div
           onClick={(e) => {
             // Tapping header in free space triggers collapse/expand (FEAT-44)
@@ -158,7 +207,7 @@ export const SubstitutionsRegister: React.FC = () => {
               aria-label={isOverviewCollapsed ? 'Expand Overview' : 'Collapse Overview'}
             >
               {isOverviewCollapsed ? (
-                <ChevronDown className="w-4 h-4 text-blue-400" />
+                <ChevronDown className="w-4 h-4 text-emerald-400" />
               ) : (
                 <ChevronUp className="w-4 h-4 text-slate-400" />
               )}
@@ -166,7 +215,7 @@ export const SubstitutionsRegister: React.FC = () => {
           </div>
         </div>
 
-        {/* Collapsible Overview: KPI Statistics Strip (BUG-16: 120fps GPU Spring Easing) */}
+        {/* Collapsible Overview: KPI Cards Strip (FEAT-43) */}
         <AnimatePresence initial={false}>
           {!isOverviewCollapsed && (
             <motion.div
@@ -177,176 +226,244 @@ export const SubstitutionsRegister: React.FC = () => {
               className="overflow-hidden will-change-[height,opacity]"
             >
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1 pb-1">
-                {/* Card 1: Covered (Green border - FEAT-43) */}
-                <div className="bg-emerald-950/20 border border-emerald-500/50 rounded-xl p-3 flex items-center justify-between shadow-sm">
-                  <div>
-                    <span className="text-[11px] text-emerald-400 font-medium">Covered Substitutions</span>
-                    <div className="text-lg font-bold text-emerald-300">{daySubstitutions.length}</div>
-                  </div>
-                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                </div>
-
-                {/* Card 2: Uncovered (Red border - FEAT-43) */}
+                {/* 1st Card: Covered Substitutions */}
                 <div
-                  className={`border rounded-xl p-3 flex items-center justify-between shadow-sm ${
-                    uncoveredSlots.length > 0
-                      ? 'bg-rose-950/20 border-rose-500/60'
-                      : 'bg-slate-900/60 border-slate-800'
+                  onClick={() => setFilterMode('covered')}
+                  className={`p-3 sm:p-4 rounded-xl border transition-all cursor-pointer ${
+                    filterMode === 'covered'
+                      ? 'bg-emerald-500/20 border-emerald-500/50 shadow-md shadow-emerald-500/10'
+                      : 'bg-slate-900/60 border-emerald-500/50 hover:border-emerald-500/70'
                   }`}
                 >
-                  <div>
-                    <span className="text-[11px] text-slate-400 font-medium">Uncovered Slots</span>
-                    <div
-                      className={`text-lg font-bold ${
-                        uncoveredSlots.length > 0 ? 'text-rose-400' : 'text-slate-400'
-                      }`}
-                    >
-                      {uncoveredSlots.length > 0 ? `${uncoveredSlots.length} Need Sub` : '0 (Fully Covered)'}
-                    </div>
+                  <div className="flex items-center justify-between text-slate-400 mb-1">
+                    <span className="font-semibold text-xs text-emerald-300">Covered Duties</span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                      ACTIVE
+                    </span>
                   </div>
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      uncoveredSlots.length > 0 ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-500'
-                    }`}
-                  >
-                    <AlertTriangle className="w-4 h-4" />
-                  </div>
+                  <div className="text-2xl sm:text-3xl font-bold text-white">{daySubstitutions.length}</div>
+                  <div className="text-[11px] text-emerald-400 mt-1">Assignments resolved</div>
                 </div>
 
-                {/* Card 3: Officiating Staff (FEAT-43) */}
-                <div className="bg-purple-950/20 border border-purple-500/40 rounded-xl p-3 flex items-center justify-between shadow-sm">
-                  <div>
-                    <span className="text-[11px] text-slate-400 font-medium">Officiating Staff</span>
-                    <div className="text-lg font-bold text-purple-300">
-                      {(offAC ? 1 : 0) + Object.keys(offCTMap).length} Active
-                    </div>
+                {/* 2nd Card: Uncovered Needs */}
+                <div
+                  onClick={() => setFilterMode('uncovered')}
+                  className={`p-3 sm:p-4 rounded-xl border transition-all cursor-pointer ${
+                    filterMode === 'uncovered'
+                      ? 'bg-rose-500/20 border-rose-500/60 shadow-md shadow-rose-500/10'
+                      : 'bg-slate-900/60 border-rose-500/60 hover:border-rose-500/80'
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-slate-400 mb-1">
+                    <span className="font-semibold text-xs text-rose-300">Uncovered Needs</span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/40">
+                      {uncoveredSlots.length > 0 ? 'ALERT' : 'CLEAR'}
+                    </span>
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-purple-500/15 flex items-center justify-center text-purple-400">
-                    <ShieldAlert className="w-4 h-4" />
+                  <div className="text-2xl sm:text-3xl font-bold text-white">{uncoveredSlots.length}</div>
+                  <div className="text-[11px] text-rose-400 mt-1">Pending substitution coverage</div>
+                </div>
+
+                {/* 3rd Card: Officiating Staff */}
+                <div className="p-3 sm:p-4 rounded-xl bg-slate-900/60 border border-purple-500/40">
+                  <div className="flex items-center justify-between text-slate-400 mb-1">
+                    <span className="font-semibold text-xs text-purple-300">Officiating Staff</span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/40">
+                      ROLE
+                    </span>
                   </div>
+                  <div className="text-2xl sm:text-3xl font-bold text-white">
+                    {(offAC ? 1 : 0) + Object.keys(offCTMap).length}
+                  </div>
+                  <div className="text-[11px] text-purple-400 mt-1">AC & CT Temporary Leaders</div>
                 </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Filter Toolbar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+        {/* Toolbar: Filters, Search, Sorting & List/Grid View Mode (FEAT-58) */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1">
           {/* Search Box */}
           <div className="relative flex-1 max-w-md">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
+              placeholder="Search by teacher, sub, class (e.g. Prep A)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search substitutions by teacher, class, period..."
-              className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
             />
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 bg-slate-950/60 p-1 rounded-xl border border-slate-800 text-xs font-semibold overflow-x-auto">
-            <button
-              onClick={() => setFilterMode('all')}
-              className={`px-3 py-1 rounded-lg transition-colors whitespace-nowrap ${
-                filterMode === 'all' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              All Records ({daySubstitutions.length + uncoveredSlots.length})
-            </button>
-
-            <button
-              onClick={() => setFilterMode('uncovered')}
-              className={`px-3 py-1 rounded-lg transition-colors whitespace-nowrap ${
-                filterMode === 'uncovered'
-                  ? 'bg-amber-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Uncovered ({uncoveredSlots.length})
-            </button>
-
-            <button
-              onClick={() => setFilterMode('covered')}
-              className={`px-3 py-1 rounded-lg transition-colors whitespace-nowrap ${
-                filterMode === 'covered' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Covered ({daySubstitutions.length})
-            </button>
-
-            {loggedInTeacher && (
+          {/* Right Toolbar Controls: Filter pills, Sorting pills, View Toggle */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            {/* Filter Pills */}
+            <div className="flex items-center bg-slate-900/90 p-0.5 sm:p-1 rounded-xl border border-slate-800 text-xs font-semibold">
               <button
-                onClick={() => setFilterMode('my')}
-                className={`px-3 py-1 rounded-lg transition-colors whitespace-nowrap ${
-                  filterMode === 'my' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                onClick={() => setFilterMode('all')}
+                className={`px-2.5 py-1 rounded-lg transition-colors ${
+                  filterMode === 'all' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                My Subs
+                All
               </button>
-            )}
+              <button
+                onClick={() => setFilterMode('uncovered')}
+                className={`px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 ${
+                  filterMode === 'uncovered' ? 'bg-rose-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <span>Uncovered</span>
+                {uncoveredSlots.length > 0 && (
+                  <span className="text-[10px] px-1 rounded-full bg-rose-950 text-rose-200">
+                    {uncoveredSlots.length}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setFilterMode('covered')}
+                className={`px-2.5 py-1 rounded-lg transition-colors ${
+                  filterMode === 'covered' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Covered
+              </button>
+              {loggedInTeacher && (
+                <button
+                  onClick={() => setFilterMode('my')}
+                  className={`px-2.5 py-1 rounded-lg transition-colors ${
+                    filterMode === 'my' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  My Duties
+                </button>
+              )}
+            </div>
+
+            {/* Sorting Selector (FEAT-58) */}
+            <div className="flex items-center bg-slate-900/90 p-0.5 sm:p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+              <button
+                onClick={() => setSubstitutionsSortBy('period')}
+                className={`px-2 py-1 rounded-lg transition-colors flex items-center gap-1 ${
+                  substitutionsSortBy === 'period' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Sort by period order"
+              >
+                <ArrowUpDown className="w-3 h-3" />
+                <span className="hidden sm:inline">Period</span>
+              </button>
+              <button
+                onClick={() => setSubstitutionsSortBy('name')}
+                className={`px-2 py-1 rounded-lg transition-colors ${
+                  substitutionsSortBy === 'name' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Sort by teacher name A-Z"
+              >
+                Name
+              </button>
+              <button
+                onClick={() => setSubstitutionsSortBy('role')}
+                className={`px-2 py-1 rounded-lg transition-colors ${
+                  substitutionsSortBy === 'role' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Sort by role hierarchy"
+              >
+                Role
+              </button>
+            </div>
+
+            {/* View Mode Toggle: Grid vs List (FEAT-58) */}
+            <div className="flex items-center bg-slate-900/90 p-0.5 sm:p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+              <button
+                onClick={() => setSubstitutionsViewMode('grid')}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  substitutionsViewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Grid Card View"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setSubstitutionsViewMode('list')}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  substitutionsViewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Compact List View"
+              >
+                <List className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Uncovered Slots Warning Cards (Rendered when in 'all' or 'uncovered' filter) */}
+      {/* Uncovered Needs Section */}
       {(filterMode === 'all' || filterMode === 'uncovered') && uncoveredSlots.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4" />
-              Action Required: Uncovered Teaching Slots ({uncoveredSlots.length})
+            <h3 className="text-xs font-bold text-rose-300 uppercase tracking-wider flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-400" />
+              Uncovered Substitution Duties ({uncoveredSlots.length})
             </h3>
-            <button
-              onClick={handleAutoResolve}
-              className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Auto-Resolve All
-            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {uncoveredSlots.map((slot, idx) => {
               const parsed = parseCellSlot(slot.task);
-              const targetClassName = parsed.className || slot.task;
-              const handleOpenAssign = () => {
-                openAssignSubModal({
-                  day: selectedDay,
-                  period: slot.period,
-                  originalTeacher: slot.originalTeacher,
-                  className: targetClassName,
-                  subject: parsed.subject || slot.task,
-                  task: slot.task,
-                });
-              };
+              const isCT = isClassTeacher(slot.originalTeacher);
 
               return (
                 <div
                   key={`${slot.period}-${slot.originalTeacher}-${idx}`}
-                  onClick={handleOpenAssign}
-                  className="bg-amber-950/20 hover:bg-amber-950/30 border border-amber-500/40 hover:border-blue-500/60 rounded-2xl p-4 flex flex-col justify-between space-y-3.5 shadow-lg cursor-pointer transition-all active:scale-[0.99] group"
+                  className={`glass-panel border rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg transition-all group ${
+                    isCT
+                      ? 'border-amber-500/40 bg-amber-950/20 hover:border-amber-500/60'
+                      : 'border-rose-500/30 hover:border-rose-500/50 bg-rose-950/10'
+                  }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                      {slot.period} Period
+                    <span
+                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                        isCT
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                          : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                      }`}
+                    >
+                      {slot.period} Period {isCT && '• CT'}
                     </span>
-                    <span className="text-xs font-semibold text-slate-300 group-hover:text-blue-300 transition-colors">
-                      {slot.task}
+                    <span className="text-xs font-bold text-white">
+                      {parsed.className || 'KG'} • {parsed.subject || slot.task}
                     </span>
                   </div>
 
-                  <div className="text-xs">
-                    <div className="text-[11px] text-slate-400">Absent Teacher:</div>
-                    <div className="font-bold text-rose-300">{slot.originalTeacher}</div>
+                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between text-xs">
+                    <div>
+                      <div className="text-[10px] text-slate-400">Absent Teacher</div>
+                      <div
+                        className={`font-bold truncate max-w-[130px] ${
+                          isCT ? 'text-amber-300' : 'text-slate-200'
+                        }`}
+                      >
+                        {slot.originalTeacher}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] text-rose-400 font-semibold">Status</div>
+                      <div className="font-bold text-rose-400 animate-pulse">Needs Sub!</div>
+                    </div>
                   </div>
 
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenAssign();
+                    onClick={() => {
+                      openAssignSubModal({
+                        day: selectedDay,
+                        period: slot.period,
+                        originalTeacher: slot.originalTeacher,
+                        className: parsed.className || 'KG',
+                        subject: parsed.subject || slot.task,
+                        task: slot.task,
+                      });
                     }}
                     className="w-full py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/30 transition-all cursor-pointer group-hover:bg-blue-500"
                   >
@@ -360,7 +477,7 @@ export const SubstitutionsRegister: React.FC = () => {
         </section>
       )}
 
-      {/* Active Substitutions Ledger Cards */}
+      {/* Active Covered Substitutions: GRID or LIST Mode (FEAT-58) */}
       {(filterMode === 'all' || filterMode === 'covered' || filterMode === 'my') && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
@@ -371,61 +488,148 @@ export const SubstitutionsRegister: React.FC = () => {
           </div>
 
           {filteredSubstitutions.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-              {filteredSubstitutions.map((sub) => (
-                <motion.div
-                  key={sub.id}
-                  initial={{ opacity: 0, scale: 0.96 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={SPRING_TRANSITIONS.snappy}
-                  className="glass-panel border border-slate-800 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg hover:border-slate-700 transition-all"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
-                      {sub.period} Period
-                    </span>
-                    <span className="text-xs font-bold text-white">
-                      {sub.className} • {sub.subject}
-                    </span>
-                  </div>
-
-                  {/* Teacher Transfer Row */}
-                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between text-xs">
-                    <div>
-                      <div className="text-[10px] text-slate-400">Absent</div>
-                      <div className="font-semibold text-rose-300 line-through truncate max-w-[110px]">
-                        {sub.originalTeacher}
-                      </div>
-                    </div>
-
-                    <ArrowRight className="w-4 h-4 text-slate-500 flex-shrink-0" />
-
-                    <div className="text-right">
-                      <div className="text-[10px] text-emerald-400 font-semibold">Sub Assigned</div>
-                      <div className="font-bold text-emerald-300 truncate max-w-[120px]">
-                        {sub.substituteTeacher}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Footer details & remove button */}
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800/60">
-                    <span className="text-[10px] text-slate-500 truncate">
-                      By {sub.assignedBy || 'Coordinator'}
-                    </span>
-
-                    <button
-                      onClick={() => removeSubstitution(sub.id)}
-                      className="px-2.5 py-1 rounded-lg text-rose-400 hover:text-rose-200 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 text-xs font-semibold flex items-center gap-1 transition-colors"
-                      title="Release this substitution assignment"
+            substitutionsViewMode === 'grid' ? (
+              /* --- GRID CARD VIEW --- */
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {filteredSubstitutions.map((sub) => {
+                  const isCT = isClassTeacher(sub.originalTeacher);
+                  return (
+                    <motion.div
+                      key={sub.id}
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={SPRING_TRANSITIONS.snappy}
+                      className={`glass-panel border rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg transition-all ${
+                        isCT
+                          ? 'border-amber-500/40 bg-amber-950/15 hover:border-amber-500/60'
+                          : 'border-slate-800 hover:border-slate-700'
+                      }`}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Release Sub</span>
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                            isCT
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                              : 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                          }`}
+                        >
+                          {sub.period} Period {isCT && '• CT'}
+                        </span>
+                        <span className="text-xs font-bold text-white">
+                          {sub.className} • {sub.subject}
+                        </span>
+                      </div>
+
+                      {/* Teacher Transfer Row */}
+                      <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between text-xs">
+                        <div>
+                          <div className="text-[10px] text-slate-400">Absent</div>
+                          <div
+                            className={`font-semibold line-through truncate max-w-[110px] ${
+                              isCT ? 'text-amber-200' : 'text-rose-300'
+                            }`}
+                          >
+                            {sub.originalTeacher}
+                          </div>
+                        </div>
+
+                        <ArrowRight className="w-4 h-4 text-slate-500 flex-shrink-0" />
+
+                        <div className="text-right">
+                          <div className="text-[10px] text-emerald-400 font-semibold">Sub Assigned</div>
+                          <div className="font-bold text-emerald-300 truncate max-w-[120px]">
+                            {sub.substituteTeacher}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer details & remove button */}
+                      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800/60">
+                        <span className="text-[10px] text-slate-500 truncate">
+                          By {sub.assignedBy || 'Coordinator'}
+                        </span>
+
+                        <button
+                          onClick={() => removeSubstitution(sub.id)}
+                          className="px-2.5 py-1 rounded-lg text-rose-400 hover:text-rose-200 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 text-xs font-semibold flex items-center gap-1 transition-colors"
+                          title="Release this substitution assignment"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Release Sub</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            ) : (
+              /* --- HIGH-DENSITY COMPACT LIST VIEW (FEAT-58) --- */
+              <div className="space-y-2">
+                {filteredSubstitutions.map((sub) => {
+                  const isCT = isClassTeacher(sub.originalTeacher);
+                  return (
+                    <motion.div
+                      key={sub.id}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={SPRING_TRANSITIONS.snappy}
+                      className={`glass-panel px-3 sm:px-4 py-2.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm transition-all ${
+                        isCT
+                          ? 'border-amber-500/35 bg-amber-950/15'
+                          : 'border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      {/* Left: Period & Class */}
+                      <div className="flex items-center gap-2.5 min-w-[160px]">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            isCT
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                              : 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                          }`}
+                        >
+                          {sub.period}
+                        </span>
+                        <div>
+                          <div className="font-bold text-white text-xs">{sub.className}</div>
+                          <div className="text-[10px] text-slate-400">{sub.subject}</div>
+                        </div>
+                      </div>
+
+                      {/* Middle: Transfer */}
+                      <div className="flex items-center gap-2 sm:gap-3 text-xs">
+                        <span
+                          className={`font-semibold line-through text-xs ${
+                            isCT ? 'text-amber-300' : 'text-rose-300'
+                          }`}
+                        >
+                          {sub.originalTeacher}
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                        <span className="font-bold text-emerald-300 text-xs">
+                          {sub.substituteTeacher}
+                        </span>
+                      </div>
+
+                      {/* Right: Actions */}
+                      <div className="flex items-center gap-3 self-end sm:self-auto">
+                        <span className="text-[10px] text-slate-500 hidden md:inline">
+                          By {sub.assignedBy || 'Coordinator'}
+                        </span>
+                        <button
+                          onClick={() => removeSubstitution(sub.id)}
+                          className="px-2 py-1 rounded-lg text-rose-400 hover:text-rose-200 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 text-xs font-semibold flex items-center gap-1 transition-colors"
+                          title="Release sub"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Release</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )
           ) : (
             <div className="glass-panel rounded-2xl p-8 text-center text-slate-500 text-xs">
               {filterMode === 'my'
@@ -461,14 +665,14 @@ export const SubstitutionsRegister: React.FC = () => {
             {Object.entries(offCTMap).map(([section, teacherName]) => (
               <div
                 key={section}
-                className="bg-slate-900/90 border border-purple-500/40 rounded-xl p-3 flex items-center justify-between"
+                className="bg-slate-900/90 border border-amber-500/40 rounded-xl p-3 flex items-center justify-between"
               >
                 <div>
-                  <span className="text-[10px] text-purple-400 font-bold uppercase">Off. CT • {section}</span>
+                  <span className="text-[10px] text-amber-400 font-bold uppercase">Off. CT • {section}</span>
                   <div className="font-bold text-white text-sm">{teacherName}</div>
                   <div className="text-[10px] text-slate-400">Class Teacher Responsibilities</div>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold">
                   🏫
                 </div>
               </div>

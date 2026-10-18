@@ -235,6 +235,35 @@ flowchart TD
   - Buttery 120fps GPU accordion collapse: Outer animating container uses `overflow-hidden will-change-[height,opacity]`, with inner padding isolated to child containers to prevent subpixel jumping.
   - Universal outside-click and <kbd>Escape</kbd> dismissal across all modals and popovers (`LOGIC-02`).
 
+### Milestone 8: Tactical Matrix Ergonomics, Header Peek Navigation & Golden CT Tokens (Job Bundle 25)
+- **When**: 2026-10-18
+- **Why**:
+  1. Scrolling down on mobile hid the entire header, making it cumbersome to reach Reset Day, Settings, or Login without scrolling all the way back up (`FEAT-52`).
+  2. The mobile browser address bar expansion/collapse fought with custom header animation, creating a jerky double jump on Chromium, Safari, Firefox, Opera, and Edge (`FEAT-57`).
+  3. On narrow screens, wide sticky teacher name columns squished the instructional period columns, impairing readability (`FEAT-53`).
+  4. Absent teachers in the routine matrix were difficult to spot at a glance during morning reviews (`FEAT-54`).
+  5. Front desk staff needed an option to hide absent teachers to focus on present faculty (`FEAT-55`).
+  6. Class Teachers needed distinct Golden/Amber role color coding (`#f59e0b`) instead of Teal, while preserving Royal Violet (`#8b5cf6`) for Academic Coordinators (`FEAT-56`).
+  7. Substitutions and Roster workstations lacked List vs Grid view modes and multi-criteria sorting (`FEAT-58`).
+  8. Missing "Add to Home Screen" PWA install button and Apple-grade iOS Safari guidance (`FEAT-59`).
+  9. User view preferences were lost on reload and lacked an explicit Save / Reset mechanism (`FEAT-60`).
+  10. Minimal UI Mode had no visual effect on component density (`BUG-17`).
+  11. Settings needed a preference toggle to collapse tab overviews by default on startup (`FEAT-45`).
+- **Where**:
+  - [`packages/ui/src/tokens.ts`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/packages/ui/src/tokens.ts): Updated `COLOR_ROLES.classTeacher` base to `#f59e0b` (Golden Amber) with dark text `#fbbf24` and matching bg/border (`FEAT-56`).
+  - [`apps/web/src/store/useTimetableStore.ts`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/store/useTimetableStore.ts): Added `hideOverviewsByDefault`, `hideAbsentStaff`, `substitutionsViewMode`, `rosterViewMode`, `substitutionsSortBy`, `rosterSortBy` to store state with auto-persistence and explicit `savePreferences()` and `resetPreferences()` (`FEAT-45`, `FEAT-55`, `FEAT-58`, `FEAT-60`).
+  - [`apps/web/src/components/Header.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/Header.tsx): Implemented Peek Header Console (`isPeekMode = currentScrollY > 50`) providing instant access to Reset Day, Settings, PWA Install, Excel, and Staff Login; added `window.visualViewport` resize listener with hysteresis to eliminate mobile address-bar double jump (`FEAT-52`, `FEAT-57`, `FEAT-59`).
+  - [`apps/web/src/components/AddToHomeScreenModal.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/AddToHomeScreenModal.tsx): Created standalone PWA installation and iOS Safari 3-step walkthrough modal (`FEAT-59`).
+  - [`apps/web/src/components/RoutineGrid.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/RoutineGrid.tsx): Added horizontal scroll observer collapsing sticky column to ~64px with 2-line split font on narrow viewports (`FEAT-53`); highlighted absent teachers in bold crimson red (`bg-rose-950/90 border-r-2 border-r-rose-500 text-rose-200`) (`FEAT-54`); added "Hide Absent" interactive toggle button in controls toolbar (`FEAT-55`); styled Class Teachers with golden amber badges (`FEAT-56`); wired `isMinimalUI` density classes (`BUG-17`).
+  - [`apps/web/src/components/AbsenceRoster.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/AbsenceRoster.tsx): Implemented Grid (`[ ⊞ Grid ]`) and List (`[ ☰ List ]`) views; added sorting pills for Role Hierarchy vs Alphabetical Name (`FEAT-58`); updated CT badge to golden amber (`FEAT-56`); initialized `isOverviewCollapsed` with `hideOverviewsByDefault` (`FEAT-45`); wired `isMinimalUI` density classes (`BUG-17`).
+  - [`apps/web/src/components/SubstitutionsRegister.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/SubstitutionsRegister.tsx): Implemented Grid and List views with Period, Name, and Role sorting (`FEAT-58`); styled Class Teacher uncovered and covered cards with golden amber tokens (`FEAT-56`); initialized `isOverviewCollapsed` with `hideOverviewsByDefault` (`FEAT-45`); wired `isMinimalUI` density classes (`BUG-17`).
+  - [`apps/web/src/components/SettingsModal.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/SettingsModal.tsx): Added toggles for "Minimal UI Mode", "Hide Overviews by Default", and "Hide Absent Teachers in Routine Matrix"; added "Save Preferences" and "Reset Defaults" actions (`FEAT-60`); integrated "Add to Home Screen / Install App" trigger (`FEAT-59`).
+  - [`apps/web/src/components/TabBar.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/TabBar.tsx): Wired `isMinimalUI` density padding (`BUG-17`).
+- **How**:
+  - `splitTeacherName` utility parses teacher initials and surname into clean 2-line stacked badges on horizontal scroll.
+  - Viewport-aware scroll synchronization suppresses scroll delta accumulation when `visualViewport` height changes during mobile URL bar expansion/collapse.
+  - Automatic `localStorage` preferences persistence with explicit UI control prevents state desynchronization across sessions.
+
 ---
 
 ## 4. Key Files Map & System Architecture
@@ -283,7 +312,8 @@ LFPS_Substitutions_Manager/
     │   │       ├── OfficiatingModal.tsx # Temporary Off. CT & Off. AC designation modal
     │   │       ├── StaffLoginModal.tsx # Root-mounted staff identity selector (BUG-14)
     │   │       ├── ResetPurgeContextMenu.tsx # Root-mounted screen-clamped history purge menu (BUG-15)
-    │   │       └── AssignSubstituteModal.tsx # Interactive candidate substitute selector (FEAT-42)
+    │   │       ├── AssignSubstituteModal.tsx # Interactive candidate substitute selector (FEAT-42)
+    │   │       └── AddToHomeScreenModal.tsx # PWA install & iOS Safari guidance modal (FEAT-59)
     │   └── package.json
     │
     └── server/                      # Go 1.23 Cloud Microservice
@@ -299,44 +329,31 @@ LFPS_Substitutions_Manager/
 
 ### Current Git State
 - **Branch**: `next-gen`
-- **Head Commit**: Job Bundle 24 Complete (`BUG-12`, `BUG-13`, `BUG-14`, `BUG-15`, `BUG-16`, `LOGIC-01`, `LOGIC-02`, `LOGIC-03`, `FEAT-42`, `FEAT-43`, `FEAT-44`)
+- **Head Commit**: Job Bundle 25 Complete (`FEAT-52`, `FEAT-57`, `FEAT-53`, `FEAT-54`, `FEAT-55`, `FEAT-56`, `FEAT-58`, `FEAT-59`, `FEAT-60`, `BUG-17`, `FEAT-45`)
 - **Working Tree**: Clean.
 - **All Unit Tests**: 11/11 Passing (`npm test`).
 - **Production Build**: Passes cleanly (`npm run build`).
 
 ### Queued Future Backlog (In Order of Priority)
 
-1. **Job Bundle 25: Tactical Matrix Ergonomics, Header Peek Navigation & Golden CT Tokens (ACTIVE NEXT)**:
-   - **`FEAT-52` (Scroll Peek Header Utility Console)**: On downward scroll, transition the header into a compact "peek" utility bar that grants instant access to Reset Day, Settings, and Staff Login, alongside the floating Dynamic Island Day Bar pill, while cleanly hiding full branding text (app title & subtitle). Full console returns only when scrolled to top.
-   - **`FEAT-57` (Mobile Browser URL Bar & Header Scroll Synchronization)**: Eliminate the jerky "double jump" on mobile viewports (Chromium, Firefox, Opera, Safari, Edge) where the browser address bar expansion fights with our custom header reveal. Synchronize scroll delta thresholds with `window.visualViewport` resize listener and CSS dynamic viewport units (`100dvh`), introducing directional hysteresis so the browser bar and peek header glide in perfect lockstep.
-   - **`FEAT-53` (Horizontal-Scroll Dynamic Teacher Column Collapse on Narrow Screens)**: On narrow screens, horizontally scrolling the routine table automatically triggers a collapsed mode for the sticky leftmost teacher name column (~65px width, 2-line small thin font).
-   - **`FEAT-54` (Absent Teacher Routine Grid High-Contrast Crimson Highlight)**: Absent teachers have their sticky first-column name cell highlighted in bold crimson red (`bg-rose-950/80 border-r-2 border-r-rose-500/80 text-rose-200 font-bold`).
-   - **`FEAT-55` (Hide Absent Teachers Option in Routine Matrix)**: Interactive toggle switch in Routine Grid toolbar and Settings to hide rows of absent teachers.
-   - **`FEAT-56` (Class Teacher Golden Token Overhaul)**: Update `@lfps/ui` design tokens and component styling: Class Teachers (CT) are color-coded in vibrant **Golden / Amber** (`#f59e0b` / `text-amber-300 bg-amber-500/15 border-amber-500/40`) instead of Teal. Academic Coordinators (`AC` and `AAC`) strictly retain their signature **Purple / Violet** (`#8b5cf6`).
-   - **`FEAT-58` (Substitutions & Roster List/Grid View Types & Multi-Criteria Sorting)**: View Toggle (`[ ⊞ Grid ]` / `[ ☰ List ]`) on Substitutions and Roster tab toolbars with Name (A-Z) and Role (Hierarchy: AC → AAC → CT → ST) sorting.
-   - **`FEAT-59` (Add to Home Screen PWA Installation & iOS Guidance)**: Interactive "Install App / Add to Home Screen" button in Settings and header, plus Apple-style iOS Safari step-by-step guidance modal.
-   - **`FEAT-60` (Unified Preferences Persistence Engine)**: Auto-persist all view preferences to `localStorage` with explicit `[ Save Preferences ]` and `[ Reset to Defaults ]` actions in Settings.
-   - **`BUG-17` (Minimal UI Mode Visual Implementation)**: Apply high-density compact styles across Header, Routine Grid, Substitutions Register, Absence Roster, and TabBar when `isMinimalUI` is active.
-   - **`FEAT-45` (Settings Preference: Hide Overviews by Default)**: Preference toggle (`hideOverviewsByDefault: boolean`) starting overviews collapsed on boot.
-
-2. **Job Bundle 26: Leadership Chain of Command, Dedicated CT Auto-Resolve & Attention Pulse**:
+1. **Job Bundle 26: Leadership Chain of Command, Dedicated CT Auto-Resolve & Attention Pulse (ACTIVE NEXT)**:
    - **`LOGIC-04` (Academic Coordinator Succession & Officiating Workflow)**: Automatic chain of command: When AC (Mrs. R. Pahwa) is absent, the Assistant Academic Coordinator (AAC, Mrs. S. Lakra) automatically acts on their behalf as Officiating AC (`Off. AC`). Only if BOTH AC and AAC are absent does the system require appointing a 3rd-party Officiating AC. Surfaces in Substitutions tab as a dedicated officiating duty card with manual selection. Flashes the Substitutions and Staff Roster navigation tabs with a soft pulsing amber glow (`@keyframes attentionPulse`) when an Off. AC needs appointment.
    - **`LOGIC-05` (Dedicated Class Teacher Auto-Resolve & Golden Substitution Cards)**: In `SubstitutionsRegister.tsx`, add a dedicated `[ ⚡ Auto-Resolve CT ]` button that specifically resolves uncovered slots for absent Class Teachers. Render all CT substitution cards in golden / amber styling. Flashes the Sub and Roster tabs with a soft pulsing amber glow when a CT is absent or has uncovered slots.
    - **`SEC-01` (Three-Tier Role-Based Access Control Architecture: Admin, Teacher, Guest)**: Universal rights segregation before drawing any logical element. Admin (full master routine, baseline reset, history purge, solver policy), Teacher (view own schedule, accept/dispute own substitutions, edit own availability remark), and Guest (read-only viewer). Build `<PermissionGuard>` and `canPerform(action, role)` checking before rendering action buttons or executing mutations.
    - **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**: Logged-in teacher cards display inline `[ ✓ Accept ]` and `[ ⚑ Dispute ]` with optional reason remark field, notifying AC / AAC.
    - **`FEAT-50` (Universal Notification Center & Live Alert Hub)**: Header Bell icon with live notice counter pill opening `NotificationCenterModal.tsx`.
 
-3. **Job Bundle 27: Auto-Resolve Brain Studio, Theme Engine & Developer Options**:
+2. **Job Bundle 27: Auto-Resolve Brain Studio, Theme Engine & Developer Options**:
    - **`FEAT-61` (Auto-Resolve Brain Studio & Solver Policy Configuration)**: Head-with-Brain icon (`Brain`) in Substitutions tab opening Policy Studio: criteria weighting (Same Subject, Same Class, Different Class), assignment sequence (Class Teachers First vs. Subject Teachers First), and subject-specific priority overrides.
    - **`FEAT-46` (Complete 12-Theme Engine Adapted from THEMES.md)**: Implement CSS token system for all 12 themes across Minimalist Light, Minimalist Night, Glass Materials, and Studio families with instant preview.
    - **`FEAT-47` (Hidden Settings & Developer Options Restoration)**: Restore hidden Developer Options panel (5-tap on version row) with relocated cloud sync diagnostics, same-period lock toggle, target cell halo pulse toggle/colors, countdown timer, and undo/redo icon style selector.
 
-4. **Job Bundle 28: Unified Cloud & Google Sheets 2-Way Live Sync Engine**:
+3. **Job Bundle 28: Unified Cloud & Google Sheets 2-Way Live Sync Engine**:
    - **`FEAT-51A` (Inbound Routine Sync from Google Sheets CSV)**: Pull master schedule diffs from Google Sheets (`/gviz/tq?tqx=out:csv&sheet=OVERVIEW`) with review modal.
    - **`FEAT-51B` (Outbound Daily Ledger Push to Google Sheets)**: Push today's substitutions ledger to Google Sheets via Google Apps Script Web App webhook (`/exec`).
    - **`FEAT-48` (Production Two-Way Full-Duplex Cloud Sync)**: Real-time WebSocket synchronization with Go backend (`/ws`) for sub-millisecond multi-device state updates.
 
-5. **Job Bundle 29: Routine Matrix Drag-and-Drop Reordering & Dedicated Class Context Menu**:
+4. **Job Bundle 29: Routine Matrix Drag-and-Drop Reordering & Dedicated Class Context Menu**:
    - **`FEAT-37A` & `FEAT-37B`**: Routine cell drag-and-drop reordering with undo/redo integration and dedicated Class View context menu.
    - **`FEAT-22`, `FEAT-23`, `FEAT-24`**: Substitution Register interactive column sorting chevrons, desktop/mobile responsive width, and column consolidation.
 
@@ -356,4 +373,6 @@ LFPS_Substitutions_Manager/
 
 ---
 *Maintained with pride under Apple HIG standards for Little Flower Preparatory School.*
+
+
 

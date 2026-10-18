@@ -438,41 +438,42 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - Sleek rightmost-aligned Apple collapse/expand icon button (`ChevronUp` / `ChevronDown`).
     - Tapping anywhere in the free space of the workstation header toggles the collapse/expand state.
 
-### Job Bundle 25: Tactical Matrix Ergonomics, Header Peek Navigation & Golden CT Tokens
-- **Status**: 🔴 Queued (Next Up)
+### Job Bundle 25: Tactical Matrix Ergonomics, Header Peek Navigation & Golden CT Tokens (RESOLVED on `next-gen` branch)
+- **Status**: 🟢 Resolved
 - **Scope & Work Items**:
-  - [ ] **FEAT-52 (Scroll Peek Header Utility Console)**:
-    - On downward scroll, transition the header into a compact "peek" utility bar that grants instant access to Reset Day, Settings, and Staff Login, alongside the floating Dynamic Island Day Bar pill, while cleanly hiding full branding text (app title & subtitle).
+  - [x] **FEAT-52 (Scroll Peek Header Utility Console)**:
+    - On downward scroll, transitioned the header into a compact "peek" utility bar that grants instant access to Reset Day, Settings, and Staff Login, alongside the floating Dynamic Island Day Bar pill, while cleanly hiding full branding text (app title & subtitle).
     - Only when scrolled all the way to the top (`scrollY <= 50`) does the full elevated header console re-expand.
-  - [ ] **FEAT-57 (Mobile Browser URL Bar & Header Scroll Synchronization)**:
-    - Eliminate the jerky "double jump" on mobile viewports (Chromium, Firefox, Opera, Safari, Edge) where the browser address bar expansion fights with our custom header reveal.
-    - Synchronize scroll delta thresholds with `window.visualViewport` resize listener and CSS dynamic viewport units (`100dvh`), introducing directional hysteresis so the browser bar and peek header glide in perfect lockstep.
-  - [ ] **FEAT-53 (Horizontal-Scroll Dynamic Teacher Column Collapse on Narrow Screens)**:
+  - [x] **FEAT-57 (Mobile Browser URL Bar & Header Scroll Synchronization)**:
+    - Eliminated the jerky "double jump" on mobile viewports (Chromium, Firefox, Opera, Safari, Edge) where the browser address bar expansion fights with custom header reveal.
+    - Synchronized scroll delta thresholds with `window.visualViewport` resize listener and CSS dynamic viewport units (`100dvh`), introducing directional hysteresis so the browser bar and peek header glide in perfect lockstep.
+  - [x] **FEAT-53 (Horizontal-Scroll Dynamic Teacher Column Collapse on Narrow Screens)**:
     - On mobile and narrow viewports, horizontally scrolling the routine table automatically triggers a collapsed mode for the sticky leftmost teacher name column.
-    - When collapsed, the teacher column narrows (~65px) and switches to a small, thin font split cleanly over two lines (e.g. `Mrs. S.` on line 1, `Lakra` on line 2), maximizing visible instructional periods while preserving row identity.
-  - [ ] **FEAT-54 (Absent Teacher Routine Grid High-Contrast Crimson Highlight)**:
-    - In `RoutineGrid.tsx`, when a teacher is marked absent for the day, style their sticky first-column name cell in bold crimson red (`bg-rose-950/80 border-r-2 border-r-rose-500/80 text-rose-200 font-bold`) so absences are immediately conspicuous during morning grid reviews.
-  - [ ] **FEAT-55 (Hide Absent Teachers Option in Routine Matrix)**:
-    - Add an interactive "Hide Absent Teachers" toggle switch in the Routine Grid controls toolbar (and Settings console).
+    - When collapsed, the teacher column narrows (~64px) and switches to a small, thin font split cleanly over two lines (e.g. `Mrs. S.` on line 1, `Lakra` on line 2), maximizing visible instructional periods while preserving row identity.
+  - [x] **FEAT-54 (Absent Teacher Routine Grid High-Contrast Crimson Highlight)**:
+    - In `RoutineGrid.tsx`, when a teacher is marked absent for the day, styled their sticky first-column name cell in bold crimson red (`bg-rose-950/80 border-r-2 border-r-rose-500/80 text-rose-200 font-bold`) so absences are immediately conspicuous during morning grid reviews.
+  - [x] **FEAT-55 (Hide Absent Teachers Option in Routine Matrix)**:
+    - Added an interactive "Hide Absent Teachers" toggle switch in the Routine Grid controls toolbar (and Settings console).
     - When active, filters out rows of absent teachers, consolidating the matrix view strictly to active present faculty.
-  - [ ] **FEAT-56 (Class Teacher Golden Token Overhaul)**:
-    - Update `@lfps/ui` design tokens and component styling: Class Teachers (CT) are color-coded in vibrant **Golden / Amber** (`#f59e0b` / `text-amber-300 bg-amber-500/15 border-amber-500/40`) instead of Teal.
+  - [x] **FEAT-56 (Class Teacher Golden Token Overhaul)**:
+    - Updated `@lfps/ui` design tokens and component styling: Class Teachers (CT) are color-coded in vibrant **Golden / Amber** (`#f59e0b` / `text-amber-300 bg-amber-500/15 border-amber-500/40`) instead of Teal.
     - Academic Coordinators (`AC` Mrs. R. Pahwa and `AAC` Mrs. S. Lakra) strictly retain their signature **Purple / Violet** (`#8b5cf6`), even when they hold class teacher responsibilities.
-  - [ ] **FEAT-58 (Substitutions & Roster List/Grid View Types & Multi-Criteria Sorting)**:
-    - Add a tactile View Toggle (`[ ⊞ Grid ]` / `[ ☰ List ]`) to both the Substitutions Register and Staff Roster tab toolbars.
-    - Add Sorting dropdown or segmented selector:
+  - [x] **FEAT-58 (Substitutions & Roster List/Grid View Types & Multi-Criteria Sorting)**:
+    - Added tactile View Toggle (`[ ⊞ Grid ]` / `[ ☰ List ]`) to both the Substitutions Register and Staff Roster tab toolbars.
+    - Added Sorting segmented selector:
       - **By Name**: Alphabetical (A-Z / Z-A).
       - **By Role**: Hierarchy rank (AC → AAC → Class Teachers → Subject Teachers).
-  - [ ] **FEAT-59 (Add to Home Screen PWA Installation & iOS Guidance)**:
-    - Implement `beforeinstallprompt` listener with an interactive "Install App / Add to Home Screen" button in Settings and header.
-    - Provide an Apple-style step-by-step guidance sheet for iOS Safari users (Share $\to$ "Add to Home Screen").
-  - [ ] **FEAT-60 (Unified Preferences Persistence Engine)**:
-    - Auto-persist all view preferences (active tab view type, sort orders, hidden overviews, hide absent staff toggle, minimal UI) to `localStorage`.
-    - Add explicit `[ Save Preferences ]` and `[ Reset to Defaults ]` actions in Settings Modal.
-  - [ ] **BUG-17 (Minimal UI Mode Visual Implementation Across All Components)**:
-    - Wire `isMinimalUI` store state to apply high-density compact styles across Header, Routine Grid, Substitutions Register, Absence Roster, and TabBar.
-  - [ ] **FEAT-45 (Settings Preference: Hide Overviews by Default)**:
-    - Add user preference toggle in Settings (`hideOverviewsByDefault: boolean`) that starts the Substitutions and Roster overviews in collapsed state on application boot.
+      - **By Period**: Chronological instructional periods (for Substitutions).
+  - [x] **FEAT-59 (Add to Home Screen PWA Installation & iOS Guidance)**:
+    - Implemented `beforeinstallprompt` listener with an interactive "Install App / Add to Home Screen" button in Settings and header.
+    - Built an Apple-style step-by-step guidance sheet (`AddToHomeScreenModal.tsx`) for iOS Safari users (Share $\to$ "Add to Home Screen").
+  - [x] **FEAT-60 (Unified Preferences Persistence Engine)**:
+    - Auto-persists all view preferences (active tab view type, sort orders, hidden overviews, hide absent staff toggle, minimal UI) to `localStorage`.
+    - Added explicit `[ Save Preferences ]` and `[ Reset to Defaults ]` actions in Settings Modal.
+  - [x] **BUG-17 (Minimal UI Mode Visual Implementation Across All Components)**:
+    - Wired `isMinimalUI` store state to apply high-density compact styles across Header, Routine Grid, Substitutions Register, Absence Roster, and TabBar.
+  - [x] **FEAT-45 (Settings Preference: Hide Overviews by Default)**:
+    - Added user preference toggle in Settings (`hideOverviewsByDefault: boolean`) that starts the Substitutions and Roster overviews in collapsed state on application boot.
 
 ### Job Bundle 26: Leadership Chain of Command, Dedicated CT Auto-Resolve & Attention Pulse
 - **Status**: 🔴 Queued

@@ -14,6 +14,7 @@ export const TabBar: React.FC = () => {
     absences,
     substitutions,
     isFitGrid,
+    isMinimalUI,
   } = useTimetableStore();
 
   // Hide floating dock when Routine Grid is expanded to Fullscreen
@@ -109,7 +110,9 @@ export const TabBar: React.FC = () => {
   return (
     <nav
       aria-label="Navigation Tabs"
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-slate-950/92 backdrop-blur-2xl border border-slate-700/80 rounded-full shadow-[0_16px_40px_rgba(0,0,0,0.85)] p-1.5 flex items-center gap-1 sm:gap-2 select-none"
+      className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-slate-950/92 backdrop-blur-2xl border border-slate-700/80 rounded-full shadow-[0_16px_40px_rgba(0,0,0,0.85)] flex items-center gap-1 sm:gap-2 select-none transition-all ${
+        isMinimalUI ? 'p-1' : 'p-1.5'
+      }`}
     >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
@@ -119,7 +122,9 @@ export const TabBar: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => handleSelectTab(tab.id)}
-            className={`relative px-3.5 sm:px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 transition-colors active:scale-95 cursor-pointer ${
+            className={`relative rounded-full text-xs font-semibold flex items-center gap-2 transition-colors active:scale-95 cursor-pointer ${
+              isMinimalUI ? 'px-2.5 sm:px-3.5 py-1.5' : 'px-3.5 sm:px-4 py-2'
+            } ${
               isActive ? 'text-white' : 'text-slate-400 hover:text-slate-200'
             }`}
           >

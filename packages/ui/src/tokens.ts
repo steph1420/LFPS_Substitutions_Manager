@@ -31,10 +31,11 @@ export const SPRING_TRANSITIONS = {
 
 export const COLOR_ROLES = {
   classTeacher: {
-    base: '#0284c7', // Sky blue
-    bg: 'rgba(2, 132, 199, 0.12)',
-    border: 'rgba(2, 132, 199, 0.28)',
-    text: '#0369a1',
+    base: '#f59e0b', // Golden Amber (FEAT-56)
+    bg: 'rgba(245, 158, 11, 0.14)',
+    border: 'rgba(245, 158, 11, 0.35)',
+    text: '#d97706',
+    darkText: '#fbbf24',
   },
   subjectTeacher: {
     base: '#007aff', // iOS blue

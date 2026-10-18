@@ -85,6 +85,14 @@ interface TimetableState {
   isSettingsOpen: boolean;
   isStaffLoginOpen: boolean;
 
+  // User Preferences (FEAT-45, FEAT-55, FEAT-58, FEAT-60)
+  hideOverviewsByDefault: boolean;
+  hideAbsentStaff: boolean;
+  substitutionsViewMode: 'grid' | 'list';
+  rosterViewMode: 'grid' | 'list';
+  substitutionsSortBy: 'name' | 'role' | 'period';
+  rosterSortBy: 'role' | 'name';
+
   // Master Data
   directory: StaffDirectory;
   schedule: MasterSchedule;
@@ -122,6 +130,16 @@ interface TimetableState {
   closeSettings: () => void;
   openStaffLogin: () => void;
   closeStaffLogin: () => void;
+
+  // Preference Actions (FEAT-45, FEAT-55, FEAT-58, FEAT-60)
+  setHideOverviewsByDefault: (hide: boolean) => void;
+  toggleHideAbsentStaff: () => void;
+  setSubstitutionsViewMode: (mode: 'grid' | 'list') => void;
+  setRosterViewMode: (mode: 'grid' | 'list') => void;
+  setSubstitutionsSortBy: (sort: 'name' | 'role' | 'period') => void;
+  setRosterSortBy: (sort: 'role' | 'name') => void;
+  savePreferences: () => void;
+  resetPreferences: () => void;
 
   // Context Menu Actions
   openContextMenu: (target: ContextMenuTarget) => void;
@@ -177,14 +195,56 @@ interface TimetableState {
   purgeHistory: () => void;
 }
 
+const PREFERENCES_STORAGE_KEY = 'lfps_user_preferences_v2';
+
+interface StoredPreferences {
+  hideOverviewsByDefault?: boolean;
+  hideAbsentStaff?: boolean;
+  substitutionsViewMode?: 'grid' | 'list';
+  rosterViewMode?: 'grid' | 'list';
+  substitutionsSortBy?: 'name' | 'role' | 'period';
+  rosterSortBy?: 'role' | 'name';
+  isMinimalUI?: boolean;
+}
+
+function loadStoredPreferences(): StoredPreferences {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(PREFERENCES_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function autoPersistPreferences(prefs: StoredPreferences) {
+  if (typeof window === 'undefined') return;
+  try {
+    const current = loadStoredPreferences();
+    const updated = { ...current, ...prefs };
+    localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(updated));
+  } catch {
+    // ignore
+  }
+}
+
+const initialPrefs = loadStoredPreferences();
+
 export const useTimetableStore = create<TimetableState>((set, get) => ({
   selectedDay: 'MON',
   activeTab: 'routine',
   viewMode: 'teachers',
-  isMinimalUI: true,
+  isMinimalUI: initialPrefs.isMinimalUI ?? false,
   isFitGrid: false,
   isSettingsOpen: false,
   isStaffLoginOpen: false,
+
+  hideOverviewsByDefault: initialPrefs.hideOverviewsByDefault ?? false,
+  hideAbsentStaff: initialPrefs.hideAbsentStaff ?? false,
+  substitutionsViewMode: initialPrefs.substitutionsViewMode ?? 'grid',
+  rosterViewMode: initialPrefs.rosterViewMode ?? 'grid',
+  substitutionsSortBy: initialPrefs.substitutionsSortBy ?? 'period',
+  rosterSortBy: initialPrefs.rosterSortBy ?? 'role',
 
   directory: DEFAULT_STAFF_DIRECTORY,
   schedule: DEFAULT_MASTER_SCHEDULE,
@@ -211,12 +271,75 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   setDay: (day) => set({ selectedDay: day }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setViewMode: (mode) => set({ viewMode: mode }),
-  toggleMinimalUI: () => set((state) => ({ isMinimalUI: !state.isMinimalUI })),
+  toggleMinimalUI: () =>
+    set((state) => {
+      const next = !state.isMinimalUI;
+      autoPersistPreferences({ isMinimalUI: next });
+      return { isMinimalUI: next };
+    }),
   toggleFitGrid: () => set((state) => ({ isFitGrid: !state.isFitGrid })),
   openSettings: () => set({ isSettingsOpen: true }),
   closeSettings: () => set({ isSettingsOpen: false }),
   openStaffLogin: () => set({ isStaffLoginOpen: true }),
   closeStaffLogin: () => set({ isStaffLoginOpen: false }),
+
+  // User Preferences Actions (FEAT-45, FEAT-55, FEAT-58, FEAT-60)
+  setHideOverviewsByDefault: (hide) => {
+    autoPersistPreferences({ hideOverviewsByDefault: hide });
+    set({ hideOverviewsByDefault: hide });
+  },
+  toggleHideAbsentStaff: () =>
+    set((state) => {
+      const next = !state.hideAbsentStaff;
+      autoPersistPreferences({ hideAbsentStaff: next });
+      return { hideAbsentStaff: next };
+    }),
+  setSubstitutionsViewMode: (mode) => {
+    autoPersistPreferences({ substitutionsViewMode: mode });
+    set({ substitutionsViewMode: mode });
+  },
+  setRosterViewMode: (mode) => {
+    autoPersistPreferences({ rosterViewMode: mode });
+    set({ rosterViewMode: mode });
+  },
+  setSubstitutionsSortBy: (sort) => {
+    autoPersistPreferences({ substitutionsSortBy: sort });
+    set({ substitutionsSortBy: sort });
+  },
+  setRosterSortBy: (sort) => {
+    autoPersistPreferences({ rosterSortBy: sort });
+    set({ rosterSortBy: sort });
+  },
+  savePreferences: () => {
+    const state = get();
+    autoPersistPreferences({
+      hideOverviewsByDefault: state.hideOverviewsByDefault,
+      hideAbsentStaff: state.hideAbsentStaff,
+      substitutionsViewMode: state.substitutionsViewMode,
+      rosterViewMode: state.rosterViewMode,
+      substitutionsSortBy: state.substitutionsSortBy,
+      rosterSortBy: state.rosterSortBy,
+      isMinimalUI: state.isMinimalUI,
+    });
+  },
+  resetPreferences: () => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(PREFERENCES_STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+    }
+    set({
+      hideOverviewsByDefault: false,
+      hideAbsentStaff: false,
+      substitutionsViewMode: 'grid',
+      rosterViewMode: 'grid',
+      substitutionsSortBy: 'period',
+      rosterSortBy: 'role',
+      isMinimalUI: false,
+    });
+  },
 
   openContextMenu: (target) => set({ activeContextMenu: target }),
   closeContextMenu: () => set({ activeContextMenu: null }),
