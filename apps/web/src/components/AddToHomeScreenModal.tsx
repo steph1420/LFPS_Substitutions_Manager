@@ -138,3 +138,4 @@ export const AddToHomeScreenModal: React.FC<AddToHomeScreenModalProps> = ({
     </AnimatePresence>
   );
 };
+
