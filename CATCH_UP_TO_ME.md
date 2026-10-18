@@ -1,18 +1,53 @@
 # CATCH UP TO ME: Operational Handover & Inter-Agent Transfer Protocol
 *Little Flower Preparatory School (LFPS) Substitutions Manager & Master Routine Suite (Next-Gen v2.0)*
 
-> **CRITICAL DIRECTIVE FOR THE INCOMING AI AGENT:**
-> You are picking up work on this codebase because the user has switched accounts/sessions due to quota limits. 
-> This document is your comprehensive single source of truth. It details **everything done, why, where, when, and how**, along with exact instructions on how to maintain this and companion documentation files so the original agent can seamlessly catch back up when returning.
->
-> **PRIME COMMANDMENTS (HOW TO BEHAVE LIKE ME):**
-> 1. **BRANCH SAFETY:** Work strictly on branch `next-gen`. **NEVER COMMIT OR PUSH TO `main`**. If user asks where to see the live work, provide: `https://github.com/steph1420/LFPS_Substitutions_Manager/tree/next-gen`.
-> 2. **MERGE MAX 2 THINGS:** User's non-negotiable directive: *"Merge max 2 things. So you can process clearly."* Never bundle 3+ items into a single merge. Split complex requests into numbered micro-bundles (e.g., 26A, 26B, 26C) to maintain crystal-clear processing and zero regressions.
-> 3. **CONFIRM & ALIGN FIRST:** When the user presents a bug or visual issue, restate your understanding and get confirmation before touching code.
-> 4. **PRE-BUNDLE BACKUP ARCHIVE:** Always run a `.tar.gz` snapshot command into `_backups/` before starting any bundle.
-> 5. **STALE ASSET PRUNING:** Running `npm run build` generates new hashed assets in `assets/`. Always delete stale hashed files (`rm assets/index-*.css assets/index-*.js`) so GitHub Pages never hosts orphaned bundles.
-> 6. **120FPS APPLE HIG DISCIPLINE:** Never animate layout reflow properties (`width`, `height`, `top`, `left`). Animate strictly GPU properties (`transform`, `opacity`). Equalize spring duration and bounce for both expand and collapse.
-> 7. **ZERO TEST REGRESSIONS:** Run `npm test` and ensure all Vitest domain tests pass (currently 15/15) before committing.
+> **CRITICAL DIRECTIVE FOR THE INCOMING AI AGENT (READ THIS IN YOUR FIRST 30 SECONDS):**
+> You are picking up work on this codebase because the user has switched accounts/sessions or opened a blank agent window due to quota limits. 
+> This document is your comprehensive single source of truth. It details **everything done, why, where, when, and how**, along with exact instructions on how to behave, communicate, and code.
+
+---
+
+## ⚡ SECTION 0: ZERO-FRICTION FIRST-TURN HANDOVER & IMMEDIATE ACTION PLAN
+
+### 1. Where You Are Right Now
+- **Current Branch**: `next-gen` (Clean working tree, tracking `origin/next-gen`).
+- **Unit Tests Status**: **15/15 passing** via `npm test`.
+- **Production Build Status**: Passes cleanly via `npm run build`.
+- **Live Deployment**: `https://steph1420.github.io/LFPS_Substitutions_Manager/` (tracks branch `next-gen`).
+
+### 2. What Was Just Completed (Job Bundle 26A)
+- **`LOGIC-04` (Academic Coordinator Succession & Officiating Workflow)**:
+  - If AC (`Mrs. R. Pahwa`) is absent, AAC (`Mrs. S. Lakra`) automatically acts on her behalf as Officiating AC (`Off. AC`).
+  - Only if **BOTH** AC and AAC are absent does the system require a manual appointment (`needsAppointment: true`).
+  - When an appointment is needed, the **Substitutions** and **Staff Roster** tabs pulse with a soft amber glow (`.attention-pulse`), and a prompt card appears in Substitutions with a 1-tap designation button.
+  - In Staff Roster, Mrs. S. Lakra dynamically displays `★ Officiating AC (Acting for Mrs. R. Pahwa)`.
+- **`LOGIC-05` (Dedicated Class Teacher Auto-Resolve & Golden Cards)**:
+  - Added dedicated `[ ⚡ Auto-Resolve CT (X Slots) ]` solver button in Substitutions for absent Class Teachers (`Mrs. M. Midha`, `Mrs. R. Narayan`).
+  - Styled all Class Teacher substitution cards with golden amber tokens (`border-amber-500/60 bg-gradient-to-br from-amber-950/35 via-slate-900/95 to-amber-900/25 ring-1 ring-amber-500/40 text-amber-200`).
+  - Tabs pulse amber while any CT teaching slots remain uncovered.
+
+### 3. What To Do On Your Very First Turn
+- If the user says **"Go"**, **"Yes"**, or tells you to proceed, **DO NOT ASK WHAT TO DO**. They are approving:
+  👉 **Job Bundle 26B (Max 2 items)**:
+  1. **`SEC-01` (Three-Tier Role-Based Access Control Architecture: Admin, Teacher, Guest)**:
+     - Strict rights segregation before drawing any logical element.
+     - `Admin` has full master routine, solver, reset, purge, and officiating rights.
+     - `Teacher` (logged in via `loggedInTeacher`) views personal schedule, accepts/disputes own substitutions, edits own availability remark. Cannot modify baseline routine or reset days.
+     - `Guest` has read-only viewer rights.
+     - Build `<PermissionGuard requiredRole={...}>` and `canPerform(action, role)` checking before rendering buttons or executing store actions.
+  2. **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**:
+     - When a teacher is logged in, their assigned substitution duties show interactive decision controls:
+       - `[ ✓ Accept ]`: Sets status to `ACCEPTED`, highlights duty in emerald green, dispatches notice.
+       - `[ ⚑ Dispute ]`: Expands micro-remark field (`"Reason for dispute (optional, e.g. Lab duty, Library inventory)"`) with `[ Confirm Dispute ]`.
+       - On confirm, marks status as `DISPUTED` (amber/rose badge), saves remark, and alerts leadership (AC / AAC).
+
+### 4. Non-Negotiable Rules To Behave Like Me
+1. **MERGE MAX 2 ITEMS PER STEP**: The user explicitly instructed: *"Merge max 2 things. So you can process clearly."* Never merge 3+ tasks at once!
+2. **BRANCH SAFETY: WORK ONLY ON `next-gen`**: **NEVER TOUCH `main`**.
+3. **PRE-BUNDLE SNAPSHOT BACKUP**: Run `tar -czf _backups/LFPS_Substitutions_Manager_v2.0.0_<bundle>_$(date +%Y%m%d_%H%M%S).tar.gz --exclude="node_modules" --exclude=".git" --exclude="dist" --exclude="_backups" .` before touching code.
+4. **PRUNE STALE ASSETS AFTER BUILD**: When running `npm run build`, delete previous hashed files in `assets/` so only active bundles remain.
+5. **CONFIRM BEFORE CODING**: If the user asks a question or reports an issue, confirm your exact understanding first before modifying files.
+6. **COMMUNICATION STYLE**: Keep responses concise, format in GitHub markdown, and always create clickable file links using `file:///absolute/path` syntax.
 
 ---
 
@@ -528,17 +563,17 @@ LFPS_Substitutions_Manager/
 2. **Job Bundle 26C: Universal Notification Center & Live Alert Hub**:
    - **`FEAT-50` (Universal Notification Center & Live Alert Hub)**: Header Bell icon with live notice counter pill opening `NotificationCenterModal.tsx`.
 
-2. **Job Bundle 27: Auto-Resolve Brain Studio, Theme Engine & Developer Options**:
+3. **Job Bundle 27: Auto-Resolve Brain Studio, Theme Engine & Developer Options**:
    - **`FEAT-61` (Auto-Resolve Brain Studio & Solver Policy Configuration)**: Head-with-Brain icon (`Brain`) in Substitutions tab opening Policy Studio: criteria weighting (Same Subject, Same Class, Different Class), assignment sequence (Class Teachers First vs. Subject Teachers First), and subject-specific priority overrides.
    - **`FEAT-46` (Complete 12-Theme Engine Adapted from THEMES.md)**: Implement CSS token system for all 12 themes across Minimalist Light, Minimalist Night, Glass Materials, and Studio families with instant preview.
    - **`FEAT-47` (Hidden Settings & Developer Options Restoration)**: Restore hidden Developer Options panel (5-tap on version row) with relocated cloud sync diagnostics, same-period lock toggle, target cell halo pulse toggle/colors, countdown timer, and undo/redo icon style selector.
 
-3. **Job Bundle 28: Unified Cloud & Google Sheets 2-Way Live Sync Engine**:
+4. **Job Bundle 28: Unified Cloud & Google Sheets 2-Way Live Sync Engine**:
    - **`FEAT-51A` (Inbound Routine Sync from Google Sheets CSV)**: Pull master schedule diffs from Google Sheets (`/gviz/tq?tqx=out:csv&sheet=OVERVIEW`) with review modal.
    - **`FEAT-51B` (Outbound Daily Ledger Push to Google Sheets)**: Push today's substitutions ledger to Google Sheets via Google Apps Script Web App webhook (`/exec`).
    - **`FEAT-48` (Production Two-Way Full-Duplex Cloud Sync)**: Real-time WebSocket synchronization with Go backend (`/ws`) for sub-millisecond multi-device state updates.
 
-4. **Job Bundle 29: Routine Matrix Drag-and-Drop Reordering & Dedicated Class Context Menu**:
+5. **Job Bundle 29: Routine Matrix Drag-and-Drop Reordering & Dedicated Class Context Menu**:
    - **`FEAT-37A` & `FEAT-37B`**: Routine cell drag-and-drop reordering with undo/redo integration and dedicated Class View context menu.
    - **`FEAT-22`, `FEAT-23`, `FEAT-24`**: Substitution Register interactive column sorting chevrons, desktop/mobile responsive width, and column consolidation.
 
