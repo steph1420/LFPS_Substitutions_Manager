@@ -560,10 +560,21 @@ LFPS_Substitutions_Manager/
    - **`SEC-01` (Three-Tier Role-Based Access Control Architecture: Admin, Teacher, Guest)**: Universal rights segregation before drawing any logical element. Admin (full master routine, baseline reset, history purge, solver policy), Teacher (view own schedule, accept/dispute own substitutions, edit own availability remark), and Guest (read-only viewer). Build `<PermissionGuard>` and `canPerform(action, role)` checking before rendering action buttons or executing mutations.
    - **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**: Logged-in teacher cards display inline `[ ✓ Accept ]` and `[ ⚑ Dispute ]` with optional reason remark field, notifying AC / AAC.
 
-2. **Job Bundle 26C: Universal Notification Center & Live Alert Hub**:
+2. **Job Bundle 26C: Nomenclature Simplification & School Overview Headings**:
+   - **`TERMS-01` (Nomenclature Simplification: Eliminate 'Team', Standardize CT & 2nd Teacher)**: Do away with 'Team' nomenclature entirely across UI copy, labels, tooltips, modals, and codebase. Teachers in a class are strictly referred to as **Class Teacher** (CT) and **2nd Teacher** (2T). If another teacher assists with class work, refer to them as **"part of a class"** (handling work in the class, but not necessarily CT or 2T).
+   - **`UI-01` (Human School Overview Headings: Substitutions Overview & Staff Roster Overview)**: Replace technical overview titles with simple school titles: change *"Substitution Register & Coverage Engine"* $\to$ **"Substitutions Overview"** and *"Staff Roster Matrix & Availability Register"* $\to$ **"Staff Roster Overview"**.
+
+3. **Job Bundle 26D: Effortless Absence Marking & Staff Full Name Display**:
+   - **`LOGIC-06` (Effortless Absence Marking: Whole Card Free Space Tap to Toggle Absent)**: Tapping anywhere in the free / unoccupied space of a staff card toggles attendance (`Mark Absent` ⟷ `Mark Present`), applicable in both Grid Card View and List View in `AbsenceRoster.tsx`. Inner action buttons guard with `e.stopPropagation()`.
+   - **`UI-02` (Staff Card Name Display: Full Name Directly, Abbreviation Only on Narrow Screens)**: Staff cards display the teacher's full name directly (`teacher.fullName`). Only on narrow / mobile screens compress/fallback to abbreviation (`teacher.abbr`) via responsive classes.
+
+4. **Job Bundle 26E: Officiating Class Teacher Whole-Day Assignment & Solver Alignment**:
+   - **`BUG-18` (Officiating CT Whole-Day Assignment & Auto-Resolve Alignment)**: When assigned Off. CT, the appointment is for the entire day, not period-by-period. Auto-Resolve solver must prioritize and assign coverage on this whole-day basis for the designated Off. CT across the absent CT's timetable.
+
+5. **Job Bundle 26F: Universal Notification Center & Live Alert Hub**:
    - **`FEAT-50` (Universal Notification Center & Live Alert Hub)**: Header Bell icon with live notice counter pill opening `NotificationCenterModal.tsx`.
 
-3. **Job Bundle 27: Auto-Resolve Brain Studio, Theme Engine & Developer Options**:
+6. **Job Bundle 27: Auto-Resolve Brain Studio, Theme Engine & Developer Options**:
    - **`FEAT-61` (Auto-Resolve Brain Studio & Solver Policy Configuration)**: Head-with-Brain icon (`Brain`) in Substitutions tab opening Policy Studio: criteria weighting (Same Subject, Same Class, Different Class), assignment sequence (Class Teachers First vs. Subject Teachers First), and subject-specific priority overrides.
    - **`FEAT-46` (Complete 12-Theme Engine Adapted from THEMES.md)**: Implement CSS token system for all 12 themes across Minimalist Light, Minimalist Night, Glass Materials, and Studio families with instant preview.
    - **`FEAT-47` (Hidden Settings & Developer Options Restoration)**: Restore hidden Developer Options panel (5-tap on version row) with relocated cloud sync diagnostics, same-period lock toggle, target cell halo pulse toggle/colors, countdown timer, and undo/redo icon style selector.

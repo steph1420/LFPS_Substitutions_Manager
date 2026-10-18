@@ -34,9 +34,17 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - **Solution Delivered**: Wrapped overview containers with `overflow-hidden will-change-[height,opacity]`, applied `SPRING_TRANSITIONS.snappy` easing in `AnimatePresence`, isolated inner container padding from the animating element to eliminate subpixel layout reflow jitter, and enabled tapping empty header space to toggle.
 
 ### BUG-17: Minimal UI Mode Toggle Has No Visual Effect
-- **Status**: 🔴 Open
+- **Status**: 🟢 Resolved (Job Bundle 25)
 - **Reported**: Toggling "Minimal UI Mode" in Settings or Header changes store state but components do not visually alter their layout or density.
-- **Fix**: Wire `isMinimalUI` across `Header.tsx`, `RoutineGrid.tsx`, `TabBar.tsx`, `SubstitutionsRegister.tsx`, and `AbsenceRoster.tsx` to conditionally compact padding, hide secondary explanatory copy, and activate high-velocity compact card views.
+- **Fix**: Wired `isMinimalUI` across `Header.tsx`, `RoutineGrid.tsx`, `TabBar.tsx`, `SubstitutionsRegister.tsx`, and `AbsenceRoster.tsx` to conditionally compact padding, hide secondary explanatory copy, and activate high-velocity compact card views.
+
+### BUG-18: Officiating Class Teacher (Off. CT.) Whole-Day Assignment & Solver Alignment
+- **Status**: 🔴 Open
+- **Reported**: When assigned as Officiating Class Teacher (`Off. CT.`), the teacher is appointed for the entire day, not period-by-period. The Auto-Resolve solver must also assign coverage on this whole-day basis (the designated Off. CT covers the absent CT's class for all periods of that day rather than period-by-period scattering).
+- **Target Solution**:
+  - Anchor Officiating CT appointments in `@lfps/core` and `useTimetableStore.ts` as whole-day section appointments.
+  - In `autoResolveSubstitutions()`, prioritize assigning the designated Off. CT across all uncovered periods of that absent CT's class before dispersing remaining periods to external substitutes.
+
 
 ### BUG-04: Fit-Grid Portrait Mode Screen Overflow & Cell Height Distortion (RESOLVED in v1.40.0)
 - **Status**: 🟢 Resolved (v1.40.0)
@@ -505,7 +513,37 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
       - `[ ⚑ Dispute ]`: Expands an inline tactile micro-remark textbox (`"Reason for dispute (optional, e.g. Lab duty, Library inventory)"`) with `[ Confirm Dispute ]` and `[ Cancel ]`.
       - On confirm, marks the substitution status as `DISPUTED` (amber/rose badge), stores the dispute remark, and automatically dispatches a high-priority alert to the leadership chain: Academic Coordinator (Mrs. R. Pahwa), Assistant AC (Mrs. S. Lakra), or designated Officiating AC.
 
-### Job Bundle 26C: Universal Notification Center & Live Alert Hub
+### Job Bundle 26C: Nomenclature Simplification & School Overview Headings
+- **Status**: 🔴 Queued (Max 2 items)
+- **Scope & Work Items**:
+  - [ ] **TERMS-01 (Nomenclature Simplification: Eliminate 'Team', Standardize CT & 2nd Teacher)**:
+    - Do away with 'Team' nomenclature entirely across UI copy, labels, tooltips, modals, and codebase.
+    - Teachers in a class are strictly referred to as **Class Teacher** (CT) and **2nd Teacher** (2T).
+    - If another teacher assists with class work, refer to them as **"part of a class"** (handling work in the class, but not necessarily CT or 2T).
+  - [ ] **UI-01 (Human School Overview Headings: Substitutions Overview & Staff Roster Overview)**:
+    - Replace overly technical overview headings that do not fit a school environment with simple, friendly titles:
+      - Substitutions tab: Change *"Substitution Register & Coverage Engine"* $\to$ **"Substitutions Overview"** (e.g. `Substitutions Overview (MON)`).
+      - Staff Roster tab: Change *"Staff Roster Matrix & Availability Register"* $\to$ **"Staff Roster Overview"** (e.g. `Staff Roster Overview (MON)`).
+
+### Job Bundle 26D: Effortless Absence Marking & Staff Full Name Display
+- **Status**: 🔴 Queued (Max 2 items)
+- **Scope & Work Items**:
+  - [ ] **LOGIC-06 (Effortless Absence Marking: Whole Card Free Space Tap to Toggle Absent)**:
+    - Make marking absent easier for the front desk: tapping anywhere in the free / unoccupied space of a staff card toggles attendance (`Mark Absent` ⟷ `Mark Present`).
+    - Applies to both **Grid Card View** and **List View** in `AbsenceRoster.tsx`.
+    - Guard child interactive buttons/popovers (`e.stopPropagation()`) so clicking Off. CT, Availability, or Duty chips does not trigger attendance toggle.
+  - [ ] **UI-02 (Staff Card Name Display: Full Name Directly, Abbreviation Only on Narrow Screens)**:
+    - Staff cards must display the teacher's full name directly (`teacher.fullName`).
+    - Only on narrow / mobile viewports compress/fallback to abbreviation (`teacher.abbr`) via responsive CSS classes / container queries (`hidden sm:inline`, `sm:hidden`).
+
+### Job Bundle 26E: Officiating Class Teacher Whole-Day Assignment & Solver Alignment
+- **Status**: 🔴 Queued (Max 2 items)
+- **Scope & Work Items**:
+  - [ ] **BUG-18 (Officiating CT Whole-Day Assignment & Auto-Resolve Alignment)**:
+    - When assigned as Officiating Class Teacher (`Off. CT.`), the appointment is for the entire day, not period-by-period.
+    - Auto-Resolve solver must prioritize and assign coverage on this whole-day basis for the designated Off. CT across the absent CT's timetable.
+
+### Job Bundle 26F: Universal Notification Center & Live Alert Hub
 - **Status**: 🔴 Queued
 - **Scope & Work Items**:
   - [ ] **FEAT-50 (Universal Notification Center & Live Alert Hub)**:
