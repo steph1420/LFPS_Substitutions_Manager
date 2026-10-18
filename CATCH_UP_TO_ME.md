@@ -5,11 +5,14 @@
 > You are picking up work on this codebase because the user has switched accounts/sessions due to quota limits. 
 > This document is your comprehensive single source of truth. It details **everything done, why, where, when, and how**, along with exact instructions on how to maintain this and companion documentation files so the original agent can seamlessly catch back up when returning.
 >
-> **PRIME COMMANDMENT:**
-> 1. **BRANCH SAFETY:** Work strictly on branch `next-gen`. **NEVER COMMIT OR PUSH TO `main`**.
-> 2. **BACKUP RULE:** Before making large architectural changes or resolving job bundles, always create a snapshot archive in `_backups/`.
-> 3. **120FPS GPU DISCIPLINE:** Adhere to Apple Human Interface Guidelines (HIG). Never animate layout reflow properties (`width`, `height`, `top`, `left`). Animate strictly `transform` and `opacity`. Equalize expand and collapse spring timings.
-> 4. **BUILD PIPELINE INTEGRITY:** Running `npm run build` compiles `apps/web` and copies `apps/web/dist` to the repository root for GitHub Pages. Always delete stale hashed assets from `assets/` so only active build assets exist.
+> **PRIME COMMANDMENTS (HOW TO BEHAVE LIKE ME):**
+> 1. **BRANCH SAFETY:** Work strictly on branch `next-gen`. **NEVER COMMIT OR PUSH TO `main`**. If user asks where to see the live work, provide: `https://github.com/steph1420/LFPS_Substitutions_Manager/tree/next-gen`.
+> 2. **MERGE MAX 2 THINGS:** User's non-negotiable directive: *"Merge max 2 things. So you can process clearly."* Never bundle 3+ items into a single merge. Split complex requests into numbered micro-bundles (e.g., 26A, 26B, 26C) to maintain crystal-clear processing and zero regressions.
+> 3. **CONFIRM & ALIGN FIRST:** When the user presents a bug or visual issue, restate your understanding and get confirmation before touching code.
+> 4. **PRE-BUNDLE BACKUP ARCHIVE:** Always run a `.tar.gz` snapshot command into `_backups/` before starting any bundle.
+> 5. **STALE ASSET PRUNING:** Running `npm run build` generates new hashed assets in `assets/`. Always delete stale hashed files (`rm assets/index-*.css assets/index-*.js`) so GitHub Pages never hosts orphaned bundles.
+> 6. **120FPS APPLE HIG DISCIPLINE:** Never animate layout reflow properties (`width`, `height`, `top`, `left`). Animate strictly GPU properties (`transform`, `opacity`). Equalize spring duration and bounce for both expand and collapse.
+> 7. **ZERO TEST REGRESSIONS:** Run `npm test` and ensure all Vitest domain tests pass (currently 15/15) before committing.
 
 ---
 
@@ -285,6 +288,166 @@ flowchart TD
   - [`apps/web/src/components/TabBar.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/TabBar.tsx): Integrated live evaluation of `needsOffACAppointment` and `hasUncoveredCTSlots`, triggering `attention-pulse` on Substitutions and Roster tabs.
   - [`apps/web/src/components/SubstitutionsRegister.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/SubstitutionsRegister.tsx): Added `[ ⚡ Auto-Resolve CT ]` solver button, Officiating AC Required action card, golden CT substitution styling in Grid and List modes, and succession badges in Officiating overview.
   - [`apps/web/src/components/AbsenceRoster.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/AbsenceRoster.tsx): Displayed dynamic acting status for Mrs. S. Lakra and officiating requirements for AC.
+
+### 3.13 Comprehensive Error & Bug Resolution Ledger (User-Reported Issues & Technical Solutions)
+
+This section documents every error, complaint, and glitch the user reported on the v2 app, the root causes, and how they were resolved:
+
+#### Issue 1: Header Flickering Glitch, Day Bar Collision & 4-State Scroll Behavior
+- **User Complaint**: 
+  > *"Big issue... Big big issue... Listen: At the top of the page, it stays full... elements are cluttered, the day bar is pushing the right icons off the screen. When we scroll down, the header should completely go away and the day bar should shrink to a pill... If I am far down and scroll up, only a thin strip should show... Day bar should stay like a pill. Only when scrolling hits the top, the full header should slide down and the day bar should join back inside the header... Flickering glitch is back in action. Also, the pill joins into the thin strip which I SAID not to. Pill should stay below the thin strip and only join the full header."*
+- **Root Causes**:
+  1. **Scroll Thrashing**: Rapid finger movements or scroll bounce near scroll threshold caused the component to alternate between `PEEK` and `HIDDEN` on every frame, generating severe visual flickering.
+  2. **Interrupted Animation Cycles**: Framer Motion layout transitions were constantly canceled by new scroll listener events firing before the previous transition completed.
+  3. **Pill-Strip Collision**: In an intermediate edit, the floating pill was rendered inside the thin peek strip or pinned at `top-2`, colliding with the title and action buttons.
+- **The Exact Architectural Fix** ([`Header.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/Header.tsx)):
+  1. **Four Explicit Scroll States**:
+     - `AT_TOP` (`scrollY <= 50`): Full header slides down. Day Bar docks **inside** the header DOM.
+     - `SCROLLING_DOWN` (`scrollY > 50` and scrolling down): Header is completely hidden (`-translate-y-full`). Day Bar shrinks into a floating pill at `top-3`.
+     - `SCROLLING_UP_PEEK` (`scrollY > 50` and scrolling up): A thin peek strip appears (`h-11` at `top-0`) showing strictly app title, Reset Day, and Settings icons. The Day Bar floats strictly **BELOW** the thin strip at `top-14` (56px) as an independent floating capsule. It is **NEVER** injected into the thin strip.
+     - `RETURN_TO_TOP` (`scrollY <= 50`): Full header slides down, and the Day Bar joins back inside the header.
+  2. **350ms Transition Lockout Ref**:
+     ```ts
+     isTransitioningRef.current = true;
+     setTimeout(() => { isTransitioningRef.current = false; }, 350);
+     ```
+  3. **Directional Hysteresis Thresholds**:
+     Requires `> 35px` accumulated downward scroll to trigger `HIDDEN` mode, and `<-40px` accumulated upward scroll to trigger `PEEK` mode. Prevents finger bounce from triggering state toggles.
+
+---
+
+#### Issue 2: Mobile Jerky Double-Jump (Browser Bar Synchronization)
+- **User Complaint**:
+  > *"In mobile, I have noticed when I scroll up, the browser bar hides first and then our header. Which creates a jerky adouble jump in ui. Need to sync header/peek/show with the browser - at least for major browsers (chromium, Firefox, opera, safari, edge)."*
+- **Root Cause**:
+  Mobile browsers (Safari, Chrome, Firefox, Opera, Edge) show and hide their own URL/navigation bar during scrolling, firing `window.visualViewport.resize` events that dynamically alter available viewport height while scroll events are simultaneously firing. The delta between viewport height changes and DOM scroll deltas caused the custom header animation to trigger out of phase with browser chrome.
+- **The Exact Architectural Fix** ([`Header.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/Header.tsx)):
+  - Added a `window.visualViewport.addEventListener('resize', ...)` listener.
+  - Tracked `lastViewportHeightRef.current`.
+  - Whenever `Math.abs(currentHeight - lastHeight) > 10` is detected (browser address bar expanding or collapsing), immediately reset `deltaYAccumulator.current = 0`, suppressing phantom scroll delta accumulation and synchronizing header state transitions cleanly with browser chrome.
+
+---
+
+#### Issue 3: Narrow Screen Faculty Column Squishing Instructional Periods (`FEAT-53`)
+- **User Complaint**:
+  > *"UI: Make the teacher names panel collapsing upon horizontal scroll (narrow screens). Upon collapsing, use small thin font for names and split over two lines."*
+- **Root Cause**:
+  The sticky teacher name column was fixed at `min-w-[140px]`. On mobile devices with ~375px–414px total width, this left less than 240px for 6 period columns, forcing horizontal scrolling with squished text.
+- **The Exact Architectural Fix** ([`RoutineGrid.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/RoutineGrid.tsx)):
+  - Added a horizontal scroll observer on the matrix container (`onScroll={(e) => setIsHorizontallyScrolled(e.currentTarget.scrollLeft > 20)}`).
+  - When scrolled horizontally on narrow viewports (`< 768px`), the teacher column collapses from `min-w-[140px]` to `min-w-[64px]`.
+  - Built `splitTeacherName(fullName)` helper that splits initials from surname (e.g. "SL" and "Lakra", "RP" and "Pahwa") and renders them stacked over two lines in a thin, elegant 10px font (`text-[10px] leading-tight font-medium text-slate-300`).
+
+---
+
+#### Issue 4: Absent Teachers Invisibility & Routine Filtering (`FEAT-54`, `FEAT-55`)
+- **User Complaint**:
+  > *"UI: For absent teachers, make their name cells in routine red. UI: Add option to hide teachers who are absent."*
+- **The Exact Architectural Fix** ([`RoutineGrid.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/RoutineGrid.tsx), [`useTimetableStore.ts`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/store/useTimetableStore.ts)):
+  - For any teacher marked absent on `selectedDay`, their sticky name cell in the Routine Matrix is highlighted in bold crimson red (`bg-rose-950/90 border-r-2 border-r-rose-500 text-rose-200 font-bold`).
+  - Added `hideAbsentStaff: boolean` to the Zustand store with `toggleHideAbsentStaff()`.
+  - Added a tactile filter toggle button in the Routine Grid toolbar (`[ 👁 Hide Absent ]` / `[ 👁 Show Absent ]`) and an explicit preference toggle in `SettingsModal.tsx`.
+
+---
+
+#### Issue 5: Class Teacher Role Color Coding (`FEAT-56`)
+- **User Complaint**:
+  > *"UI: Color code CT with golden instead of Teal. ACs, even if CT, will remain Purple or Pink whatever it is currently."*
+- **The Exact Architectural Fix** ([`tokens.ts`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/packages/ui/src/tokens.ts), [`SubstitutionsRegister.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/SubstitutionsRegister.tsx), [`AbsenceRoster.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/AbsenceRoster.tsx)):
+  - In `@lfps/ui`, upgraded `COLOR_ROLES.classTeacher` to Golden Amber:
+    - Base: `#f59e0b` (Amber 500)
+    - Dark text: `#fbbf24` (Amber 400)
+    - Background: `rgba(245, 158, 11, 0.15)`
+    - Border: `rgba(245, 158, 11, 0.4)`
+  - Added hierarchy filter function:
+    ```ts
+    const isClassTeacher = (teacherName: string): boolean => {
+      const teacher = directory[teacherName];
+      if (!teacher) return false;
+      const isAC = teacher.abbr === 'Mrs. R. Pahwa' || (teacher.role.includes('Academic Coordinator') && !teacher.role.includes('Asst.'));
+      const isAAC = teacher.abbr === 'Mrs. S. Lakra' || teacher.role.includes('Asst. Academic Coordinator');
+      return teacher.role.includes('Class Teacher') && !isAC && !isAAC;
+    };
+    ```
+  - Academic Coordinators (`Mrs. R. Pahwa`, `Mrs. S. Lakra`) strictly retain Royal Violet / Purple tokens (`COLOR_ROLES.coordinator`).
+
+---
+
+#### Issue 6: Academic Coordinator Succession & Tab Attention Glow (`LOGIC-04`)
+- **User Complaint**:
+  > *"Logic: If AC is absent, AAC acts on their behalf. We can technically say they are officiating. Only when both are absent do we need to appoint an officiating AC. This assignment cannot be auto-resolved but should reflect in substitutions tab with the option to assign. Flash the Sub and Roster tabs with soft pulsing amber glow to grab attention."*
+- **The Exact Architectural Fix** ([`solver/index.ts`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/packages/core/src/solver/index.ts), [`TabBar.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/TabBar.tsx), [`SubstitutionsRegister.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/SubstitutionsRegister.tsx)):
+  - Pure domain function `getEffectiveOfficiatingAC`:
+    1. If `officiatingACMap[day]` is manually assigned, return it.
+    2. If AC (`Mrs. R. Pahwa`) is present, return AC (`needsAppointment: false`).
+    3. If AC is absent but AAC (`Mrs. S. Lakra`) is present, return AAC as acting (`isAutoOfficiating: true, needsAppointment: false`).
+    4. If BOTH AC and AAC are absent, return `needsAppointment: true`.
+  - When `needsAppointment` is true:
+    - `TabBar.tsx` applies `.attention-pulse` (soft amber glow) to the `substitutions` and `roster` tabs.
+    - `SubstitutionsRegister.tsx` renders a prominent `[ 👑 Designate Off. AC ]` alert card invoking `openOfficiatingModal({ type: 'AC' })`.
+    - In `AbsenceRoster.tsx`, shows `Mrs. S. Lakra (Acting for Mrs. R. Pahwa)`.
+
+---
+
+#### Issue 7: Dedicated Class Teacher Auto-Resolve & Golden Substitution Cards (`LOGIC-05`)
+- **User Complaint**:
+  > *"Logic: For class teachers. Give another button to auto-resolve CT. Down below in cards area, add golden color cards for CT substitutions. Flash the Sub and Roster tabs with soft pulsing amber glow to grab attention."*
+- **The Exact Architectural Fix** ([`SubstitutionsRegister.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/SubstitutionsRegister.tsx), [`TabBar.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/TabBar.tsx)):
+  - Filtered `ctUncoveredSlots = uncoveredSlots.filter(s => isClassTeacher(s.originalTeacher))`.
+  - When `ctUncoveredSlots.length > 0`, renders:
+    `<button onClick={handleAutoResolveCT} className="... bg-gradient-to-r from-amber-600 to-amber-700 ...">⚡ Auto-Resolve CT ({ctUncoveredSlots.length})</button>`.
+  - In cards area, styled CT substitution cards with rich golden aesthetic (`border-amber-500/60 bg-gradient-to-br from-amber-950/35 via-slate-900/95 to-amber-900/25 ring-1 ring-amber-500/40 text-amber-200`) in both Grid and List modes.
+  - Flashes `substitutions` and `roster` tabs with `.attention-pulse` when `hasUncoveredCTSlots` is true.
+
+---
+
+#### Issue 8: Routine Fullscreen Workstation Blank Screen (`BUG-10`)
+- **Symptom**: Clicking "Expand Grid" resulted in an empty slate-950 canvas.
+- **Root Cause**: `createPortal(..., document.body)` inside a child component suffered layout collapse because `document.body.style.overflow = 'hidden'` stripped height context from flex children in WebKit.
+- **The Fix**: Hoisted fullscreen rendering directly into `App.tsx` root view (`if (isFitGrid) return <div className="fixed inset-0 h-[100dvh] w-screen z-[100] ..."><RoutineGrid isFullscreen />...</div>`).
+
+---
+
+#### Issue 9: Modals and Popovers Clipped by Ancestor Transforms (`BUG-14`, `BUG-15`)
+- **Symptom**: `StaffLoginModal` and `ResetPurgeContextMenu` were visually clipped or positioned at offset coordinates.
+- **Root Cause**: In CSS specification, any element with a `transform`, `filter`, or `perspective` creates a new local containing block for `fixed` children, preventing them from positioning relative to the viewport.
+- **The Fix**: Hoisted all modals (`StaffLoginModal`, `ResetPurgeContextMenu`, `AssignSubstituteModal`, `AddToHomeScreenModal`) to the top-level root in `App.tsx` outside any transformed containers.
+
+---
+
+### 3.14 The Operational Rulebook: How to Behave Like Me
+
+Any AI agent continuing this conversation must adhere to these behavioral patterns:
+
+1. **The 2-Item Micro-Bundle Rule ("Merge max 2 things")**:
+   - The user explicitly requested: *"Merge max 2 things. So you can process clearly."*
+   - Never attempt to combine multiple disparate features into one monolithic bundle. Break tasks into clean pairs (e.g. Bundle 26A: `LOGIC-04` + `LOGIC-05`; Bundle 26B: `SEC-01` + `FEAT-49`; Bundle 26C: `FEAT-50`).
+   - Deliver, verify with tests, build, commit, push, and confirm with the user before proceeding to the next pair.
+
+2. **Branch Discipline (`next-gen` strictly)**:
+   - Always run `git status` to verify you are on branch `next-gen`.
+   - **NEVER TOUCH `main`**. The user's live GitHub Pages deployment tracks `next-gen`.
+   - If the user asks which branch or how to see the work, point them to: `https://github.com/steph1420/LFPS_Substitutions_Manager/tree/next-gen`.
+
+3. **Pre-Bundle Snapshot Backups**:
+   - Before executing code changes in a bundle, run:
+     ```bash
+     tar -czf _backups/LFPS_Substitutions_Manager_v2.0.0_<bundle_name>_$(date +%Y%m%d_%H%M%S).tar.gz --exclude="node_modules" --exclude=".git" --exclude="dist" --exclude="_backups" .
+     ```
+
+4. **Stale Asset Pruning after Build**:
+   - When running `npm run build`, Vite creates new content-hashed files in `apps/web/dist` and copies them to root `assets/`.
+   - You must inspect `assets/` and delete previous hashed files (e.g. `rm assets/index-*.css assets/index-*.js`) so that only the single active CSS and JS bundle exist.
+
+5. **Test-Driven Domain Integrity (`@lfps/core`)**:
+   - Domain logic lives in `packages/core/src/solver/` with zero DOM dependencies.
+   - Every algorithmic rule (co-teaching, absence handling, coordinator succession, candidate ranking) must be backed by a Vitest test in `packages/core/test/solver.test.ts`.
+   - Run `npm test` and ensure all 15 tests pass.
+
+6. **Apple HIG Tactile Polish**:
+   - Symmetrical springs: Whenever Framer Motion is used for expand/collapse, ensure identical timing curves (`SPRING_TRANSITIONS.snappy` or symmetrical duration springs).
+   - Zero reflow animation: Never animate `width`, `height`, `top`, or `left`. Animate `transform` (`scale`, `y`, `x`) and `opacity`.
+   - Non-blocking front-desk velocity: Add 1-tap workflows and outside-click/Escape dismissal across all dialogs.
 
 ---
 
