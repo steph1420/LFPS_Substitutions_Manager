@@ -15,6 +15,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [v2.0.0-alpha.1] - 2026-10-18
 
 ### Added
+- **Academic Coordinator Succession & Officiating Workflow (LOGIC-04, Job Bundle 26A)**:
+  - Engineered pure domain succession function `getEffectiveOfficiatingAC(day, absences, officiatingACMap)` in `@lfps/core` with comprehensive Vitest coverage.
+  - Automatic chain of command: When Academic Coordinator (`Mrs. R. Pahwa`) is marked absent, the Assistant Academic Coordinator (`Mrs. S. Lakra`, AAC) automatically acts on her behalf as Officiating AC (`Off. AC`).
+  - Only when BOTH the AC and AAC are absent does the system require appointing a 3rd-party Officiating AC (`needsAppointment: true`).
+  - Surfaced dedicated Officiating AC prompt card in `SubstitutionsRegister.tsx` with 1-tap manual designation (`openOfficiatingModal({ type: 'AC' })`).
+  - Visual Attention Glow: When an appointment is required, flashes both the **Substitutions** and **Staff Roster** navigation tabs with a soft pulsing amber halo (`@keyframes softAmberAttention` / `attention-pulse`).
+  - In `AbsenceRoster.tsx`, dynamically indicates `Mrs. S. Lakra (Acting for Mrs. R. Pahwa)` on duty.
+- **Dedicated Class Teacher Auto-Resolve & Golden Substitution Cards (LOGIC-05, Job Bundle 26A)**:
+  - In `SubstitutionsRegister.tsx`, added dedicated `[ ⚡ Auto-Resolve CT (X Slots) ]` button next to the standard solver button that filters uncovered periods strictly to absent Class Teachers.
+  - Rendered all Class Teacher substitution cards in both Grid Card View and List View with an eye-catching golden aesthetic (`border-amber-500/60 bg-gradient-to-br from-amber-950/35 via-slate-900/95 to-amber-900/25 ring-1 ring-amber-500/40 text-amber-200`).
+  - When any Class Teacher has uncovered class periods, flashes both the **Substitutions** and **Staff Roster** tabs with the soft pulsing amber glow until coverage is complete.
 - **Monorepo Architecture & Package Separation (Job Bundle 19)**:
   - Migrated legacy single-file codebase to modern NPM workspaces monorepo:
     - `@lfps/core`: Pure TypeScript domain engine, types, and substitution solver.

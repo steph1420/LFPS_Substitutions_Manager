@@ -119,6 +119,14 @@ export interface OfficiatingAssignment {
   assignedAt: number;
 }
 
+export interface EffectiveOfficiatingACResult {
+  effectiveAC: string | null;
+  isAutoOfficiating: boolean; // true if AAC acts on behalf of AC
+  needsAppointment: boolean; // true if both AC & AAC are absent and no officiating AC has been assigned
+  isManuallyAssigned: boolean;
+  reason: string;
+}
+
 export interface CandidateSubstitute {
   teacher: Teacher;
   isAvailable: boolean;

@@ -264,6 +264,28 @@ flowchart TD
   - Viewport-aware scroll synchronization suppresses scroll delta accumulation when `visualViewport` height changes during mobile URL bar expansion/collapse.
   - Automatic `localStorage` preferences persistence with explicit UI control prevents state desynchronization across sessions.
 
+### 3.12 Job Bundle 26A: Leadership Chain of Command, Dedicated CT Auto-Resolve & Attention Pulse (2026-10-18)
+- **Status**: 🟢 Resolved & Merged (Max 2 items constraint)
+- **What**:
+  1. `LOGIC-04` (Academic Coordinator Succession & Officiating Workflow):
+     - Automatic chain of command: When Academic Coordinator (`Mrs. R. Pahwa`) is marked absent, the Assistant Academic Coordinator (`Mrs. S. Lakra`, AAC) automatically acts on her behalf as Officiating AC (`Off. AC`).
+     - Only if BOTH the AC and AAC are absent does the system require appointing a 3rd-party Officiating AC (`needsAppointment: true`).
+     - When appointment is needed, flashes both the **Substitutions** and **Staff Roster** navigation tabs with a soft pulsing amber halo (`@keyframes softAmberAttention` / `attention-pulse`).
+     - Surfaced dedicated Officiating AC prompt card in `SubstitutionsRegister.tsx` with 1-tap manual designation (`openOfficiatingModal({ type: 'AC' })`).
+     - In `AbsenceRoster.tsx`, dynamically indicates `Mrs. S. Lakra (Acting for Mrs. R. Pahwa)` on duty.
+  2. `LOGIC-05` (Dedicated Class Teacher Auto-Resolve & Golden Substitution Cards):
+     - In `SubstitutionsRegister.tsx`, added dedicated `[ ⚡ Auto-Resolve CT (X Slots) ]` button next to the standard solver button that filters uncovered periods strictly to absent Class Teachers.
+     - Rendered all Class Teacher substitution cards in both Grid Card View and List View with an eye-catching golden aesthetic (`border-amber-500/60 bg-gradient-to-br from-amber-950/35 via-slate-900/95 to-amber-900/25 ring-1 ring-amber-500/40 text-amber-200`).
+     - When any Class Teacher has uncovered class periods, flashes both the **Substitutions** and **Staff Roster** tabs with the soft pulsing amber glow until coverage is complete.
+- **Where**:
+  - [`packages/core/src/types/index.ts`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/packages/core/src/types/index.ts): Defined `EffectiveOfficiatingACResult` interface.
+  - [`packages/core/src/solver/index.ts`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/packages/core/src/solver/index.ts): Implemented `getEffectiveOfficiatingAC(day, absences, officiatingACMap)` domain algorithm.
+  - [`packages/core/test/solver.test.ts`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/packages/core/test/solver.test.ts): Added 4 comprehensive Vitest test cases (retaining AC, auto-acting AAC, dual absence requirement, manual override); expanded suite to 15 passing tests.
+  - [`apps/web/src/index.css`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/index.css): Added `@keyframes softAmberAttention` and `.attention-pulse` classes.
+  - [`apps/web/src/components/TabBar.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/TabBar.tsx): Integrated live evaluation of `needsOffACAppointment` and `hasUncoveredCTSlots`, triggering `attention-pulse` on Substitutions and Roster tabs.
+  - [`apps/web/src/components/SubstitutionsRegister.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/SubstitutionsRegister.tsx): Added `[ ⚡ Auto-Resolve CT ]` solver button, Officiating AC Required action card, golden CT substitution styling in Grid and List modes, and succession badges in Officiating overview.
+  - [`apps/web/src/components/AbsenceRoster.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/AbsenceRoster.tsx): Displayed dynamic acting status for Mrs. S. Lakra and officiating requirements for AC.
+
 ---
 
 ## 4. Key Files Map & System Architecture
@@ -329,18 +351,18 @@ LFPS_Substitutions_Manager/
 
 ### Current Git State
 - **Branch**: `next-gen`
-- **Head Commit**: Job Bundle 25 Complete (`FEAT-52`, `FEAT-57`, `FEAT-53`, `FEAT-54`, `FEAT-55`, `FEAT-56`, `FEAT-58`, `FEAT-59`, `FEAT-60`, `BUG-17`, `FEAT-45`)
+- **Head Commit**: Job Bundle 26A Complete (`LOGIC-04`, `LOGIC-05`)
 - **Working Tree**: Clean.
-- **All Unit Tests**: 11/11 Passing (`npm test`).
+- **All Unit Tests**: 15/15 Passing (`npm test`).
 - **Production Build**: Passes cleanly (`npm run build`).
 
-### Queued Future Backlog (In Order of Priority)
+### Queued Future Backlog (In Order of Priority - Max 2 Items Per Step)
 
-1. **Job Bundle 26: Leadership Chain of Command, Dedicated CT Auto-Resolve & Attention Pulse (ACTIVE NEXT)**:
-   - **`LOGIC-04` (Academic Coordinator Succession & Officiating Workflow)**: Automatic chain of command: When AC (Mrs. R. Pahwa) is absent, the Assistant Academic Coordinator (AAC, Mrs. S. Lakra) automatically acts on their behalf as Officiating AC (`Off. AC`). Only if BOTH AC and AAC are absent does the system require appointing a 3rd-party Officiating AC. Surfaces in Substitutions tab as a dedicated officiating duty card with manual selection. Flashes the Substitutions and Staff Roster navigation tabs with a soft pulsing amber glow (`@keyframes attentionPulse`) when an Off. AC needs appointment.
-   - **`LOGIC-05` (Dedicated Class Teacher Auto-Resolve & Golden Substitution Cards)**: In `SubstitutionsRegister.tsx`, add a dedicated `[ ⚡ Auto-Resolve CT ]` button that specifically resolves uncovered slots for absent Class Teachers. Render all CT substitution cards in golden / amber styling. Flashes the Sub and Roster tabs with a soft pulsing amber glow when a CT is absent or has uncovered slots.
+1. **Job Bundle 26B: Three-Tier RBAC Architecture & Teacher Substitution Dispute Workflow (ACTIVE NEXT)**:
    - **`SEC-01` (Three-Tier Role-Based Access Control Architecture: Admin, Teacher, Guest)**: Universal rights segregation before drawing any logical element. Admin (full master routine, baseline reset, history purge, solver policy), Teacher (view own schedule, accept/dispute own substitutions, edit own availability remark), and Guest (read-only viewer). Build `<PermissionGuard>` and `canPerform(action, role)` checking before rendering action buttons or executing mutations.
    - **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**: Logged-in teacher cards display inline `[ ✓ Accept ]` and `[ ⚑ Dispute ]` with optional reason remark field, notifying AC / AAC.
+
+2. **Job Bundle 26C: Universal Notification Center & Live Alert Hub**:
    - **`FEAT-50` (Universal Notification Center & Live Alert Hub)**: Header Bell icon with live notice counter pill opening `NotificationCenterModal.tsx`.
 
 2. **Job Bundle 27: Auto-Resolve Brain Studio, Theme Engine & Developer Options**:

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
-import { autoResolveSubstitutions, PeriodId, parseCellSlot } from '@lfps/core';
+import { autoResolveSubstitutions, PeriodId, parseCellSlot, getEffectiveOfficiatingAC } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
 import {
   Sparkles,
@@ -17,6 +17,7 @@ import {
   LayoutGrid,
   List,
   ArrowUpDown,
+  Award,
 } from 'lucide-react';
 import { UndoRedoControls } from './UndoRedoControls.js';
 
@@ -31,6 +32,7 @@ export const SubstitutionsRegister: React.FC = () => {
     assignSubstitution,
     removeSubstitution,
     openAssignSubModal,
+    openOfficiatingModal,
     loggedInTeacher,
     officiatingAC,
     officiatingCT,
@@ -73,7 +75,32 @@ export const SubstitutionsRegister: React.FC = () => {
     return slots;
   }, [selectedDay, schedule, absences, substitutions]);
 
-  // Handle 1-Tap Auto Resolve
+  // Check if a teacher is a Class Teacher (LOGIC-05, FEAT-56)
+  const isClassTeacher = (teacherName: string): boolean => {
+    const teacher = directory[teacherName];
+    if (!teacher) return false;
+    const isAC = teacher.abbr === 'Mrs. R. Pahwa' || (teacher.role.includes('Academic Coordinator') && !teacher.role.includes('Asst.'));
+    const isAAC = teacher.abbr === 'Mrs. S. Lakra' || teacher.role.includes('Asst. Academic Coordinator');
+    return teacher.role.includes('Class Teacher') && !isAC && !isAAC;
+  };
+
+  // Evaluate Academic Coordinator Succession Logic (LOGIC-04)
+  const offACResult = React.useMemo(() => {
+    return getEffectiveOfficiatingAC({
+      day: selectedDay,
+      absences,
+      officiatingACMap: officiatingAC,
+    });
+  }, [selectedDay, absences, officiatingAC]);
+
+  const effectiveAC = offACResult.effectiveAC;
+
+  // Uncovered slots strictly for absent Class Teachers (LOGIC-05)
+  const ctUncoveredSlots = React.useMemo(() => {
+    return uncoveredSlots.filter((slot) => isClassTeacher(slot.originalTeacher));
+  }, [uncoveredSlots, directory]);
+
+  // Handle 1-Tap Auto Resolve for All Slots
   const handleAutoResolve = () => {
     if (uncoveredSlots.length === 0) return;
 
@@ -96,6 +123,33 @@ export const SubstitutionsRegister: React.FC = () => {
         subject: assignment.subject,
         status: 'COVERED',
         assignedBy: 'Auto-Resolve Engine',
+      });
+    });
+  };
+
+  // Handle 1-Tap Dedicated Auto Resolve for Class Teachers (LOGIC-05)
+  const handleAutoResolveCT = () => {
+    if (ctUncoveredSlots.length === 0) return;
+
+    const plan = autoResolveSubstitutions({
+      day: selectedDay,
+      uncoveredSlots: ctUncoveredSlots,
+      schedule: currentSchedule,
+      absences,
+      availabilities,
+      strategy: 'SUBJECT_MATCH',
+    });
+
+    plan.assignments.forEach((assignment) => {
+      assignSubstitution({
+        day: selectedDay,
+        period: assignment.period,
+        originalTeacher: assignment.originalTeacher,
+        substituteTeacher: assignment.substituteTeacher,
+        className: assignment.className,
+        subject: assignment.subject,
+        status: 'COVERED',
+        assignedBy: 'Auto-Resolve CT Engine',
       });
     });
   };
@@ -147,17 +201,7 @@ export const SubstitutionsRegister: React.FC = () => {
     return true;
   });
 
-  const offAC = officiatingAC[selectedDay];
   const offCTMap = officiatingCT[selectedDay] || {};
-
-  // Check if a teacher is a Class Teacher (FEAT-56)
-  const isClassTeacher = (teacherName: string): boolean => {
-    const teacher = directory[teacherName];
-    if (!teacher) return false;
-    const isAC = teacher.abbr === 'Mrs. R. Pahwa' || (teacher.role.includes('Academic Coordinator') && !teacher.role.includes('Asst.'));
-    const isAAC = teacher.abbr === 'Mrs. S. Lakra' || teacher.role.includes('Asst. Academic Coordinator');
-    return teacher.role.includes('Class Teacher') && !isAC && !isAAC;
-  };
 
   return (
     <div className={`w-full animate-in fade-in duration-200 ${isMinimalUI ? 'space-y-3' : 'space-y-5'}`}>
@@ -188,6 +232,18 @@ export const SubstitutionsRegister: React.FC = () => {
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-between md:justify-end w-full md:w-auto">
             {/* Substitutions Tab Undo / Redo Controls (FEAT-40) */}
             <UndoRedoControls tab="substitutions" />
+
+            {/* Dedicated CT Auto-Resolve Button (LOGIC-05) */}
+            {ctUncoveredSlots.length > 0 && (
+              <button
+                onClick={handleAutoResolveCT}
+                className="w-fit flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs font-bold shadow-lg shadow-amber-500/30 active:scale-95 transition-all cursor-pointer"
+                title="Auto-resolve uncovered periods strictly for absent Class Teachers"
+              >
+                <Sparkles className="w-4 h-4 text-amber-200 animate-spin" style={{ animationDuration: '4s' }} />
+                <span>⚡ Auto-Resolve CT ({ctUncoveredSlots.length})</span>
+              </button>
+            )}
 
             {uncoveredSlots.length > 0 && (
               <button
@@ -273,9 +329,15 @@ export const SubstitutionsRegister: React.FC = () => {
                     </span>
                   </div>
                   <div className="text-2xl sm:text-3xl font-bold text-white">
-                    {(offAC ? 1 : 0) + Object.keys(offCTMap).length}
+                    {(effectiveAC ? 1 : 0) + Object.keys(offCTMap).length}
                   </div>
-                  <div className="text-[11px] text-purple-400 mt-1">AC & CT Temporary Leaders</div>
+                  <div className="text-[11px] text-purple-400 mt-1">
+                    {effectiveAC
+                      ? offACResult.isAutoOfficiating
+                        ? `Acting AC: ${effectiveAC}`
+                        : `Off. AC: ${effectiveAC}`
+                      : 'AC: Needs Appointment'}
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -398,6 +460,35 @@ export const SubstitutionsRegister: React.FC = () => {
         </div>
       </section>
 
+      {/* Officiating AC Required Prompt Card (LOGIC-04) */}
+      {offACResult.needsAppointment && (
+        <section className="p-4 sm:p-4.5 rounded-2xl border border-amber-500/80 bg-gradient-to-r from-amber-950/40 via-slate-900/90 to-amber-900/30 shadow-[0_0_24px_rgba(245,158,11,0.22)] flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 attention-pulse">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-amber-300 font-bold flex-shrink-0">
+              <ShieldAlert className="w-5 h-5 text-amber-400" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-amber-300 uppercase tracking-wide flex items-center gap-2">
+                <span>Officiating AC Required ({selectedDay})</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">
+                  APPOINTMENT NEEDED
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 mt-0.5">
+                Both Academic Coordinator (Mrs. R. Pahwa) and Asst. Coordinator (Mrs. S. Lakra) are absent today. This leadership duty cannot be auto-resolved — please designate an Officiating AC.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => openOfficiatingModal({ type: 'AC' })}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/40 active:scale-95 transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer flex-shrink-0"
+          >
+            <Award className="w-4 h-4 text-slate-950" />
+            <span>Designate Off. AC</span>
+          </button>
+        </section>
+      )}
+
       {/* Uncovered Needs Section */}
       {(filterMode === 'all' || filterMode === 'uncovered') && uncoveredSlots.length > 0 && (
         <section className="space-y-3">
@@ -501,7 +592,7 @@ export const SubstitutionsRegister: React.FC = () => {
                       transition={SPRING_TRANSITIONS.snappy}
                       className={`glass-panel border rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg transition-all ${
                         isCT
-                          ? 'border-amber-500/40 bg-amber-950/15 hover:border-amber-500/60'
+                          ? 'border-amber-500/60 bg-gradient-to-br from-amber-950/35 via-slate-900/95 to-amber-900/25 shadow-[0_0_16px_rgba(245,158,11,0.18)] ring-1 ring-amber-500/40 hover:border-amber-400'
                           : 'border-slate-800 hover:border-slate-700'
                       }`}
                     >
@@ -575,7 +666,7 @@ export const SubstitutionsRegister: React.FC = () => {
                       transition={SPRING_TRANSITIONS.snappy}
                       className={`glass-panel px-3 sm:px-4 py-2.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm transition-all ${
                         isCT
-                          ? 'border-amber-500/35 bg-amber-950/15'
+                          ? 'border-amber-500/50 bg-gradient-to-r from-amber-950/30 via-slate-900/90 to-amber-900/20 shadow-[0_0_12px_rgba(245,158,11,0.15)] ring-1 ring-amber-500/30'
                           : 'border-slate-800 hover:border-slate-700'
                       }`}
                     >
@@ -588,7 +679,7 @@ export const SubstitutionsRegister: React.FC = () => {
                               : 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
                           }`}
                         >
-                          {sub.period}
+                          {sub.period} {isCT && '• CT'}
                         </span>
                         <div>
                           <div className="font-bold text-white text-xs">{sub.className}</div>
@@ -606,7 +697,7 @@ export const SubstitutionsRegister: React.FC = () => {
                           {sub.originalTeacher}
                         </span>
                         <ArrowRight className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-                        <span className="font-bold text-emerald-300 text-xs">
+                        <span className={`font-bold text-xs ${isCT ? 'text-amber-200' : 'text-emerald-300'}`}>
                           {sub.substituteTeacher}
                         </span>
                       </div>
@@ -641,7 +732,7 @@ export const SubstitutionsRegister: React.FC = () => {
       )}
 
       {/* Officiating Leadership Overview (Section 3) */}
-      {(offAC || Object.keys(offCTMap).length > 0) && (
+      {(effectiveAC || Object.keys(offCTMap).length > 0) && (
         <section className="glass-panel rounded-2xl p-4 sm:p-5 border border-purple-500/30 bg-purple-950/10 shadow-lg space-y-3">
           <h3 className="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-purple-400" />
@@ -649,16 +740,36 @@ export const SubstitutionsRegister: React.FC = () => {
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
-            {offAC && (
+            {effectiveAC && (
               <div className="bg-slate-900/90 border border-purple-500/40 rounded-xl p-3 flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] text-purple-400 font-bold uppercase">Officiating AC</span>
-                  <div className="font-bold text-white text-sm">{offAC}</div>
-                  <div className="text-[10px] text-slate-400">Acting Academic Coordinator</div>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="text-[10px] text-purple-400 font-bold uppercase">Officiating AC</span>
+                    {offACResult.isAutoOfficiating && (
+                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-semibold">
+                        Acting for AC
+                      </span>
+                    )}
+                    {offACResult.isManuallyAssigned && (
+                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-semibold">
+                        Designated
+                      </span>
+                    )}
+                  </div>
+                  <div className="font-bold text-white text-sm">{effectiveAC}</div>
+                  <div className="text-[10px] text-slate-400">
+                    {offACResult.isAutoOfficiating
+                      ? 'Asst. AC automatically acting on behalf of AC'
+                      : 'Acting Academic Coordinator'}
+                  </div>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center font-bold">
+                <button
+                  onClick={() => openOfficiatingModal({ type: 'AC' })}
+                  className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 flex items-center justify-center font-bold transition-colors cursor-pointer"
+                  title="Change Officiating AC"
+                >
                   ★
-                </div>
+                </button>
               </div>
             )}
 
@@ -672,9 +783,13 @@ export const SubstitutionsRegister: React.FC = () => {
                   <div className="font-bold text-white text-sm">{teacherName}</div>
                   <div className="text-[10px] text-slate-400">Class Teacher Responsibilities</div>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold">
+                <button
+                  onClick={() => openOfficiatingModal({ type: 'CT', section })}
+                  className="w-8 h-8 rounded-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 flex items-center justify-center font-bold transition-colors cursor-pointer"
+                  title={`Change Officiating CT for ${section}`}
+                >
                   🏫
-                </div>
+                </button>
               </div>
             ))}
           </div>

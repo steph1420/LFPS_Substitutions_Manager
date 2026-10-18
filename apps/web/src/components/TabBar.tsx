@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
-import { PeriodId } from '@lfps/core';
+import { PeriodId, getEffectiveOfficiatingAC } from '@lfps/core';
 import { useTimetableStore, ActiveTab } from '../store/useTimetableStore.js';
 import { Table2, Sparkles, Users } from 'lucide-react';
 
@@ -13,6 +13,8 @@ export const TabBar: React.FC = () => {
     schedule,
     absences,
     substitutions,
+    directory,
+    officiatingAC,
     isFitGrid,
     isMinimalUI,
   } = useTimetableStore();
@@ -20,14 +22,36 @@ export const TabBar: React.FC = () => {
   // Hide floating dock when Routine Grid is expanded to Fullscreen
   if (isFitGrid) return null;
 
-  // Calculate live badge for Uncovered Substitution Slots
+  // Helper to determine if a teacher is a Class Teacher (LOGIC-05)
+  const isClassTeacher = (teacherName: string): boolean => {
+    const teacher = directory[teacherName];
+    if (!teacher) return false;
+    const isAC = teacher.abbr === 'Mrs. R. Pahwa' || (teacher.role.includes('Academic Coordinator') && !teacher.role.includes('Asst.'));
+    const isAAC = teacher.abbr === 'Mrs. S. Lakra' || teacher.role.includes('Asst. Academic Coordinator');
+    return teacher.role.includes('Class Teacher') && !isAC && !isAAC;
+  };
+
+  // Evaluate Academic Coordinator Succession (LOGIC-04)
+  const offACResult = React.useMemo(() => {
+    return getEffectiveOfficiatingAC({
+      day: selectedDay,
+      absences,
+      officiatingACMap: officiatingAC,
+    });
+  }, [selectedDay, absences, officiatingAC]);
+
+  const needsOffACAppointment = offACResult.needsAppointment;
+
+  // Calculate live badge for Uncovered Substitution Slots & CT status (LOGIC-05)
   const currentSchedule = schedule[selectedDay] || {};
-  const uncoveredCount = React.useMemo(() => {
+  const { uncoveredCount, hasUncoveredCTSlots } = React.useMemo(() => {
     let count = 0;
+    let ctUncovered = false;
     const activeAbsences = absences.filter((a) => a.day === selectedDay);
     const periods: PeriodId[] = ['G/PD', '1st', '2nd', '3rd', '4th', '5th', '6th'];
 
     activeAbsences.forEach((abs) => {
+      const isCT = isClassTeacher(abs.teacherName);
       periods.forEach((p) => {
         if (abs.periods && !abs.periods.includes(p)) return;
         const task = currentSchedule[p]?.[abs.teacherName];
@@ -35,18 +59,26 @@ export const TabBar: React.FC = () => {
           const isCovered = substitutions.some(
             (s) => s.day === selectedDay && s.period === p && s.originalTeacher === abs.teacherName
           );
-          if (!isCovered) count++;
+          if (!isCovered) {
+            count++;
+            if (isCT) {
+              ctUncovered = true;
+            }
+          }
         }
       });
     });
 
-    return count;
-  }, [selectedDay, schedule, absences, substitutions]);
+    return { uncoveredCount: count, hasUncoveredCTSlots: ctUncovered };
+  }, [selectedDay, schedule, absences, substitutions, directory]);
 
   // Calculate live badge for Absent Staff
   const absentCount = absences.filter(
     (a) => a.day === selectedDay && a.type !== 'AWAY_OFFICIAL'
   ).length;
+
+  // Soft pulsing amber attention glow is active if Officiating AC needs appointment OR any CT slot is uncovered
+  const shouldPulseAmber = needsOffACAppointment || hasUncoveredCTSlots;
 
   const triggerHaptic = (ms = 20) => {
     if (typeof window !== 'undefined' && 'vibrate' in navigator) {
@@ -117,15 +149,18 @@ export const TabBar: React.FC = () => {
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         const Icon = tab.icon;
+        const isUrgent = shouldPulseAmber && (tab.id === 'substitutions' || tab.id === 'roster');
 
         return (
           <button
             key={tab.id}
             onClick={() => handleSelectTab(tab.id)}
-            className={`relative rounded-full text-xs font-semibold flex items-center gap-2 transition-colors active:scale-95 cursor-pointer ${
+            className={`relative rounded-full text-xs font-semibold flex items-center gap-2 transition-all active:scale-95 cursor-pointer ${
               isMinimalUI ? 'px-2.5 sm:px-3.5 py-1.5' : 'px-3.5 sm:px-4 py-2'
             } ${
               isActive ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+            } ${
+              isUrgent ? 'attention-pulse border border-amber-500/80 text-amber-200' : 'border border-transparent'
             }`}
           >
             {isActive && (

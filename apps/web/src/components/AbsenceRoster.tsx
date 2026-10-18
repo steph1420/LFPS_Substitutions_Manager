@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SPRING_TRANSITIONS, COLOR_ROLES } from '@lfps/ui';
-import { Teacher } from '@lfps/core';
+import { Teacher, getEffectiveOfficiatingAC } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
 import {
   Check,
@@ -66,6 +66,16 @@ export const AbsenceRoster: React.FC = () => {
 
   // KPI Calculations for today
   const activeAbsences = absences.filter((a) => a.day === selectedDay);
+
+  // Academic Coordinator Succession Logic (LOGIC-04)
+  const offACResult = React.useMemo(() => {
+    return getEffectiveOfficiatingAC({
+      day: selectedDay,
+      absences,
+      officiatingACMap: officiatingAC,
+    });
+  }, [selectedDay, absences, officiatingAC]);
+
   const absentCount = activeAbsences.filter((a) => a.type !== 'AWAY_OFFICIAL').length;
   const awayCount = activeAbsences.filter((a) => a.type === 'AWAY_OFFICIAL').length;
   const presentCount = allTeachers.length - absentCount - awayCount;
@@ -363,7 +373,6 @@ export const AbsenceRoster: React.FC = () => {
             );
 
             const offCTSection = teacher.primaryClass ? officiatingCT[selectedDay]?.[teacher.primaryClass] : null;
-            const offAC = officiatingAC[selectedDay];
 
             const blobBorder = isAbsent
               ? COLOR_ROLES.absent.border
@@ -540,16 +549,28 @@ export const AbsenceRoster: React.FC = () => {
                     <div className="text-[11px] text-slate-400">
                       Off. AC:
                       <span className="ml-1 font-bold text-purple-300">
-                        {offAC || 'Not Assigned'}
+                        {offACResult.effectiveAC
+                          ? offACResult.isAutoOfficiating
+                            ? `${offACResult.effectiveAC} (Acting)`
+                            : offACResult.effectiveAC
+                          : 'Not Assigned'}
                       </span>
                     </div>
                     <button
                       onClick={() => openOfficiatingModal({ type: 'AC' })}
                       className="text-[11px] font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-0.5"
                     >
-                      <span>{offAC ? 'Change' : 'Designate'}</span>
+                      <span>{offACResult.effectiveAC ? 'Change' : 'Designate'}</span>
                       <ChevronRight className="w-3 h-3" />
                     </button>
+                  </div>
+                )}
+
+                {!isAbsent && isAAC && offACResult.isAutoOfficiating && (
+                  <div className="pt-1 border-t border-purple-500/30 flex items-center justify-between text-xs">
+                    <div className="text-[11px] text-purple-300 font-semibold flex items-center gap-1">
+                      <span>★ Officiating AC (Acting for Mrs. R. Pahwa)</span>
+                    </div>
                   </div>
                 )}
               </motion.div>

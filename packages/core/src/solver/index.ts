@@ -12,8 +12,9 @@ import {
   ParsedCellSlot,
   AutoResolveStrategy,
   AutoResolvePlan,
+  EffectiveOfficiatingACResult,
 } from '../types/index.js';
-import { DEFAULT_STAFF_DIRECTORY, DEFAULT_PERIODS } from '../data/seed.js';
+import { DEFAULT_STAFF_DIRECTORY, DEFAULT_PERIODS, PRIMARY_AC, ASSISTANT_AC } from '../data/seed.js';
 
 export const KNOWN_CLASSES = ['KG A', 'KG B', 'PREP A', 'PREP B', 'NUR A', 'NUR B'];
 
@@ -452,6 +453,71 @@ export function autoResolveSubstitutions(params: {
     strategy,
     assignments,
     unresolvedSlots,
+  };
+}
+
+/**
+ * Evaluates the Academic Coordinator succession logic (LOGIC-04).
+ * - When Primary AC is marked absent/away, the Assistant AC automatically acts on her behalf as Officiating AC.
+ * - Only when BOTH Primary AC and Assistant AC are absent does the system flag that an Officiating AC needs appointment.
+ * - If a manual appointment is already present in officiatingACMap for that day, it takes precedence.
+ */
+export function getEffectiveOfficiatingAC(params: {
+  day: DayOfWeek;
+  absences: AbsenceRecord[];
+  officiatingACMap: Record<DayOfWeek, string | null>;
+  acName?: string;
+  aacName?: string;
+}): EffectiveOfficiatingACResult {
+  const {
+    day,
+    absences,
+    officiatingACMap,
+    acName = PRIMARY_AC,
+    aacName = ASSISTANT_AC,
+  } = params;
+
+  const manual = officiatingACMap[day];
+  if (manual) {
+    return {
+      effectiveAC: manual,
+      isAutoOfficiating: false,
+      needsAppointment: false,
+      isManuallyAssigned: true,
+      reason: `Manually designated Officiating AC: ${manual}`,
+    };
+  }
+
+  const isAcAbsent = absences.some((a) => a.teacherName === acName && a.day === day);
+  if (!isAcAbsent) {
+    return {
+      effectiveAC: acName,
+      isAutoOfficiating: false,
+      needsAppointment: false,
+      isManuallyAssigned: false,
+      reason: `Primary AC (${acName}) is on duty`,
+    };
+  }
+
+  // AC is absent. Check Assistant AC.
+  const isAacAbsent = absences.some((a) => a.teacherName === aacName && a.day === day);
+  if (!isAacAbsent) {
+    return {
+      effectiveAC: aacName,
+      isAutoOfficiating: true,
+      needsAppointment: false,
+      isManuallyAssigned: false,
+      reason: `Asst. AC (${aacName}) automatically acting on behalf of absent AC (${acName})`,
+    };
+  }
+
+  // Both AC and AAC are absent.
+  return {
+    effectiveAC: null,
+    isAutoOfficiating: false,
+    needsAppointment: true,
+    isManuallyAssigned: false,
+    reason: `Both AC (${acName}) and AAC (${aacName}) are absent. Manual appointment of Officiating AC required.`,
   };
 }
 

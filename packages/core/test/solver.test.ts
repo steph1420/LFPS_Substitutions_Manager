@@ -11,6 +11,7 @@ import {
   DEFAULT_MASTER_SCHEDULE,
   AbsenceRecord,
   StaffAvailabilityRecord,
+  getEffectiveOfficiatingAC,
 } from '../src/index.js';
 
 describe('LFPS Core Solver & Domain Engine', () => {
@@ -207,6 +208,96 @@ describe('LFPS Core Solver & Domain Engine', () => {
       expect(plan.assignments[0].period).toBe('1st');
       expect(plan.assignments[1].period).toBe('4th');
       expect(plan.unresolvedSlots.length).toBe(0);
+    });
+  });
+
+  describe('Academic Coordinator Succession & Officiating Logic (LOGIC-04)', () => {
+    const emptyOfficiatingMap = { MON: null, TUE: null, WED: null, THU: null, FRI: null, SAT: null };
+
+    it('retains Primary AC when she is present and on duty', () => {
+      const res = getEffectiveOfficiatingAC({
+        day: 'MON',
+        absences: [],
+        officiatingACMap: emptyOfficiatingMap,
+      });
+      expect(res.effectiveAC).toBe('Mrs. R. Pahwa');
+      expect(res.isAutoOfficiating).toBe(false);
+      expect(res.needsAppointment).toBe(false);
+    });
+
+    it('automatically appoints Assistant AC (Mrs. S. Lakra) as Off. AC when Primary AC is absent', () => {
+      const absences: AbsenceRecord[] = [
+        {
+          teacherId: 'STAFF-03',
+          teacherName: 'Mrs. R. Pahwa',
+          day: 'MON',
+          type: 'FULL_DAY',
+          markedAt: Date.now(),
+        },
+      ];
+      const res = getEffectiveOfficiatingAC({
+        day: 'MON',
+        absences,
+        officiatingACMap: emptyOfficiatingMap,
+      });
+      expect(res.effectiveAC).toBe('Mrs. S. Lakra');
+      expect(res.isAutoOfficiating).toBe(true);
+      expect(res.needsAppointment).toBe(false);
+    });
+
+    it('requires manual appointment when BOTH AC and AAC are absent', () => {
+      const absences: AbsenceRecord[] = [
+        {
+          teacherId: 'STAFF-03',
+          teacherName: 'Mrs. R. Pahwa',
+          day: 'MON',
+          type: 'FULL_DAY',
+          markedAt: Date.now(),
+        },
+        {
+          teacherId: 'STAFF-01',
+          teacherName: 'Mrs. S. Lakra',
+          day: 'MON',
+          type: 'FULL_DAY',
+          markedAt: Date.now(),
+        },
+      ];
+      const res = getEffectiveOfficiatingAC({
+        day: 'MON',
+        absences,
+        officiatingACMap: emptyOfficiatingMap,
+      });
+      expect(res.effectiveAC).toBeNull();
+      expect(res.isAutoOfficiating).toBe(false);
+      expect(res.needsAppointment).toBe(true);
+    });
+
+    it('respects manual appointment override even if both are absent', () => {
+      const absences: AbsenceRecord[] = [
+        {
+          teacherId: 'STAFF-03',
+          teacherName: 'Mrs. R. Pahwa',
+          day: 'MON',
+          type: 'FULL_DAY',
+          markedAt: Date.now(),
+        },
+        {
+          teacherId: 'STAFF-01',
+          teacherName: 'Mrs. S. Lakra',
+          day: 'MON',
+          type: 'FULL_DAY',
+          markedAt: Date.now(),
+        },
+      ];
+      const res = getEffectiveOfficiatingAC({
+        day: 'MON',
+        absences,
+        officiatingACMap: { ...emptyOfficiatingMap, MON: 'Mrs. M. Midha' },
+      });
+      expect(res.effectiveAC).toBe('Mrs. M. Midha');
+      expect(res.isAutoOfficiating).toBe(false);
+      expect(res.needsAppointment).toBe(false);
+      expect(res.isManuallyAssigned).toBe(true);
     });
   });
 });

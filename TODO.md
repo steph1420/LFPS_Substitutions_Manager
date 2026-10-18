@@ -475,18 +475,24 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] **FEAT-45 (Settings Preference: Hide Overviews by Default)**:
     - Added user preference toggle in Settings (`hideOverviewsByDefault: boolean`) that starts the Substitutions and Roster overviews in collapsed state on application boot.
 
-### Job Bundle 26: Leadership Chain of Command, Dedicated CT Auto-Resolve & Attention Pulse
-- **Status**: 🔴 Queued
+### Job Bundle 26A: Leadership Chain of Command, Dedicated CT Auto-Resolve & Attention Pulse
+- **Status**: 🟢 Completed (2026-10-18)
 - **Scope & Work Items**:
-  - [ ] **LOGIC-04 (Academic Coordinator Succession & Officiating Workflow)**:
-    - Automatic chain of command: When AC (Mrs. R. Pahwa) is absent, the Assistant Academic Coordinator (AAC, Mrs. S. Lakra) automatically acts on their behalf as Officiating AC (`Off. AC`).
-    - Only if BOTH the AC and AAC are absent does the system require appointing a 3rd-party Officiating AC.
-    - This leadership assignment cannot be auto-resolved by the algorithm; it surfaces in the Substitutions tab as a dedicated officiating duty card with manual selection.
-    - Whenever an Officiating AC needs appointment, flash both the **Substitutions** and **Staff Roster** navigation tabs in the bottom dock with a soft pulsing amber glow (`@keyframes attentionPulse`) to grab the coordinator's attention.
-  - [ ] **LOGIC-05 (Dedicated Class Teacher Auto-Resolve & Golden Substitution Cards)**:
-    - In `SubstitutionsRegister.tsx`, add a dedicated `[ ⚡ Auto-Resolve CT ]` button that specifically resolves uncovered slots for absent Class Teachers.
-    - In the substitution ledger cards area, render all Class Teacher substitution cards in an eye-catching **golden / amber** theme (`border-amber-400/60 bg-amber-950/30 text-amber-200` with golden glow badge).
-    - When any Class Teacher is absent or has an uncovered class period, flash both the **Substitutions** and **Staff Roster** navigation tabs with a soft pulsing amber glow.
+  - [x] **LOGIC-04 (Academic Coordinator Succession & Officiating Workflow)**:
+    - Pure domain function `getEffectiveOfficiatingAC(day, absences, officiatingACMap)` implemented in `@lfps/core`.
+    - Automatic chain of command: When AC (`Mrs. R. Pahwa`) is marked absent, the Assistant Academic Coordinator (`Mrs. S. Lakra`, AAC) automatically acts on her behalf as Officiating AC (`Off. AC`).
+    - Only if BOTH the AC and AAC are absent does the system require appointing a 3rd-party Officiating AC (`needsAppointment: true`).
+    - Surfaced dedicated Officiating AC prompt card in `SubstitutionsRegister.tsx` with 1-tap manual designation (`openOfficiatingModal({ type: 'AC' })`).
+    - When appointment is needed, flashes both the **Substitutions** and **Staff Roster** navigation tabs with a soft pulsing amber glow (`attention-pulse`).
+    - In `AbsenceRoster.tsx`, dynamically displays `Mrs. S. Lakra (Acting)` when AC is absent and AAC is on duty.
+  - [x] **LOGIC-05 (Dedicated Class Teacher Auto-Resolve & Golden Substitution Cards)**:
+    - In `SubstitutionsRegister.tsx`, added dedicated `[ ⚡ Auto-Resolve CT (X Slots) ]` button that specifically resolves uncovered slots for absent Class Teachers.
+    - Rendered all Class Teacher substitution cards in both Grid and List views with an elegant golden aesthetic (`border-amber-500/60 bg-gradient-to-br from-amber-950/35 via-slate-900/95 to-amber-900/25 ring-1 ring-amber-500/40 text-amber-200`).
+    - When any Class Teacher has uncovered class periods, flashes both the **Substitutions** and **Staff Roster** navigation tabs with the soft pulsing amber glow until resolved.
+
+### Job Bundle 26B: Three-Tier RBAC Architecture & Teacher Substitution Dispute Workflow
+- **Status**: 🔴 Queued (Next Up - Max 2 items)
+- **Scope & Work Items**:
   - [ ] **SEC-01 (Three-Tier Role-Based Access Control Architecture: Admin, Teacher, Guest)**:
     - Strict rights segregation before drawing any logical element:
       1. **`Admin` (Full Rights)**: Can edit master routine, assign substitutions, baseline reset, purge history, configure solver policy, and appoint officiating roles.
@@ -498,6 +504,10 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
       - `[ ✓ Accept ]`: Marks the substitution status as `ACCEPTED`, highlights the duty in emerald green, locks the slot, and dispatches an acceptance notice.
       - `[ ⚑ Dispute ]`: Expands an inline tactile micro-remark textbox (`"Reason for dispute (optional, e.g. Lab duty, Library inventory)"`) with `[ Confirm Dispute ]` and `[ Cancel ]`.
       - On confirm, marks the substitution status as `DISPUTED` (amber/rose badge), stores the dispute remark, and automatically dispatches a high-priority alert to the leadership chain: Academic Coordinator (Mrs. R. Pahwa), Assistant AC (Mrs. S. Lakra), or designated Officiating AC.
+
+### Job Bundle 26C: Universal Notification Center & Live Alert Hub
+- **Status**: 🔴 Queued
+- **Scope & Work Items**:
   - [ ] **FEAT-50 (Universal Notification Center & Live Alert Hub)**:
     - Add an Apple HIG Notification Bell button (`🔔`) to `Header.tsx` with a live reactive notice counter pill (`notif-badge`).
     - Build `NotificationCenterModal.tsx`: an elevated slide-over drawer / floating modal aggregating real-time operational notices:
