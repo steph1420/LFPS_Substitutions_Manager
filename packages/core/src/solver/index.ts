@@ -477,17 +477,7 @@ export function getEffectiveOfficiatingAC(params: {
     aacName = ASSISTANT_AC,
   } = params;
 
-  const manual = officiatingACMap[day];
-  if (manual) {
-    return {
-      effectiveAC: manual,
-      isAutoOfficiating: false,
-      needsAppointment: false,
-      isManuallyAssigned: true,
-      reason: `Manually designated Officiating AC: ${manual}`,
-    };
-  }
-
+  // 1. Primary AC on duty check: If AC is not absent, primary AC is always effective (BUG-19)
   const isAcAbsent = absences.some((a) => a.teacherName === acName && a.day === day);
   if (!isAcAbsent) {
     return {
@@ -496,6 +486,18 @@ export function getEffectiveOfficiatingAC(params: {
       needsAppointment: false,
       isManuallyAssigned: false,
       reason: `Primary AC (${acName}) is on duty`,
+    };
+  }
+
+  // 2. AC is absent! Check if manual officiating appointment exists for today
+  const manual = officiatingACMap[day];
+  if (manual) {
+    return {
+      effectiveAC: manual,
+      isAutoOfficiating: false,
+      needsAppointment: false,
+      isManuallyAssigned: true,
+      reason: `Manually designated Officiating AC: ${manual}`,
     };
   }
 

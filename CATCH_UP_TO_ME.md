@@ -11,30 +11,34 @@
 
 ### 1. Where You Are Right Now
 - **Current Branch**: `next-gen` (Clean working tree, tracking `origin/next-gen`).
-- **Unit Tests Status**: **15/15 passing** via `npm test`.
+- **Unit Tests Status**: **16/16 passing** via `npm test`.
 - **Production Build Status**: Passes cleanly via `npm run build`.
 - **Live Deployment**: `https://steph1420.github.io/LFPS_Substitutions_Manager/` (tracks branch `next-gen`).
 
-### 2. What Was Just Completed (Job Bundle 26A)
-- **`LOGIC-04` (Academic Coordinator Succession & Officiating Workflow)**:
-  - If AC (`Mrs. R. Pahwa`) is absent, AAC (`Mrs. S. Lakra`) automatically acts on her behalf as Officiating AC (`Off. AC`).
-  - Only if **BOTH** AC and AAC are absent does the system require a manual appointment (`needsAppointment: true`).
-  - When an appointment is needed, the **Substitutions** and **Staff Roster** tabs pulse with a soft amber glow (`.attention-pulse`), and a prompt card appears in Substitutions with a 1-tap designation button.
-  - In Staff Roster, Mrs. S. Lakra dynamically displays `★ Officiating AC (Acting for Mrs. R. Pahwa)`.
-- **`LOGIC-05` (Dedicated Class Teacher Auto-Resolve & Golden Cards)**:
-  - Added dedicated `[ ⚡ Auto-Resolve CT (X Slots) ]` solver button in Substitutions for absent Class Teachers (`Mrs. M. Midha`, `Mrs. R. Narayan`).
-  - Styled all Class Teacher substitution cards with golden amber tokens (`border-amber-500/60 bg-gradient-to-br from-amber-950/35 via-slate-900/95 to-amber-900/25 ring-1 ring-amber-500/40 text-amber-200`).
-  - Tabs pulse amber while any CT teaching slots remain uncovered.
+### 2. What Was Just Completed (Job Bundle 26)
+- **`BUG-19` (Officiating AC Persistence Fix on Mark Present / Mark All Present)**:
+  - In `@lfps/core` `getEffectiveOfficiatingAC`: If the primary AC (`Mrs. R. Pahwa`) is on duty (`!isAcAbsent`), `effectiveAC` strictly resolves to the primary AC, ignoring any lingering manual assignments in `officiatingACMap`.
+  - In `useTimetableStore.ts`: Automatically prunes `officiatingAC[day]` when AC absence is untoggled and during `markAllPresent(day)` atomic state resets.
+  - Added unit test in `packages/core/test/solver.test.ts` (16/16 Vitest tests passing).
+- **`LOGIC-07` (Routine Classes View: Remove Nursery Sections)**:
+  - Removed `NUR A` and `NUR B` from `RoutineGrid.tsx` `classSections`, strictly displaying active classes (`KG A`, `KG B`, `PREP A`, `PREP B`).
+- **`TERMS-01` & `TERMS-02` (Universal Nomenclature Cleanup: Eradicate 'Team' and 'Leader')**:
+  - Replaced "Team" everywhere with **Class Teacher** and **2nd Teacher** (or "part of a class").
+  - Replaced "Leader/Leadership" everywhere with **Officiating Staff**, **Officiating**, **Staff**, or **Teacher**.
+- **`UI-01` & `UI-03` (Human School Overview Headings)**:
+  - Renamed headers to **"Substitutions Overview ({selectedDay})"**, **"Staff Roster Overview ({selectedDay})"**, and **"Officiating Staff ({selectedDay})"**.
+- **`UI-05` (Non-Shifting UI for Absence Actions)**:
+  - Eliminated layout jumps and vertical push-downs when marking AC or CT absent via fixed action slots (`min-h-[28px]`) and integrated toolbar actions.
+- **`LOGIC-06`, `UI-02` & `UI-04` (Staff Roster Ergonomics & Multi-Density Suite)**:
+  - Whole-card free-space tap toggles teacher absence (`Mark Absent` ⟷ `Mark Present`) with child button event isolation (`e.stopPropagation()`).
+  - Prioritizes teacher full names (`teacher.fullName`) directly; falls back to abbreviations only on narrow viewports.
+  - 4 View Modes: **Comfort Grid** (spacious cards), **Compact Grid** (high-density cards), **Compact List** (single-line spreadsheet table for 50+ staff), and **Detailed List** (expanded rows).
 
 ### 3. What To Do On Your Very First Turn
 - If the user says **"Go"**, **"Yes"**, or tells you to proceed, **DO NOT ASK WHAT TO DO**. They are approving:
-  👉 **Job Bundle 26: Immediate Operational Polish, Nomenclature, Roster Ergonomics & Non-Shifting UI**:
-  1. **`BUG-19`**: Officiating AC Persistence Fix on Mark Present / Mark All Present (Primary AC on duty takes absolute precedence; reconcile store map).
-  2. **`LOGIC-07`**: Routine Classes View: Remove Nursery sections (`NUR A`, `NUR B`).
-  3. **`TERMS-01` & `TERMS-02`**: Eradicate "Team" (strictly CT & 2T) and "Leader/Leadership" (strictly "Officiating Staff").
-  4. **`UI-01` & `UI-03`**: School Headings: "Substitutions Overview", "Staff Roster Overview", and "Officiating Staff".
-  5. **`UI-05`**: Non-Shifting UI for Absence Actions (zero layout jumps when AC/CT marked absent).
-  6. **`LOGIC-06`, `UI-02` & `UI-04`**: Roster Ergonomics & Multi-Density Suite (comfortable whole-card tap targets, full names, and 4 view modes: Comfort Grid, Compact Grid, Compact List, Detailed List).
+  👉 **Job Bundle 27: Whole-Day Officiating CT & Auto-Resolve Brain Studio**:
+  1. **`BUG-18`**: When assigned as Officiating Class Teacher (`Off. CT.`), the teacher is appointed for the entire day (not period-by-period), and Auto-Resolve assigns coverage on this whole-day basis.
+  2. **`FEAT-61`**: Auto-Resolve Brain Studio & Solver Policy Configuration (Brain icon beside Auto-Resolve opening Policy Studio: Same Subject / Co-Workers priority, Class Teacher priority, Second Teacher priority, Preferred/Defined Principal rules, and assignment sequence toggles).
 
 ### 4. Non-Negotiable Rules To Behave Like Me
 1. **HIGH-CAPACITY COHESIVE BUNDLES**: The user instructed: *"Now we will not stick to just 2 tasks... You can make bundles as big as you can handle in your reasoning."* Group related features and bugfixes into comprehensive, thematic bundles.
@@ -317,9 +321,38 @@ flowchart TD
   - [`apps/web/src/index.css`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/index.css): Added `@keyframes softAmberAttention` and `.attention-pulse` classes.
   - [`apps/web/src/components/TabBar.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/TabBar.tsx): Integrated live evaluation of `needsOffACAppointment` and `hasUncoveredCTSlots`, triggering `attention-pulse` on Substitutions and Roster tabs.
   - [`apps/web/src/components/SubstitutionsRegister.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/SubstitutionsRegister.tsx): Added `[ ⚡ Auto-Resolve CT ]` solver button, Officiating AC Required action card, golden CT substitution styling in Grid and List modes, and succession badges in Officiating overview.
-  - [`apps/web/src/components/AbsenceRoster.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/AbsenceRoster.tsx): Displayed dynamic acting status for Mrs. S. Lakra and officiating requirements for AC.
+### 3.13 Job Bundle 26: Immediate Operational Polish, Nomenclature, Roster Ergonomics & Non-Shifting UI (2026-10-19)
+- **Status**: 🟢 Resolved & Merged
+- **What**:
+  1. `BUG-19` (Officiating AC Persistence Fix on Mark Present / Mark All Present):
+     - In `@lfps/core` `getEffectiveOfficiatingAC`: Primary AC (`Mrs. R. Pahwa`) takes absolute precedence when on duty (`!isAcAbsent`), ignoring stale manual entries in `officiatingACMap`.
+     - In `useTimetableStore.ts`: Automatically prune and reconcile `officiatingAC[day]` when AC is untoggled present. Also implemented atomic `markAllPresent(day)` action that cleans up absences, substitutions, and officiating mappings in a single history snapshot.
+     - Added comprehensive unit test in `packages/core/test/solver.test.ts` (16/16 Vitest tests passing).
+  2. `LOGIC-07` (Routine Classes View: Remove Nursery Sections):
+     - In `RoutineGrid.tsx`, removed `NUR A` and `NUR B` from `classSections`, strictly retaining active classes (`KG A`, `KG B`, `PREP A`, `PREP B`).
+  3. `TERMS-01` & `TERMS-02` (Universal Nomenclature Cleanup: Eradicate 'Team' and 'Leader'):
+     - Removed the word "Team" across all components, labels, and modals. Teachers in a class are strictly referred to as **Class Teacher** (CT) and **2nd Teacher** (2T), or **"part of a class"**.
+     - Removed the word "Leader" / "Leadership" across all UI copy and code. Strictly use **"Officiating Staff"**, **"Officiating"**, **"Staff"**, or **"Teacher"**.
+  4. `UI-01` & `UI-03` (Human School Overview Headings):
+     - Substitutions tab: Renamed heading to **"Substitutions Overview ({selectedDay})"**.
+     - Staff Roster tab: Renamed heading to **"Staff Roster Overview ({selectedDay})"**.
+     - Officiating Section: Renamed to **"Officiating Staff ({selectedDay})"**.
+  5. `UI-05` (Non-Shifting UI for Absence Actions):
+     - Eliminated layout jumps and vertical push-downs when marking AC or CT absent by reserving stable action container slots (`min-h-[28px]`) and routing actions to the toolbar and Card 3.
+  6. `LOGIC-06`, `UI-02` & `UI-04` (Staff Roster Card Ergonomics & Multi-Density Suite):
+     - Entire card / row free-space tap toggles teacher attendance (`Mark Absent` ⟷ `Mark Present`), with child interactive buttons guarded by `e.stopPropagation()`.
+     - Prioritized teacher full names (`teacher.fullName`) directly; abbreviations show on narrow viewports via responsive CSS.
+     - 4 View Modes: **Comfort Grid** (spacious cards with chips), **Compact Grid** (high-density cards), **Compact List** (single-line spreadsheet table for 50+ staff), and **Detailed List** (expanded rows). Preferences auto-persist in `localStorage`.
+- **Where**:
+  - [`packages/core/src/solver/index.ts`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/packages/core/src/solver/index.ts)
+  - [`packages/core/test/solver.test.ts`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/packages/core/test/solver.test.ts)
+  - [`apps/web/src/store/useTimetableStore.ts`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/store/useTimetableStore.ts)
+  - [`apps/web/src/components/RoutineGrid.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/RoutineGrid.tsx)
+  - [`apps/web/src/components/OfficiatingModal.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/OfficiatingModal.tsx)
+  - [`apps/web/src/components/SubstitutionsRegister.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/SubstitutionsRegister.tsx)
+  - [`apps/web/src/components/AbsenceRoster.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/AbsenceRoster.tsx)
 
-### 3.13 Comprehensive Error & Bug Resolution Ledger (User-Reported Issues & Technical Solutions)
+### 3.14 Comprehensive Error & Bug Resolution Ledger (User-Reported Issues & Technical Solutions)
 
 This section documents every error, complaint, and glitch the user reported on the v2 app, the root causes, and how they were resolved:
 
@@ -544,22 +577,14 @@ LFPS_Substitutions_Manager/
 
 ### Current Git State
 - **Branch**: `next-gen`
-- **Head Commit**: Job Bundle 26A Complete (`LOGIC-04`, `LOGIC-05`)
+- **Head Commit**: Job Bundle 26 Complete (`BUG-19`, `LOGIC-07`, `TERMS-01`, `TERMS-02`, `UI-01..05`, `LOGIC-06`)
 - **Working Tree**: Clean.
-- **All Unit Tests**: 15/15 Passing (`npm test`).
+- **All Unit Tests**: 16/16 Passing (`npm test`).
 - **Production Build**: Passes cleanly (`npm run build`).
 
 ### Queued High-Capacity Backlog (Consolidated Thematic Bundles)
 
-1. **Job Bundle 26: Immediate Operational Polish, Nomenclature, Roster Ergonomics & Non-Shifting UI (ACTIVE NEXT)**:
-   - **`BUG-19` (Officiating AC Persistence Fix)**: If primary AC (`Mrs. R. Pahwa`) is on duty (`!isAcAbsent`), `getEffectiveOfficiatingAC` strictly resolves to primary AC. Store automatically prunes `officiatingAC[day]` when AC is untoggled present or during "Mark All Present".
-   - **`LOGIC-07` (Routine Classes View Nursery Removal)**: Remove Nursery (`NUR A`, `NUR B`) from routine classes view (`RoutineGrid.tsx`).
-   - **`TERMS-01` & `TERMS-02` (Nomenclature Overhaul)**: Eradicate "Team" (strictly CT, 2T, "part of a class") and "Leader/Leadership" (strictly "Officiating Staff", "Officiating", "Staff", "Teacher").
-   - **`UI-01` & `UI-03` (Human School Headings)**: "Substitutions Overview", "Staff Roster Overview", and "Officiating Staff".
-   - **`UI-05` (Non-Shifting UI for Absence Actions)**: Zero layout jump / push-down when marking AC or CT absent via fixed/stable action slots.
-   - **`LOGIC-06`, `UI-02` & `UI-04` (Staff Roster Multi-Density & Ergonomics Suite)**: Comfortable whole-card free-space tap for attendance, full names prioritized with responsive abbreviation, and 4 view modes (Comfort Grid, Compact Grid, Compact List, Detailed List) scalable to 50+ staff.
-
-2. **Job Bundle 27: Whole-Day Officiating CT & Auto-Resolve Brain Studio**:
+1. **Job Bundle 27: Whole-Day Officiating CT & Auto-Resolve Brain Studio (ACTIVE NEXT)**:
    - **`BUG-18` (Officiating CT Whole-Day Assignment)**: Off. CT is a full-day section charge. Auto-Resolve assigns coverage on this whole-day basis.
    - **`FEAT-61` (Auto-Resolve Brain Studio & Solver Policy Configuration)**: Head-with-Brain icon (`Brain`) opening Policy Studio: Same Subject (Co-Workers), Class Teacher priority, Second Teacher priority, Preferred/Defined Teachers (Principal subject overrides), and assignment sequence toggles. Direct integration with `@lfps/core` solver.
 

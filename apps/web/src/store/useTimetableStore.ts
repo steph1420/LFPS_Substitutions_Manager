@@ -28,6 +28,8 @@ export interface CoTeachSlotTarget {
   subject: string;
 }
 
+export type RosterViewMode = 'comfort-grid' | 'compact-grid' | 'compact-list' | 'detailed-list' | 'grid' | 'list';
+
 export interface OfficiatingTarget {
   type: 'AC' | 'CT';
   section?: string;
@@ -89,7 +91,7 @@ interface TimetableState {
   hideOverviewsByDefault: boolean;
   hideAbsentStaff: boolean;
   substitutionsViewMode: 'grid' | 'list';
-  rosterViewMode: 'grid' | 'list';
+  rosterViewMode: RosterViewMode;
   substitutionsSortBy: 'name' | 'role' | 'period';
   rosterSortBy: 'role' | 'name';
 
@@ -135,7 +137,7 @@ interface TimetableState {
   setHideOverviewsByDefault: (hide: boolean) => void;
   toggleHideAbsentStaff: () => void;
   setSubstitutionsViewMode: (mode: 'grid' | 'list') => void;
-  setRosterViewMode: (mode: 'grid' | 'list') => void;
+  setRosterViewMode: (mode: RosterViewMode) => void;
   setSubstitutionsSortBy: (sort: 'name' | 'role' | 'period') => void;
   setRosterSortBy: (sort: 'role' | 'name') => void;
   savePreferences: () => void;
@@ -175,6 +177,7 @@ interface TimetableState {
 
   assignSubstitution: (sub: Omit<SubstitutionAssignment, 'id' | 'assignedAt'>) => void;
   removeSubstitution: (id: string) => void;
+  markAllPresent: (day?: DayOfWeek) => void;
 
   // FEAT-31: Co-teacher per-period release
   releaseCoTeacher: (period: PeriodId, teacherName: string) => void;
@@ -201,7 +204,7 @@ interface StoredPreferences {
   hideOverviewsByDefault?: boolean;
   hideAbsentStaff?: boolean;
   substitutionsViewMode?: 'grid' | 'list';
-  rosterViewMode?: 'grid' | 'list';
+  rosterViewMode?: RosterViewMode;
   substitutionsSortBy?: 'name' | 'role' | 'period';
   rosterSortBy?: 'role' | 'name';
   isMinimalUI?: boolean;
@@ -230,6 +233,15 @@ function autoPersistPreferences(prefs: StoredPreferences) {
 
 const initialPrefs = loadStoredPreferences();
 
+const getInitialRosterMode = (saved?: RosterViewMode): RosterViewMode => {
+  if (saved === 'list') return 'compact-list';
+  if (saved === 'grid') return 'comfort-grid';
+  if (saved === 'comfort-grid' || saved === 'compact-grid' || saved === 'compact-list' || saved === 'detailed-list') {
+    return saved;
+  }
+  return 'comfort-grid';
+};
+
 export const useTimetableStore = create<TimetableState>((set, get) => ({
   selectedDay: 'MON',
   activeTab: 'routine',
@@ -242,7 +254,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   hideOverviewsByDefault: initialPrefs.hideOverviewsByDefault ?? false,
   hideAbsentStaff: initialPrefs.hideAbsentStaff ?? false,
   substitutionsViewMode: initialPrefs.substitutionsViewMode ?? 'grid',
-  rosterViewMode: initialPrefs.rosterViewMode ?? 'grid',
+  rosterViewMode: getInitialRosterMode(initialPrefs.rosterViewMode),
   substitutionsSortBy: initialPrefs.substitutionsSortBy ?? 'period',
   rosterSortBy: initialPrefs.rosterSortBy ?? 'role',
 
@@ -387,11 +399,30 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
             ? pushSnapshot(state.substitutionsHistory, { substitutions: state.substitutions })
             : state.substitutionsHistory;
 
+        // BUG-19: Automatically reconcile and prune officiating designations if the primary teacher returns
+        let updatedOfficiatingAC = state.officiatingAC;
+        if (teacherName === 'Mrs. R. Pahwa' && state.officiatingAC[state.selectedDay]) {
+          updatedOfficiatingAC = { ...state.officiatingAC };
+          delete updatedOfficiatingAC[state.selectedDay];
+        }
+
+        let updatedOfficiatingCT = state.officiatingCT;
+        const teacherObj = Object.values(state.directory).find((t) => t.abbr === teacherName);
+        if (teacherObj?.primaryClass && state.officiatingCT[state.selectedDay]?.[teacherObj.primaryClass]) {
+          updatedOfficiatingCT = {
+            ...state.officiatingCT,
+            [state.selectedDay]: { ...state.officiatingCT[state.selectedDay] },
+          };
+          delete updatedOfficiatingCT[state.selectedDay][teacherObj.primaryClass];
+        }
+
         return {
           absences: state.absences.filter(
             (a) => !(a.teacherName === teacherName && a.day === state.selectedDay)
           ),
           substitutions: updatedSubs,
+          officiatingAC: updatedOfficiatingAC,
+          officiatingCT: updatedOfficiatingCT,
           substitutionsHistory,
           rosterHistory,
         };
@@ -474,6 +505,39 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
       return {
         substitutions: state.substitutions.filter((s) => s.id !== id),
+        substitutionsHistory,
+      };
+    }),
+
+  markAllPresent: (targetDay) =>
+    set((state) => {
+      const day = targetDay || state.selectedDay;
+      const rosterHistory = pushSnapshot(state.rosterHistory, {
+        absences: state.absences,
+        availabilities: state.availabilities,
+        officiatingAC: state.officiatingAC,
+        officiatingCT: state.officiatingCT,
+      });
+
+      const updatedSubs = state.substitutions.filter((s) => s.day !== day);
+      const substitutionsHistory =
+        updatedSubs.length !== state.substitutions.length
+          ? pushSnapshot(state.substitutionsHistory, { substitutions: state.substitutions })
+          : state.substitutionsHistory;
+
+      // Clean up officiating designations for this day (BUG-19)
+      const updatedOfficiatingAC = { ...state.officiatingAC };
+      delete updatedOfficiatingAC[day];
+
+      const updatedOfficiatingCT = { ...state.officiatingCT };
+      delete updatedOfficiatingCT[day];
+
+      return {
+        absences: state.absences.filter((a) => a.day !== day),
+        substitutions: updatedSubs,
+        officiatingAC: updatedOfficiatingAC,
+        officiatingCT: updatedOfficiatingCT,
+        rosterHistory,
         substitutionsHistory,
       };
     }),

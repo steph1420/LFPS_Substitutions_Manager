@@ -106,7 +106,7 @@ export const OfficiatingModal: React.FC = () => {
                         </span>
                         {isRecommended && (
                           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-0.5">
-                            <Star className="w-2.5 h-2.5" /> Team Partner
+                            <Star className="w-2.5 h-2.5" /> 2nd Teacher
                           </span>
                         )}
                         {isFreeFromSub && (

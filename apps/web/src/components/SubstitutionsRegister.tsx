@@ -17,7 +17,6 @@ import {
   LayoutGrid,
   List,
   ArrowUpDown,
-  Award,
 } from 'lucide-react';
 import { UndoRedoControls } from './UndoRedoControls.js';
 
@@ -222,16 +221,28 @@ export const SubstitutionsRegister: React.FC = () => {
           <div>
             <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
-              Substitution Register & Coverage Engine ({selectedDay})
+              Substitutions Overview ({selectedDay})
             </h2>
             <p className="text-xs text-slate-400">
-              Live audit ledger, automatic candidate affinity ranking, and automated 1-tap solver.
+              Live substitution ledger, staff coverage, and 1-tap automated resolution.
             </p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-between md:justify-end w-full md:w-auto">
             {/* Substitutions Tab Undo / Redo Controls (FEAT-40) */}
             <UndoRedoControls tab="substitutions" />
+
+            {/* Stable Off. AC Prompt (UI-05: Non-shifting action in toolbar) */}
+            {offACResult.needsAppointment && (
+              <button
+                onClick={() => openOfficiatingModal({ type: 'AC' })}
+                className="w-fit flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 text-xs font-bold active:scale-95 transition-all cursor-pointer shadow-sm attention-pulse"
+                title="Both AC and AAC are absent today — designate Officiating AC"
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                <span>Appoint Off. AC</span>
+              </button>
+            )}
 
             {/* Dedicated CT Auto-Resolve Button (LOGIC-05) */}
             {ctUncoveredSlots.length > 0 && (
@@ -321,7 +332,13 @@ export const SubstitutionsRegister: React.FC = () => {
                 </div>
 
                 {/* 3rd Card: Officiating Staff */}
-                <div className="p-3 sm:p-4 rounded-xl bg-slate-900/60 border border-purple-500/40">
+                <div
+                  className={`p-3 sm:p-4 rounded-xl transition-all ${
+                    offACResult.needsAppointment
+                      ? 'bg-amber-950/30 border border-amber-500/70 ring-1 ring-amber-500/30 attention-pulse'
+                      : 'bg-slate-900/60 border border-purple-500/40'
+                  }`}
+                >
                   <div className="flex items-center justify-between text-slate-400 mb-1">
                     <span className="font-semibold text-xs text-purple-300">Officiating Staff</span>
                     <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/40">
@@ -331,12 +348,22 @@ export const SubstitutionsRegister: React.FC = () => {
                   <div className="text-2xl sm:text-3xl font-bold text-white">
                     {(effectiveAC ? 1 : 0) + Object.keys(offCTMap).length}
                   </div>
-                  <div className="text-[11px] text-purple-400 mt-1">
-                    {effectiveAC
-                      ? offACResult.isAutoOfficiating
-                        ? `Acting AC: ${effectiveAC}`
-                        : `Off. AC: ${effectiveAC}`
-                      : 'AC: Needs Appointment'}
+                  <div className="flex items-center justify-between mt-1 text-[11px]">
+                    <span className={offACResult.needsAppointment ? 'text-amber-300 font-semibold' : 'text-purple-400'}>
+                      {effectiveAC
+                        ? offACResult.isAutoOfficiating
+                          ? `Acting AC: ${effectiveAC}`
+                          : `Off. AC: ${effectiveAC}`
+                        : 'AC: Needs Appointment'}
+                    </span>
+                    {offACResult.needsAppointment && (
+                      <button
+                        onClick={() => openOfficiatingModal({ type: 'AC' })}
+                        className="px-2 py-0.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[10px] active:scale-95 transition-all cursor-pointer shadow-sm"
+                      >
+                        Appoint
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -459,35 +486,6 @@ export const SubstitutionsRegister: React.FC = () => {
           </div>
         </div>
       </section>
-
-      {/* Officiating AC Required Prompt Card (LOGIC-04) */}
-      {offACResult.needsAppointment && (
-        <section className="p-4 sm:p-4.5 rounded-2xl border border-amber-500/80 bg-gradient-to-r from-amber-950/40 via-slate-900/90 to-amber-900/30 shadow-[0_0_24px_rgba(245,158,11,0.22)] flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 attention-pulse">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-amber-300 font-bold flex-shrink-0">
-              <ShieldAlert className="w-5 h-5 text-amber-400" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-amber-300 uppercase tracking-wide flex items-center gap-2">
-                <span>Officiating AC Required ({selectedDay})</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">
-                  APPOINTMENT NEEDED
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-300 mt-0.5">
-                Both Academic Coordinator (Mrs. R. Pahwa) and Asst. Coordinator (Mrs. S. Lakra) are absent today. This leadership duty cannot be auto-resolved — please designate an Officiating AC.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => openOfficiatingModal({ type: 'AC' })}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/40 active:scale-95 transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer flex-shrink-0"
-          >
-            <Award className="w-4 h-4 text-slate-950" />
-            <span>Designate Off. AC</span>
-          </button>
-        </section>
-      )}
 
       {/* Uncovered Needs Section */}
       {(filterMode === 'all' || filterMode === 'uncovered') && uncoveredSlots.length > 0 && (
@@ -731,15 +729,36 @@ export const SubstitutionsRegister: React.FC = () => {
         </section>
       )}
 
-      {/* Officiating Leadership Overview (Section 3) */}
-      {(effectiveAC || Object.keys(offCTMap).length > 0) && (
+      {/* Officiating Staff Overview (Section 3 - UI-03) */}
+      {(effectiveAC || offACResult.needsAppointment || Object.keys(offCTMap).length > 0) && (
         <section className="glass-panel rounded-2xl p-4 sm:p-5 border border-purple-500/30 bg-purple-950/10 shadow-lg space-y-3">
           <h3 className="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-purple-400" />
-            Temporary Leadership Officiating Designations ({selectedDay})
+            Officiating Staff ({selectedDay})
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+            {offACResult.needsAppointment && (
+              <div className="bg-amber-950/40 border border-amber-500/60 rounded-xl p-3 flex items-center justify-between attention-pulse">
+                <div>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="text-[10px] text-amber-400 font-bold uppercase">Officiating AC</span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">
+                      Required
+                    </span>
+                  </div>
+                  <div className="font-bold text-amber-200 text-sm">Appointment Needed</div>
+                  <div className="text-[10px] text-slate-300">Both AC & AAC absent today</div>
+                </div>
+                <button
+                  onClick={() => openOfficiatingModal({ type: 'AC' })}
+                  className="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs active:scale-95 transition-all shadow-sm cursor-pointer"
+                >
+                  Appoint
+                </button>
+              </div>
+            )}
+
             {effectiveAC && (
               <div className="bg-slate-900/90 border border-purple-500/40 rounded-xl p-3 flex items-center justify-between">
                 <div>

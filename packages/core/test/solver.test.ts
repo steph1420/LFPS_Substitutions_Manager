@@ -299,6 +299,19 @@ describe('LFPS Core Solver & Domain Engine', () => {
       expect(res.needsAppointment).toBe(false);
       expect(res.isManuallyAssigned).toBe(true);
     });
+
+    it('always resolves to Primary AC when AC is present, ignoring stale manual mappings (BUG-19)', () => {
+      const absences: AbsenceRecord[] = []; // AC is present
+      const res = getEffectiveOfficiatingAC({
+        day: 'MON',
+        absences,
+        officiatingACMap: { ...emptyOfficiatingMap, MON: 'Mrs. M. Midha' },
+      });
+      expect(res.effectiveAC).toBe('Mrs. R. Pahwa');
+      expect(res.isAutoOfficiating).toBe(false);
+      expect(res.isManuallyAssigned).toBe(false);
+      expect(res.needsAppointment).toBe(false);
+    });
   });
 });
 

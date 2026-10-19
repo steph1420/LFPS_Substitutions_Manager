@@ -53,8 +53,8 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
     });
   }, [allTeachers, hideAbsentStaff, absences, selectedDay]);
 
-  // List of distinct classes for Class View
-  const classSections = ['KG A', 'KG B', 'PREP A', 'PREP B', 'NUR A', 'NUR B'];
+  // List of distinct classes for Class View (LOGIC-07: Nursery removed)
+  const classSections = ['KG A', 'KG B', 'PREP A', 'PREP B'];
 
   // Handle Horizontal Scroll for Sticky Column Collapse on Narrow Screens (FEAT-53)
   const handleTableScroll = (e: React.UIEvent<HTMLDivElement>) => {

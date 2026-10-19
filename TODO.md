@@ -46,11 +46,11 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - In `autoResolveSubstitutions()`, prioritize assigning the designated Off. CT across all uncovered periods of that absent CT's class before dispersing remaining periods to external substitutes.
 
 ### BUG-19: Officiating AC Persists After Marking AC Present or Marking All Present
-- **Status**: 🔴 Open
+- **Status**: 🟢 Resolved (Job Bundle 26)
 - **Reported**: Once an Officiating AC is assigned, even after marking all staff present (or untoggling AC absence), the actual AC remains marked under the temporary Off. AC.
 - **Root Cause & Fix**:
-  - In `getEffectiveOfficiatingAC`: If the primary AC is on duty (`!isAcAbsent`), `effectiveAC` must strictly resolve to the primary AC (`Mrs. R. Pahwa`), ignoring stale manual entries in `officiatingACMap`.
-  - In `useTimetableStore.ts`: Prune/reconcile `officiatingAC[day]` when AC absence is untoggled or during `handleMarkAllPresent()`.
+  - In `getEffectiveOfficiatingAC`: If the primary AC is on duty (`!isAcAbsent`), `effectiveAC` strictly resolves to the primary AC (`Mrs. R. Pahwa`), ignoring stale manual entries in `officiatingACMap`.
+  - In `useTimetableStore.ts`: Automatically prune/reconcile `officiatingAC[day]` when AC absence is untoggled and during `handleMarkAllPresent()`. Added unit tests in `solver.test.ts`.
 
 
 ### BUG-04: Fit-Grid Portrait Mode Screen Overflow & Cell Height Distortion (RESOLVED in v1.40.0)
@@ -506,24 +506,24 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - When any Class Teacher has uncovered class periods, flashes both the **Substitutions** and **Staff Roster** navigation tabs with the soft pulsing amber glow until resolved.
 
 ### Job Bundle 26: Immediate Operational Polish, Nomenclature, Roster Ergonomics & Non-Shifting UI
-- **Status**: 🔴 Queued (Next Up)
+- **Status**: 🟢 Completed
 - **Scope & Work Items**:
-  - [ ] **BUG-19 (Officiating AC Persistence Fix on Mark Present / Mark All Present)**:
+  - [x] **BUG-19 (Officiating AC Persistence Fix on Mark Present / Mark All Present)**:
     - In `@lfps/core` `getEffectiveOfficiatingAC`: If the primary AC is on duty (`!isAcAbsent`), `effectiveAC` strictly resolves to the primary AC (`Mrs. R. Pahwa`), ignoring any lingering manual assignments in `officiatingACMap`.
     - In `useTimetableStore.ts`: Automatically prune and reconcile `officiatingAC[day]` when AC is untoggled present or when `handleMarkAllPresent()` runs.
-  - [ ] **LOGIC-07 (Routine Classes View: Remove Nursery Sections)**:
+  - [x] **LOGIC-07 (Routine Classes View: Remove Nursery Sections)**:
     - In `RoutineGrid.tsx`, remove Nursery sections (`NUR A`, `NUR B`) from `classSections`, displaying strictly valid active classes (`KG A`, `KG B`, `PREP A`, `PREP B`).
-  - [ ] **TERMS-01 & TERMS-02 (Universal Nomenclature Cleanup: Eradicate 'Team' and 'Leader')**:
+  - [x] **TERMS-01 & TERMS-02 (Universal Nomenclature Cleanup: Eradicate 'Team' and 'Leader')**:
     - Eradicate the word "Team" entirely across UI copy, labels, tooltips, modals, and code. Teachers in a class are strictly referred to as **Class Teacher** (CT) and **2nd Teacher** (2T). Additional helpers are **"part of a class"**.
     - Eradicate the word "Leader" / "Leadership" across UI copy and code. Strictly use **"Officiating Staff"**, **"Officiating"**, **"Staff"**, or **"Teacher"**.
-  - [ ] **UI-01 & UI-03 (Human School Overview Headings)**:
+  - [x] **UI-01 & UI-03 (Human School Overview Headings)**:
     - Substitutions tab: Change *"Substitution Register & Coverage Engine"* $\to$ **"Substitutions Overview"** (e.g. `Substitutions Overview (MON)`).
     - Staff Roster tab: Change *"Staff Roster Matrix & Availability Register"* $\to$ **"Staff Roster Overview"** (e.g. `Staff Roster Overview (MON)`).
     - Officiating Section: Change *"Temporary Leadership Officiating Designations"* $\to$ **"Officiating Staff"**.
-  - [ ] **UI-05 (Non-Shifting UI for Absence Actions)**:
+  - [x] **UI-05 (Non-Shifting UI for Absence Actions)**:
     - When AC or CT is marked absent, avoid layout jumps and sudden vertical content shifts.
     - Provide fixed/stable container slots or seamlessly integrated card actions so the surrounding UI remains stable without unexpected push-downs.
-  - [ ] **LOGIC-06, UI-02 & UI-04 (Staff Roster Card Ergonomics & Multi-Density Suite)**:
+  - [x] **LOGIC-06, UI-02 & UI-04 (Staff Roster Card Ergonomics & Multi-Density Suite)**:
     - **Inviting & Comfortable Tap**: Whole card free space tap toggles attendance (`Mark Absent` ⟷ `Mark Present`) with enlarged, comfortable hit targets (eliminating thin, uninviting pills). Inner action buttons guard with `e.stopPropagation()`.
     - **Full Name Priority**: Always display the teacher's full name directly (`teacher.fullName`), only falling back to abbreviations on narrow/mobile screens via responsive CSS.
     - **Multi-Density View Variations**: Add clean segmented view switcher to the Roster tab to handle large staff counts (e.g. 50+ teachers):
