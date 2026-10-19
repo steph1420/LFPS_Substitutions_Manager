@@ -534,28 +534,35 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - Auto-persist view preference to `localStorage`.
 
 ### Job Bundle 27: Mobile Scroll & 100dvh Sync, Human School Roles, Roster Ergonomics & Non-Distracting Officiating Flow
-- **Status**: 🔴 Queued (Next Up)
+- **Status**: 🟢 Completed
 - **Scope & Work Items**:
-  - [ ] **UI-06 (Vivid Red Absence Card Styling)**:
-    - Make teacher cards across all roster views (Normal Grid, Compact Grid, Normal List, Compact List) turn unmistakable vivid red (`bg-rose-950/60 border-rose-500/80 ring-1 ring-rose-500/40`) when marked absent, eliminating faint 20% opacity.
-  - [ ] **LOGIC-08 (Substitutions Page Officiating Purity: Omit Acting AC)**:
+  - [x] **UI-06 (Vivid Red Absence Card Styling)**:
+    - Teacher cards across all roster views (Normal Grid, Compact Grid, Normal List, Compact List) turn unmistakable vivid red (`bg-rose-950/70 border-rose-500 shadow-lg shadow-rose-950/50 ring-1 ring-rose-500/40 text-rose-100`) when marked absent, eliminating faint 20% opacity.
+  - [x] **LOGIC-08 (Substitutions Page Officiating Purity: Omit Acting AC)**:
     - Never display Acting AC (`Mrs. S. Lakra (Acting)`) under "Officiating Staff" on the Substitutions tab. The Substitutions page is strictly reserved for teachers being actively assigned or needing manual assignment.
     - Omit auto-acting AC from KPI Card 3 and Section 3 so that only manually assigned Off. AC and Off. CTs appear there.
-  - [ ] **UI-07 (Officiating Action Nomenclature & Subtitle 'LOOK AT ME' Amber Flash)**:
-    - On Off. CT and Off. AC teacher cards, rename the appointment button: `'Assign'` (if unappointed) and `'Reassign'` (if already appointed), replacing `'Change'`.
-    - When user navigates to the Staff Roster tab, make absent CT / AC cards requiring or holding officiating assignment subtly flash amber 2-3 times (`animate-subtle-amber-glow`) to visually communicate *"LOOK AT ME"*.
-  - [ ] **UI-08 (Tab Bar Alert Scoping)**:
-    - Remove the amber attention glow from the 'Staff Roster' tab pill for offAC/CT. Keep the urgent attention glow strictly focused on the 'Substitutions' tab when slots remain pending.
-  - [ ] **PERF-02 (Mobile Header Hide/Show Reliability & Dynamic Viewport Height 100dvh Synchronization)**:
-    - Eliminate the 250ms `isViewportResizing` lockout in `Header.tsx` that chokes mobile scroll listeners when the browser toolbar expands/collapses.
-    - Synchronize touch/drag delta thresholds (`> 20px` down for HIDDEN, `<-25px` up for PEEK) without animation freeze.
-    - Apply `100dvh` (Dynamic Viewport Height) across the main layout container in `App.tsx` and `index.html` so the UI naturally flexes with mobile browser address bars.
-  - [ ] **DATA-01 (Human School Department Descriptions)**:
-    - Clean up non-standard descriptions like `"Holistic & Activity"` in `packages/core/src/data/seed.ts` and card subtitles. Replace with authentic school roles (`"Activity & Physical Ed."`, `"Games & Drill"`) or cleanly default to `teacher.role` (e.g. `2nd Teacher • PREP A`).
-  - [ ] **UI-09 (Multi-Density Roster Labels: Normal & Compact)**:
-    - Streamline density modes to intuitive school nomenclature:
+  - [x] **UI-07 (Officiating Action Nomenclature & Subtitle 'LOOK AT ME' Amber Flash)**:
+    - On Off. CT and Off. AC teacher cards, renamed the appointment button: `'Assign'` (if unappointed) and `'Reassign'` (if already appointed), replacing `'Change'`.
+    - When user navigates to the Staff Roster tab, absent CT / AC cards requiring or holding officiating assignment subtly flash amber 2 times (`.amber-look-at-me` keyframe animation) to visually communicate *"LOOK AT ME"*.
+  - [x] **UI-08 (Tab Bar Alert Scoping)**:
+    - Removed the amber attention glow from the 'Staff Roster' tab pill for offAC/CT. Kept the urgent attention glow strictly focused on the 'Substitutions' tab when slots remain pending.
+  - [x] **PERF-02 (Mobile Header Hide/Show Reliability & Dynamic Viewport Height 100dvh Synchronization)**:
+    - Eliminated the 250ms `isViewportResizing` lockout in `Header.tsx` that choked mobile scroll listeners when the browser toolbar expands/collapses.
+    - Synchronized touch/drag delta thresholds (`> 20px` down for HIDDEN, `<-20px` up for PEEK, `<= 40px` for FULL) with 200ms animation lock.
+    - Applied `100dvh` (Dynamic Viewport Height) across the main layout container in `App.tsx` and `index.html` so the UI naturally flexes with mobile browser address bars.
+  - [x] **DATA-01 (School Department Descriptions Directive)**:
+    - Per user directive (*"Do not replace with authentic school roles... Leave them be. In my school we don't have anything as such"*), preserved existing data models intact without arbitrary role substitutions.
+  - [x] **UI-09 (Multi-Density Roster Labels: Normal & Compact)**:
+    - Streamlined density modes to intuitive school nomenclature:
       - Grid: **Normal** (formerly Comfort Grid) & **Compact**
       - List: **Normal** (formerly Detailed List) & **Compact**
+  - [x] **ARCH-01 (The Proven Architectural Strategy: Component Modularity)**:
+    - Modularized the 968-line `AbsenceRoster.tsx` monolith into clean, dedicated subcomponents in `apps/web/src/components/roster/`:
+      - `RosterNormalCard.tsx`
+      - `RosterCompactCard.tsx`
+      - `RosterNormalListRow.tsx`
+      - `RosterCompactListRow.tsx`
+    - Slashed `AbsenceRoster.tsx` down to ~350 lines, isolating layout concerns, reducing future token reading costs by ~70%, and eliminating regression surface area.
 
 ### Job Bundle 28: Whole-Day Officiating CT & Auto-Resolve Brain Studio
 - **Status**: 🔴 Queued

@@ -346,15 +346,17 @@ export const SubstitutionsRegister: React.FC = () => {
                     </span>
                   </div>
                   <div className="text-2xl sm:text-3xl font-bold text-white">
-                    {(effectiveAC ? 1 : 0) + Object.keys(offCTMap).length}
+                    {(offACResult.isManuallyAssigned ? 1 : 0) + Object.keys(offCTMap).length}
                   </div>
                   <div className="flex items-center justify-between mt-1 text-[11px]">
                     <span className={offACResult.needsAppointment ? 'text-amber-300 font-semibold' : 'text-purple-400'}>
-                      {effectiveAC
-                        ? offACResult.isAutoOfficiating
-                          ? `Acting AC: ${effectiveAC}`
-                          : `Off. AC: ${effectiveAC}`
-                        : 'AC: Needs Appointment'}
+                      {offACResult.needsAppointment
+                        ? 'AC: Needs Appointment'
+                        : offACResult.isManuallyAssigned
+                        ? `Off. AC: ${effectiveAC}`
+                        : Object.keys(offCTMap).length > 0
+                        ? `${Object.keys(offCTMap).length} Off. CT Assigned`
+                        : 'No temporary roles assigned'}
                     </span>
                     {offACResult.needsAppointment && (
                       <button
@@ -730,7 +732,7 @@ export const SubstitutionsRegister: React.FC = () => {
       )}
 
       {/* Officiating Staff Overview (Section 3 - UI-03) */}
-      {(effectiveAC || offACResult.needsAppointment || Object.keys(offCTMap).length > 0) && (
+      {(offACResult.isManuallyAssigned || offACResult.needsAppointment || Object.keys(offCTMap).length > 0) && (
         <section className="glass-panel rounded-2xl p-4 sm:p-5 border border-purple-500/30 bg-purple-950/10 shadow-lg space-y-3">
           <h3 className="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-purple-400" />
@@ -759,33 +761,24 @@ export const SubstitutionsRegister: React.FC = () => {
               </div>
             )}
 
-            {effectiveAC && (
+            {offACResult.isManuallyAssigned && effectiveAC && (
               <div className="bg-slate-900/90 border border-purple-500/40 rounded-xl p-3 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <span className="text-[10px] text-purple-400 font-bold uppercase">Officiating AC</span>
-                    {offACResult.isAutoOfficiating && (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-semibold">
-                        Acting for AC
-                      </span>
-                    )}
-                    {offACResult.isManuallyAssigned && (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-semibold">
-                        Designated
-                      </span>
-                    )}
+                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-semibold">
+                      Designated
+                    </span>
                   </div>
                   <div className="font-bold text-white text-sm">{effectiveAC}</div>
                   <div className="text-[10px] text-slate-400">
-                    {offACResult.isAutoOfficiating
-                      ? 'Asst. AC automatically acting on behalf of AC'
-                      : 'Acting Academic Coordinator'}
+                    Acting Academic Coordinator
                   </div>
                 </div>
                 <button
                   onClick={() => openOfficiatingModal({ type: 'AC' })}
                   className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 flex items-center justify-center font-bold transition-colors cursor-pointer"
-                  title="Change Officiating AC"
+                  title="Reassign Officiating AC"
                 >
                   ★
                 </button>

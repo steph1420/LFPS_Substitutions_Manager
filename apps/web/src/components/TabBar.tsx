@@ -149,7 +149,7 @@ export const TabBar: React.FC = () => {
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         const Icon = tab.icon;
-        const isUrgent = shouldPulseAmber && (tab.id === 'substitutions' || tab.id === 'roster');
+        const isUrgent = shouldPulseAmber && tab.id === 'substitutions';
 
         return (
           <button

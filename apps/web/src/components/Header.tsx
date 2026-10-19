@@ -47,7 +47,6 @@ export const Header: React.FC = () => {
   const scrollDeltaAccumulatorRef = React.useRef(0);
   const isTransitioningRef = React.useRef(false);
   const isDayChangingRef = React.useRef(false);
-  const isViewportResizingRef = React.useRef(false);
   const autoCollapseTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-collapse timer for floating day bar
@@ -99,28 +98,22 @@ export const Header: React.FC = () => {
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
   }, []);
 
-  // Mobile Browser URL Bar Sync with visualViewport (FEAT-57)
+  // Mobile Browser URL Bar Sync with visualViewport (FEAT-57 & PERF-02)
   React.useEffect(() => {
     if (typeof window === 'undefined' || !window.visualViewport) return;
 
-    let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
     const handleViewportResize = () => {
-      isViewportResizingRef.current = true;
-      if (resizeTimeout) clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => {
-        isViewportResizingRef.current = false;
-        lastScrollYRef.current = window.scrollY;
-      }, 250);
+      // Soft sync without locking scroll events so mobile toolbar animations don't choke the header
+      lastScrollYRef.current = window.scrollY;
     };
 
     window.visualViewport.addEventListener('resize', handleViewportResize);
     return () => {
       window.visualViewport?.removeEventListener('resize', handleViewportResize);
-      if (resizeTimeout) clearTimeout(resizeTimeout);
     };
   }, []);
 
-  // 120fps Directional Scroll Observer with Strict Hysteresis & Transition Lock
+  // 120fps Directional Scroll Observer with Responsive Hysteresis & Fluid Mobile Sync
   React.useEffect(() => {
     let rafId: number | null = null;
 
@@ -130,8 +123,8 @@ export const Header: React.FC = () => {
       rafId = requestAnimationFrame(() => {
         rafId = null;
 
-        // Ignore artificial scroll events triggered by schedule table height diffs or URL bar resizing
-        if (isDayChangingRef.current || isViewportResizingRef.current) {
+        // Ignore artificial scroll events triggered by schedule table height diffs during day switches
+        if (isDayChangingRef.current) {
           lastScrollYRef.current = window.scrollY;
           return;
         }
@@ -141,8 +134,8 @@ export const Header: React.FC = () => {
         const diff = currentScrollY - prevScrollY;
         lastScrollYRef.current = currentScrollY;
 
-        // State 1: TOP OF PAGE (scrollY <= 50) -> Full Header Console
-        if (currentScrollY <= 50) {
+        // State 1: TOP OF PAGE (scrollY <= 40) -> Full Header Console
+        if (currentScrollY <= 40) {
           scrollDeltaAccumulatorRef.current = 0;
           if (headerState !== 'FULL') {
             setHeaderState('FULL');
@@ -151,12 +144,12 @@ export const Header: React.FC = () => {
             isTransitioningRef.current = true;
             setTimeout(() => {
               isTransitioningRef.current = false;
-            }, 350);
+            }, 200);
           }
           return;
         }
 
-        // Lock state changes while actively animating between modes to eliminate flickering
+        // Lock state changes momentarily while actively animating between modes
         if (isTransitioningRef.current) return;
 
         // Accumulate directional scroll delta
@@ -166,23 +159,23 @@ export const Header: React.FC = () => {
           scrollDeltaAccumulatorRef.current = Math.min(0, scrollDeltaAccumulatorRef.current) + diff;
         }
 
-        // State 2: SCROLLING DOWN (scrollY > 80 and accumulated delta > 35) -> Header Completely Gone, only lone pill
-        if (headerState !== 'HIDDEN' && currentScrollY > 80 && scrollDeltaAccumulatorRef.current > 35) {
+        // State 2: SCROLLING DOWN (scrollY > 60 and accumulated delta > 20) -> Header Completely Gone, only lone pill
+        if (headerState !== 'HIDDEN' && currentScrollY > 60 && scrollDeltaAccumulatorRef.current > 20) {
           scrollDeltaAccumulatorRef.current = 0;
           setHeaderState('HIDDEN');
           isTransitioningRef.current = true;
           setTimeout(() => {
             isTransitioningRef.current = false;
-          }, 350);
+          }, 200);
         }
-        // State 3: SCROLLING UP WHILE DOWN (scrollY > 80 and accumulated delta < -40) -> Slim Peek Strip
-        else if (headerState !== 'PEEK' && currentScrollY > 80 && scrollDeltaAccumulatorRef.current < -40) {
+        // State 3: SCROLLING UP WHILE DOWN (scrollY > 60 and accumulated delta < -20) -> Slim Peek Strip
+        else if (headerState !== 'PEEK' && currentScrollY > 60 && scrollDeltaAccumulatorRef.current < -20) {
           scrollDeltaAccumulatorRef.current = 0;
           setHeaderState('PEEK');
           isTransitioningRef.current = true;
           setTimeout(() => {
             isTransitioningRef.current = false;
-          }, 350);
+          }, 200);
         }
       });
     };

@@ -28,7 +28,15 @@ export interface CoTeachSlotTarget {
   subject: string;
 }
 
-export type RosterViewMode = 'comfort-grid' | 'compact-grid' | 'compact-list' | 'detailed-list' | 'grid' | 'list';
+export type RosterViewMode =
+  | 'normal-grid'
+  | 'compact-grid'
+  | 'normal-list'
+  | 'compact-list'
+  | 'comfort-grid'
+  | 'detailed-list'
+  | 'grid'
+  | 'list';
 
 export interface OfficiatingTarget {
   type: 'AC' | 'CT';
@@ -234,12 +242,11 @@ function autoPersistPreferences(prefs: StoredPreferences) {
 const initialPrefs = loadStoredPreferences();
 
 const getInitialRosterMode = (saved?: RosterViewMode): RosterViewMode => {
-  if (saved === 'list') return 'compact-list';
-  if (saved === 'grid') return 'comfort-grid';
-  if (saved === 'comfort-grid' || saved === 'compact-grid' || saved === 'compact-list' || saved === 'detailed-list') {
-    return saved;
-  }
-  return 'comfort-grid';
+  if (saved === 'list' || saved === 'compact-list') return 'compact-list';
+  if (saved === 'detailed-list' || saved === 'normal-list') return 'normal-list';
+  if (saved === 'compact-grid') return 'compact-grid';
+  if (saved === 'grid' || saved === 'comfort-grid' || saved === 'normal-grid') return 'normal-grid';
+  return 'normal-grid';
 };
 
 export const useTimetableStore = create<TimetableState>((set, get) => ({

@@ -15,35 +15,20 @@
 - **Production Build Status**: Passes cleanly via `npm run build`.
 - **Live Deployment**: `https://steph1420.github.io/LFPS_Substitutions_Manager/` (tracks branch `next-gen`).
 
-### 2. What Was Just Completed (Job Bundle 26)
-- **`BUG-19` (Officiating AC Persistence Fix on Mark Present / Mark All Present)**:
-  - In `@lfps/core` `getEffectiveOfficiatingAC`: If the primary AC (`Mrs. R. Pahwa`) is on duty (`!isAcAbsent`), `effectiveAC` strictly resolves to the primary AC, ignoring any lingering manual assignments in `officiatingACMap`.
-  - In `useTimetableStore.ts`: Automatically prunes `officiatingAC[day]` when AC absence is untoggled and during `markAllPresent(day)` atomic state resets.
-  - Added unit test in `packages/core/test/solver.test.ts` (16/16 Vitest tests passing).
-- **`LOGIC-07` (Routine Classes View: Remove Nursery Sections)**:
-  - Removed `NUR A` and `NUR B` from `RoutineGrid.tsx` `classSections`, strictly displaying active classes (`KG A`, `KG B`, `PREP A`, `PREP B`).
-- **`TERMS-01` & `TERMS-02` (Universal Nomenclature Cleanup: Eradicate 'Team' and 'Leader')**:
-  - Replaced "Team" everywhere with **Class Teacher** and **2nd Teacher** (or "part of a class").
-  - Replaced "Leader/Leadership" everywhere with **Officiating Staff**, **Officiating**, **Staff**, or **Teacher**.
-- **`UI-01` & `UI-03` (Human School Overview Headings)**:
-  - Renamed headers to **"Substitutions Overview ({selectedDay})"**, **"Staff Roster Overview ({selectedDay})"**, and **"Officiating Staff ({selectedDay})"**.
-- **`UI-05` (Non-Shifting UI for Absence Actions)**:
-  - Eliminated layout jumps and vertical push-downs when marking AC or CT absent via fixed action slots (`min-h-[28px]`) and integrated toolbar actions.
-- **`LOGIC-06`, `UI-02` & `UI-04` (Staff Roster Ergonomics & Multi-Density Suite)**:
-  - Whole-card free-space tap toggles teacher absence (`Mark Absent` ⟷ `Mark Present`) with child button event isolation (`e.stopPropagation()`).
-  - Prioritizes teacher full names (`teacher.fullName`) directly; falls back to abbreviations only on narrow viewports.
-  - 4 View Modes: **Comfort Grid** (spacious cards), **Compact Grid** (high-density cards), **Compact List** (single-line spreadsheet table for 50+ staff), and **Detailed List** (expanded rows).
+### 2. What Was Just Completed (Job Bundle 27)
+- **`UI-06` (Vivid Red Absence Card Styling)**: Teacher cards across all roster modes (Normal Grid, Compact Grid, Normal List, Compact List) turn unmistakable, rich red (`bg-rose-950/70 border-rose-500 ring-1 ring-rose-500/40 text-rose-100`) with red status pills and avatars when marked absent, eliminating faint 20% opacity.
+- **`LOGIC-08` (Substitutions Page Officiating Purity)**: Auto-acting AC (`Mrs. S. Lakra (Acting)`) is completely excluded from the Substitutions tab "Officiating Staff" section and KPI Card 3. Substitutions tab strictly displays manual appointments or required appointments.
+- **`UI-07` (Officiating Action Nomenclature & Amber Flash)**: On Off. CT and Off. AC cards, renamed action button to `'Assign'` / `'Reassign'` (replacing `'Change'`). Cards needing/holding officiating appointment play a subtle 2-cycle amber glow (`.amber-look-at-me`) when switching to Staff Roster.
+- **`UI-08` (Tab Bar Alert Scoping)**: Removed amber attention glow from 'Staff Roster' tab pill; scoped strictly to 'Substitutions' tab when slots remain pending.
+- **`PERF-02` (Mobile Header & 100dvh Synchronization)**: Eliminated 250ms `isViewportResizing` lockout in `Header.tsx` that choked mobile scroll listeners. Applied `100dvh` (Dynamic Viewport Height) across the main layout container in `App.tsx` and `index.html`.
+- **`UI-09` (Multi-Density Roster Labels)**: Streamlined view modes to: Grid (Normal, Compact) and List (Normal, Compact).
+- **`ARCH-01` (Component Modularity / The Proven Architectural Strategy)**: Decomposed `AbsenceRoster.tsx` monolith into clean, modular subcomponents in `apps/web/src/components/roster/`: `RosterNormalCard.tsx`, `RosterCompactCard.tsx`, `RosterNormalListRow.tsx`, and `RosterCompactListRow.tsx`, slashing file size to ~350 lines.
 
 ### 3. What To Do On Your Very First Turn
 - If the user says **"Go"**, **"Yes"**, or tells you to proceed, **DO NOT ASK WHAT TO DO**. They are approving:
-  👉 **Job Bundle 27: Mobile Scroll & 100dvh Sync, Human School Roles, Roster Ergonomics & Non-Distracting Officiating Flow**:
-  1. **`UI-06`**: Teacher cards turn vivid red (`bg-rose-950/60 border-rose-500/80 ring-1 ring-rose-500/40`) when marked absent across Normal Grid, Compact Grid, Normal List, and Compact List.
-  2. **`LOGIC-08`**: Substitutions page purity: Never display Acting AC (`Mrs. S. Lakra (Acting)`) under "Officiating Staff". Substitutions page is strictly reserved for manual assignments or actions needing assignment.
-  3. **`UI-07`**: Rename 'Change' on Off. AC / Off. CT cards to 'Assign' / 'Reassign'. Cards needing/holding officiating appointment subtly flash amber 2-3 times when switching to Staff Roster ("LOOK AT ME").
-  4. **`UI-08`**: Remove amber attention glow from 'Staff Roster' tab pill; keep it strictly scoped to Substitutions.
-  5. **`PERF-02`**: Eliminate 250ms `isViewportResizing` mobile scroll choking and adopt `100dvh` (Dynamic Viewport Height) across the main layout container.
-  6. **`DATA-01`**: Replace non-standard "Holistic & Activity" descriptions with authentic school roles (`Activity & Physical Ed.`, `Games & Drill` or default `teacher.role`).
-  7. **`UI-09`**: Streamline density labels: Grid (Normal, Compact) & List (Normal, Compact).
+  👉 **Job Bundle 28: Whole-Day Officiating CT & Auto-Resolve Brain Studio**:
+  1. **`BUG-18`**: When assigned as Officiating Class Teacher (`Off. CT.`), the teacher is appointed for the entire day (not period-by-period), and Auto-Resolve assigns coverage on this whole-day basis.
+  2. **`FEAT-61`**: Auto-Resolve Brain Studio & Solver Policy Configuration (Brain icon beside Auto-Resolve opening Policy Studio: Same Subject / Co-Workers priority, Class Teacher priority, Second Teacher priority, Preferred/Defined Principal rules, and assignment sequence toggles).
 
 ### 4. Non-Negotiable Rules To Behave Like Me
 1. **HIGH-CAPACITY COHESIVE BUNDLES**: The user instructed: *"Now we will not stick to just 2 tasks... You can make bundles as big as you can handle in your reasoning."* Group related features and bugfixes into comprehensive, thematic bundles.
@@ -357,7 +342,39 @@ flowchart TD
   - [`apps/web/src/components/SubstitutionsRegister.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/SubstitutionsRegister.tsx)
   - [`apps/web/src/components/AbsenceRoster.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/AbsenceRoster.tsx)
 
-### 3.14 Comprehensive Error & Bug Resolution Ledger (User-Reported Issues & Technical Solutions)
+### 3.14 Job Bundle 27: Mobile Scroll & 100dvh Sync, Human School Roles, Roster Ergonomics & Non-Distracting Officiating Flow (2026-10-19)
+- **Status**: 🟢 Resolved & Merged
+- **What**:
+  1. `UI-06` (Vivid Red Absence Card Styling):
+     - Roster teacher cards across all 4 modes (Normal Grid, Compact Grid, Normal List, Compact List) turn unmistakable, rich red (`bg-rose-950/70 border-rose-500 ring-1 ring-rose-500/40 text-rose-100`) with red status pills and avatars when marked absent, eliminating faint 20% opacity.
+  2. `LOGIC-08` (Substitutions Page Officiating Purity):
+     - Auto-acting AC (`Mrs. S. Lakra (Acting)`) is completely excluded from the Substitutions tab "Officiating Staff" section and KPI Card 3. Substitutions tab strictly displays manual appointments or required appointments.
+  3. `UI-07` (Officiating Action Nomenclature & Amber Flash):
+     - On Off. CT and Off. AC cards, renamed action button to `'Assign'` (if unappointed) and `'Reassign'` (if already appointed), replacing `'Change'`.
+     - Cards needing/holding officiating appointment play a subtle 2-cycle amber glow (`.amber-look-at-me`) when switching to Staff Roster ("LOOK AT ME").
+  4. `UI-08` (Tab Bar Alert Scoping):
+     - Removed amber attention glow from 'Staff Roster' tab pill; scoped strictly to 'Substitutions' tab when slots remain pending.
+  5. `PERF-02` (Mobile Header & 100dvh Synchronization):
+     - Eliminated 250ms `isViewportResizing` lockout in `Header.tsx` that choked mobile scroll listeners.
+     - Applied `100dvh` (Dynamic Viewport Height) across the main layout container in `App.tsx` and `index.html`.
+  6. `UI-09` (Multi-Density Roster Labels):
+     - Streamlined view modes to: Grid (Normal, Compact) and List (Normal, Compact).
+  7. `ARCH-01` (Component Modularity / The Proven Architectural Strategy):
+     - Decomposed `AbsenceRoster.tsx` monolith into clean, modular subcomponents in `apps/web/src/components/roster/`: `RosterNormalCard.tsx`, `RosterCompactCard.tsx`, `RosterNormalListRow.tsx`, and `RosterCompactListRow.tsx`, slashing file size to ~350 lines and saving substantial context quota for future runs.
+- **Where**:
+  - [`apps/web/src/components/AbsenceRoster.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/AbsenceRoster.tsx)
+  - [`apps/web/src/components/roster/RosterNormalCard.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/roster/RosterNormalCard.tsx)
+  - [`apps/web/src/components/roster/RosterCompactCard.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/roster/RosterCompactCard.tsx)
+  - [`apps/web/src/components/roster/RosterNormalListRow.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/roster/RosterNormalListRow.tsx)
+  - [`apps/web/src/components/roster/RosterCompactListRow.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/roster/RosterCompactListRow.tsx)
+  - [`apps/web/src/components/Header.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/Header.tsx)
+  - [`apps/web/src/components/TabBar.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/TabBar.tsx)
+  - [`apps/web/src/components/SubstitutionsRegister.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/components/SubstitutionsRegister.tsx)
+  - [`apps/web/src/store/useTimetableStore.ts`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/store/useTimetableStore.ts)
+  - [`apps/web/src/index.css`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/index.css)
+  - [`apps/web/src/App.tsx`](file:///Users/steve/BigFolder/Edit&Prod/Scripting/School/LFPS_Substitutions_Manager/apps/web/src/App.tsx)
+
+### 3.15 Comprehensive Error & Bug Resolution Ledger (User-Reported Issues & Technical Solutions)
 
 This section documents every error, complaint, and glitch the user reported on the v2 app, the root causes, and how they were resolved:
 
@@ -582,27 +599,18 @@ LFPS_Substitutions_Manager/
 
 ### Current Git State
 - **Branch**: `next-gen`
-- **Head Commit**: Job Bundle 26 Complete (`BUG-19`, `LOGIC-07`, `TERMS-01`, `TERMS-02`, `UI-01..05`, `LOGIC-06`)
+- **Head Commit**: Job Bundle 27 Complete (`UI-06..09`, `LOGIC-08`, `PERF-02`, `ARCH-01`)
 - **Working Tree**: Clean.
 - **All Unit Tests**: 16/16 Passing (`npm test`).
 - **Production Build**: Passes cleanly (`npm run build`).
 
 ### Queued High-Capacity Backlog (Consolidated Thematic Bundles)
 
-1. **Job Bundle 27: Mobile Scroll & 100dvh Sync, Human School Roles, Roster Ergonomics & Non-Distracting Officiating Flow (ACTIVE NEXT)**:
-   - **`UI-06` (Vivid Red Absence Card Styling)**: Teacher cards turn unmistakable vivid red (`bg-rose-950/60 border-rose-500/80 ring-1 ring-rose-500/40`) when marked absent across Normal Grid, Compact Grid, Normal List, Compact List.
-   - **`LOGIC-08` (Substitutions Page Officiating Purity: Omit Acting AC)**: Never display Acting AC (`Mrs. S. Lakra (Acting)`) under "Officiating Staff" on the Substitutions tab. The Substitutions page is strictly reserved for manual assignments or actions needing assignment.
-   - **`UI-07` (Officiating Action Nomenclature & 'LOOK AT ME' Amber Flash)**: Rename 'Change' on Off. AC / Off. CT cards to 'Assign' / 'Reassign'. Cards needing/holding officiating appointment subtly flash amber 2-3 times when switching to Staff Roster.
-   - **`UI-08` (Tab Bar Alert Scoping)**: Remove amber attention glow from 'Staff Roster' tab pill; keep it strictly scoped to Substitutions.
-   - **`PERF-02` (Mobile Header Hide/Show Reliability & Dynamic Viewport Height 100dvh Synchronization)**: Eliminate 250ms `isViewportResizing` mobile scroll choking and adopt `100dvh` (Dynamic Viewport Height) across the main layout container.
-   - **`DATA-01` (Human School Department Descriptions)**: Clean up non-standard descriptions like `"Holistic & Activity"` in `packages/core/src/data/seed.ts` and card subtitles. Replace with authentic school roles (`Activity & Physical Ed.`, `Games & Drill` or default `teacher.role`).
-   - **`UI-09` (Multi-Density Roster Labels: Normal & Compact)**: Streamline density modes to intuitive school nomenclature: Grid (Normal, Compact) & List (Normal, Compact).
-
-2. **Job Bundle 28: Whole-Day Officiating CT & Auto-Resolve Brain Studio**:
+1. **Job Bundle 28: Whole-Day Officiating CT & Auto-Resolve Brain Studio (ACTIVE NEXT)**:
    - **`BUG-18` (Officiating CT Whole-Day Assignment)**: Off. CT is a full-day section charge. Auto-Resolve assigns coverage on this whole-day basis.
    - **`FEAT-61` (Auto-Resolve Brain Studio & Solver Policy Configuration)**: Head-with-Brain icon (`Brain`) opening Policy Studio: Same Subject (Co-Workers), Class Teacher priority, Second Teacher priority, Preferred/Defined Teachers (Principal subject overrides), and assignment sequence toggles. Direct integration with `@lfps/core` solver.
 
-3. **Job Bundle 29: Security RBAC, Teacher Self-Service & Universal Notification Center**:
+2. **Job Bundle 29: Security RBAC, Teacher Self-Service & Universal Notification Center**:
    - **`SEC-01` (Three-Tier RBAC Architecture: Admin, Teacher, Guest)**: Universal rights segregation with `<PermissionGuard>`.
    - **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**: Logged-in teacher `[ ✓ Accept ]` and `[ ⚑ Dispute ]` with optional remark field and coordinator alert dispatch.
    - **`FEAT-50` (Universal Notification Center & Live Alert Hub)**: Header Bell icon with live badge opening slide-over drawer for disputes, timetable clashes, uncovered periods, and receipts.
