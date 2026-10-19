@@ -533,7 +533,31 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
       4. ☷ **Detailed List** (Multi-line list with role and duty breakdown)
     - Auto-persist view preference to `localStorage`.
 
-### Job Bundle 27: Whole-Day Officiating CT & Auto-Resolve Brain Studio
+### Job Bundle 27: Mobile Scroll & 100dvh Sync, Human School Roles, Roster Ergonomics & Non-Distracting Officiating Flow
+- **Status**: 🔴 Queued (Next Up)
+- **Scope & Work Items**:
+  - [ ] **UI-06 (Vivid Red Absence Card Styling)**:
+    - Make teacher cards across all roster views (Normal Grid, Compact Grid, Normal List, Compact List) turn unmistakable vivid red (`bg-rose-950/60 border-rose-500/80 ring-1 ring-rose-500/40`) when marked absent, eliminating faint 20% opacity.
+  - [ ] **LOGIC-08 (Substitutions Page Officiating Purity: Omit Acting AC)**:
+    - Never display Acting AC (`Mrs. S. Lakra (Acting)`) under "Officiating Staff" on the Substitutions tab. The Substitutions page is strictly reserved for teachers being actively assigned or needing manual assignment.
+    - Omit auto-acting AC from KPI Card 3 and Section 3 so that only manually assigned Off. AC and Off. CTs appear there.
+  - [ ] **UI-07 (Officiating Action Nomenclature & Subtitle 'LOOK AT ME' Amber Flash)**:
+    - On Off. CT and Off. AC teacher cards, rename the appointment button: `'Assign'` (if unappointed) and `'Reassign'` (if already appointed), replacing `'Change'`.
+    - When user navigates to the Staff Roster tab, make absent CT / AC cards requiring or holding officiating assignment subtly flash amber 2-3 times (`animate-subtle-amber-glow`) to visually communicate *"LOOK AT ME"*.
+  - [ ] **UI-08 (Tab Bar Alert Scoping)**:
+    - Remove the amber attention glow from the 'Staff Roster' tab pill for offAC/CT. Keep the urgent attention glow strictly focused on the 'Substitutions' tab when slots remain pending.
+  - [ ] **PERF-02 (Mobile Header Hide/Show Reliability & Dynamic Viewport Height 100dvh Synchronization)**:
+    - Eliminate the 250ms `isViewportResizing` lockout in `Header.tsx` that chokes mobile scroll listeners when the browser toolbar expands/collapses.
+    - Synchronize touch/drag delta thresholds (`> 20px` down for HIDDEN, `<-25px` up for PEEK) without animation freeze.
+    - Apply `100dvh` (Dynamic Viewport Height) across the main layout container in `App.tsx` and `index.html` so the UI naturally flexes with mobile browser address bars.
+  - [ ] **DATA-01 (Human School Department Descriptions)**:
+    - Clean up non-standard descriptions like `"Holistic & Activity"` in `packages/core/src/data/seed.ts` and card subtitles. Replace with authentic school roles (`"Activity & Physical Ed."`, `"Games & Drill"`) or cleanly default to `teacher.role` (e.g. `2nd Teacher • PREP A`).
+  - [ ] **UI-09 (Multi-Density Roster Labels: Normal & Compact)**:
+    - Streamline density modes to intuitive school nomenclature:
+      - Grid: **Normal** (formerly Comfort Grid) & **Compact**
+      - List: **Normal** (formerly Detailed List) & **Compact**
+
+### Job Bundle 28: Whole-Day Officiating CT & Auto-Resolve Brain Studio
 - **Status**: 🔴 Queued
 - **Scope & Work Items**:
   - [ ] **BUG-18 (Officiating CT Whole-Day Assignment & Solver Alignment)**:
@@ -550,7 +574,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
       - **Assignment Sequence**: Order of allocation toggle (*Class Teachers First* vs. *Subject Teachers First* vs. *Fair-Share Load Balancing*).
     - Wire solver policies directly into `@lfps/core`'s `calculateCandidateAffinity` and auto-resolve engines.
 
-### Job Bundle 28: Security RBAC, Teacher Self-Service & Universal Notification Center
+### Job Bundle 29: Security RBAC, Teacher Self-Service & Universal Notification Center
 - **Status**: 🔴 Queued
 - **Scope & Work Items**:
   - [ ] **SEC-01 (Three-Tier Role-Based Access Control Architecture: Admin, Teacher, Guest)**:
@@ -574,7 +598,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
       5. **Acceptance Receipts (`✓`)**: Notices when a teacher confirms and accepts their duty.
     - Provide 1-tap "Mark All as Read", clear individual notices, and outside-click / <kbd>Esc</kbd> dismissal.
 
-### Job Bundle 29: Theme Engine, Restored Developer Options & Routine Drag Reordering
+### Job Bundle 30: Theme Engine, Restored Developer Options & Routine Drag Reordering
 - **Status**: 🔴 Queued
 - **Scope & Work Items**:
   - [ ] **FEAT-46 (Complete 12-Theme Engine Adapted from THEMES.md)**:
@@ -597,7 +621,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] **FEAT-22, FEAT-23, FEAT-24 (Substitution Table Sorting & Column Polish)**:
     - Clickable column headers with sorting chevrons (`▲`/`▼`) for Period, Class, Teacher, Status.
 
-### Job Bundle 30: Unified Cloud & Google Sheets 2-Way Live Sync Engine
+### Job Bundle 31: Unified Cloud & Google Sheets 2-Way Live Sync Engine
 - **Status**: 🔴 Queued
 - **Scope & Work Items**:
   - [ ] **FEAT-51A (Inbound Routine Sync from Google Sheets)**:

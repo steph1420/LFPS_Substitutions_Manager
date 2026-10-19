@@ -36,9 +36,14 @@
 
 ### 3. What To Do On Your Very First Turn
 - If the user says **"Go"**, **"Yes"**, or tells you to proceed, **DO NOT ASK WHAT TO DO**. They are approving:
-  👉 **Job Bundle 27: Whole-Day Officiating CT & Auto-Resolve Brain Studio**:
-  1. **`BUG-18`**: When assigned as Officiating Class Teacher (`Off. CT.`), the teacher is appointed for the entire day (not period-by-period), and Auto-Resolve assigns coverage on this whole-day basis.
-  2. **`FEAT-61`**: Auto-Resolve Brain Studio & Solver Policy Configuration (Brain icon beside Auto-Resolve opening Policy Studio: Same Subject / Co-Workers priority, Class Teacher priority, Second Teacher priority, Preferred/Defined Principal rules, and assignment sequence toggles).
+  👉 **Job Bundle 27: Mobile Scroll & 100dvh Sync, Human School Roles, Roster Ergonomics & Non-Distracting Officiating Flow**:
+  1. **`UI-06`**: Teacher cards turn vivid red (`bg-rose-950/60 border-rose-500/80 ring-1 ring-rose-500/40`) when marked absent across Normal Grid, Compact Grid, Normal List, and Compact List.
+  2. **`LOGIC-08`**: Substitutions page purity: Never display Acting AC (`Mrs. S. Lakra (Acting)`) under "Officiating Staff". Substitutions page is strictly reserved for manual assignments or actions needing assignment.
+  3. **`UI-07`**: Rename 'Change' on Off. AC / Off. CT cards to 'Assign' / 'Reassign'. Cards needing/holding officiating appointment subtly flash amber 2-3 times when switching to Staff Roster ("LOOK AT ME").
+  4. **`UI-08`**: Remove amber attention glow from 'Staff Roster' tab pill; keep it strictly scoped to Substitutions.
+  5. **`PERF-02`**: Eliminate 250ms `isViewportResizing` mobile scroll choking and adopt `100dvh` (Dynamic Viewport Height) across the main layout container.
+  6. **`DATA-01`**: Replace non-standard "Holistic & Activity" descriptions with authentic school roles (`Activity & Physical Ed.`, `Games & Drill` or default `teacher.role`).
+  7. **`UI-09`**: Streamline density labels: Grid (Normal, Compact) & List (Normal, Compact).
 
 ### 4. Non-Negotiable Rules To Behave Like Me
 1. **HIGH-CAPACITY COHESIVE BUNDLES**: The user instructed: *"Now we will not stick to just 2 tasks... You can make bundles as big as you can handle in your reasoning."* Group related features and bugfixes into comprehensive, thematic bundles.
@@ -584,22 +589,31 @@ LFPS_Substitutions_Manager/
 
 ### Queued High-Capacity Backlog (Consolidated Thematic Bundles)
 
-1. **Job Bundle 27: Whole-Day Officiating CT & Auto-Resolve Brain Studio (ACTIVE NEXT)**:
+1. **Job Bundle 27: Mobile Scroll & 100dvh Sync, Human School Roles, Roster Ergonomics & Non-Distracting Officiating Flow (ACTIVE NEXT)**:
+   - **`UI-06` (Vivid Red Absence Card Styling)**: Teacher cards turn unmistakable vivid red (`bg-rose-950/60 border-rose-500/80 ring-1 ring-rose-500/40`) when marked absent across Normal Grid, Compact Grid, Normal List, Compact List.
+   - **`LOGIC-08` (Substitutions Page Officiating Purity: Omit Acting AC)**: Never display Acting AC (`Mrs. S. Lakra (Acting)`) under "Officiating Staff" on the Substitutions tab. The Substitutions page is strictly reserved for manual assignments or actions needing assignment.
+   - **`UI-07` (Officiating Action Nomenclature & 'LOOK AT ME' Amber Flash)**: Rename 'Change' on Off. AC / Off. CT cards to 'Assign' / 'Reassign'. Cards needing/holding officiating appointment subtly flash amber 2-3 times when switching to Staff Roster.
+   - **`UI-08` (Tab Bar Alert Scoping)**: Remove amber attention glow from 'Staff Roster' tab pill; keep it strictly scoped to Substitutions.
+   - **`PERF-02` (Mobile Header Hide/Show Reliability & Dynamic Viewport Height 100dvh Synchronization)**: Eliminate 250ms `isViewportResizing` mobile scroll choking and adopt `100dvh` (Dynamic Viewport Height) across the main layout container.
+   - **`DATA-01` (Human School Department Descriptions)**: Clean up non-standard descriptions like `"Holistic & Activity"` in `packages/core/src/data/seed.ts` and card subtitles. Replace with authentic school roles (`Activity & Physical Ed.`, `Games & Drill` or default `teacher.role`).
+   - **`UI-09` (Multi-Density Roster Labels: Normal & Compact)**: Streamline density modes to intuitive school nomenclature: Grid (Normal, Compact) & List (Normal, Compact).
+
+2. **Job Bundle 28: Whole-Day Officiating CT & Auto-Resolve Brain Studio**:
    - **`BUG-18` (Officiating CT Whole-Day Assignment)**: Off. CT is a full-day section charge. Auto-Resolve assigns coverage on this whole-day basis.
    - **`FEAT-61` (Auto-Resolve Brain Studio & Solver Policy Configuration)**: Head-with-Brain icon (`Brain`) opening Policy Studio: Same Subject (Co-Workers), Class Teacher priority, Second Teacher priority, Preferred/Defined Teachers (Principal subject overrides), and assignment sequence toggles. Direct integration with `@lfps/core` solver.
 
-3. **Job Bundle 28: Security RBAC, Teacher Self-Service & Universal Notification Center**:
+3. **Job Bundle 29: Security RBAC, Teacher Self-Service & Universal Notification Center**:
    - **`SEC-01` (Three-Tier RBAC Architecture: Admin, Teacher, Guest)**: Universal rights segregation with `<PermissionGuard>`.
    - **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**: Logged-in teacher `[ ✓ Accept ]` and `[ ⚑ Dispute ]` with optional remark field and coordinator alert dispatch.
    - **`FEAT-50` (Universal Notification Center & Live Alert Hub)**: Header Bell icon with live badge opening slide-over drawer for disputes, timetable clashes, uncovered periods, and receipts.
 
-4. **Job Bundle 29: Theme Engine, Restored Developer Options & Routine Drag Reordering**:
+4. **Job Bundle 30: Theme Engine, Restored Developer Options & Routine Drag Reordering**:
    - **`FEAT-46` (Complete 12-Theme Engine)**: CSS token architecture for 12 themes across 4 design families with visual swatches.
    - **`FEAT-47` (Restored Developer Options Panel)**: 5-tap version Easter egg unlock; cross-period lock, target cell halo indicator, countdown timer, etc.
    - **`FEAT-37A` & `FEAT-37B`**: Routine Matrix Drag-and-Drop Reordering with undo/redo and dedicated Class View context menu.
    - **`FEAT-22`, `FEAT-23`, `FEAT-24`**: Substitution Register interactive column sorting chevrons, responsive width, and column consolidation.
 
-5. **Job Bundle 30: Unified Cloud Sync & Google Sheets 2-Way Live Pipeline**:
+5. **Job Bundle 31: Unified Cloud Sync & Google Sheets 2-Way Live Pipeline**:
    - **`FEAT-51A` (Inbound Routine Sync from Google Sheets CSV)**: Pull master schedule diffs with review modal.
    - **`FEAT-51B` (Outbound Daily Ledger Push to Google Sheets)**: Push today's substitutions ledger to Google Sheets Web App endpoint (`/exec`).
    - **`FEAT-48` (Production Two-Way Full-Duplex Cloud Sync)**: Real-time WebSocket synchronization with Go backend (`/ws`).
