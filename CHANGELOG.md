@@ -15,6 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [v2.0.0-alpha.1] - 2026-10-18
 
 ### Added
+- **Whole-Day Officiating CT, Auto-Resolve Brain Studio & Ergonomic Polish (Job Bundle 28)**:
+  - **Whole-Day Off. CT Priority (`BUG-18`)**: Officiating Class Teacher is anchored as a whole-day section responsibility in `@lfps/core` and `useTimetableStore`. `calculateCandidateAffinity` assigns +250 points affinity to the designated Off. CT for uncovered periods of their assigned class, ensuring the engine covers the section with the designated Off. CT before choosing other staff.
+  - **Auto-Resolve Brain Studio (`FEAT-61`)**: Built `AutoResolveBrainModal.tsx` launched via the Brain icon in `SubstitutionsRegister.tsx`. Enables school coordinators to configure heuristic weights (Same Subject Co-Workers, Class Teacher, Second Teacher, Workload Balance penalty, Fatigue penalty, Whole-Day Off. CT priority, and Principal Preferred Subject Overrides).
+  - **Strict 3 Single Pulses for Amber Glow**: Replaced multi-peak keyframe with `@keyframes singleAmberPulse` running exactly 3 individual pulses (0% -> 50% peak -> 100% rest) when switching to Staff Roster.
+  - **Roster Normal Card Breathing Room & Text Cutoff Elimination**: Restored spacious card dimensions (`min-h-[210px]`, `p-4 sm:p-5`, `rounded-2xl`, `w-12 h-12` avatar) and converted Off. CT and Off. AC blocks to full-width vertical stacks, eliminating text cutoff for dual-role staff.
+  - **Abbreviated Names with Hover Tooltip**: Standardized teacher card titles on `teacher.abbr` with full name on hover across all 4 roster layout modes (Normal Grid, Compact Grid, Normal List, Compact List).
+  - **Binary Header Navigation Mode**: Simplified header states in `Header.tsx` to strictly Full Console or Dynamic Island Day Pill (`'FULL' | 'PILL'`), eliminating the slim peek strip for clean, zero-jerk mobile scrolling.
 - **Academic Coordinator Succession & Officiating Workflow (LOGIC-04, Job Bundle 26A)**:
   - Engineered pure domain succession function `getEffectiveOfficiatingAC(day, absences, officiatingACMap)` in `@lfps/core` with comprehensive Vitest coverage.
   - Automatic chain of command: When Academic Coordinator (`Mrs. R. Pahwa`) is marked absent, the Assistant Academic Coordinator (`Mrs. S. Lakra`, AAC) automatically acts on her behalf as Officiating AC (`Off. AC`).

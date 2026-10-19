@@ -53,12 +53,11 @@ export const RosterCompactCard: React.FC<RosterCompactCardProps> = ({
           {teacher.initials}
         </div>
         <div className="overflow-hidden flex-1">
-          <div className="font-bold text-white text-xs truncate" title={teacher.fullName}>
-            <span className="hidden sm:inline">{teacher.fullName}</span>
-            <span className="sm:hidden">{teacher.abbr}</span>
+          <div className="font-bold text-white text-xs truncate cursor-help" title={teacher.fullName}>
+            {teacher.abbr}
           </div>
           <div className="text-[10px] text-slate-400 truncate">
-            {isCT ? teacher.primaryClass : teacher.abbr}
+            {isCT ? teacher.primaryClass : teacher.role}
           </div>
         </div>
         <button

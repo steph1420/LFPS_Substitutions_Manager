@@ -5,6 +5,7 @@ import { autoResolveSubstitutions, PeriodId, parseCellSlot, getEffectiveOfficiat
 import { useTimetableStore } from '../store/useTimetableStore.js';
 import {
   Sparkles,
+  Brain,
   ArrowRight,
   Trash2,
   AlertTriangle,
@@ -19,6 +20,7 @@ import {
   ArrowUpDown,
 } from 'lucide-react';
 import { UndoRedoControls } from './UndoRedoControls.js';
+import { AutoResolveBrainModal } from './AutoResolveBrainModal.js';
 
 export const SubstitutionsRegister: React.FC = () => {
   const {
@@ -41,11 +43,13 @@ export const SubstitutionsRegister: React.FC = () => {
     setSubstitutionsSortBy,
     hideOverviewsByDefault,
     isMinimalUI,
+    autoResolvePolicy,
   } = useTimetableStore();
 
   const [filterMode, setFilterMode] = React.useState<'all' | 'uncovered' | 'covered' | 'my'>('all');
   const [searchQuery, setSearchQuery] = React.useState('');
   const [isOverviewCollapsed, setIsOverviewCollapsed] = React.useState(hideOverviewsByDefault);
+  const [isBrainModalOpen, setIsBrainModalOpen] = React.useState(false);
 
   const currentSchedule = schedule[selectedDay] || {};
 
@@ -110,6 +114,8 @@ export const SubstitutionsRegister: React.FC = () => {
       absences,
       availabilities,
       strategy: 'SUBJECT_MATCH',
+      officiatingCT,
+      policyConfig: autoResolvePolicy,
     });
 
     plan.assignments.forEach((assignment) => {
@@ -137,6 +143,8 @@ export const SubstitutionsRegister: React.FC = () => {
       absences,
       availabilities,
       strategy: 'SUBJECT_MATCH',
+      officiatingCT,
+      policyConfig: autoResolvePolicy,
     });
 
     plan.assignments.forEach((assignment) => {
@@ -259,12 +267,22 @@ export const SubstitutionsRegister: React.FC = () => {
             {uncoveredSlots.length > 0 && (
               <button
                 onClick={handleAutoResolve}
-                className="w-fit flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition-all"
+                className="w-fit flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition-all cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-blue-200 animate-spin" style={{ animationDuration: '3s' }} />
                 Auto-Resolve ({uncoveredSlots.length} Slots)
               </button>
             )}
+
+            {/* Brain Studio Config Button (FEAT-61) */}
+            <button
+              onClick={() => setIsBrainModalOpen(true)}
+              className="w-fit flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/40 hover:border-purple-400 text-purple-200 text-xs font-semibold active:scale-95 transition-all cursor-pointer shadow-sm group"
+              title="Configure Auto-Resolve Strategy & Heuristic Weights"
+            >
+              <Brain className="w-4 h-4 text-purple-400 group-hover:rotate-12 transition-transform duration-200" />
+              <span className="hidden sm:inline">Brain Studio</span>
+            </button>
 
             {/* Rightmost Aligned Collapse Icon Button (FEAT-44) */}
             <button
@@ -772,7 +790,7 @@ export const SubstitutionsRegister: React.FC = () => {
                   </div>
                   <div className="font-bold text-white text-sm">{effectiveAC}</div>
                   <div className="text-[10px] text-slate-400">
-                    Acting Academic Coordinator
+                    Officiating Academic Coordinator
                   </div>
                 </div>
                 <button
@@ -807,6 +825,12 @@ export const SubstitutionsRegister: React.FC = () => {
           </div>
         </section>
       )}
+
+      {/* Auto-Resolve Brain Studio Modal (FEAT-61) */}
+      <AutoResolveBrainModal
+        isOpen={isBrainModalOpen}
+        onClose={() => setIsBrainModalOpen(false)}
+      />
     </div>
   );
 };

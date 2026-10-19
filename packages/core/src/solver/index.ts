@@ -12,6 +12,8 @@ import {
   ParsedCellSlot,
   AutoResolveStrategy,
   AutoResolvePlan,
+  AutoResolvePolicyConfig,
+  DEFAULT_AUTORESOLVE_POLICY,
   EffectiveOfficiatingACResult,
 } from '../types/index.js';
 import { DEFAULT_STAFF_DIRECTORY, DEFAULT_PERIODS, PRIMARY_AC, ASSISTANT_AC } from '../data/seed.js';
@@ -192,15 +194,30 @@ export function calculateCandidateAffinity(
   period: PeriodId,
   day: DayOfWeek,
   schedule: DailySchedule,
-  existingSubsCount = 0
+  existingSubsCount = 0,
+  policyConfig: AutoResolvePolicyConfig = DEFAULT_AUTORESOLVE_POLICY,
+  isDesignatedOffCT = false
 ): { score: number; breakdown: CandidateSubstitute['scoreBreakdown'] } {
   const parsed = parseCellSlot(targetTask);
   let subjectMatchScore = 0;
   let departmentMatchScore = 0;
   let workloadScore = 0;
   let consecutivePenalty = 0;
+  let officiatingMatch = 0;
+  let secondTeacherMatch = 0;
+  let preferredOverride = 0;
 
-  // 1. Subject specialization
+  // 0. Whole-Day Designated Officiating CT (BUG-18)
+  if (isDesignatedOffCT && policyConfig.prioritizeOfficiatingCT) {
+    officiatingMatch = 250; // Decisive priority for appointed whole-day Off. CT
+  }
+
+  // 1. Principal Preferred Subject Override
+  if (parsed.subject && policyConfig.preferredSubjectOverrides?.[parsed.subject] === teacher.abbr) {
+    preferredOverride = 80;
+  }
+
+  // 2. Subject specialization (Co-Workers teaching same subject)
   if (parsed.subject && teacher.assignedSubjectPool) {
     const hasMatch = teacher.assignedSubjectPool.some(
       (s) =>
@@ -208,21 +225,27 @@ export function calculateCandidateAffinity(
         parsed.subject!.toLowerCase().includes(s.toLowerCase())
     );
     if (hasMatch) {
-      subjectMatchScore = 45;
+      subjectMatchScore = policyConfig.sameSubjectWeight;
     }
   }
 
-  // 2. Class Team / Department alignment
+  // 3. Class Teacher / 2nd Teacher / Department alignment
   if (parsed.className && teacher.primaryClass === parsed.className) {
-    departmentMatchScore += 35; // Class Teacher priority
+    departmentMatchScore += policyConfig.classTeacherWeight; // Class Teacher priority
+  } else if (
+    parsed.className &&
+    (teacher.role.includes('2nd Teacher') || teacher.role.includes('Second Teacher')) &&
+    teacher.department.toLowerCase().includes(parsed.className.split(' ')[0].toLowerCase())
+  ) {
+    secondTeacherMatch = policyConfig.secondTeacherWeight; // 2nd Teacher priority
   } else if (parsed.className && teacher.department.toLowerCase().includes(parsed.className.split(' ')[0].toLowerCase())) {
-    departmentMatchScore += 20; // Department match (e.g. KG with KG)
+    departmentMatchScore += 15; // Department match (e.g. KG with KG)
   }
 
-  // 3. Workload fair-share balance
-  workloadScore = Math.max(-30, -(existingSubsCount * 10));
+  // 4. Workload fair-share balance
+  workloadScore = Math.max(-40, -(existingSubsCount * policyConfig.workloadBalancingWeight));
 
-  // 4. Consecutive period fatigue penalty
+  // 5. Consecutive period fatigue penalty
   const periodOrder: PeriodId[] = ['G/PD', '1st', 'BREAK', '2nd', '3rd', '4th', '5th', '6th'];
   const pIndex = periodOrder.indexOf(period);
   if (pIndex > 0 && pIndex < periodOrder.length - 1) {
@@ -231,13 +254,20 @@ export function calculateCandidateAffinity(
     const prevBusy = prevTask && prevTask !== 'Free' && prevTask !== '-';
     const nextBusy = nextTask && nextTask !== 'Free' && nextTask !== '-';
     if (prevBusy && nextBusy) {
-      consecutivePenalty = -15; // Sandwiched period
+      consecutivePenalty = -policyConfig.consecutiveFatiguePenalty; // Sandwiched period
     }
   }
 
   const totalScore = Math.max(
     0,
-    100 + subjectMatchScore + departmentMatchScore + workloadScore + consecutivePenalty
+    100 +
+      officiatingMatch +
+      preferredOverride +
+      subjectMatchScore +
+      departmentMatchScore +
+      secondTeacherMatch +
+      workloadScore +
+      consecutivePenalty
   );
 
   return {
@@ -247,6 +277,9 @@ export function calculateCandidateAffinity(
       departmentMatch: departmentMatchScore,
       workloadFairShare: workloadScore,
       consecutiveFatigue: consecutivePenalty,
+      officiatingMatch,
+      secondTeacherMatch,
+      preferredOverride,
     },
   };
 }
@@ -264,6 +297,8 @@ export function findAvailableSubstitutes(params: {
   availabilities: Record<string, StaffAvailabilityRecord>;
   existingAssignments: SubstitutionAssignment[];
   directory?: StaffDirectory;
+  policyConfig?: AutoResolvePolicyConfig;
+  officiatingCT?: Record<string, Record<string, string>>;
 }): CandidateSubstitute[] {
   const {
     day,
@@ -275,9 +310,14 @@ export function findAvailableSubstitutes(params: {
     availabilities,
     existingAssignments,
     directory = DEFAULT_STAFF_DIRECTORY,
+    policyConfig = DEFAULT_AUTORESOLVE_POLICY,
+    officiatingCT,
   } = params;
 
   const results: CandidateSubstitute[] = [];
+  const parsedTarget = parseCellSlot(targetTask);
+  const targetSection = parsedTarget.className;
+  const designatedOffCT = targetSection ? officiatingCT?.[day]?.[targetSection] : undefined;
 
   for (const teacher of Object.values(directory)) {
     // Cannot sub for self
@@ -343,6 +383,8 @@ export function findAvailableSubstitutes(params: {
       (s) => s.substituteTeacher === teacher.abbr
     ).length;
 
+    const isDesignatedOffCT = Boolean(designatedOffCT && designatedOffCT === teacher.abbr);
+
     // Calculate score
     const affinity = calculateCandidateAffinity(
       teacher,
@@ -350,7 +392,9 @@ export function findAvailableSubstitutes(params: {
       period,
       day,
       schedule,
-      currentSubsCount
+      currentSubsCount,
+      policyConfig,
+      isDesignatedOffCT
     );
 
     results.push({
@@ -384,6 +428,8 @@ export function autoResolveSubstitutions(params: {
   availabilities: Record<string, StaffAvailabilityRecord>;
   directory?: StaffDirectory;
   strategy?: AutoResolveStrategy;
+  officiatingCT?: Record<string, Record<string, string>>;
+  policyConfig?: AutoResolvePolicyConfig;
 }): AutoResolvePlan {
   const {
     day,
@@ -392,7 +438,9 @@ export function autoResolveSubstitutions(params: {
     absences,
     availabilities,
     directory = DEFAULT_STAFF_DIRECTORY,
-    strategy = 'SUBJECT_MATCH',
+    strategy = 'BRAIN_POLICY',
+    officiatingCT,
+    policyConfig = DEFAULT_AUTORESOLVE_POLICY,
   } = params;
 
   const assignments: AutoResolvePlan['assignments'] = [];
@@ -411,6 +459,8 @@ export function autoResolveSubstitutions(params: {
       availabilities,
       existingAssignments: simulatedSubs,
       directory,
+      policyConfig,
+      officiatingCT,
     });
 
     const viableCandidate = candidates.find((c) => c.isAvailable);

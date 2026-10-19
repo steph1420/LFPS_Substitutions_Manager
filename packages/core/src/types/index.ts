@@ -137,10 +137,33 @@ export interface CandidateSubstitute {
     departmentMatch: number;
     workloadFairShare: number;
     consecutiveFatigue: number;
+    officiatingMatch?: number;
+    secondTeacherMatch?: number;
+    preferredOverride?: number;
   };
 }
 
-export type AutoResolveStrategy = 'SUBJECT_MATCH' | 'BALANCED_LOAD' | 'MINIMAL_SPLITS';
+export interface AutoResolvePolicyConfig {
+  prioritizeOfficiatingCT: boolean; // Whole-Day Off. CT assigned across all their section's periods (BUG-18)
+  sameSubjectWeight: number; // Co-Workers in same subject (default: 40)
+  classTeacherWeight: number; // Class Teacher priority (default: 35)
+  secondTeacherWeight: number; // 2nd Teacher / Co-Teacher in class (default: 30)
+  workloadBalancingWeight: number; // Workload fair share penalty (default: 15)
+  consecutiveFatiguePenalty: number; // Consecutive period fatigue penalty (default: 15)
+  preferredSubjectOverrides?: Record<string, string>; // Subject -> TeacherAbbr (Principal subject overrides)
+}
+
+export const DEFAULT_AUTORESOLVE_POLICY: AutoResolvePolicyConfig = {
+  prioritizeOfficiatingCT: true,
+  sameSubjectWeight: 40,
+  classTeacherWeight: 35,
+  secondTeacherWeight: 30,
+  workloadBalancingWeight: 15,
+  consecutiveFatiguePenalty: 15,
+  preferredSubjectOverrides: {},
+};
+
+export type AutoResolveStrategy = 'SUBJECT_MATCH' | 'BALANCED_LOAD' | 'MINIMAL_SPLITS' | 'BRAIN_POLICY';
 
 export interface AutoResolvePlan {
   strategy: AutoResolveStrategy;

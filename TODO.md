@@ -39,11 +39,11 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - **Fix**: Wired `isMinimalUI` across `Header.tsx`, `RoutineGrid.tsx`, `TabBar.tsx`, `SubstitutionsRegister.tsx`, and `AbsenceRoster.tsx` to conditionally compact padding, hide secondary explanatory copy, and activate high-velocity compact card views.
 
 ### BUG-18: Officiating Class Teacher (Off. CT.) Whole-Day Assignment & Solver Alignment
-- **Status**: 🔴 Open
+- **Status**: 🟢 Resolved (Job Bundle 28)
 - **Reported**: When assigned as Officiating Class Teacher (`Off. CT.`), the teacher is appointed for the entire day, not period-by-period. The Auto-Resolve solver must also assign coverage on this whole-day basis (the designated Off. CT covers the absent CT's class for all periods of that day rather than period-by-period scattering).
-- **Target Solution**:
-  - Anchor Officiating CT appointments in `@lfps/core` and `useTimetableStore.ts` as whole-day section appointments.
-  - In `autoResolveSubstitutions()`, prioritize assigning the designated Off. CT across all uncovered periods of that absent CT's class before dispersing remaining periods to external substitutes.
+- **Target Solution Delivered**:
+  - Anchored Officiating CT appointments in `@lfps/core` and `useTimetableStore.ts` as whole-day section appointments.
+  - In `autoResolveSubstitutions()`, passed `officiatingCT` and weighted designated Off. CT with +250 points affinity across all periods for their section, guaranteeing consistent whole-day coverage while respecting period-by-period teaching availability. Added comprehensive Vitest tests.
 
 ### BUG-19: Officiating AC Persists After Marking AC Present or Marking All Present
 - **Status**: 🟢 Resolved (Job Bundle 26)
@@ -644,6 +644,27 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - Connect React client store with Go server WebSocket hub (`/ws`).
     - Push live state mutations (`STATE_MUTATION`) on any schedule change, absence toggle, or substitution assignment.
     - Real-time client state reconciliation and server disk persistence hydration with sub-millisecond broadcast.
+
+### Job Bundle 28: Whole-Day Officiating CT, Auto-Resolve Brain Studio & Ergonomic Polish (RESOLVED on `next-gen` branch)
+- **Status**: 🟢 Resolved
+- **Scope & Work Items**:
+  - [x] **BUG-18 (Officiating CT Whole-Day Assignment & Priority)**:
+    - Anchored Officiating CT appointments in `@lfps/core` and `useTimetableStore.ts` as whole-day section appointments.
+    - Updated `calculateCandidateAffinity` and `findAvailableSubstitutes` in `packages/core/src/solver/index.ts` to assign +250 affinity to designated Off. CT for uncovered slots in their section.
+    - Integrated with `autoResolveSubstitutions` to pass `officiatingCT` and guarantee whole-day priority while respecting regular period teaching availability.
+  - [x] **FEAT-61 (Auto-Resolve Brain Studio & Heuristics Tuning Modal)**:
+    - Added `AutoResolvePolicyConfig` to `@lfps/core` with configurable heuristics (Same Subject, Class Teacher, Second Teacher, Workload Balance penalty, Fatigue penalty, Whole-Day Off. CT priority, and Principal Preferred Subject Overrides).
+    - Created `AutoResolveBrainModal.tsx` mounted in `SubstitutionsRegister.tsx` with tactile sliders, rule editor for Principal subject preferences, and 1-tap defaults reset.
+    - Connected policy persistence to `useTimetableStore` and `localStorage`.
+  - [x] **Strict 3 Single Pulses for Amber Glow**:
+    - Replaced dual-peak keyframe with `@keyframes singleAmberPulse` running exactly 3 single clean pulses (0% -> 50% peak -> 100% rest) when cards come into view.
+  - [x] **Roster Normal Card Breathing Room & Text Cutoff Elimination**:
+    - Restored comfortable dimensions (`min-h-[210px]`, `p-4 sm:p-5`, `rounded-2xl`, `w-12 h-12` avatar) for Normal Grid view.
+    - Converted Off. CT and Off. AC blocks to full-width vertical stack (`flex flex-col gap-1.5 w-full`), eliminating horizontal ellipsis truncation for teachers with multiple roles (e.g. Mrs. Riya Pahwa).
+  - [x] **Abbreviated Names Across All Roster Views**:
+    - Standardized teacher card titles on `teacher.abbr` with full name on hover (`title={teacher.fullName}`) to prevent 2nd line wrapping.
+  - [x] **Binary Header State Mode (Pill or Full)**:
+    - Simplified `HeaderState` in `Header.tsx` to `'FULL' | 'PILL'`, eradicating the 44px slim peek strip for crisp, predictable mobile scrolling.
 
 ### Job Bundle 29: Routine Matrix Drag-and-Drop Reordering & Dedicated Class Context Menu
 - **Status**: 🔴 Queued

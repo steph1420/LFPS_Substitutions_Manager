@@ -58,15 +58,9 @@ export const RosterCompactListRow: React.FC<RosterCompactListRowProps> = ({
           {teacher.initials}
         </div>
         <div className="truncate">
-          <span className="font-bold text-white truncate" title={teacher.fullName}>
-            <span className="hidden sm:inline">{teacher.fullName}</span>
-            <span className="sm:hidden">{teacher.abbr}</span>
+          <span className="font-bold text-white truncate cursor-help" title={teacher.fullName}>
+            {teacher.abbr}
           </span>
-          {teacher.fullName !== teacher.abbr && (
-            <span className="hidden sm:inline text-[10px] text-slate-400 ml-1.5 font-mono">
-              ({teacher.abbr})
-            </span>
-          )}
         </div>
       </div>
 

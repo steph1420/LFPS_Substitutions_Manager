@@ -71,7 +71,7 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
         if ((e.target as HTMLElement).closest('button, input, select, a')) return;
         onToggleAbsence(teacher.abbr);
       }}
-      className={`glass-panel p-4 rounded-2xl border transition-all flex flex-col justify-between gap-3 cursor-pointer select-none group relative overflow-hidden ${
+      className={`glass-panel p-4 sm:p-5 rounded-2xl border transition-all flex flex-col justify-between gap-4 min-h-[210px] cursor-pointer select-none group relative overflow-hidden ${
         isAbsent
           ? 'card-absent-illuminated text-rose-100'
           : isAwayOfficial
@@ -86,7 +86,7 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
         <div className="flex items-center gap-3 overflow-hidden flex-1">
           {/* Role Avatar Blob */}
           <div
-            className="relative w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-sm shadow-inner flex-shrink-0"
+            className="relative w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-sm shadow-inner flex-shrink-0"
             style={{
               backgroundColor: isAbsent
                 ? 'rgba(244, 63, 94, 0.25)'
@@ -125,21 +125,16 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
 
           {/* Teacher Identity & Badges */}
           <div className="overflow-hidden flex-1">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <h3 className="font-bold text-white text-sm truncate" title={teacher.fullName}>
-                <span className="hidden sm:inline">{teacher.fullName}</span>
-                <span className="sm:hidden">{teacher.abbr}</span>
-              </h3>
-              {teacher.fullName !== teacher.abbr && (
-                <span className="hidden sm:inline text-[10px] text-slate-400 font-mono">
-                  ({teacher.abbr})
-                </span>
-              )}
-            </div>
+            <h3
+              className="font-bold text-white text-base tracking-tight truncate cursor-help"
+              title={teacher.fullName}
+            >
+              {teacher.abbr}
+            </h3>
 
-            <div className="flex items-center gap-1.5 mt-0.5 text-xs">
+            <div className="flex items-center gap-1.5 mt-1 text-xs">
               <span
-                className={`font-medium truncate ${
+                className={`font-semibold truncate ${
                   isAbsent
                     ? 'text-rose-300'
                     : isCT
@@ -152,20 +147,20 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
                 {teacher.role}
               </span>
               {teacher.primaryClass && (
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold flex-shrink-0">
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold flex-shrink-0">
                   {teacher.primaryClass}
                 </span>
               )}
               {isFreeFromSub && (
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700 font-medium flex-shrink-0">
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-medium flex-shrink-0">
                   No Subs
                 </span>
               )}
             </div>
 
-            {/* Department info (retained as-is from teacher data without modification) */}
+            {/* Department info */}
             {teacher.department && (
-              <div className="text-[11px] text-slate-400 truncate mt-0.5">
+              <div className="text-[11px] text-slate-400 truncate mt-1">
                 <span>{teacher.department}</span>
               </div>
             )}
@@ -219,13 +214,13 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
           </span>
         </button>
 
-        {/* Stable Action Slot (UI-05 & UI-07: Non-shifting container, Assign/Reassign) */}
-        <div className="min-h-[28px] flex items-center">
+        {/* Stable Action Slot (UI-05 & UI-07: Stacked full-width officiating rows, Assign/Reassign) */}
+        <div className="flex flex-col gap-1.5 w-full">
           {/* Class Teacher Officiating Assignment */}
           {isCT && isAbsent && (
-            <div className="w-full flex items-center justify-between text-xs px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30">
-              <div className="flex items-center gap-1.5 truncate">
-                <span className="text-[10px] font-bold text-amber-300 uppercase">Off. CT:</span>
+            <div className="w-full flex items-center justify-between text-xs px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-[10px] font-bold text-amber-300 uppercase flex-shrink-0">Off. CT:</span>
                 <span className="text-white font-medium truncate">
                   {offCTSection ? offCTSection : 'None Appointed'}
                 </span>
@@ -235,10 +230,10 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
                   e.stopPropagation();
                   onOpenOfficiatingCT(teacher.primaryClass);
                 }}
-                className="text-[11px] font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-0.5 cursor-pointer ml-2 flex-shrink-0"
+                className="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-0.5 cursor-pointer ml-2 flex-shrink-0"
               >
                 <span>{offCTSection ? 'Reassign' : 'Assign'}</span>
-                <ChevronRight className="w-3 h-3" />
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
@@ -246,14 +241,14 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
           {/* Academic Coordinator Succession & Appointment */}
           {isAC && isAbsent && (
             <div
-              className={`w-full flex items-center justify-between text-xs px-2.5 py-1 rounded-lg border ${
+              className={`w-full flex items-center justify-between text-xs px-3 py-1.5 rounded-xl border ${
                 offACResult.needsAppointment
                   ? 'bg-amber-950/40 border-amber-500/60 attention-pulse'
                   : 'bg-purple-500/10 border-purple-500/30'
               }`}
             >
-              <div className="flex items-center gap-1.5 truncate">
-                <span className="text-[10px] font-bold text-purple-300 uppercase">Off. AC:</span>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-[10px] font-bold text-purple-300 uppercase flex-shrink-0">Off. AC:</span>
                 <span className="text-white font-medium truncate">
                   {offACResult.effectiveAC
                     ? offACResult.isAutoOfficiating
@@ -267,19 +262,19 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
                   e.stopPropagation();
                   onOpenOfficiatingAC();
                 }}
-                className="text-[11px] font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-0.5 cursor-pointer ml-2 flex-shrink-0"
+                className="text-xs font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-0.5 cursor-pointer ml-2 flex-shrink-0"
               >
                 <span>{offACResult.isManuallyAssigned ? 'Reassign' : 'Assign'}</span>
-                <ChevronRight className="w-3 h-3" />
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
 
           {/* Assistant Academic Coordinator Acting status */}
           {isAAC && offACResult.isAutoOfficiating && (
-            <div className="w-full flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-300">
-              <ShieldAlert className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
-              <span className="text-[11px] font-medium truncate">
+            <div className="w-full flex items-center gap-2 text-xs px-3 py-1.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300">
+              <ShieldAlert className="w-4 h-4 text-purple-400 flex-shrink-0" />
+              <span className="text-xs font-medium truncate">
                 Acting for Mrs. R. Pahwa today
               </span>
             </div>

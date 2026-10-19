@@ -88,15 +88,9 @@ export const RosterNormalListRow: React.FC<RosterNormalListRowProps> = ({
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-bold text-white text-sm" title={teacher.fullName}>
-              <span className="hidden sm:inline">{teacher.fullName}</span>
-              <span className="sm:hidden">{teacher.abbr}</span>
+            <span className="font-bold text-white text-sm cursor-help" title={teacher.fullName}>
+              {teacher.abbr}
             </span>
-            {teacher.fullName !== teacher.abbr && (
-              <span className="hidden sm:inline text-[10px] text-slate-400 font-mono">
-                ({teacher.abbr})
-              </span>
-            )}
             {teacher.primaryClass && (
               <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-200 border border-amber-500/30 font-bold">
                 {teacher.primaryClass}

@@ -54,7 +54,7 @@ export const OfficiatingModal: React.FC = () => {
                   : `Assign Officiating Class Teacher (Off. CT • ${section})`}
               </h3>
               <p className="text-[11px] text-slate-400">
-                Designate a temporary leader for {selectedDay}. Permissions inherit automatically.
+                Designate temporary officiating staff for {selectedDay}. Permissions inherit automatically.
               </p>
             </div>
             <button

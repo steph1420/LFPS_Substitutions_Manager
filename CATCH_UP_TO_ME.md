@@ -11,24 +11,24 @@
 
 ### 1. Where You Are Right Now
 - **Current Branch**: `next-gen` (Clean working tree, tracking `origin/next-gen`).
-- **Unit Tests Status**: **16/16 passing** via `npm test`.
+- **Unit Tests Status**: **18/18 passing** via `npm test`.
 - **Production Build Status**: Passes cleanly via `npm run build`.
 - **Live Deployment**: `https://steph1420.github.io/LFPS_Substitutions_Manager/` (tracks branch `next-gen`).
 
-### 2. What Was Just Completed (Job Bundle 27)
-- **`UI-06` (Vivid Red Absence Card Styling)**: Teacher cards across all roster modes (Normal Grid, Compact Grid, Normal List, Compact List) turn unmistakable, rich red (`bg-rose-950/70 border-rose-500 ring-1 ring-rose-500/40 text-rose-100`) with red status pills and avatars when marked absent, eliminating faint 20% opacity.
-- **`LOGIC-08` (Substitutions Page Officiating Purity)**: Auto-acting AC (`Mrs. S. Lakra (Acting)`) is completely excluded from the Substitutions tab "Officiating Staff" section and KPI Card 3. Substitutions tab strictly displays manual appointments or required appointments.
-- **`UI-07` (Officiating Action Nomenclature & Amber Flash)**: On Off. CT and Off. AC cards, renamed action button to `'Assign'` / `'Reassign'` (replacing `'Change'`). Cards needing/holding officiating appointment play a subtle 2-cycle amber glow (`.amber-look-at-me`) when switching to Staff Roster.
-- **`UI-08` (Tab Bar Alert Scoping)**: Removed amber attention glow from 'Staff Roster' tab pill; scoped strictly to 'Substitutions' tab when slots remain pending.
-- **`PERF-02` (Mobile Header & 100dvh Synchronization)**: Eliminated 250ms `isViewportResizing` lockout in `Header.tsx` that choked mobile scroll listeners. Applied `100dvh` (Dynamic Viewport Height) across the main layout container in `App.tsx` and `index.html`.
-- **`UI-09` (Multi-Density Roster Labels)**: Streamlined view modes to: Grid (Normal, Compact) and List (Normal, Compact).
-- **`ARCH-01` (Component Modularity / The Proven Architectural Strategy)**: Decomposed `AbsenceRoster.tsx` monolith into clean, modular subcomponents in `apps/web/src/components/roster/`: `RosterNormalCard.tsx`, `RosterCompactCard.tsx`, `RosterNormalListRow.tsx`, and `RosterCompactListRow.tsx`, slashing file size to ~350 lines.
+### 2. What Was Just Completed (Job Bundle 28)
+- **`BUG-18` (Whole-Day Officiating CT Priority)**: Officiating Class Teacher appointments are anchored as full-day section responsibilities in `@lfps/core` and `useTimetableStore`. `calculateCandidateAffinity` assigns +250 points affinity to the designated Off. CT for uncovered periods of their assigned class, ensuring the engine covers the section with the designated Off. CT before choosing other staff while strictly respecting period availability.
+- **`FEAT-61` (Auto-Resolve Brain Studio & Heuristics Tuning Modal)**: Built `AutoResolveBrainModal.tsx` launched via the Brain icon in `SubstitutionsRegister.tsx`. Enables school coordinators to configure heuristic weights (Same Subject Co-Workers, Class Teacher, Second Teacher, Workload Balance penalty, Fatigue penalty, Whole-Day Off. CT priority, and Principal Preferred Subject Overrides).
+- **Strict 3 Single Pulses for Amber Glow**: Replaced dual-peak keyframe with `@keyframes singleAmberPulse` running exactly 3 individual pulses (0% -> 50% peak -> 100% rest) when switching to Staff Roster.
+- **Roster Normal Card Breathing Room & Text Cutoff Elimination**: Restored spacious card dimensions (`min-h-[210px]`, `p-4 sm:p-5`, `rounded-2xl`, `w-12 h-12` avatar) and converted Off. CT and Off. AC blocks to full-width vertical stacks, eliminating text cutoff for dual-role staff (e.g. Mrs. Riya Pahwa).
+- **Abbreviated Names with Hover Tooltip**: Standardized teacher card titles on `teacher.abbr` with full name on hover across all 4 roster layout modes (Normal Grid, Compact Grid, Normal List, Compact List).
+- **Binary Header Navigation Mode**: Simplified header states in `Header.tsx` to strictly Full Console or Dynamic Island Day Pill (`'FULL' | 'PILL'`), eliminating the slim peek strip for clean, zero-jerk mobile scrolling.
 
 ### 3. What To Do On Your Very First Turn
 - If the user says **"Go"**, **"Yes"**, or tells you to proceed, **DO NOT ASK WHAT TO DO**. They are approving:
-  👉 **Job Bundle 28: Whole-Day Officiating CT & Auto-Resolve Brain Studio**:
-  1. **`BUG-18`**: When assigned as Officiating Class Teacher (`Off. CT.`), the teacher is appointed for the entire day (not period-by-period), and Auto-Resolve assigns coverage on this whole-day basis.
-  2. **`FEAT-61`**: Auto-Resolve Brain Studio & Solver Policy Configuration (Brain icon beside Auto-Resolve opening Policy Studio: Same Subject / Co-Workers priority, Class Teacher priority, Second Teacher priority, Preferred/Defined Principal rules, and assignment sequence toggles).
+  👉 **Job Bundle 29: Security RBAC, Teacher Self-Service & Universal Notification Center**:
+  1. **`SEC-01`**: Three-Tier RBAC Architecture (Admin, Teacher, Guest) with `<PermissionGuard>`.
+  2. **`FEAT-49`**: Teacher Substitution Acceptance & Dispute Workflow (`[ ✓ Accept ]` and `[ ⚑ Dispute ]`).
+  3. **`FEAT-50`**: Universal Notification Center & Live Alert Hub (Header Bell icon with live badge opening slide-over drawer).
 
 ### 4. Non-Negotiable Rules To Behave Like Me
 1. **HIGH-CAPACITY COHESIVE BUNDLES**: The user instructed: *"Now we will not stick to just 2 tasks... You can make bundles as big as you can handle in your reasoning."* Group related features and bugfixes into comprehensive, thematic bundles.
@@ -500,6 +500,34 @@ This section documents every error, complaint, and glitch the user reported on t
 
 ---
 
+#### Issue 10: Whole-Day Officiating CT, Auto-Resolve Brain Studio & Ergonomic Polish (Job Bundle 28)
+- **User Request**:
+  > *"When assigned off. CT, they are assigned for the whole day, not period-basic. Also, auto-resolve should assign on this basis only."*
+  > *"Need an option to define the logic for auto-resolve. Give all algorithms considered points including - Same Subject (Co-Workers), Class Teacher, Second teacher, Preferred/Defined (this usually means the Principal wants a certain teacher to be given subs for a certain subject.)."*
+  > *"Amber glow is pulsing more than 3 times. I want 3 pulses not 3 sets of pulses."*
+  > *"Can we increase the card height now back to previous look, now that we have a separate compact view?"*
+  > *"Some issues in roster. See text being cutoff in 1st card. Abbreviated name sometimes drop to second line. I think we should stick to abbreviated names only with hover to show full name."*
+  > *"Remove thin strip view for header. It's only pill or full."*
+- **The Exact Architectural Fix**:
+  1. **Whole-Day Off. CT Priority (`BUG-18`)**:
+     - Officiating CT is registered as a section appointment across the full day in `@lfps/core`.
+     - In `packages/core/src/solver/index.ts`, `calculateCandidateAffinity` gives +250 points affinity to the designated Off. CT for all uncovered slots of that class section.
+     - Auto-resolve passes `officiatingCT` and policy config, prioritizing the appointed teacher across all available periods while honoring availability.
+  2. **Auto-Resolve Brain Studio (`FEAT-61`)**:
+     - Built `AutoResolveBrainModal.tsx` launched via the Brain icon in `SubstitutionsRegister.tsx`.
+     - Provides tactile sliders for heuristic weights, Principal preferred subject override rule builder, whole-day Off. CT toggle, and algorithmic scoring breakdown with 1-tap defaults reset.
+  3. **Strict 3 Single Amber Pulses**:
+     - Fixed `@keyframes singleAmberPulse` in `apps/web/src/index.css` to a single 50% peak curve executed with `animation-iteration-count: 3`.
+  4. **Roster Normal Card Ergonomics & Zero Cutoff**:
+     - Restored `min-h-[210px]`, `p-4 sm:p-5`, and `w-12 h-12` avatar in `RosterNormalCard.tsx`.
+     - Stacked Off. CT and Off. AC blocks into full-width vertical column (`flex flex-col gap-1.5 w-full`), completely eradicating horizontal text truncation for dual-role staff.
+  5. **Abbreviated Names with Hover Tooltip**:
+     - Standardized display names on `teacher.abbr` with native `title={teacher.fullName}` tooltip across all 4 roster modes.
+  6. **Binary Header Navigation (Only Pill or Full)**:
+     - Refactored `Header.tsx` to `HeaderState: 'FULL' | 'PILL'`. Removed the 44px slim peek strip for smooth, glitch-free mobile scrolling.
+
+---
+
 ### 3.14 The Operational Rulebook: How to Behave Like Me
 
 Any AI agent continuing this conversation must adhere to these behavioral patterns:
@@ -599,18 +627,14 @@ LFPS_Substitutions_Manager/
 
 ### Current Git State
 - **Branch**: `next-gen`
-- **Head Commit**: Job Bundle 27 Complete (`UI-06..09`, `LOGIC-08`, `PERF-02`, `ARCH-01`)
+- **Head Commit**: Job Bundle 28 Complete (`BUG-18`, `FEAT-61`, 3-pulse amber glow, card dimensions, abbreviated names, binary header)
 - **Working Tree**: Clean.
-- **All Unit Tests**: 16/16 Passing (`npm test`).
+- **All Unit Tests**: 18/18 Passing (`npm test`).
 - **Production Build**: Passes cleanly (`npm run build`).
 
 ### Queued High-Capacity Backlog (Consolidated Thematic Bundles)
 
-1. **Job Bundle 28: Whole-Day Officiating CT & Auto-Resolve Brain Studio (ACTIVE NEXT)**:
-   - **`BUG-18` (Officiating CT Whole-Day Assignment)**: Off. CT is a full-day section charge. Auto-Resolve assigns coverage on this whole-day basis.
-   - **`FEAT-61` (Auto-Resolve Brain Studio & Solver Policy Configuration)**: Head-with-Brain icon (`Brain`) opening Policy Studio: Same Subject (Co-Workers), Class Teacher priority, Second Teacher priority, Preferred/Defined Teachers (Principal subject overrides), and assignment sequence toggles. Direct integration with `@lfps/core` solver.
-
-2. **Job Bundle 29: Security RBAC, Teacher Self-Service & Universal Notification Center**:
+1. **Job Bundle 29: Security RBAC, Teacher Self-Service & Universal Notification Center (ACTIVE NEXT)**:
    - **`SEC-01` (Three-Tier RBAC Architecture: Admin, Teacher, Guest)**: Universal rights segregation with `<PermissionGuard>`.
    - **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**: Logged-in teacher `[ ✓ Accept ]` and `[ ⚑ Dispute ]` with optional remark field and coordinator alert dispatch.
    - **`FEAT-50` (Universal Notification Center & Live Alert Hub)**: Header Bell icon with live badge opening slide-over drawer for disputes, timetable clashes, uncovered periods, and receipts.

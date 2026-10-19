@@ -209,6 +209,87 @@ describe('LFPS Core Solver & Domain Engine', () => {
       expect(plan.assignments[1].period).toBe('4th');
       expect(plan.unresolvedSlots.length).toBe(0);
     });
+
+    it('prioritizes designated Officiating Class Teacher across whole-day uncovered periods (BUG-18)', () => {
+      const schedule = DEFAULT_MASTER_SCHEDULE['MON'];
+      const absences: AbsenceRecord[] = [
+        {
+          teacherId: 'STAFF-02',
+          teacherName: 'Mrs. S. Lakra', // CT for KG A
+          day: 'MON',
+          type: 'FULL_DAY',
+          markedAt: Date.now(),
+        },
+      ];
+
+      // Designate Mrs. S. Bage as Off. CT for KG A on MON
+      const officiatingCT = {
+        MON: { 'KG A': 'Mrs. S. Bage' },
+      };
+
+      const plan = autoResolveSubstitutions({
+        day: 'MON',
+        uncoveredSlots: [
+          { period: '1st', originalTeacher: 'Mrs. S. Lakra', task: 'ENG. REC. KG A' },
+          { period: '3rd', originalTeacher: 'Mrs. S. Lakra', task: 'ENG. ORAL KG A' },
+        ],
+        schedule,
+        absences,
+        availabilities: {},
+        officiatingCT,
+        policyConfig: {
+          prioritizeOfficiatingCT: true,
+          sameSubjectWeight: 40,
+          classTeacherWeight: 35,
+          secondTeacherWeight: 30,
+          workloadBalancingWeight: 15,
+          consecutiveFatiguePenalty: 15,
+        },
+      });
+
+      expect(plan.assignments.length).toBe(2);
+      // Both periods should be assigned to the designated whole-day Off. CT Mrs. S. Bage who is free in 1st & 3rd
+      expect(plan.assignments[0].substituteTeacher).toBe('Mrs. S. Bage');
+      expect(plan.assignments[1].substituteTeacher).toBe('Mrs. S. Bage');
+    });
+
+    it('respects Principal preferred subject override in policy configuration (FEAT-61)', () => {
+      const schedule = DEFAULT_MASTER_SCHEDULE['MON'];
+      const absences: AbsenceRecord[] = [
+        {
+          teacherId: 'STAFF-02',
+          teacherName: 'Mrs. S. Lakra',
+          day: 'MON',
+          type: 'FULL_DAY',
+          markedAt: Date.now(),
+        },
+      ];
+
+      // Principal override: Mathematics/M. SC. in 1st period must be given to Ms. K. Sanga (who is Free)
+      const plan = autoResolveSubstitutions({
+        day: 'MON',
+        uncoveredSlots: [
+          { period: '1st', originalTeacher: 'Mrs. S. Lakra', task: 'M. SC. KG A' },
+        ],
+        schedule,
+        absences,
+        availabilities: {},
+        policyConfig: {
+          prioritizeOfficiatingCT: false,
+          sameSubjectWeight: 40,
+          classTeacherWeight: 35,
+          secondTeacherWeight: 30,
+          workloadBalancingWeight: 15,
+          consecutiveFatiguePenalty: 15,
+          preferredSubjectOverrides: {
+            'M. SC.': 'Ms. K. Sanga',
+          },
+        },
+      });
+
+      expect(plan.assignments.length).toBe(1);
+      expect(plan.assignments[0].substituteTeacher).toBe('Ms. K. Sanga');
+    });
   });
 
   describe('Academic Coordinator Succession & Officiating Logic (LOGIC-04)', () => {

@@ -9,6 +9,8 @@ import {
   SubstitutionAssignment,
   DutyPreset,
   SubAvailabilityStatus,
+  AutoResolvePolicyConfig,
+  DEFAULT_AUTORESOLVE_POLICY,
   DEFAULT_STAFF_DIRECTORY,
   DEFAULT_MASTER_SCHEDULE,
 } from '@lfps/core';
@@ -151,6 +153,11 @@ interface TimetableState {
   savePreferences: () => void;
   resetPreferences: () => void;
 
+  // Auto-Resolve Brain Studio Policy (FEAT-61 & BUG-18)
+  autoResolvePolicy: AutoResolvePolicyConfig;
+  updateAutoResolvePolicy: (policy: Partial<AutoResolvePolicyConfig>) => void;
+  resetAutoResolvePolicy: () => void;
+
   // Context Menu Actions
   openContextMenu: (target: ContextMenuTarget) => void;
   closeContextMenu: () => void;
@@ -239,7 +246,20 @@ function autoPersistPreferences(prefs: StoredPreferences) {
   }
 }
 
+const AUTORESOLVE_POLICY_STORAGE_KEY = 'lfps_autoresolve_policy_v2';
+
+function loadStoredPolicy(): AutoResolvePolicyConfig {
+  if (typeof window === 'undefined') return DEFAULT_AUTORESOLVE_POLICY;
+  try {
+    const raw = localStorage.getItem(AUTORESOLVE_POLICY_STORAGE_KEY);
+    return raw ? { ...DEFAULT_AUTORESOLVE_POLICY, ...JSON.parse(raw) } : DEFAULT_AUTORESOLVE_POLICY;
+  } catch {
+    return DEFAULT_AUTORESOLVE_POLICY;
+  }
+}
+
 const initialPrefs = loadStoredPreferences();
+const initialPolicy = loadStoredPolicy();
 
 const getInitialRosterMode = (saved?: RosterViewMode): RosterViewMode => {
   if (saved === 'list' || saved === 'compact-list') return 'compact-list';
@@ -264,6 +284,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   rosterViewMode: getInitialRosterMode(initialPrefs.rosterViewMode),
   substitutionsSortBy: initialPrefs.substitutionsSortBy ?? 'period',
   rosterSortBy: initialPrefs.rosterSortBy ?? 'role',
+  autoResolvePolicy: initialPolicy,
 
   directory: DEFAULT_STAFF_DIRECTORY,
   schedule: DEFAULT_MASTER_SCHEDULE,
@@ -359,6 +380,31 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       isMinimalUI: false,
     });
   },
+
+  updateAutoResolvePolicy: (policyUpdate) =>
+    set((state) => {
+      const nextPolicy = { ...state.autoResolvePolicy, ...policyUpdate };
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(AUTORESOLVE_POLICY_STORAGE_KEY, JSON.stringify(nextPolicy));
+        }
+      } catch {
+        // ignore
+      }
+      return { autoResolvePolicy: nextPolicy };
+    }),
+
+  resetAutoResolvePolicy: () =>
+    set(() => {
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(AUTORESOLVE_POLICY_STORAGE_KEY);
+        }
+      } catch {
+        // ignore
+      }
+      return { autoResolvePolicy: DEFAULT_AUTORESOLVE_POLICY };
+    }),
 
   openContextMenu: (target) => set({ activeContextMenu: target }),
   closeContextMenu: () => set({ activeContextMenu: null }),

@@ -25,7 +25,7 @@ const ISLAND_SPRING = {
 
 const DAYS: DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
-type HeaderState = 'FULL' | 'HIDDEN' | 'PEEK';
+type HeaderState = 'FULL' | 'PILL';
 
 export const Header: React.FC = () => {
   const sync = useLiveSync();
@@ -44,7 +44,6 @@ export const Header: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = React.useState<any>(null);
 
   const lastScrollYRef = React.useRef(0);
-  const scrollDeltaAccumulatorRef = React.useRef(0);
   const isTransitioningRef = React.useRef(false);
   const isDayChangingRef = React.useRef(false);
   const autoCollapseTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -103,7 +102,6 @@ export const Header: React.FC = () => {
     if (typeof window === 'undefined' || !window.visualViewport) return;
 
     const handleViewportResize = () => {
-      // Soft sync without locking scroll events so mobile toolbar animations don't choke the header
       lastScrollYRef.current = window.scrollY;
     };
 
@@ -113,7 +111,7 @@ export const Header: React.FC = () => {
     };
   }, []);
 
-  // 120fps Directional Scroll Observer with Responsive Hysteresis & Fluid Mobile Sync
+  // 120fps Scroll Observer: Clean binary transition between FULL and PILL (no thin strip)
   React.useEffect(() => {
     let rafId: number | null = null;
 
@@ -123,20 +121,16 @@ export const Header: React.FC = () => {
       rafId = requestAnimationFrame(() => {
         rafId = null;
 
-        // Ignore artificial scroll events triggered by schedule table height diffs during day switches
         if (isDayChangingRef.current) {
           lastScrollYRef.current = window.scrollY;
           return;
         }
 
         const currentScrollY = window.scrollY;
-        const prevScrollY = lastScrollYRef.current;
-        const diff = currentScrollY - prevScrollY;
         lastScrollYRef.current = currentScrollY;
 
-        // State 1: TOP OF PAGE (scrollY <= 40) -> Full Header Console
-        if (currentScrollY <= 40) {
-          scrollDeltaAccumulatorRef.current = 0;
+        // State 1: TOP OF PAGE (scrollY <= 50) -> Full Header Console
+        if (currentScrollY <= 50) {
           if (headerState !== 'FULL') {
             setHeaderState('FULL');
             setIsIslandExpanded(false);
@@ -152,26 +146,9 @@ export const Header: React.FC = () => {
         // Lock state changes momentarily while actively animating between modes
         if (isTransitioningRef.current) return;
 
-        // Accumulate directional scroll delta
-        if (diff > 0) {
-          scrollDeltaAccumulatorRef.current = Math.max(0, scrollDeltaAccumulatorRef.current) + diff;
-        } else if (diff < 0) {
-          scrollDeltaAccumulatorRef.current = Math.min(0, scrollDeltaAccumulatorRef.current) + diff;
-        }
-
-        // State 2: SCROLLING DOWN (scrollY > 60 and accumulated delta > 20) -> Header Completely Gone, only lone pill
-        if (headerState !== 'HIDDEN' && currentScrollY > 60 && scrollDeltaAccumulatorRef.current > 20) {
-          scrollDeltaAccumulatorRef.current = 0;
-          setHeaderState('HIDDEN');
-          isTransitioningRef.current = true;
-          setTimeout(() => {
-            isTransitioningRef.current = false;
-          }, 200);
-        }
-        // State 3: SCROLLING UP WHILE DOWN (scrollY > 60 and accumulated delta < -20) -> Slim Peek Strip
-        else if (headerState !== 'PEEK' && currentScrollY > 60 && scrollDeltaAccumulatorRef.current < -20) {
-          scrollDeltaAccumulatorRef.current = 0;
-          setHeaderState('PEEK');
+        // State 2: SCROLLED DOWN (scrollY > 50) -> Floating Day Pill only
+        if (headerState !== 'PILL' && currentScrollY > 50) {
+          setHeaderState('PILL');
           isTransitioningRef.current = true;
           setTimeout(() => {
             isTransitioningRef.current = false;
@@ -281,70 +258,18 @@ export const Header: React.FC = () => {
         deferredPrompt={deferredPrompt}
       />
 
-      {/* FLOATING DAY BAR PILL: Stays outside/below the thin strip, only joins the full header at the top */}
+      {/* FLOATING DAY BAR PILL: Floats at top-3 when scrolled away from top (Only Pill or Full) */}
       <AnimatePresence>
-        {headerState !== 'FULL' && (
+        {headerState === 'PILL' && (
           <motion.div
             key="floating-day-pill-container"
             initial={{ opacity: 0, y: -20 }}
-            animate={{
-              opacity: 1,
-              // When in PEEK mode, the pill stays BELOW the 44px thin strip (y: 46px -> top: 58px).
-              // When in HIDDEN mode, the pill floats at top-3 (y: 0).
-              y: headerState === 'PEEK' ? 46 : 0,
-            }}
+            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={ISLAND_SPRING}
             className="fixed top-3 left-0 right-0 z-50 flex justify-center pointer-events-none will-change-transform"
           >
             <div className="pointer-events-auto">{renderIslandContent()}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* STATE 3: SLIM PEEK STRIP (When far down and scrolling UP, pill stays BELOW, NOT inside) */}
-      <AnimatePresence>
-        {headerState === 'PEEK' && (
-          <motion.div
-            key="peek-strip"
-            initial={{ y: -65, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -65, opacity: 0 }}
-            transition={SPRING_TRANSITIONS.snappy}
-            className="fixed top-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/90 h-11 sm:h-12 px-3 sm:px-6 flex items-center justify-between shadow-[0_8px_24px_rgba(0,0,0,0.7)] select-none will-change-transform"
-          >
-            {/* Left: Compact Reset Day Button */}
-            <div className="flex items-center">
-              <ResetDayButton compact />
-            </div>
-
-            {/* Center: Open breathing space — the pill floats cleanly BELOW this strip */}
-            <div className="flex-1" />
-
-            {/* Right: Quick Utilities (PWA, Settings, Profile) */}
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <button
-                onClick={() => setIsPwaModalOpen(true)}
-                className="p-1.5 rounded-xl glass-pill border-slate-700/60 text-slate-300 hover:text-blue-400 hover:border-blue-500/40 transition-colors active:scale-95"
-                title="Install PWA"
-              >
-                <Smartphone className="w-3.5 h-3.5 text-blue-400" />
-              </button>
-              <button
-                onClick={openSettings}
-                className="p-1.5 rounded-xl glass-pill border-slate-700 hover:border-blue-500/40 text-slate-300 hover:text-blue-400 transition-colors active:scale-95"
-                title="Console & Settings"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => (loggedInTeacher ? logout() : openStaffLogin())}
-                className="glass-pill px-2.5 py-1 rounded-full text-xs flex items-center gap-1.5 text-slate-200 active:scale-95 transition-transform"
-              >
-                <User className="w-3.5 h-3.5 text-blue-400" />
-                <span className="truncate max-w-[80px]">{loggedInTeacher || 'Login'}</span>
-              </button>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
