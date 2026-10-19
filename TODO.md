@@ -45,6 +45,13 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - Anchor Officiating CT appointments in `@lfps/core` and `useTimetableStore.ts` as whole-day section appointments.
   - In `autoResolveSubstitutions()`, prioritize assigning the designated Off. CT across all uncovered periods of that absent CT's class before dispersing remaining periods to external substitutes.
 
+### BUG-19: Officiating AC Persists After Marking AC Present or Marking All Present
+- **Status**: 🔴 Open
+- **Reported**: Once an Officiating AC is assigned, even after marking all staff present (or untoggling AC absence), the actual AC remains marked under the temporary Off. AC.
+- **Root Cause & Fix**:
+  - In `getEffectiveOfficiatingAC`: If the primary AC is on duty (`!isAcAbsent`), `effectiveAC` must strictly resolve to the primary AC (`Mrs. R. Pahwa`), ignoring stale manual entries in `officiatingACMap`.
+  - In `useTimetableStore.ts`: Prune/reconcile `officiatingAC[day]` when AC absence is untoggled or during `handleMarkAllPresent()`.
+
 
 ### BUG-04: Fit-Grid Portrait Mode Screen Overflow & Cell Height Distortion (RESOLVED in v1.40.0)
 - **Status**: 🟢 Resolved (v1.40.0)
@@ -498,8 +505,53 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - Rendered all Class Teacher substitution cards in both Grid and List views with an elegant golden aesthetic (`border-amber-500/60 bg-gradient-to-br from-amber-950/35 via-slate-900/95 to-amber-900/25 ring-1 ring-amber-500/40 text-amber-200`).
     - When any Class Teacher has uncovered class periods, flashes both the **Substitutions** and **Staff Roster** navigation tabs with the soft pulsing amber glow until resolved.
 
-### Job Bundle 26B: Three-Tier RBAC Architecture & Teacher Substitution Dispute Workflow
-- **Status**: 🔴 Queued (Next Up - Max 2 items)
+### Job Bundle 26: Immediate Operational Polish, Nomenclature, Roster Ergonomics & Non-Shifting UI
+- **Status**: 🔴 Queued (Next Up)
+- **Scope & Work Items**:
+  - [ ] **BUG-19 (Officiating AC Persistence Fix on Mark Present / Mark All Present)**:
+    - In `@lfps/core` `getEffectiveOfficiatingAC`: If the primary AC is on duty (`!isAcAbsent`), `effectiveAC` strictly resolves to the primary AC (`Mrs. R. Pahwa`), ignoring any lingering manual assignments in `officiatingACMap`.
+    - In `useTimetableStore.ts`: Automatically prune and reconcile `officiatingAC[day]` when AC is untoggled present or when `handleMarkAllPresent()` runs.
+  - [ ] **LOGIC-07 (Routine Classes View: Remove Nursery Sections)**:
+    - In `RoutineGrid.tsx`, remove Nursery sections (`NUR A`, `NUR B`) from `classSections`, displaying strictly valid active classes (`KG A`, `KG B`, `PREP A`, `PREP B`).
+  - [ ] **TERMS-01 & TERMS-02 (Universal Nomenclature Cleanup: Eradicate 'Team' and 'Leader')**:
+    - Eradicate the word "Team" entirely across UI copy, labels, tooltips, modals, and code. Teachers in a class are strictly referred to as **Class Teacher** (CT) and **2nd Teacher** (2T). Additional helpers are **"part of a class"**.
+    - Eradicate the word "Leader" / "Leadership" across UI copy and code. Strictly use **"Officiating Staff"**, **"Officiating"**, **"Staff"**, or **"Teacher"**.
+  - [ ] **UI-01 & UI-03 (Human School Overview Headings)**:
+    - Substitutions tab: Change *"Substitution Register & Coverage Engine"* $\to$ **"Substitutions Overview"** (e.g. `Substitutions Overview (MON)`).
+    - Staff Roster tab: Change *"Staff Roster Matrix & Availability Register"* $\to$ **"Staff Roster Overview"** (e.g. `Staff Roster Overview (MON)`).
+    - Officiating Section: Change *"Temporary Leadership Officiating Designations"* $\to$ **"Officiating Staff"**.
+  - [ ] **UI-05 (Non-Shifting UI for Absence Actions)**:
+    - When AC or CT is marked absent, avoid layout jumps and sudden vertical content shifts.
+    - Provide fixed/stable container slots or seamlessly integrated card actions so the surrounding UI remains stable without unexpected push-downs.
+  - [ ] **LOGIC-06, UI-02 & UI-04 (Staff Roster Card Ergonomics & Multi-Density Suite)**:
+    - **Inviting & Comfortable Tap**: Whole card free space tap toggles attendance (`Mark Absent` ⟷ `Mark Present`) with enlarged, comfortable hit targets (eliminating thin, uninviting pills). Inner action buttons guard with `e.stopPropagation()`.
+    - **Full Name Priority**: Always display the teacher's full name directly (`teacher.fullName`), only falling back to abbreviations on narrow/mobile screens via responsive CSS.
+    - **Multi-Density View Variations**: Add clean segmented view switcher to the Roster tab to handle large staff counts (e.g. 50+ teachers):
+      1. 🔲 **Comfort Grid** (Spacious cards with large icons & duty chips)
+      2. ▦ **Compact Grid** (High-density cards with small icons)
+      3. ☰ **Compact List** (Single-line spreadsheet-dense roster table)
+      4. ☷ **Detailed List** (Multi-line list with role and duty breakdown)
+    - Auto-persist view preference to `localStorage`.
+
+### Job Bundle 27: Whole-Day Officiating CT & Auto-Resolve Brain Studio
+- **Status**: 🔴 Queued
+- **Scope & Work Items**:
+  - [ ] **BUG-18 (Officiating CT Whole-Day Assignment & Solver Alignment)**:
+    - When assigned as Officiating Class Teacher (`Off. CT.`), the teacher is appointed for the entire day, not period-by-period.
+    - Anchor Officiating CT appointments in `@lfps/core` and `useTimetableStore.ts` as whole-day section appointments.
+    - Auto-Resolve solver prioritizes assigning the designated Off. CT across all uncovered periods of that absent CT's class.
+  - [ ] **FEAT-61 (Auto-Resolve Brain Studio & Solver Policy Configuration)**:
+    - In the Substitutions tab header (beside the Auto-Resolve button), add an intelligent Head-with-Brain icon (`Brain` from `lucide-react`).
+    - Tapping opens the **Auto-Resolve Policy & Heuristics Studio**:
+      - **Same Subject (Co-Workers)**: Priority weighting for subject teachers teaching the same curriculum.
+      - **Class Teacher (CT)**: Priority weighting for primary class teachers.
+      - **Second Teacher (2T)**: Priority weighting for secondary co-teachers in the class.
+      - **Preferred / Defined Teachers (Principal Rule Overrides)**: Principal-defined rules (e.g. *"For Mathematics, prioritize Teacher X"*, *"For Science, prioritize Teacher Y"*).
+      - **Assignment Sequence**: Order of allocation toggle (*Class Teachers First* vs. *Subject Teachers First* vs. *Fair-Share Load Balancing*).
+    - Wire solver policies directly into `@lfps/core`'s `calculateCandidateAffinity` and auto-resolve engines.
+
+### Job Bundle 28: Security RBAC, Teacher Self-Service & Universal Notification Center
+- **Status**: 🔴 Queued
 - **Scope & Work Items**:
   - [ ] **SEC-01 (Three-Tier Role-Based Access Control Architecture: Admin, Teacher, Guest)**:
     - Strict rights segregation before drawing any logical element:
@@ -511,61 +563,20 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - In `SubstitutionsRegister.tsx` (and dedicated teacher schedule view), when a teacher is logged in (`loggedInTeacher`), any substitution duty assigned to them displays an interactive decision pod:
       - `[ ✓ Accept ]`: Marks the substitution status as `ACCEPTED`, highlights the duty in emerald green, locks the slot, and dispatches an acceptance notice.
       - `[ ⚑ Dispute ]`: Expands an inline tactile micro-remark textbox (`"Reason for dispute (optional, e.g. Lab duty, Library inventory)"`) with `[ Confirm Dispute ]` and `[ Cancel ]`.
-      - On confirm, marks the substitution status as `DISPUTED` (amber/rose badge), stores the dispute remark, and automatically dispatches a high-priority alert to the leadership chain: Academic Coordinator (Mrs. R. Pahwa), Assistant AC (Mrs. S. Lakra), or designated Officiating AC.
-
-### Job Bundle 26C: Nomenclature Simplification & School Overview Headings
-- **Status**: 🔴 Queued (Max 2 items)
-- **Scope & Work Items**:
-  - [ ] **TERMS-01 (Nomenclature Simplification: Eliminate 'Team', Standardize CT & 2nd Teacher)**:
-    - Do away with 'Team' nomenclature entirely across UI copy, labels, tooltips, modals, and codebase.
-    - Teachers in a class are strictly referred to as **Class Teacher** (CT) and **2nd Teacher** (2T).
-    - If another teacher assists with class work, refer to them as **"part of a class"** (handling work in the class, but not necessarily CT or 2T).
-  - [ ] **UI-01 (Human School Overview Headings: Substitutions Overview & Staff Roster Overview)**:
-    - Replace overly technical overview headings that do not fit a school environment with simple, friendly titles:
-      - Substitutions tab: Change *"Substitution Register & Coverage Engine"* $\to$ **"Substitutions Overview"** (e.g. `Substitutions Overview (MON)`).
-      - Staff Roster tab: Change *"Staff Roster Matrix & Availability Register"* $\to$ **"Staff Roster Overview"** (e.g. `Staff Roster Overview (MON)`).
-
-### Job Bundle 26D: Effortless Absence Marking & Staff Full Name Display
-- **Status**: 🔴 Queued (Max 2 items)
-- **Scope & Work Items**:
-  - [ ] **LOGIC-06 (Effortless Absence Marking: Whole Card Free Space Tap to Toggle Absent)**:
-    - Make marking absent easier for the front desk: tapping anywhere in the free / unoccupied space of a staff card toggles attendance (`Mark Absent` ⟷ `Mark Present`).
-    - Applies to both **Grid Card View** and **List View** in `AbsenceRoster.tsx`.
-    - Guard child interactive buttons/popovers (`e.stopPropagation()`) so clicking Off. CT, Availability, or Duty chips does not trigger attendance toggle.
-  - [ ] **UI-02 (Staff Card Name Display: Full Name Directly, Abbreviation Only on Narrow Screens)**:
-    - Staff cards must display the teacher's full name directly (`teacher.fullName`).
-    - Only on narrow / mobile viewports compress/fallback to abbreviation (`teacher.abbr`) via responsive CSS classes / container queries (`hidden sm:inline`, `sm:hidden`).
-
-### Job Bundle 26E: Officiating Class Teacher Whole-Day Assignment & Solver Alignment
-- **Status**: 🔴 Queued (Max 2 items)
-- **Scope & Work Items**:
-  - [ ] **BUG-18 (Officiating CT Whole-Day Assignment & Auto-Resolve Alignment)**:
-    - When assigned as Officiating Class Teacher (`Off. CT.`), the appointment is for the entire day, not period-by-period.
-    - Auto-Resolve solver must prioritize and assign coverage on this whole-day basis for the designated Off. CT across the absent CT's timetable.
-
-### Job Bundle 26F: Universal Notification Center & Live Alert Hub
-- **Status**: 🔴 Queued
-- **Scope & Work Items**:
+      - On confirm, marks the substitution status as `DISPUTED` (amber/rose badge), stores the dispute remark, and automatically dispatches a high-priority alert to the officiating coordinator.
   - [ ] **FEAT-50 (Universal Notification Center & Live Alert Hub)**:
     - Add an Apple HIG Notification Bell button (`🔔`) to `Header.tsx` with a live reactive notice counter pill (`notif-badge`).
     - Build `NotificationCenterModal.tsx`: an elevated slide-over drawer / floating modal aggregating real-time operational notices:
       1. **Disputes (`⚑`)**: Alerts when a teacher disputes a substitution with their name, period, class, remark, and a 1-tap `[ Reassign Sub ]` action.
       2. **Timetable Clashes & Conflicts (`⚠️`)**: Real-time warnings when a teacher is double-booked across sections.
       3. **Uncovered Period Warnings (`🕒`)**: Alerts for unassigned substitution duties.
-      4. **Officiating Leadership Prompts (`⭐` / `🏫`)**: Reminders when AC or CT are absent and require temporary officiating assignment.
+      4. **Officiating Prompts (`🏫`)**: Reminders when AC or CT are absent and require temporary officiating assignment.
       5. **Acceptance Receipts (`✓`)**: Notices when a teacher confirms and accepts their duty.
     - Provide 1-tap "Mark All as Read", clear individual notices, and outside-click / <kbd>Esc</kbd> dismissal.
 
-### Job Bundle 27: Auto-Resolve Brain Studio, Theme Engine & Developer Options
+### Job Bundle 29: Theme Engine, Restored Developer Options & Routine Drag Reordering
 - **Status**: 🔴 Queued
 - **Scope & Work Items**:
-  - [ ] **FEAT-61 (Auto-Resolve Brain Studio & Solver Policy Configuration)**:
-    - In the Substitutions tab header (beside the Auto-Resolve button), add an intelligent Head-with-Brain icon (`Brain` from `lucide-react`).
-    - Tapping opens the **Auto-Resolve Policy & Heuristics Studio**:
-      - **Criteria Weighting**: Configure priority sliders for *Same Subject Match*, *Same Class / Department Alignment*, and *Different Class Fair-Share*.
-      - **Assignment Sequence**: Order of allocation toggle (*Class Teachers First* vs. *Subject Teachers First*).
-      - **Subject-Specific Priority Overrides**: Add custom subject assignment rules (e.g. *"For Mathematics, prioritize Teacher X"*, *"For Science, prioritize Teacher Y"*).
-    - Wire solver policies directly into `@lfps/core`'s `calculateCandidateAffinity` and auto-resolve engines.
   - [ ] **FEAT-46 (Complete 12-Theme Engine Adapted from THEMES.md)**:
     - Implement CSS token engine supporting all 12 curated themes across 4 design families:
       1. ☀️ **Minimalist Light**: `system`, `light` (iOS Light), `warm-sepia` (Warm Sepia / Parchment).
@@ -580,8 +591,13 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
       - Target cell halo pulse indicator toggle (`subHaloIndicator`) and color palette selector (`Emerald`, `Neon Cyan`, `Amber`, `Violet`).
       - Acceptance countdown timer toggle and duration selector (`5s`, `10s`, `30s`, `60s`).
       - Mobile undo/redo icon style selector (`Curved`, `Circular`, `Geometric`, `Micro-Text`).
+  - [ ] **FEAT-37A & FEAT-37B (Routine Matrix Drag-and-Drop Reordering & Dedicated Class Context Menu)**:
+    - Enable intuitive drag-and-drop cell interactions in `RoutineGrid.tsx` allowing coordinators to move or swap period assignments with instant undo/redo tracking.
+    - In Classes View (`viewMode === 'classes'`), right-clicking or long-pressing provides class-specific actions (`[ Change Subject/Teacher ]`, `[ Inspect Substitutions ]`, `[ View Section Schedule ]`).
+  - [ ] **FEAT-22, FEAT-23, FEAT-24 (Substitution Table Sorting & Column Polish)**:
+    - Clickable column headers with sorting chevrons (`▲`/`▼`) for Period, Class, Teacher, Status.
 
-### Job Bundle 28: Unified Cloud & Google Sheets 2-Way Live Sync Engine
+### Job Bundle 30: Unified Cloud & Google Sheets 2-Way Live Sync Engine
 - **Status**: 🔴 Queued
 - **Scope & Work Items**:
   - [ ] **FEAT-51A (Inbound Routine Sync from Google Sheets)**:

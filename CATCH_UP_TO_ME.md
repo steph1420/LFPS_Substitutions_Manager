@@ -28,21 +28,16 @@
 
 ### 3. What To Do On Your Very First Turn
 - If the user says **"Go"**, **"Yes"**, or tells you to proceed, **DO NOT ASK WHAT TO DO**. They are approving:
-  👉 **Job Bundle 26B (Max 2 items)**:
-  1. **`SEC-01` (Three-Tier Role-Based Access Control Architecture: Admin, Teacher, Guest)**:
-     - Strict rights segregation before drawing any logical element.
-     - `Admin` has full master routine, solver, reset, purge, and officiating rights.
-     - `Teacher` (logged in via `loggedInTeacher`) views personal schedule, accepts/disputes own substitutions, edits own availability remark. Cannot modify baseline routine or reset days.
-     - `Guest` has read-only viewer rights.
-     - Build `<PermissionGuard requiredRole={...}>` and `canPerform(action, role)` checking before rendering buttons or executing store actions.
-  2. **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**:
-     - When a teacher is logged in, their assigned substitution duties show interactive decision controls:
-       - `[ ✓ Accept ]`: Sets status to `ACCEPTED`, highlights duty in emerald green, dispatches notice.
-       - `[ ⚑ Dispute ]`: Expands micro-remark field (`"Reason for dispute (optional, e.g. Lab duty, Library inventory)"`) with `[ Confirm Dispute ]`.
-       - On confirm, marks status as `DISPUTED` (amber/rose badge), saves remark, and alerts leadership (AC / AAC).
+  👉 **Job Bundle 26: Immediate Operational Polish, Nomenclature, Roster Ergonomics & Non-Shifting UI**:
+  1. **`BUG-19`**: Officiating AC Persistence Fix on Mark Present / Mark All Present (Primary AC on duty takes absolute precedence; reconcile store map).
+  2. **`LOGIC-07`**: Routine Classes View: Remove Nursery sections (`NUR A`, `NUR B`).
+  3. **`TERMS-01` & `TERMS-02`**: Eradicate "Team" (strictly CT & 2T) and "Leader/Leadership" (strictly "Officiating Staff").
+  4. **`UI-01` & `UI-03`**: School Headings: "Substitutions Overview", "Staff Roster Overview", and "Officiating Staff".
+  5. **`UI-05`**: Non-Shifting UI for Absence Actions (zero layout jumps when AC/CT marked absent).
+  6. **`LOGIC-06`, `UI-02` & `UI-04`**: Roster Ergonomics & Multi-Density Suite (comfortable whole-card tap targets, full names, and 4 view modes: Comfort Grid, Compact Grid, Compact List, Detailed List).
 
 ### 4. Non-Negotiable Rules To Behave Like Me
-1. **MERGE MAX 2 ITEMS PER STEP**: The user explicitly instructed: *"Merge max 2 things. So you can process clearly."* Never merge 3+ tasks at once!
+1. **HIGH-CAPACITY COHESIVE BUNDLES**: The user instructed: *"Now we will not stick to just 2 tasks... You can make bundles as big as you can handle in your reasoning."* Group related features and bugfixes into comprehensive, thematic bundles.
 2. **BRANCH SAFETY: WORK ONLY ON `next-gen`**: **NEVER TOUCH `main`**.
 3. **PRE-BUNDLE SNAPSHOT BACKUP**: Run `tar -czf _backups/LFPS_Substitutions_Manager_v2.0.0_<bundle>_$(date +%Y%m%d_%H%M%S).tar.gz --exclude="node_modules" --exclude=".git" --exclude="dist" --exclude="_backups" .` before touching code.
 4. **PRUNE STALE ASSETS AFTER BUILD**: When running `npm run build`, delete previous hashed files in `assets/` so only active bundles remain.
@@ -554,39 +549,35 @@ LFPS_Substitutions_Manager/
 - **All Unit Tests**: 15/15 Passing (`npm test`).
 - **Production Build**: Passes cleanly (`npm run build`).
 
-### Queued Future Backlog (In Order of Priority - Max 2 Items Per Step)
+### Queued High-Capacity Backlog (Consolidated Thematic Bundles)
 
-1. **Job Bundle 26B: Three-Tier RBAC Architecture & Teacher Substitution Dispute Workflow (ACTIVE NEXT)**:
-   - **`SEC-01` (Three-Tier Role-Based Access Control Architecture: Admin, Teacher, Guest)**: Universal rights segregation before drawing any logical element. Admin (full master routine, baseline reset, history purge, solver policy), Teacher (view own schedule, accept/dispute own substitutions, edit own availability remark), and Guest (read-only viewer). Build `<PermissionGuard>` and `canPerform(action, role)` checking before rendering action buttons or executing mutations.
-   - **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**: Logged-in teacher cards display inline `[ ✓ Accept ]` and `[ ⚑ Dispute ]` with optional reason remark field, notifying AC / AAC.
+1. **Job Bundle 26: Immediate Operational Polish, Nomenclature, Roster Ergonomics & Non-Shifting UI (ACTIVE NEXT)**:
+   - **`BUG-19` (Officiating AC Persistence Fix)**: If primary AC (`Mrs. R. Pahwa`) is on duty (`!isAcAbsent`), `getEffectiveOfficiatingAC` strictly resolves to primary AC. Store automatically prunes `officiatingAC[day]` when AC is untoggled present or during "Mark All Present".
+   - **`LOGIC-07` (Routine Classes View Nursery Removal)**: Remove Nursery (`NUR A`, `NUR B`) from routine classes view (`RoutineGrid.tsx`).
+   - **`TERMS-01` & `TERMS-02` (Nomenclature Overhaul)**: Eradicate "Team" (strictly CT, 2T, "part of a class") and "Leader/Leadership" (strictly "Officiating Staff", "Officiating", "Staff", "Teacher").
+   - **`UI-01` & `UI-03` (Human School Headings)**: "Substitutions Overview", "Staff Roster Overview", and "Officiating Staff".
+   - **`UI-05` (Non-Shifting UI for Absence Actions)**: Zero layout jump / push-down when marking AC or CT absent via fixed/stable action slots.
+   - **`LOGIC-06`, `UI-02` & `UI-04` (Staff Roster Multi-Density & Ergonomics Suite)**: Comfortable whole-card free-space tap for attendance, full names prioritized with responsive abbreviation, and 4 view modes (Comfort Grid, Compact Grid, Compact List, Detailed List) scalable to 50+ staff.
 
-2. **Job Bundle 26C: Nomenclature Simplification & School Overview Headings**:
-   - **`TERMS-01` (Nomenclature Simplification: Eliminate 'Team', Standardize CT & 2nd Teacher)**: Do away with 'Team' nomenclature entirely across UI copy, labels, tooltips, modals, and codebase. Teachers in a class are strictly referred to as **Class Teacher** (CT) and **2nd Teacher** (2T). If another teacher assists with class work, refer to them as **"part of a class"** (handling work in the class, but not necessarily CT or 2T).
-   - **`UI-01` (Human School Overview Headings: Substitutions Overview & Staff Roster Overview)**: Replace technical overview titles with simple school titles: change *"Substitution Register & Coverage Engine"* $\to$ **"Substitutions Overview"** and *"Staff Roster Matrix & Availability Register"* $\to$ **"Staff Roster Overview"**.
+2. **Job Bundle 27: Whole-Day Officiating CT & Auto-Resolve Brain Studio**:
+   - **`BUG-18` (Officiating CT Whole-Day Assignment)**: Off. CT is a full-day section charge. Auto-Resolve assigns coverage on this whole-day basis.
+   - **`FEAT-61` (Auto-Resolve Brain Studio & Solver Policy Configuration)**: Head-with-Brain icon (`Brain`) opening Policy Studio: Same Subject (Co-Workers), Class Teacher priority, Second Teacher priority, Preferred/Defined Teachers (Principal subject overrides), and assignment sequence toggles. Direct integration with `@lfps/core` solver.
 
-3. **Job Bundle 26D: Effortless Absence Marking & Staff Full Name Display**:
-   - **`LOGIC-06` (Effortless Absence Marking: Whole Card Free Space Tap to Toggle Absent)**: Tapping anywhere in the free / unoccupied space of a staff card toggles attendance (`Mark Absent` ⟷ `Mark Present`), applicable in both Grid Card View and List View in `AbsenceRoster.tsx`. Inner action buttons guard with `e.stopPropagation()`.
-   - **`UI-02` (Staff Card Name Display: Full Name Directly, Abbreviation Only on Narrow Screens)**: Staff cards display the teacher's full name directly (`teacher.fullName`). Only on narrow / mobile screens compress/fallback to abbreviation (`teacher.abbr`) via responsive classes.
+3. **Job Bundle 28: Security RBAC, Teacher Self-Service & Universal Notification Center**:
+   - **`SEC-01` (Three-Tier RBAC Architecture: Admin, Teacher, Guest)**: Universal rights segregation with `<PermissionGuard>`.
+   - **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**: Logged-in teacher `[ ✓ Accept ]` and `[ ⚑ Dispute ]` with optional remark field and coordinator alert dispatch.
+   - **`FEAT-50` (Universal Notification Center & Live Alert Hub)**: Header Bell icon with live badge opening slide-over drawer for disputes, timetable clashes, uncovered periods, and receipts.
 
-4. **Job Bundle 26E: Officiating Class Teacher Whole-Day Assignment & Solver Alignment**:
-   - **`BUG-18` (Officiating CT Whole-Day Assignment & Auto-Resolve Alignment)**: When assigned Off. CT, the appointment is for the entire day, not period-by-period. Auto-Resolve solver must prioritize and assign coverage on this whole-day basis for the designated Off. CT across the absent CT's timetable.
+4. **Job Bundle 29: Theme Engine, Restored Developer Options & Routine Drag Reordering**:
+   - **`FEAT-46` (Complete 12-Theme Engine)**: CSS token architecture for 12 themes across 4 design families with visual swatches.
+   - **`FEAT-47` (Restored Developer Options Panel)**: 5-tap version Easter egg unlock; cross-period lock, target cell halo indicator, countdown timer, etc.
+   - **`FEAT-37A` & `FEAT-37B`**: Routine Matrix Drag-and-Drop Reordering with undo/redo and dedicated Class View context menu.
+   - **`FEAT-22`, `FEAT-23`, `FEAT-24`**: Substitution Register interactive column sorting chevrons, responsive width, and column consolidation.
 
-5. **Job Bundle 26F: Universal Notification Center & Live Alert Hub**:
-   - **`FEAT-50` (Universal Notification Center & Live Alert Hub)**: Header Bell icon with live notice counter pill opening `NotificationCenterModal.tsx`.
-
-6. **Job Bundle 27: Auto-Resolve Brain Studio, Theme Engine & Developer Options**:
-   - **`FEAT-61` (Auto-Resolve Brain Studio & Solver Policy Configuration)**: Head-with-Brain icon (`Brain`) in Substitutions tab opening Policy Studio: criteria weighting (Same Subject, Same Class, Different Class), assignment sequence (Class Teachers First vs. Subject Teachers First), and subject-specific priority overrides.
-   - **`FEAT-46` (Complete 12-Theme Engine Adapted from THEMES.md)**: Implement CSS token system for all 12 themes across Minimalist Light, Minimalist Night, Glass Materials, and Studio families with instant preview.
-   - **`FEAT-47` (Hidden Settings & Developer Options Restoration)**: Restore hidden Developer Options panel (5-tap on version row) with relocated cloud sync diagnostics, same-period lock toggle, target cell halo pulse toggle/colors, countdown timer, and undo/redo icon style selector.
-
-4. **Job Bundle 28: Unified Cloud & Google Sheets 2-Way Live Sync Engine**:
-   - **`FEAT-51A` (Inbound Routine Sync from Google Sheets CSV)**: Pull master schedule diffs from Google Sheets (`/gviz/tq?tqx=out:csv&sheet=OVERVIEW`) with review modal.
-   - **`FEAT-51B` (Outbound Daily Ledger Push to Google Sheets)**: Push today's substitutions ledger to Google Sheets via Google Apps Script Web App webhook (`/exec`).
-   - **`FEAT-48` (Production Two-Way Full-Duplex Cloud Sync)**: Real-time WebSocket synchronization with Go backend (`/ws`) for sub-millisecond multi-device state updates.
-
-5. **Job Bundle 29: Routine Matrix Drag-and-Drop Reordering & Dedicated Class Context Menu**:
-   - **`FEAT-37A` & `FEAT-37B`**: Routine cell drag-and-drop reordering with undo/redo integration and dedicated Class View context menu.
-   - **`FEAT-22`, `FEAT-23`, `FEAT-24`**: Substitution Register interactive column sorting chevrons, desktop/mobile responsive width, and column consolidation.
+5. **Job Bundle 30: Unified Cloud Sync & Google Sheets 2-Way Live Pipeline**:
+   - **`FEAT-51A` (Inbound Routine Sync from Google Sheets CSV)**: Pull master schedule diffs with review modal.
+   - **`FEAT-51B` (Outbound Daily Ledger Push to Google Sheets)**: Push today's substitutions ledger to Google Sheets Web App endpoint (`/exec`).
+   - **`FEAT-48` (Production Two-Way Full-Duplex Cloud Sync)**: Real-time WebSocket synchronization with Go backend (`/ws`).
 
 ---
 
