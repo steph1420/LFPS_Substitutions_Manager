@@ -583,28 +583,37 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
     - Wire solver policies directly into `@lfps/core`'s `calculateCandidateAffinity` and auto-resolve engines.
 
 ### Job Bundle 29: Security RBAC, Teacher Self-Service & Universal Notification Center
-- **Status**: 🔴 Queued
+- **Status**: 🟢 Completed
 - **Scope & Work Items**:
-  - [ ] **SEC-01 (Three-Tier Role-Based Access Control Architecture: Admin, Teacher, Guest)**:
+  - [x] **SEC-01 (Three-Tier Role-Based Access Control Architecture: Admin, Teacher, Guest)**:
     - Strict rights segregation before drawing any logical element:
       1. **`Admin` (Full Rights)**: Can edit master routine, assign substitutions, baseline reset, purge history, configure solver policy, and appoint officiating roles.
       2. **`Teacher` (Logged-In Identity Rights)**: Can view personal duty schedule, accept/dispute their own substitutions, edit their own availability remark. Cannot modify baseline routine, reset days, or purge history.
       3. **`Guest` (Viewer Rights)**: Read-only inspection of routine matrix, substitutions register, and roster. Destructive mutations and dispute actions are suppressed.
-    - Build `<PermissionGuard requiredRole={...}>` and `canPerform(action, role)` helper checking permissions before rendering action buttons or executing store mutations.
-  - [ ] **FEAT-49 (Teacher Substitution Acceptance & Dispute Workflow)**:
-    - In `SubstitutionsRegister.tsx` (and dedicated teacher schedule view), when a teacher is logged in (`loggedInTeacher`), any substitution duty assigned to them displays an interactive decision pod:
-      - `[ ✓ Accept ]`: Marks the substitution status as `ACCEPTED`, highlights the duty in emerald green, locks the slot, and dispatches an acceptance notice.
-      - `[ ⚑ Dispute ]`: Expands an inline tactile micro-remark textbox (`"Reason for dispute (optional, e.g. Lab duty, Library inventory)"`) with `[ Confirm Dispute ]` and `[ Cancel ]`.
-      - On confirm, marks the substitution status as `DISPUTED` (amber/rose badge), stores the dispute remark, and automatically dispatches a high-priority alert to the officiating coordinator.
-  - [ ] **FEAT-50 (Universal Notification Center & Live Alert Hub)**:
-    - Add an Apple HIG Notification Bell button (`🔔`) to `Header.tsx` with a live reactive notice counter pill (`notif-badge`).
-    - Build `NotificationCenterModal.tsx`: an elevated slide-over drawer / floating modal aggregating real-time operational notices:
-      1. **Disputes (`⚑`)**: Alerts when a teacher disputes a substitution with their name, period, class, remark, and a 1-tap `[ Reassign Sub ]` action.
+    - Built `<PermissionGuard requiredRole={...}>` and `usePermissions()` hook checking permissions before rendering action buttons or executing mutations.
+  - [x] **FEAT-49 (Teacher Substitution Acceptance & Dispute Workflow)**:
+    - In `SubstitutionsRegister.tsx` (across both Grid Card and List view modes), substitution duties display interactive teacher decision controls:
+      - `[ ✓ Accept ]`: Marks status as `ACCEPTED`, displays emerald confirmation badge (`✓ Accepted by [Teacher]`), and logs timestamp.
+      - `[ ⚑ Dispute ]`: Summons tactile `DisputeModal.tsx` allowing staff to record dispute remarks (e.g. Lab duty, Library inventory, prior arrangement).
+      - On confirm, marks status as `DISPUTED` (amber/rose callout badge with dispute remark) and dispatches real-time alert to Notification Center.
+      - Coordinators receive an instant `[ Reassign ]` button on disputed cards/rows.
+  - [x] **FEAT-50 (Universal Notification Center & Live Alert Hub)**:
+    - Added Apple HIG Notification Bell button (`🔔`) with live reactive unread counter pill to `Header.tsx` (both desktop and mobile viewports).
+    - Built `NotificationCenterDrawer.tsx`: slide-over drawer aggregating real-time operational notices:
+      1. **Disputes (`⚑`)**: Alerts when staff disputes a substitution duty with 1-tap `[ Reassign Sub ]` action.
       2. **Timetable Clashes & Conflicts (`⚠️`)**: Real-time warnings when a teacher is double-booked across sections.
-      3. **Uncovered Period Warnings (`🕒`)**: Alerts for unassigned substitution duties.
-      4. **Officiating Prompts (`🏫`)**: Reminders when AC or CT are absent and require temporary officiating assignment.
-      5. **Acceptance Receipts (`✓`)**: Notices when a teacher confirms and accepts their duty.
-    - Provide 1-tap "Mark All as Read", clear individual notices, and outside-click / <kbd>Esc</kbd> dismissal.
+      3. **Uncovered Period Warnings (`🕒`)**: Alerts for pending substitution coverage.
+      4. **Officiating Prompts (`🏫`)**: Reminders when AC or CT are absent and require temporary appointment.
+      5. **Acceptance Receipts (`✓`)**: Notices when a teacher accepts assigned duty.
+    - Provided 1-tap "Mark all as read", filter tabs (All, Unread, Actionable), clear notices, and smooth backdrop/<kbd>Esc</kbd> dismissal.
+  - [x] **Routine Grid Clean Teacher Names**:
+    - Eradicated golden and purple colors from teacher names in Routine Grid; strictly rendered in standard clean text (`text-slate-100` / `text-rose-100`).
+  - [x] **Universal Class Teacher Recognition for Academic Coordinators**:
+    - Eliminated `&& !isAC && !isAAC` exclusion across `RoutineGrid.tsx`, `SubstitutionsRegister.tsx`, and `TabBar.tsx`. Academic Coordinators who are Class Teachers (`Mrs. R. Pahwa` - PREP A, `Mrs. S. Lakra` - KG A) now show both their AC/AAC badge and CT badge with full CT auto-resolve participation.
+  - [x] **Segregated Unavailable Staff in Popup Teacher Selector**:
+    - Removed small accordion toggle button in `AssignSubstituteModal.tsx`. Always segregates staff into two clear sections: Available Candidates (ranked with Fit Score and `[ Assign ]`) and Unavailable / Busy Staff (dimmed with conflict reasons and `[ Override ]`).
+  - [x] **Strict 1-Pulse Amber Attention Glow**:
+    - Updated amber glow animation iteration count strictly to 1 in `index.css` and `RosterNormalCard.tsx`.
 
 ### Job Bundle 30: Theme Engine, Restored Developer Options & Routine Drag Reordering
 - **Status**: 🔴 Queued

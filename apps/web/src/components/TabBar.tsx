@@ -27,9 +27,7 @@ export const TabBar: React.FC = () => {
   const isClassTeacher = (teacherName: string): boolean => {
     const teacher = directory[teacherName];
     if (!teacher) return false;
-    const isAC = teacher.abbr === 'Mrs. R. Pahwa' || (teacher.role.includes('Academic Coordinator') && !teacher.role.includes('Asst.'));
-    const isAAC = teacher.abbr === 'Mrs. S. Lakra' || teacher.role.includes('Asst. Academic Coordinator');
-    return teacher.role.includes('Class Teacher') && !isAC && !isAAC;
+    return teacher.role.includes('Class Teacher');
   };
 
   // Evaluate Academic Coordinator Succession (LOGIC-04)

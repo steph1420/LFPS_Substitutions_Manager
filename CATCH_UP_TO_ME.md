@@ -15,20 +15,22 @@
 - **Production Build Status**: Passes cleanly via `npm run build`.
 - **Live Deployment**: `https://steph1420.github.io/LFPS_Substitutions_Manager/` (tracks branch `next-gen`).
 
-### 2. What Was Just Completed (Job Bundle 28)
-- **`BUG-18` (Whole-Day Officiating CT Priority)**: Officiating Class Teacher appointments are anchored as full-day section responsibilities in `@lfps/core` and `useTimetableStore`. `calculateCandidateAffinity` assigns +250 points affinity to the designated Off. CT for uncovered periods of their assigned class, ensuring the engine covers the section with the designated Off. CT before choosing other staff while strictly respecting period availability.
-- **`FEAT-61` (Auto-Resolve Brain Studio & Heuristics Tuning Modal)**: Built `AutoResolveBrainModal.tsx` launched via the Brain icon in `SubstitutionsRegister.tsx`. Enables school coordinators to configure heuristic weights (Same Subject Co-Workers, Class Teacher, Second Teacher, Workload Balance penalty, Fatigue penalty, Whole-Day Off. CT priority, and Principal Preferred Subject Overrides).
-- **Strict 3 Single Pulses for Amber Glow**: Replaced dual-peak keyframe with `@keyframes singleAmberPulse` running exactly 3 individual pulses (0% -> 50% peak -> 100% rest) when switching to Staff Roster.
-- **Roster Normal Card Breathing Room & Text Cutoff Elimination**: Restored spacious card dimensions (`min-h-[210px]`, `p-4 sm:p-5`, `rounded-2xl`, `w-12 h-12` avatar) and converted Off. CT and Off. AC blocks to full-width vertical stacks, eliminating text cutoff for dual-role staff (e.g. Mrs. Riya Pahwa).
-- **Abbreviated Names with Hover Tooltip**: Standardized teacher card titles on `teacher.abbr` with full name on hover across all 4 roster layout modes (Normal Grid, Compact Grid, Normal List, Compact List).
-- **Binary Header Navigation Mode**: Simplified header states in `Header.tsx` to strictly Full Console or Dynamic Island Day Pill (`'FULL' | 'PILL'`), eliminating the slim peek strip for clean, zero-jerk mobile scrolling.
+### 2. What Was Just Completed (Job Bundle 29)
+- **`SEC-01` (Three-Tier RBAC Architecture: Admin, Teacher, Guest)**: Universal rights segregation with `<PermissionGuard>` component and `usePermissions()` hook. Front-desk unauthenticated sessions operate as Admin, with Teacher self-service and Guest viewing modes.
+- **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**: Active substitution cards and rows in `SubstitutionsRegister.tsx` display interactive `[ ✓ Accept ]` and `[ ⚑ Dispute ]` actions. Disputing opens `DisputeModal.tsx` for entering reasons, marks the duty as `DISPUTED`, dispatches a notification, and surfaces a 1-tap `[ Reassign ]` button for coordinators.
+- **`FEAT-50` (Universal Notification Center & Live Alert Hub)**: Header Bell button (`🔔`) with reactive unread counter badge opening `NotificationCenterDrawer.tsx` slide-over drawer aggregating disputes, clashing commitments, pending duties, officiating prompts, and acceptance receipts.
+- **Routine Grid Clean Teacher Names**: Eradicated golden and purple colors from teacher names in Routine Grid; strictly rendered in clean standard text (`text-slate-100` / `text-rose-100`).
+- **Universal Class Teacher Recognition**: Eliminated `&& !isAC && !isAAC` exclusion across `RoutineGrid.tsx`, `SubstitutionsRegister.tsx`, and `TabBar.tsx`. Academic Coordinators who are Class Teachers (`Mrs. R. Pahwa` - PREP A, `Mrs. S. Lakra` - KG A) now show both their AC/AAC badge and CT badge with full CT auto-resolve participation.
+- **Segregated Unavailable Staff in Popup Selector**: Replaced the small accordion toggle in `AssignSubstituteModal.tsx` with segregated Available Candidates and Unavailable/Busy Staff sections, showing clear conflict reasons and `[ Override ]` button.
+- **Strict 1-Pulse Amber Attention Glow**: Updated amber glow animation iteration count strictly to 1 in `index.css` and `RosterNormalCard.tsx`.
 
 ### 3. What To Do On Your Very First Turn
 - If the user says **"Go"**, **"Yes"**, or tells you to proceed, **DO NOT ASK WHAT TO DO**. They are approving:
-  👉 **Job Bundle 29: Security RBAC, Teacher Self-Service & Universal Notification Center**:
-  1. **`SEC-01`**: Three-Tier RBAC Architecture (Admin, Teacher, Guest) with `<PermissionGuard>`.
-  2. **`FEAT-49`**: Teacher Substitution Acceptance & Dispute Workflow (`[ ✓ Accept ]` and `[ ⚑ Dispute ]`).
-  3. **`FEAT-50`**: Universal Notification Center & Live Alert Hub (Header Bell icon with live badge opening slide-over drawer).
+  👉 **Job Bundle 30: Theme Engine, Restored Developer Options & Routine Drag Reordering**:
+  1. **`FEAT-46`**: Complete 12-Theme Engine Adapted from THEMES.md across 4 design families with visual swatches.
+  2. **`FEAT-47`**: Restored Developer Options & Diagnostics Panel (5-tap version easter egg unlock; cross-period lock, target cell halo pulse indicator, etc.).
+  3. **`FEAT-37A` & `FEAT-37B`**: Routine Matrix Drag-and-Drop Reordering with undo/redo and dedicated Class View context menu.
+  4. **`FEAT-22`, `FEAT-23`, `FEAT-24`**: Substitutions Register column sorting chevrons and high-density adjustments.
 
 ### 4. Non-Negotiable Rules To Behave Like Me
 1. **HIGH-CAPACITY COHESIVE BUNDLES**: The user instructed: *"Now we will not stick to just 2 tasks... You can make bundles as big as you can handle in your reasoning."* Group related features and bugfixes into comprehensive, thematic bundles.
@@ -627,19 +629,14 @@ LFPS_Substitutions_Manager/
 
 ### Current Git State
 - **Branch**: `next-gen`
-- **Head Commit**: Job Bundle 28 Complete (`BUG-18`, `FEAT-61`, 3-pulse amber glow, card dimensions, abbreviated names, binary header)
+- **Head Commit**: Job Bundle 29 Complete (`SEC-01`, `FEAT-49`, `FEAT-50`, clean Routine Grid teacher names, AC CT recognition, segregated teacher selector, 1-pulse amber glow)
 - **Working Tree**: Clean.
 - **All Unit Tests**: 18/18 Passing (`npm test`).
 - **Production Build**: Passes cleanly (`npm run build`).
 
 ### Queued High-Capacity Backlog (Consolidated Thematic Bundles)
 
-1. **Job Bundle 29: Security RBAC, Teacher Self-Service & Universal Notification Center (ACTIVE NEXT)**:
-   - **`SEC-01` (Three-Tier RBAC Architecture: Admin, Teacher, Guest)**: Universal rights segregation with `<PermissionGuard>`.
-   - **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**: Logged-in teacher `[ ✓ Accept ]` and `[ ⚑ Dispute ]` with optional remark field and coordinator alert dispatch.
-   - **`FEAT-50` (Universal Notification Center & Live Alert Hub)**: Header Bell icon with live badge opening slide-over drawer for disputes, timetable clashes, uncovered periods, and receipts.
-
-4. **Job Bundle 30: Theme Engine, Restored Developer Options & Routine Drag Reordering**:
+1. **Job Bundle 30: Theme Engine, Restored Developer Options & Routine Drag Reordering (ACTIVE NEXT)**:
    - **`FEAT-46` (Complete 12-Theme Engine)**: CSS token architecture for 12 themes across 4 design families with visual swatches.
    - **`FEAT-47` (Restored Developer Options Panel)**: 5-tap version Easter egg unlock; cross-period lock, target cell halo indicator, countdown timer, etc.
    - **`FEAT-37A` & `FEAT-37B`**: Routine Matrix Drag-and-Drop Reordering with undo/redo and dedicated Class View context menu.

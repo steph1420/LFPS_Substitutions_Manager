@@ -13,6 +13,8 @@ import {
   DEFAULT_AUTORESOLVE_POLICY,
   DEFAULT_STAFF_DIRECTORY,
   DEFAULT_MASTER_SCHEDULE,
+  UserRole,
+  AppNotification,
 } from '@lfps/core';
 
 export interface ContextMenuTarget {
@@ -114,10 +116,15 @@ interface TimetableState {
   availabilities: Record<string, StaffAvailabilityRecord>;
   substitutions: SubstitutionAssignment[];
 
-  // Authentication & Officiating
+  // Authentication, RBAC & Officiating (SEC-01)
   loggedInTeacher: string | null;
+  operatingRole: UserRole;
   officiatingAC: Record<DayOfWeek, string | null>;
   officiatingCT: Record<DayOfWeek, Record<string, string>>;
+
+  // Notifications (FEAT-50)
+  isNotificationCenterOpen: boolean;
+  notifications: AppNotification[];
 
   // History Stacks (FEAT-40: Per-tab isolated undo/redo)
   routineHistory: HistoryStack<RoutineSnapshot>;
@@ -131,6 +138,7 @@ interface TimetableState {
   activeCoTeachSlot: CoTeachSlotTarget | null;
   activeOfficiatingTarget: OfficiatingTarget | null;
   activeAssignSubSlot: AssignSubSlotTarget | null;
+  activeDisputeTarget: SubstitutionAssignment | null;
 
   // Actions
   setDay: (day: DayOfWeek) => void;
@@ -199,8 +207,22 @@ interface TimetableState {
 
   login: (teacherName: string) => void;
   logout: () => void;
+  setOperatingRole: (role: UserRole) => void;
   assignOfficiatingAC: (day: DayOfWeek, teacherName: string) => void;
   assignOfficiatingCT: (day: DayOfWeek, section: string, teacherName: string) => void;
+
+  // Teacher Self-Service & Dispute Actions (FEAT-49)
+  acceptSubstitution: (id: string) => void;
+  disputeSubstitution: (id: string, reason: string) => void;
+  openDisputeModal: (sub: SubstitutionAssignment) => void;
+  closeDisputeModal: () => void;
+
+  // Universal Notification Center Actions (FEAT-50)
+  openNotificationCenter: () => void;
+  closeNotificationCenter: () => void;
+  markNotificationRead: (id: string) => void;
+  clearAllNotifications: () => void;
+  addNotification: (notif: Omit<AppNotification, 'id' | 'timestamp' | 'isRead'>) => void;
 
   // Undo / Redo Actions (FEAT-40)
   undo: (tab?: ActiveTab) => void;
@@ -294,6 +316,9 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   substitutions: [],
 
   loggedInTeacher: null,
+  operatingRole: 'ADMIN',
+  isNotificationCenterOpen: false,
+  notifications: [],
   officiatingAC: { MON: null, TUE: null, WED: null, THU: null, FRI: null, SAT: null },
   officiatingCT: { MON: {}, TUE: {}, WED: {}, THU: {}, FRI: {}, SAT: {} },
 
@@ -307,6 +332,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   activeCoTeachSlot: null,
   activeOfficiatingTarget: null,
   activeAssignSubSlot: null,
+  activeDisputeTarget: null,
 
   setDay: (day) => set({ selectedDay: day }),
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -617,8 +643,94 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       };
     }),
 
-  login: (teacherName) => set({ loggedInTeacher: teacherName }),
-  logout: () => set({ loggedInTeacher: null }),
+  login: (teacherName) =>
+    set({
+      loggedInTeacher: teacherName,
+      operatingRole:
+        teacherName === 'Mrs. R. Pahwa' || teacherName === 'Mrs. S. Lakra'
+          ? 'ADMIN'
+          : 'TEACHER',
+    }),
+  logout: () => set({ loggedInTeacher: null, operatingRole: 'ADMIN' }),
+  setOperatingRole: (role) => set({ operatingRole: role }),
+
+  acceptSubstitution: (id) =>
+    set((state) => {
+      const substitutionsHistory = pushSnapshot(state.substitutionsHistory, {
+        substitutions: state.substitutions,
+      });
+
+      return {
+        substitutions: state.substitutions.map((sub) =>
+          sub.id === id ? { ...sub, status: 'ACCEPTED' as const, acceptedAt: Date.now() } : sub
+        ),
+        substitutionsHistory,
+      };
+    }),
+
+  disputeSubstitution: (id, reason) =>
+    set((state) => {
+      const substitutionsHistory = pushSnapshot(state.substitutionsHistory, {
+        substitutions: state.substitutions,
+      });
+
+      let disputedSub: SubstitutionAssignment | undefined;
+      const updated = state.substitutions.map((sub) => {
+        if (sub.id === id) {
+          disputedSub = {
+            ...sub,
+            status: 'DISPUTED' as const,
+            disputeRemark: reason,
+            disputedAt: Date.now(),
+          };
+          return disputedSub;
+        }
+        return sub;
+      });
+
+      const newNotif: AppNotification = {
+        id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        type: 'DISPUTE',
+        title: `Substitution Disputed by ${disputedSub?.substituteTeacher || 'Staff'}`,
+        description: `Period ${disputedSub?.period} (${disputedSub?.className} • ${disputedSub?.subject}): "${reason}"`,
+        timestamp: Date.now(),
+        isRead: false,
+        actionTab: 'substitutions',
+        actionTarget: id,
+      };
+
+      return {
+        substitutions: updated,
+        notifications: [newNotif, ...state.notifications],
+        substitutionsHistory,
+        activeDisputeTarget: null,
+      };
+    }),
+
+  openDisputeModal: (sub) => set({ activeDisputeTarget: sub }),
+  closeDisputeModal: () => set({ activeDisputeTarget: null }),
+
+  openNotificationCenter: () => set({ isNotificationCenterOpen: true }),
+  closeNotificationCenter: () => set({ isNotificationCenterOpen: false }),
+  markNotificationRead: (id) =>
+    set((state) => ({
+      notifications: state.notifications.map((n) =>
+        n.id === id ? { ...n, isRead: true } : n
+      ),
+    })),
+  clearAllNotifications: () => set({ notifications: [] }),
+  addNotification: (notif) =>
+    set((state) => ({
+      notifications: [
+        {
+          ...notif,
+          id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          timestamp: Date.now(),
+          isRead: false,
+        },
+        ...state.notifications,
+      ],
+    })),
 
   assignOfficiatingAC: (day, teacherName) =>
     set((state) => {

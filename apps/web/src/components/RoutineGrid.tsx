@@ -147,9 +147,9 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
             const isAwayOfficial = !!absence && absence.type === 'AWAY_OFFICIAL';
 
             // Role classifications (FEAT-56)
-            const isAC = teacher.abbr === 'Mrs. R. Pahwa' || teacher.role.includes('Academic Coordinator') && !teacher.role.includes('Asst.');
+            const isAC = teacher.abbr === 'Mrs. R. Pahwa' || (teacher.role.includes('Academic Coordinator') && !teacher.role.includes('Asst.'));
             const isAAC = teacher.abbr === 'Mrs. S. Lakra' || teacher.role.includes('Asst. Academic Coordinator');
-            const isCT = teacher.role.includes('Class Teacher') && !isAC && !isAAC;
+            const isCT = teacher.role.includes('Class Teacher');
 
             const { line1, line2 } = splitTeacherName(teacher.abbr);
 
@@ -186,13 +186,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                       </span>
                       <span
                         className={`text-[10px] font-bold truncate max-w-full ${
-                          isAbsent
-                            ? 'text-rose-200'
-                            : isCT
-                            ? 'text-amber-400'
-                            : isAC || isAAC
-                            ? 'text-purple-300'
-                            : 'text-slate-100'
+                          isAbsent ? 'text-rose-200' : 'text-slate-100'
                         }`}
                       >
                         {line2}
@@ -203,13 +197,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                     <div className="flex items-center gap-1">
                       <span
                         className={`truncate text-xs font-bold ${
-                          isAbsent
-                            ? 'text-rose-100'
-                            : isCT
-                            ? 'text-amber-300'
-                            : isAC || isAAC
-                            ? 'text-purple-300'
-                            : 'text-slate-100'
+                          isAbsent ? 'text-rose-100' : 'text-slate-100'
                         }`}
                       >
                         {teacher.abbr}
@@ -224,8 +212,18 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                           AWAY
                         </span>
                       )}
+                      {isAC && (
+                        <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 hidden sm:inline" title="Academic Coordinator">
+                          AC
+                        </span>
+                      )}
+                      {isAAC && (
+                        <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 hidden sm:inline" title="Asst. Academic Coordinator">
+                          AAC
+                        </span>
+                      )}
                       {isCT && !isAbsent && (
-                        <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 hidden sm:inline">
+                        <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 hidden sm:inline" title={teacher.primaryClass ? `Class Teacher • ${teacher.primaryClass}` : 'Class Teacher'}>
                           CT
                         </span>
                       )}

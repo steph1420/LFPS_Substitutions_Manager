@@ -79,7 +79,7 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
           : isCT
           ? 'border-amber-500/40 bg-slate-900/80 hover:border-amber-500/60'
           : 'border-slate-800 hover:border-slate-700 bg-slate-900/60'
-      } ${shouldPulse ? 'amber-look-at-me-3x' : ''}`}
+      } ${shouldPulse ? 'amber-look-at-me-1x' : ''}`}
     >
       {/* Top Header: Avatar, Full Name & Duties button */}
       <div className="flex items-start justify-between gap-3">

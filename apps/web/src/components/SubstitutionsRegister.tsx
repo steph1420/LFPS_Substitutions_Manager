@@ -18,6 +18,8 @@ import {
   LayoutGrid,
   List,
   ArrowUpDown,
+  Check,
+  Flag,
 } from 'lucide-react';
 import { UndoRedoControls } from './UndoRedoControls.js';
 import { AutoResolveBrainModal } from './AutoResolveBrainModal.js';
@@ -32,6 +34,8 @@ export const SubstitutionsRegister: React.FC = () => {
     directory,
     assignSubstitution,
     removeSubstitution,
+    acceptSubstitution,
+    openDisputeModal,
     openAssignSubModal,
     openOfficiatingModal,
     loggedInTeacher,
@@ -82,9 +86,7 @@ export const SubstitutionsRegister: React.FC = () => {
   const isClassTeacher = (teacherName: string): boolean => {
     const teacher = directory[teacherName];
     if (!teacher) return false;
-    const isAC = teacher.abbr === 'Mrs. R. Pahwa' || (teacher.role.includes('Academic Coordinator') && !teacher.role.includes('Asst.'));
-    const isAAC = teacher.abbr === 'Mrs. S. Lakra' || teacher.role.includes('Asst. Academic Coordinator');
-    return teacher.role.includes('Class Teacher') && !isAC && !isAAC;
+    return teacher.role.includes('Class Teacher');
   };
 
   // Evaluate Academic Coordinator Succession Logic (LOGIC-04)
@@ -652,20 +654,79 @@ export const SubstitutionsRegister: React.FC = () => {
                         </div>
                       </div>
 
+                      {/* Status Badges or Teacher Self-Service Actions (FEAT-49) */}
+                      {sub.status === 'ACCEPTED' ? (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-[11px] text-emerald-400 font-medium">
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Accepted by {sub.substituteTeacher}</span>
+                        </div>
+                      ) : sub.status === 'DISPUTED' ? (
+                        <div className="space-y-1 p-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-[11px] text-rose-300">
+                          <div className="flex items-center gap-1.5 font-semibold text-rose-400">
+                            <Flag className="w-3.5 h-3.5" />
+                            <span>Disputed by {sub.substituteTeacher}</span>
+                          </div>
+                          {sub.disputeRemark && (
+                            <div className="text-[10px] text-rose-200/90 italic pl-5">
+                              "{sub.disputeRemark}"
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 pt-0.5">
+                          <button
+                            onClick={() => acceptSubstitution(sub.id)}
+                            className="flex-1 py-1 px-2.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                            title="Accept this substitution duty"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Accept</span>
+                          </button>
+                          <button
+                            onClick={() => openDisputeModal(sub)}
+                            className="py-1 px-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                            title="Dispute or decline this assignment"
+                          >
+                            <Flag className="w-3.5 h-3.5" />
+                            <span>Dispute</span>
+                          </button>
+                        </div>
+                      )}
+
                       {/* Footer details & remove button */}
                       <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800/60">
                         <span className="text-[10px] text-slate-500 truncate">
                           By {sub.assignedBy || 'Coordinator'}
                         </span>
 
-                        <button
-                          onClick={() => removeSubstitution(sub.id)}
-                          className="px-2.5 py-1 rounded-lg text-rose-400 hover:text-rose-200 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 text-xs font-semibold flex items-center gap-1 transition-colors"
-                          title="Release this substitution assignment"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Release Sub</span>
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          {sub.status === 'DISPUTED' && (
+                            <button
+                              onClick={() =>
+                                openAssignSubModal({
+                                  day: selectedDay,
+                                  period: sub.period,
+                                  originalTeacher: sub.originalTeacher,
+                                  className: sub.className,
+                                  subject: sub.subject,
+                                  task: `${sub.className} ${sub.subject}`,
+                                })
+                              }
+                              className="px-2 py-0.5 rounded-lg text-amber-400 hover:text-amber-200 hover:bg-amber-500/10 border border-amber-500/30 text-xs font-semibold transition-colors cursor-pointer"
+                              title="Reassign another substitute"
+                            >
+                              Reassign
+                            </button>
+                          )}
+                          <button
+                            onClick={() => removeSubstitution(sub.id)}
+                            className="px-2.5 py-1 rounded-lg text-rose-400 hover:text-rose-200 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                            title="Release this substitution assignment"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Release Sub</span>
+                          </button>
+                        </div>
                       </div>
                     </motion.div>
                   );
@@ -721,13 +782,61 @@ export const SubstitutionsRegister: React.FC = () => {
                       </div>
 
                       {/* Right: Actions */}
-                      <div className="flex items-center gap-3 self-end sm:self-auto">
-                        <span className="text-[10px] text-slate-500 hidden md:inline">
+                      <div className="flex items-center gap-2.5 self-end sm:self-auto flex-wrap">
+                        {sub.status === 'ACCEPTED' ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                            <Check className="w-3 h-3" />
+                            <span>Accepted</span>
+                          </span>
+                        ) : sub.status === 'DISPUTED' ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/30 px-2 py-0.5 rounded-full" title={sub.disputeRemark}>
+                              <Flag className="w-3 h-3" />
+                              <span>Disputed</span>
+                            </span>
+                            <button
+                              onClick={() =>
+                                openAssignSubModal({
+                                  day: selectedDay,
+                                  period: sub.period,
+                                  originalTeacher: sub.originalTeacher,
+                                  className: sub.className,
+                                  subject: sub.subject,
+                                  task: `${sub.className} ${sub.subject}`,
+                                })
+                              }
+                              className="px-2 py-0.5 rounded-lg text-amber-400 hover:text-amber-200 hover:bg-amber-500/10 border border-amber-500/30 text-xs font-semibold transition-colors cursor-pointer"
+                            >
+                              Reassign
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => acceptSubstitution(sub.id)}
+                              className="px-2 py-0.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
+                              title="Accept this substitution"
+                            >
+                              <Check className="w-3 h-3" />
+                              <span>Accept</span>
+                            </button>
+                            <button
+                              onClick={() => openDisputeModal(sub)}
+                              className="px-2 py-0.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
+                              title="Dispute this substitution"
+                            >
+                              <Flag className="w-3 h-3" />
+                              <span>Dispute</span>
+                            </button>
+                          </div>
+                        )}
+
+                        <span className="text-[10px] text-slate-500 hidden md:inline ml-1">
                           By {sub.assignedBy || 'Coordinator'}
                         </span>
                         <button
                           onClick={() => removeSubstitution(sub.id)}
-                          className="px-2 py-1 rounded-lg text-rose-400 hover:text-rose-200 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 text-xs font-semibold flex items-center gap-1 transition-colors"
+                          className="px-2 py-1 rounded-lg text-rose-400 hover:text-rose-200 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                           title="Release sub"
                         >
                           <Trash2 className="w-3 h-3" />

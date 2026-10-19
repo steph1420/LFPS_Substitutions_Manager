@@ -11,6 +11,7 @@ import {
   ChevronDown,
   X,
   Smartphone,
+  Bell,
 } from 'lucide-react';
 import { useLiveSync } from '../hooks/useLiveSync.js';
 import { ResetDayButton } from './ResetDayButton.js';
@@ -36,7 +37,16 @@ export const Header: React.FC = () => {
     logout,
     openSettings,
     openStaffLogin,
+    notifications,
+    substitutions,
+    openNotificationCenter,
   } = useTimetableStore();
+
+  const unreadNotifCount = notifications.filter((n) => !n.isRead).length;
+  const disputedSubCount = substitutions.filter(
+    (s) => s.day === selectedDay && s.status === 'DISPUTED'
+  ).length;
+  const alertBadgeCount = unreadNotifCount + disputedSubCount;
 
   const [headerState, setHeaderState] = React.useState<HeaderState>('FULL');
   const [isIslandExpanded, setIsIslandExpanded] = React.useState(false);
@@ -304,9 +314,21 @@ export const Header: React.FC = () => {
               </div>
             </div>
 
-            {/* Mobile Actions: Reset Button, Settings & Profile Pill */}
+            {/* Mobile Actions: Reset Button, Notifications, Settings & Profile Pill */}
             <div className="md:hidden flex items-center gap-1.5">
               <ResetDayButton compact />
+              <button
+                onClick={openNotificationCenter}
+                className="relative p-1.5 rounded-full glass-pill border-slate-800 text-slate-300 hover:text-white transition-colors active:scale-95 cursor-pointer"
+                title="Notification Center & Live Alerts (FEAT-50)"
+              >
+                <Bell className="w-3.5 h-3.5 text-purple-400" />
+                {alertBadgeCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-[9px] font-bold text-white flex items-center justify-center animate-pulse">
+                    {alertBadgeCount > 9 ? '9+' : alertBadgeCount}
+                  </span>
+                )}
+              </button>
               <button
                 onClick={openSettings}
                 className="p-1.5 rounded-full glass-pill border-slate-800 text-slate-300 hover:text-white transition-colors active:scale-95"
@@ -398,6 +420,20 @@ export const Header: React.FC = () => {
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
               <span>Excel</span>
+            </button>
+
+            {/* Notification Center Bell (FEAT-50) */}
+            <button
+              onClick={openNotificationCenter}
+              className="relative p-1.5 rounded-lg border glass-pill border-slate-700 hover:border-purple-500/40 text-slate-300 hover:text-purple-400 transition-colors active:scale-95 cursor-pointer"
+              title="Universal Notification Center (FEAT-50)"
+            >
+              <Bell className="w-4 h-4 text-purple-400" />
+              {alertBadgeCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 px-1 min-w-[16px] h-4 rounded-full bg-rose-500 text-[9px] font-bold text-white flex items-center justify-center animate-pulse">
+                  {alertBadgeCount > 9 ? '9+' : alertBadgeCount}
+                </span>
+              )}
             </button>
 
             {/* Settings Console Button (BUG-11) */}

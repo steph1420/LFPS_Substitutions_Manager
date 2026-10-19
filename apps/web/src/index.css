@@ -74,7 +74,7 @@
   box-shadow: inset 0 0 16px 0 rgba(225, 29, 72, 0.15);
 }
 
-/* Strictly 3 single pulses: 1 pulse per cycle × 3 iterations (UI-07) */
+/* Strictly 1 single pulse when card enters view (UI-07) */
 @keyframes singleAmberPulse {
   0%, 100% {
     box-shadow: 0 12px 32px -4px rgba(225, 29, 72, 0.45),
@@ -91,7 +91,8 @@
   }
 }
 
+.amber-look-at-me-1x,
 .amber-look-at-me-3x {
-  animation: singleAmberPulse 0.85s ease-in-out 3;
+  animation: singleAmberPulse 0.95s ease-in-out 1;
 }
 

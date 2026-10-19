@@ -18,7 +18,6 @@ export const AssignSubstituteModal: React.FC = () => {
   } = useTimetableStore();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAllStaff, setShowAllStaff] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Outside click and Escape key dismissal (LOGIC-02)
@@ -226,46 +225,54 @@ export const AssignSubstituteModal: React.FC = () => {
               ))
             )}
 
-            {/* Manual Override / Other Staff Accordion */}
+            {/* Unavailable / Busy Staff Section - Always segregated & visible */}
             {displayedUnavailable.length > 0 && (
-              <div className="pt-2">
-                <button
-                  onClick={() => setShowAllStaff((prev) => !prev)}
-                  className="w-full text-left text-[11px] font-semibold text-slate-400 hover:text-slate-300 flex items-center justify-between py-1.5 px-1 border-t border-slate-800/80"
-                >
+              <div className="pt-3 space-y-2 border-t border-slate-800/80 mt-2">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between px-1">
                   <span className="flex items-center gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5 text-slate-500" />
-                    Other Staff ({displayedUnavailable.length} busy or unavailable)
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-500/80" />
+                    Unavailable / Busy Staff ({displayedUnavailable.length})
                   </span>
-                  <span>{showAllStaff ? 'Hide' : 'Show'}</span>
-                </button>
+                  <span className="text-[10px] text-slate-500 font-normal">Manual Override</span>
+                </div>
 
-                {showAllStaff && (
-                  <div className="space-y-1.5 pt-1.5">
-                    {displayedUnavailable.map((candidate) => (
-                      <div
-                        key={candidate.teacher.abbr}
-                        className="p-2 rounded-xl bg-slate-950/40 border border-slate-800/80 flex items-center justify-between gap-2 text-xs opacity-75"
-                      >
+                <div className="space-y-1.5">
+                  {displayedUnavailable.map((candidate) => (
+                    <div
+                      key={candidate.teacher.abbr}
+                      className="p-2.5 rounded-xl bg-slate-950/40 border border-slate-800/70 hover:border-slate-700/80 transition-all flex items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-slate-800/60 border border-slate-700/40 flex items-center justify-center font-bold text-slate-400 text-xs flex-shrink-0">
+                          {candidate.teacher.abbr.slice(0, 2)}
+                        </div>
                         <div className="min-w-0">
-                          <span className="font-medium text-slate-300 truncate">
-                            {candidate.teacher.abbr}
-                          </span>
-                          <div className="text-[10px] text-rose-400/90 truncate">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-xs text-slate-300 truncate">
+                              {candidate.teacher.abbr}
+                            </span>
+                            {candidate.teacher.primaryClass && (
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-900 text-slate-500 border border-slate-800">
+                                {candidate.teacher.primaryClass}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-rose-400/90 truncate flex items-center gap-1 mt-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500/60 inline-block flex-shrink-0" />
                             {candidate.unavailabilityReason || 'Busy in another class'}
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleSelectSubstitute(candidate.teacher.abbr)}
-                          className="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-amber-600 hover:text-white text-slate-300 text-[11px] font-medium transition-colors border border-slate-700"
-                          title="Override and assign anyway"
-                        >
-                          Override
-                        </button>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <button
+                        onClick={() => handleSelectSubstitute(candidate.teacher.abbr)}
+                        className="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-amber-600 hover:text-white text-amber-300/90 text-xs font-semibold transition-colors border border-amber-500/30 flex items-center gap-1 flex-shrink-0 cursor-pointer shadow-sm active:scale-95"
+                        title="Override schedule conflict and assign anyway"
+                      >
+                        <span>Override</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

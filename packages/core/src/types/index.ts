@@ -93,7 +93,7 @@ export interface StaffAvailabilityRecord {
   updatedAt: number;
 }
 
-export type SubstitutionStatus = 'PENDING' | 'COVERED' | 'FREE_FROM_SUB' | 'DISPUTED';
+export type SubstitutionStatus = 'PENDING' | 'COVERED' | 'FREE_FROM_SUB' | 'ACCEPTED' | 'DISPUTED';
 
 export interface SubstitutionAssignment {
   id: string;
@@ -105,8 +105,26 @@ export interface SubstitutionAssignment {
   subject: string;
   status: SubstitutionStatus;
   remark?: string;
+  disputeRemark?: string;
+  acceptedAt?: number;
+  disputedAt?: number;
   assignedAt: number;
   assignedBy?: string;
+}
+
+export type UserRole = 'ADMIN' | 'TEACHER' | 'GUEST';
+
+export type NotificationType = 'DISPUTE' | 'UNCOVERED' | 'OFFICIATING' | 'CONFLICT' | 'SYSTEM';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  description: string;
+  timestamp: number;
+  isRead: boolean;
+  actionTab?: 'routine' | 'substitutions' | 'roster';
+  actionTarget?: any;
 }
 
 export type OfficiatingRoleType = 'OFF_CT' | 'OFF_AC';
