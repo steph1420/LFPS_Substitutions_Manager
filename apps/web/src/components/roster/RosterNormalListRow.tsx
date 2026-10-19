@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Teacher, EffectiveOfficiatingACResult } from '@lfps/core';
 import { Check, UserX, SlidersHorizontal, ChevronRight, ShieldAlert } from 'lucide-react';
 
@@ -12,6 +13,7 @@ interface RosterNormalListRowProps {
   offCTSection?: string;
   offACResult: EffectiveOfficiatingACResult;
   isFreeFromSub?: boolean;
+  wasAbsentOnMount?: boolean;
   onToggleAbsence: (abbr: string) => void;
   onOpenAvailability: (abbr: string) => void;
   onOpenOfficiatingCT: (section?: string) => void;
@@ -28,29 +30,46 @@ export const RosterNormalListRow: React.FC<RosterNormalListRowProps> = ({
   offCTSection,
   offACResult,
   isFreeFromSub,
+  wasAbsentOnMount,
   onToggleAbsence,
   onOpenAvailability,
   onOpenOfficiatingCT,
   onOpenOfficiatingAC,
 }) => {
-  const isOfficiatingAttentionTarget =
-    (isAC && isAbsent) ||
-    (isCT && isAbsent && !offCTSection) ||
-    (isAAC && offACResult.isAutoOfficiating);
+  const [hasPulsed, setHasPulsed] = React.useState(false);
+  const [shouldPulse, setShouldPulse] = React.useState(false);
+
+  // UI-07: Strictly pulse amber 3 times WHEN row is in view, and only for unassigned CT/AC that were absent on mount
+  const isUnassignedOfficiatingTarget =
+    Boolean(wasAbsentOnMount) &&
+    ((isAC && isAbsent && offACResult.needsAppointment) ||
+     (isCT && isAbsent && !offCTSection));
+
+  const handleViewportEnter = () => {
+    if (!hasPulsed && isUnassignedOfficiatingTarget) {
+      setShouldPulse(true);
+      setHasPulsed(true);
+    }
+  };
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      viewport={{ once: true, amount: 0.3 }}
+      onViewportEnter={handleViewportEnter}
+      onAnimationEnd={() => setShouldPulse(false)}
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('button, input, select, a')) return;
         onToggleAbsence(teacher.abbr);
       }}
       className={`p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs transition-colors cursor-pointer select-none ${
         isAbsent
-          ? 'bg-rose-950/45 border-l-4 border-l-rose-500 hover:bg-rose-950/60 text-rose-100'
+          ? 'row-absent-illuminated text-rose-100'
           : isAwayOfficial
           ? 'bg-indigo-950/20 border-l-4 border-l-indigo-500 hover:bg-indigo-950/30'
           : 'hover:bg-slate-800/40'
-      } ${isOfficiatingAttentionTarget ? 'amber-look-at-me' : ''}`}
+      } ${shouldPulse ? 'amber-look-at-me-3x' : ''}`}
     >
       {/* Left: Avatar & Identity Details */}
       <div className="flex items-center gap-3">
@@ -169,6 +188,7 @@ export const RosterNormalListRow: React.FC<RosterNormalListRowProps> = ({
           <SlidersHorizontal className="w-3.5 h-3.5" />
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 };
+

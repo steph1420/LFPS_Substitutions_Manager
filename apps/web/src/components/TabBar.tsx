@@ -15,6 +15,7 @@ export const TabBar: React.FC = () => {
     substitutions,
     directory,
     officiatingAC,
+    officiatingCT,
     isFitGrid,
     isMinimalUI,
   } = useTimetableStore();
@@ -77,8 +78,16 @@ export const TabBar: React.FC = () => {
     (a) => a.day === selectedDay && a.type !== 'AWAY_OFFICIAL'
   ).length;
 
-  // Soft pulsing amber attention glow is active if Officiating AC needs appointment OR any CT slot is uncovered
-  const shouldPulseAmber = needsOffACAppointment || hasUncoveredCTSlots;
+  // Check if any absent Class Teacher has not been appointed an Officiating CT yet
+  const hasUnassignedCTAppointments = React.useMemo(() => {
+    const activeAbsences = absences.filter((a) => a.day === selectedDay && a.type !== 'AWAY_OFFICIAL');
+    return activeAbsences.some((abs) => {
+      const teacher = directory[abs.teacherName];
+      if (!teacher || !isClassTeacher(abs.teacherName)) return false;
+      const section = teacher.primaryClass;
+      return section ? !officiatingCT[selectedDay]?.[section] : false;
+    });
+  }, [selectedDay, absences, directory, officiatingCT]);
 
   const triggerHaptic = (ms = 20) => {
     if (typeof window !== 'undefined' && 'vibrate' in navigator) {
@@ -149,7 +158,10 @@ export const TabBar: React.FC = () => {
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         const Icon = tab.icon;
-        const isUrgent = shouldPulseAmber && tab.id === 'substitutions';
+        const isUrgent =
+          !isActive &&
+          ((tab.id === 'substitutions' && (uncoveredCount > 0 || hasUncoveredCTSlots)) ||
+           (tab.id === 'roster' && (needsOffACAppointment || hasUnassignedCTAppointments)));
 
         return (
           <button

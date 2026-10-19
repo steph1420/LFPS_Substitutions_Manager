@@ -20,6 +20,7 @@ interface RosterNormalCardProps {
   offCTSection?: string;
   offACResult: EffectiveOfficiatingACResult;
   isFreeFromSub?: boolean;
+  wasAbsentOnMount?: boolean;
   onToggleAbsence: (abbr: string) => void;
   onOpenAvailability: (abbr: string) => void;
   onOpenOfficiatingCT: (section?: string) => void;
@@ -36,21 +37,35 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
   offCTSection,
   offACResult,
   isFreeFromSub,
+  wasAbsentOnMount,
   onToggleAbsence,
   onOpenAvailability,
   onOpenOfficiatingCT,
   onOpenOfficiatingAC,
 }) => {
-  // UI-07: Determine if this card should draw attention with the amber "LOOK AT ME" pulse
-  const isOfficiatingAttentionTarget =
-    (isAC && isAbsent) ||
-    (isCT && isAbsent && !offCTSection) ||
-    (isAAC && offACResult.isAutoOfficiating);
+  const [hasPulsed, setHasPulsed] = React.useState(false);
+  const [shouldPulse, setShouldPulse] = React.useState(false);
+
+  // UI-07: Strictly pulse amber 3 times WHEN card is in view, and only for unassigned CT/AC that were absent on mount
+  const isUnassignedOfficiatingTarget =
+    Boolean(wasAbsentOnMount) &&
+    ((isAC && isAbsent && offACResult.needsAppointment) ||
+     (isCT && isAbsent && !offCTSection));
+
+  const handleViewportEnter = () => {
+    if (!hasPulsed && isUnassignedOfficiatingTarget) {
+      setShouldPulse(true);
+      setHasPulsed(true);
+    }
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
+      viewport={{ once: true, amount: 0.3 }}
+      onViewportEnter={handleViewportEnter}
+      onAnimationEnd={() => setShouldPulse(false)}
       onClick={(e) => {
         // Whole card free space tap toggles absence
         if ((e.target as HTMLElement).closest('button, input, select, a')) return;
@@ -58,13 +73,13 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
       }}
       className={`glass-panel p-4 rounded-2xl border transition-all flex flex-col justify-between gap-3 cursor-pointer select-none group relative overflow-hidden ${
         isAbsent
-          ? 'border-rose-500 bg-rose-950/70 shadow-lg shadow-rose-950/50 ring-1 ring-rose-500/40 text-rose-100'
+          ? 'card-absent-illuminated text-rose-100'
           : isAwayOfficial
           ? 'border-indigo-500/50 bg-indigo-950/20'
           : isCT
           ? 'border-amber-500/40 bg-slate-900/80 hover:border-amber-500/60'
           : 'border-slate-800 hover:border-slate-700 bg-slate-900/60'
-      } ${isOfficiatingAttentionTarget ? 'amber-look-at-me' : ''}`}
+      } ${shouldPulse ? 'amber-look-at-me-3x' : ''}`}
     >
       {/* Top Header: Avatar, Full Name & Duties button */}
       <div className="flex items-start justify-between gap-3">
@@ -274,3 +289,4 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
     </motion.div>
   );
 };
+

@@ -69,6 +69,18 @@ export const AbsenceRoster: React.FC = () => {
   // KPI Calculations for today
   const activeAbsences = absences.filter((a) => a.day === selectedDay);
 
+  // Track which teachers were already absent when user navigated to this tab (UI-07: In-View 3-Pulse trigger)
+  const lastSelectedDayRef = React.useRef(selectedDay);
+  const initialAbsentTeachersRef = React.useRef(
+    new Set(absences.filter((a) => a.day === selectedDay && a.type !== 'AWAY_OFFICIAL').map((a) => a.teacherName))
+  );
+  if (lastSelectedDayRef.current !== selectedDay) {
+    lastSelectedDayRef.current = selectedDay;
+    initialAbsentTeachersRef.current = new Set(
+      absences.filter((a) => a.day === selectedDay && a.type !== 'AWAY_OFFICIAL').map((a) => a.teacherName)
+    );
+  }
+
   // Academic Coordinator Succession Logic (LOGIC-04 & BUG-19)
   const offACResult = React.useMemo(() => {
     return getEffectiveOfficiatingAC({
@@ -406,6 +418,7 @@ export const AbsenceRoster: React.FC = () => {
                 offCTSection={offCTSection}
                 offACResult={offACResult}
                 isFreeFromSub={isFreeFromSub}
+                wasAbsentOnMount={initialAbsentTeachersRef.current.has(teacher.abbr)}
                 onToggleAbsence={toggleAbsence}
                 onOpenAvailability={openAvailabilityModal}
                 onOpenOfficiatingCT={(section) => openOfficiatingModal({ type: 'CT', section })}
@@ -503,6 +516,7 @@ export const AbsenceRoster: React.FC = () => {
                 offCTSection={offCTSection}
                 offACResult={offACResult}
                 isFreeFromSub={isFreeFromSub}
+                wasAbsentOnMount={initialAbsentTeachersRef.current.has(teacher.abbr)}
                 onToggleAbsence={toggleAbsence}
                 onOpenAvailability={openAvailabilityModal}
                 onOpenOfficiatingCT={(section) => openOfficiatingModal({ type: 'CT', section })}

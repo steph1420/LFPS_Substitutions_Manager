@@ -32,7 +32,7 @@ export const RosterCompactCard: React.FC<RosterCompactCardProps> = ({
       }}
       className={`glass-panel p-3 rounded-xl border flex flex-col justify-between gap-2.5 cursor-pointer select-none transition-all ${
         isAbsent
-          ? 'border-rose-500 bg-rose-950/70 shadow-md shadow-rose-950/50 ring-1 ring-rose-500/40 text-rose-100'
+          ? 'card-compact-absent-illuminated text-rose-100'
           : isCT
           ? 'border-amber-500/30 bg-slate-900/80 hover:border-amber-500/50'
           : 'border-slate-800 hover:border-slate-700 bg-slate-900/60'
@@ -90,3 +90,4 @@ export const RosterCompactCard: React.FC<RosterCompactCardProps> = ({
     </motion.div>
   );
 };
+

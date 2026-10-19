@@ -33,7 +33,7 @@ export const RosterCompactListRow: React.FC<RosterCompactListRowProps> = ({
       }}
       className={`px-3 sm:px-4 py-2.5 flex items-center justify-between gap-3 text-xs transition-colors cursor-pointer select-none ${
         isAbsent
-          ? 'bg-rose-950/45 border-l-4 border-l-rose-500 hover:bg-rose-950/60 text-rose-100'
+          ? 'row-absent-illuminated text-rose-100'
           : isAwayOfficial
           ? 'bg-indigo-950/20 border-l-4 border-l-indigo-500 hover:bg-indigo-950/30'
           : 'hover:bg-slate-800/40'
@@ -133,3 +133,4 @@ export const RosterCompactListRow: React.FC<RosterCompactListRowProps> = ({
     </div>
   );
 };
+

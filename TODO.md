@@ -536,16 +536,17 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 ### Job Bundle 27: Mobile Scroll & 100dvh Sync, Human School Roles, Roster Ergonomics & Non-Distracting Officiating Flow
 - **Status**: 🟢 Completed
 - **Scope & Work Items**:
-  - [x] **UI-06 (Vivid Red Absence Card Styling)**:
-    - Teacher cards across all roster views (Normal Grid, Compact Grid, Normal List, Compact List) turn unmistakable vivid red (`bg-rose-950/70 border-rose-500 shadow-lg shadow-rose-950/50 ring-1 ring-rose-500/40 text-rose-100`) when marked absent, eliminating faint 20% opacity.
+  - [x] **UI-06 (Tactile Console Backlight Red Shift for Absent Teacher Cards)**:
+    - Teacher cards and rows across all roster views (Normal Grid, Compact Grid, Normal List, Compact List) turn unmistakable backlit red like illuminated console buttons (`.card-absent-illuminated`, `.card-compact-absent-illuminated`, `.row-absent-illuminated`) with top radial illumination, crimson drop shadow, and bevel rim highlight, overriding `.glass-panel` background.
   - [x] **LOGIC-08 (Substitutions Page Officiating Purity: Omit Acting AC)**:
     - Never display Acting AC (`Mrs. S. Lakra (Acting)`) under "Officiating Staff" on the Substitutions tab. The Substitutions page is strictly reserved for teachers being actively assigned or needing manual assignment.
     - Omit auto-acting AC from KPI Card 3 and Section 3 so that only manually assigned Off. AC and Off. CTs appear there.
-  - [x] **UI-07 (Officiating Action Nomenclature & Subtitle 'LOOK AT ME' Amber Flash)**:
+  - [x] **UI-07 (In-View 3-Pulse Amber Attention Glow for Unassigned Officiating Staff)**:
     - On Off. CT and Off. AC teacher cards, renamed the appointment button: `'Assign'` (if unappointed) and `'Reassign'` (if already appointed), replacing `'Change'`.
-    - When user navigates to the Staff Roster tab, absent CT / AC cards requiring or holding officiating assignment subtly flash amber 2 times (`.amber-look-at-me` keyframe animation) to visually communicate *"LOOK AT ME"*.
-  - [x] **UI-08 (Tab Bar Alert Scoping)**:
-    - Removed the amber attention glow from the 'Staff Roster' tab pill for offAC/CT. Kept the urgent attention glow strictly focused on the 'Substitutions' tab when slots remain pending.
+    - Amber glow never pulses immediately when marking a teacher absent on the card itself.
+    - If the user navigates away (e.g. to Substitutions) and returns to the Staff Roster tab while Off. CT or Off. AC remains unassigned, the unassigned cards trigger strictly **3 amber attention pulses** (`.amber-look-at-me-3x`) **only when the card actually enters the viewport** via Framer Motion viewport intersection detection.
+  - [x] **UI-08 (Tab Bar Inactive Alert Scoping)**:
+    - Tab bar pulses amber strictly on inactive tabs: alerts on the 'Staff Roster' tab when Off. AC or Off. CT assignments are pending, and alerts on the 'Substitutions' tab when uncovered substitution slots remain. Active tabs do not pulse to prevent distraction while working.
   - [x] **PERF-02 (Mobile Header Hide/Show Reliability & Dynamic Viewport Height 100dvh Synchronization)**:
     - Eliminated the 250ms `isViewportResizing` lockout in `Header.tsx` that choked mobile scroll listeners when the browser toolbar expands/collapses.
     - Synchronized touch/drag delta thresholds (`> 20px` down for HIDDEN, `<-20px` up for PEEK, `<= 40px` for FULL) with 200ms animation lock.
