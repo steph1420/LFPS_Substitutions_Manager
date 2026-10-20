@@ -261,8 +261,20 @@ export const AssignSubstituteModal: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <div className="text-[10px] text-rose-400/90 truncate flex items-center gap-1 mt-0.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500/60 inline-block flex-shrink-0" />
+                          <div
+                            className={`text-[10px] truncate flex items-center gap-1 mt-0.5 ${
+                              candidate.unavailabilityReason?.includes('Away')
+                                ? 'text-indigo-400'
+                                : 'text-rose-400/90'
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full inline-block flex-shrink-0 ${
+                                candidate.unavailabilityReason?.includes('Away')
+                                  ? 'bg-indigo-500'
+                                  : 'bg-rose-500/60'
+                              }`}
+                            />
                             {candidate.unavailabilityReason || 'Busy in another class'}
                           </div>
                         </div>

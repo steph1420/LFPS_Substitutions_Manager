@@ -429,6 +429,64 @@ body {
   animation: errorShake 0.4s ease-in-out;
 }
 
+/* Displace Alert Animation: Flash Overwrite & Falling Ghost Text */
+@keyframes flashRedOverwrite {
+  0% { 
+    box-shadow: inset 0 0 0 4px rgba(244, 63, 94, 0.9), 0 0 16px rgba(244, 63, 94, 0.6); 
+    transform: scale(0.92); 
+    border-radius: 12px; 
+  }
+  50% { 
+    box-shadow: inset 0 0 0 4px rgba(244, 63, 94, 0.5), 0 0 8px rgba(244, 63, 94, 0.3); 
+    transform: scale(1.05); 
+    border-radius: 10px; 
+  }
+  100% { 
+    box-shadow: inset 0 0 0 0 transparent; 
+    transform: scale(1); 
+    border-radius: 8px; 
+  }
+}
+
+@keyframes ghostSlideOut {
+  0% { transform: translateY(0) scale(1); opacity: 0.95; }
+  100% { transform: translateY(52px) scale(0.78); opacity: 0; }
+}
+
+.cell-displaced-flash {
+  animation: flashRedOverwrite 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  position: relative !important;
+  z-index: 25 !important;
+}
+
+.ghost-displaced {
+  position: absolute;
+  top: 6px;
+  left: 4px;
+  right: 4px;
+  text-align: center;
+  color: #fb7185;
+  font-weight: 800;
+  font-size: 11px;
+  z-index: 30;
+  pointer-events: none;
+  animation: ghostSlideOut 0.75s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+}
+
+/* Away Period Marquee Selection */
+.away-period-marquee {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(99, 102, 241, 0.2),
+    rgba(99, 102, 241, 0.2) 8px,
+    rgba(99, 102, 241, 0.38) 8px,
+    rgba(99, 102, 241, 0.38) 16px
+  ) !important;
+  border: 2px dashed #818cf8 !important;
+  box-shadow: 0 0 14px rgba(99, 102, 241, 0.6), inset 0 0 10px rgba(99, 102, 241, 0.3) !important;
+}
+
 /* ==========================================================================
    RETRO GLASS: SKEUOMORPHIC CURVED GLASS PEBBLE KEYPADS & BUTTONS
    ========================================================================== */

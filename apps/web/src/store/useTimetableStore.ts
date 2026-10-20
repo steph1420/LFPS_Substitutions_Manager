@@ -24,6 +24,14 @@ export interface ContextMenuTarget {
   period?: PeriodId;
 }
 
+export interface AwaySelectionState {
+  active: boolean;
+  teacherName: string;
+  selectedPeriods: PeriodId[];
+  venue?: string;
+  reason?: string;
+}
+
 export interface CoTeachSlotTarget {
   period: PeriodId;
   teacher: string;
@@ -207,6 +215,21 @@ interface TimetableState {
   activeOfficiatingTarget: OfficiatingTarget | null;
   activeAssignSubSlot: AssignSubSlotTarget | null;
   activeDisputeTarget: SubstitutionAssignment | null;
+
+  // Away on Official Duty Mode & Dialog
+  awaySelectionState: AwaySelectionState | null;
+  isAwayModalOpen: boolean;
+  awayModalTeacher: string | null;
+
+  startAwaySelection: (teacherName: string, initialPeriods?: PeriodId[], venue?: string) => void;
+  toggleAwayPeriod: (period: PeriodId) => void;
+  setAwayPeriods: (periods: PeriodId[]) => void;
+  setAwayVenue: (venue: string) => void;
+  saveAwaySelection: () => void;
+  cancelAwaySelection: () => void;
+  openAwayModal: (teacherName: string) => void;
+  closeAwayModal: () => void;
+  setTeacherAwayOfficial: (teacherName: string, periods: PeriodId[], venue?: string) => void;
 
   // Actions
   setDay: (day: DayOfWeek) => void;
@@ -435,6 +458,9 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   activeOfficiatingTarget: null,
   activeAssignSubSlot: null,
   activeDisputeTarget: null,
+  awaySelectionState: null,
+  isAwayModalOpen: false,
+  awayModalTeacher: null,
 
   setDay: (day) => set({ selectedDay: day }),
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -775,6 +801,133 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
   openAssignSubModal: (slot) => set({ activeAssignSubSlot: slot }),
   closeAssignSubModal: () => set({ activeAssignSubSlot: null }),
+
+  openAwayModal: (teacherName) =>
+    set({
+      isAwayModalOpen: true,
+      awayModalTeacher: teacherName,
+      activeContextMenu: null,
+    }),
+  closeAwayModal: () =>
+    set({
+      isAwayModalOpen: false,
+      awayModalTeacher: null,
+    }),
+
+  startAwaySelection: (teacherName, initialPeriods, venue) => {
+    const state = get();
+    const day = state.selectedDay;
+    const existingAbsence = state.absences.find(
+      (a) => a.teacherName === teacherName && a.day === day && a.type === 'AWAY_OFFICIAL'
+    );
+    const periods = initialPeriods || existingAbsence?.periods || ['1st', '2nd', '3rd', '4th', '5th', '6th'];
+    const currentVenue = venue || existingAbsence?.venue || 'Official Duty';
+
+    set({
+      activeTab: 'routine',
+      awaySelectionState: {
+        active: true,
+        teacherName,
+        selectedPeriods: periods,
+        venue: currentVenue,
+      },
+      isAwayModalOpen: false,
+      activeContextMenu: null,
+    });
+  },
+
+  toggleAwayPeriod: (period) =>
+    set((state) => {
+      if (!state.awaySelectionState || !state.awaySelectionState.active) return {};
+      const current = state.awaySelectionState.selectedPeriods;
+      const next = current.includes(period)
+        ? current.filter((p) => p !== period)
+        : [...current, period];
+      return {
+        awaySelectionState: {
+          ...state.awaySelectionState,
+          selectedPeriods: next,
+        },
+      };
+    }),
+
+  setAwayPeriods: (periods) =>
+    set((state) => {
+      if (!state.awaySelectionState || !state.awaySelectionState.active) return {};
+      return {
+        awaySelectionState: {
+          ...state.awaySelectionState,
+          selectedPeriods: periods,
+        },
+      };
+    }),
+
+  setAwayVenue: (venue) =>
+    set((state) => {
+      if (!state.awaySelectionState || !state.awaySelectionState.active) return {};
+      return {
+        awaySelectionState: {
+          ...state.awaySelectionState,
+          venue,
+        },
+      };
+    }),
+
+  saveAwaySelection: () => {
+    const state = get();
+    if (!state.awaySelectionState) return;
+    const { teacherName, selectedPeriods, venue } = state.awaySelectionState;
+    state.setTeacherAwayOfficial(teacherName, selectedPeriods, venue);
+  },
+
+  cancelAwaySelection: () =>
+    set({
+      awaySelectionState: null,
+    }),
+
+  setTeacherAwayOfficial: (teacherName, periods, venue) =>
+    set((state) => {
+      const day = state.selectedDay;
+      const rosterHistory = pushSnapshot(state.rosterHistory, {
+        absences: state.absences,
+        availabilities: state.availabilities,
+        officiatingAC: state.officiatingAC,
+        officiatingCT: state.officiatingCT,
+      });
+
+      const remainingAbsences = state.absences.filter(
+        (a) => !(a.teacherName === teacherName && a.day === day)
+      );
+
+      if (!periods || periods.length === 0) {
+        return {
+          absences: remainingAbsences,
+          rosterHistory,
+          awaySelectionState: null,
+          isAwayModalOpen: false,
+          awayModalTeacher: null,
+        };
+      }
+
+      const teacher = Object.values(state.directory).find((t) => t.abbr === teacherName);
+      const newAbsence: AbsenceRecord = {
+        teacherId: teacher?.id || `t-${teacherName}`,
+        teacherName,
+        day,
+        type: 'AWAY_OFFICIAL',
+        periods,
+        venue: venue || 'Official Duty',
+        markedAt: Date.now(),
+      };
+
+      return {
+        absences: [...remainingAbsences, newAbsence],
+        rosterHistory,
+        awaySelectionState: null,
+        isAwayModalOpen: false,
+        awayModalTeacher: null,
+      };
+    }),
 
   toggleAbsence: (teacherName, options = {}) =>
     set((state) => {

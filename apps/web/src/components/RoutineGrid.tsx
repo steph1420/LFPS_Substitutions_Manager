@@ -9,9 +9,8 @@ import {
   compareTeachersByName,
 } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
-import { Maximize2, Minimize2, Users, School, Eye, EyeOff } from 'lucide-react';
+import { Maximize2, Minimize2, Users, School, Eye, EyeOff, Check, Building2 } from 'lucide-react';
 import { UndoRedoControls } from './UndoRedoControls.js';
-import { TeacherNameOverlay } from './common/TeacherNameOverlay.js';
 import { LimboTray } from './LimboTray.js';
 
 const DAYS: DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -48,12 +47,26 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
     routineSortBy,
     setRoutineSortBy,
     moveRoutineSlot,
+    awaySelectionState,
+    toggleAwayPeriod,
+    setAwayPeriods,
+    saveAwaySelection,
+    cancelAwaySelection,
+    startAwaySelection,
   } = useTimetableStore();
 
   const [dragOverTarget, setDragOverTarget] = React.useState<{ teacher: string; period: PeriodId } | null>(null);
   const [dragSource, setDragSource] = React.useState<{ teacher: string; period: PeriodId; task: string } | null>(null);
   const [isColumnCollapsed, setIsColumnCollapsed] = React.useState(false);
+  const [isMarqueeDragging, setIsMarqueeDragging] = React.useState(false);
+  const [lastDisplacedDrop, setLastDisplacedDrop] = React.useState<{ teacher: string; period: PeriodId; oldTask: string } | null>(null);
   const tableWrapperRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleGlobalMouseUp = () => setIsMarqueeDragging(false);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, []);
 
   const isExpanded = isFitGrid || isFullscreen;
   const currentSchedule = schedule[selectedDay] || {};
@@ -216,6 +229,9 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
             const isAbsent = !!absence && absence.type !== 'AWAY_OFFICIAL';
             const isAwayOfficial = !!absence && absence.type === 'AWAY_OFFICIAL';
 
+            const isAwayTargetRow = awaySelectionState?.active && awaySelectionState.teacherName === teacher.abbr;
+            const isDimmedByAwayMode = awaySelectionState?.active && !isAwayTargetRow;
+
             // Role classifications (FEAT-56)
             const isAC = teacher.abbr === 'Mrs. R. Pahwa' || (teacher.role.includes('Academic Coordinator') && !teacher.role.includes('Asst.'));
             const isAAC = teacher.abbr === 'Mrs. S. Lakra' || teacher.role.includes('Asst. Academic Coordinator');
@@ -227,10 +243,14 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
               <tr
                 key={teacher.id}
                 className={`transition-colors ${
-                  isAbsent
+                  isDimmedByAwayMode
+                    ? 'opacity-25 pointer-events-none'
+                    : isAwayTargetRow
+                    ? 'bg-indigo-950/40 ring-2 ring-indigo-500/80 shadow-xl relative z-20'
+                    : isAbsent
                     ? 'bg-rose-950/15'
                     : isAwayOfficial
-                    ? 'bg-slate-900/30'
+                    ? 'bg-indigo-950/20'
                     : 'hover:bg-slate-900/40'
                 }`}
               >
@@ -244,6 +264,8 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                   } ${
                     isAbsent
                       ? 'bg-rose-950/90 border-r-2 border-r-rose-500 text-rose-200 font-bold shadow-[3px_0_12px_rgba(244,63,94,0.35)]'
+                      : isAwayTargetRow
+                      ? 'bg-indigo-950/95 border-r-2 border-r-indigo-400 text-indigo-100 font-bold shadow-[3px_0_12px_rgba(99,102,241,0.4)]'
                       : 'bg-slate-900/98 font-semibold text-slate-200 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)]'
                   }`}
                   title={teacher.fullName}
@@ -263,22 +285,33 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                       </span>
                     </div>
                   ) : (
-                    // Normal full name display
-                    <div className="flex items-center gap-1">
-                      <TeacherNameOverlay
-                        abbr={teacher.abbr}
-                        fullName={teacher.fullName}
-                        className={isAbsent ? 'text-rose-100 text-xs font-bold' : 'text-slate-100 text-xs font-bold'}
-                      />
+                    // Normal full name display (Overlay removed from matrix to prevent context menu interference)
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`text-xs font-bold truncate ${
+                          isAbsent ? 'text-rose-100' : isAwayTargetRow ? 'text-indigo-200' : 'text-slate-100'
+                        }`}
+                        title={teacher.fullName}
+                      >
+                        {teacher.abbr}
+                      </span>
                       {isAbsent && (
                         <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-rose-500/30 text-rose-200 border border-rose-400/40">
                           ABS
                         </span>
                       )}
                       {isAwayOfficial && (
-                        <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                          AWAY
-                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startAwaySelection(teacher.abbr);
+                          }}
+                          className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/25 text-indigo-300 border border-indigo-500/40 hover:bg-indigo-500/45 transition-colors cursor-pointer"
+                          title="Click to edit away periods on grid"
+                        >
+                          AWAY ({absence?.periods?.length ?? 'ALL'})
+                        </button>
                       )}
                       {isAC && (
                         <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 hidden sm:inline" title="Academic Coordinator">
@@ -333,7 +366,14 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                       s.substituteTeacher === teacher.abbr
                   );
 
-                  const isDraggable = isBusy && !covering && !sub && period.id !== 'BREAK';
+                  const isAwayTargetRow = awaySelectionState?.active && awaySelectionState.teacherName === teacher.abbr;
+                  const isPeriodAwaySelected = Boolean(isAwayTargetRow && awaySelectionState?.selectedPeriods.includes(period.id));
+                  const isAwayThisPeriod = Boolean(
+                    isAwayOfficial && (!absence?.periods || absence.periods.includes(period.id))
+                  );
+                  const isDisplacedFlash = lastDisplacedDrop?.teacher === teacher.abbr && lastDisplacedDrop?.period === period.id;
+
+                  const isDraggable = !awaySelectionState?.active && isBusy && !covering && !sub && period.id !== 'BREAK';
                   const isDragOver = dragOverTarget?.teacher === teacher.abbr && dragOverTarget?.period === period.id;
 
                   return (
@@ -382,6 +422,12 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                           const data = JSON.parse(e.dataTransfer.getData('application/json'));
                           if (!data) return;
 
+                          const targetCurrentTask = currentSchedule[period.id]?.[teacher.abbr];
+                          if (targetCurrentTask && targetCurrentTask !== 'Free' && targetCurrentTask !== '-') {
+                            setLastDisplacedDrop({ teacher: teacher.abbr, period: period.id, oldTask: targetCurrentTask });
+                            setTimeout(() => setLastDisplacedDrop(null), 850);
+                          }
+
                           if (data.type === 'limbo' && data.item) {
                             moveRoutineSlot(
                               selectedDay,
@@ -415,6 +461,10 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                       }}
                       onContextMenu={(e) => handleContextMenu(e, teacher.abbr, period.id)}
                       onClick={() => {
+                        if (awaySelectionState?.active) {
+                          if (isAwayTargetRow) toggleAwayPeriod(period.id);
+                          return;
+                        }
                         if (isCoTeaching) {
                           openCoTeachModal({
                             period: period.id,
@@ -424,22 +474,55 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                           });
                         }
                       }}
-                      className={`text-center border-l border-slate-800/60 transition-all select-none ${
-                        isDragOver ? 'ring-2 ring-blue-400 ring-inset bg-blue-500/20' : ''
+                      onMouseDown={(e) => {
+                        if (awaySelectionState?.active && isAwayTargetRow && e.button === 0) {
+                          setIsMarqueeDragging(true);
+                          toggleAwayPeriod(period.id);
+                        }
+                      }}
+                      onMouseEnter={() => {
+                        if (awaySelectionState?.active && isAwayTargetRow && isMarqueeDragging) {
+                          toggleAwayPeriod(period.id);
+                        }
+                      }}
+                      className={`text-center border-l border-slate-800/60 transition-all select-none relative ${
+                        isDisplacedFlash ? 'cell-displaced-flash' : ''
+                      } ${
+                        isPeriodAwaySelected
+                          ? 'away-period-marquee text-indigo-100 ring-2 ring-indigo-400'
+                          : isDragOver
+                          ? 'ring-2 ring-blue-400 ring-inset bg-blue-500/20'
+                          : ''
                       } ${
                         dragSource?.teacher === teacher.abbr && dragSource?.period === period.id
                           ? 'opacity-40 scale-95'
                           : ''
                       } ${isDraggable ? 'cursor-grab active:cursor-grabbing hover:bg-slate-800/50' : ''} ${
-                        isMinimalUI ? 'px-0.5 py-0.5' : 'px-1 py-1 sm:px-1.5 sm:py-1.5'
-                      }`}
+                        awaySelectionState?.active && isAwayTargetRow ? 'cursor-pointer hover:bg-indigo-900/40' : ''
+                      } ${isMinimalUI ? 'px-0.5 py-0.5' : 'px-1 py-1 sm:px-1.5 sm:py-1.5'}`}
                       title={
-                        isDraggable
+                        awaySelectionState?.active && isAwayTargetRow
+                          ? `Click or drag to toggle away period`
+                          : isDraggable
                           ? `Drag to swap with another period (Undo available)`
                           : undefined
                       }
                     >
-                      {covering ? (
+                      {isDisplacedFlash && (
+                        <div className="ghost-displaced">{lastDisplacedDrop.oldTask}</div>
+                      )}
+
+                      {isPeriodAwaySelected ? (
+                        <div className="rounded-lg bg-indigo-500/35 border border-indigo-400 p-1 text-[11px] font-bold text-indigo-100 shadow-md flex flex-col items-center justify-center">
+                          <div className="truncate font-bold text-[10px] sm:text-xs">
+                            {parsed.className || originalTask}
+                          </div>
+                          <div className="text-[8px] sm:text-[9px] text-indigo-200 font-extrabold flex items-center gap-0.5">
+                            <Building2 className="w-2.5 h-2.5" />
+                            <span>AWAY</span>
+                          </div>
+                        </div>
+                      ) : covering ? (
                         <div className="rounded-lg bg-emerald-500/15 border border-emerald-500/30 p-1 text-[11px] font-semibold text-emerald-300 shadow-sm">
                           <div className="truncate font-bold text-[10px] sm:text-xs">{covering.className}</div>
                           <div className="text-[8px] sm:text-[9px] text-emerald-400/80 truncate">
@@ -461,6 +544,16 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                             {parsed.className || originalTask}
                           </div>
                           <div className="text-[8px] sm:text-[9px] font-bold text-rose-400">Need Sub!</div>
+                        </div>
+                      ) : isAwayThisPeriod && isBusy ? (
+                        <div className="rounded-lg bg-indigo-500/20 border border-indigo-500/40 p-1 text-[11px] font-semibold text-indigo-200 shadow-sm">
+                          <div className="truncate font-bold text-[10px] sm:text-xs">
+                            {parsed.className || originalTask}
+                          </div>
+                          <div className="text-[8px] sm:text-[9px] font-bold text-indigo-300 flex items-center justify-center gap-0.5">
+                            <Building2 className="w-2.5 h-2.5" />
+                            <span>Away (Duty)</span>
+                          </div>
                         </div>
                       ) : isBusy ? (
                         <div
@@ -693,10 +786,85 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
     </div>
   );
 
+  const awaySelectionBanner = awaySelectionState?.active ? (
+    <div className="w-full p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-indigo-950/95 border border-indigo-500/50 shadow-2xl backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-2.5 z-30">
+      <div className="flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-lg bg-indigo-500/30 border border-indigo-400/50 flex items-center justify-center text-indigo-300 flex-shrink-0">
+          <Building2 className="w-4 h-4" />
+        </div>
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-xs sm:text-sm text-indigo-100">
+              Selecting Away Periods: {awaySelectionState.teacherName}
+            </span>
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-indigo-500/40 border border-indigo-400/50 text-indigo-200">
+              {awaySelectionState.selectedPeriods.length} Selected
+            </span>
+          </div>
+          <p className="text-[10px] text-indigo-300/80">
+            Tap or drag across periods in the highlighted row to toggle. Selected cells show animated marquee.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5 text-xs w-full sm:w-auto justify-end">
+        {/* Quick Presets */}
+        <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-lg border border-indigo-500/30 text-[10px]">
+          <button
+            type="button"
+            onClick={() => setAwayPeriods(['G/PD', '1st', '2nd', '3rd', '4th', '5th', '6th'])}
+            className="px-2 py-0.5 rounded hover:bg-indigo-600 text-indigo-200 cursor-pointer"
+          >
+            All Day
+          </button>
+          <button
+            type="button"
+            onClick={() => setAwayPeriods(['G/PD', '1st', '2nd'])}
+            className="px-2 py-0.5 rounded hover:bg-indigo-600 text-indigo-200 cursor-pointer"
+          >
+            Morning
+          </button>
+          <button
+            type="button"
+            onClick={() => setAwayPeriods(['3rd', '4th', '5th', '6th'])}
+            className="px-2 py-0.5 rounded hover:bg-indigo-600 text-indigo-200 cursor-pointer"
+          >
+            Afternoon
+          </button>
+          <button
+            type="button"
+            onClick={() => setAwayPeriods([])}
+            className="px-2 py-0.5 rounded hover:bg-slate-800 text-slate-400 cursor-pointer"
+          >
+            Clear
+          </button>
+        </div>
+
+        {/* Cancel and Save */}
+        <button
+          type="button"
+          onClick={cancelAwaySelection}
+          className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={saveAwaySelection}
+          className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/40 flex items-center gap-1.5 transition-all cursor-pointer"
+        >
+          <Check className="w-3.5 h-3.5" />
+          <span>Done ({awaySelectionState.selectedPeriods.length})</span>
+        </button>
+      </div>
+    </div>
+  ) : null;
+
   // When Fullscreen Workstation is active, render full-bleed flex column (BUG-10)
   if (isExpanded) {
     return (
       <section className="flex-1 w-full h-full flex flex-col min-h-0 overflow-hidden space-y-2 sm:space-y-3">
+        {awaySelectionBanner}
         {controlsBar}
         <div
           ref={tableWrapperRef}
@@ -717,6 +885,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
         isMinimalUI ? 'p-2 sm:p-3' : 'p-2 sm:p-5'
       }`}
     >
+      {awaySelectionBanner}
       {controlsBar}
       <div
         ref={tableWrapperRef}

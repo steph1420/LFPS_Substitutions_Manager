@@ -11,6 +11,7 @@ export const SubAvailabilityModal: React.FC = () => {
     closeAvailabilityModal,
     availabilities,
     setStaffAvailability,
+    openAwayModal,
     directory,
   } = useTimetableStore();
 
@@ -44,6 +45,11 @@ export const SubAvailabilityModal: React.FC = () => {
   ];
 
   const handlePresetClick = (preset: DutyPreset, label: string) => {
+    if (preset === 'AWAY_OFFICIAL') {
+      closeAvailabilityModal();
+      openAwayModal(teacher);
+      return;
+    }
     setStaffAvailability(teacher, 'FREE_FROM_SUB', {
       dutyPreset: preset,
       remark: label,

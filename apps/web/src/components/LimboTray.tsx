@@ -99,36 +99,51 @@ export const LimboTray: React.FC = () => {
               </div>
             )}
 
-            {/* Displaced Cards Flow */}
-            <div className="flex flex-wrap gap-2 sm:gap-2.5 pt-3">
-              {items.map((item) => {
-                const isShaking = shakingItemId === item.id;
-                return (
-                  <div
-                    key={item.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, item)}
-                    onClick={() => handleCardClick(item)}
-                    className={`group relative rounded-xl px-3 py-2 bg-slate-900/90 border border-amber-500/50 hover:border-amber-400 shadow-md hover:shadow-amber-500/20 transition-all cursor-grab active:cursor-grabbing select-none ${
-                      isShaking ? 'animate-shake border-rose-500 bg-rose-950/40' : ''
-                    }`}
-                    title={`Click to restore to ${item.ogTeacher} (${item.period}) or drag onto any grid cell`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="font-bold text-xs sm:text-sm text-amber-300">
-                        {item.task}
+            {/* Displaced Cards Flow with fluid FLIP sliding animations */}
+            <motion.div layout className="flex flex-wrap gap-2 sm:gap-2.5 pt-3">
+              <AnimatePresence mode="popLayout">
+                {items.map((item) => {
+                  const isShaking = shakingItemId === item.id;
+                  return (
+                    <motion.div
+                      layout
+                      layoutId={item.id}
+                      key={item.id}
+                      initial={{ opacity: 0, scale: 0.8, y: -6 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.7, y: -10 }}
+                      transition={{
+                        layout: { duration: 0.28, ease: [0.2, 0.9, 0.3, 1] },
+                        opacity: { duration: 0.18 },
+                        scale: { duration: 0.2 },
+                      }}
+                    >
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, item)}
+                        onClick={() => handleCardClick(item)}
+                        className={`group relative rounded-xl px-3 py-2 bg-slate-900/90 border border-amber-500/50 hover:border-amber-400 shadow-md hover:shadow-amber-500/20 transition-all cursor-grab active:cursor-grabbing select-none ${
+                          isShaking ? 'animate-shake border-rose-500 bg-rose-950/40' : ''
+                        }`}
+                        title={`Click to restore to ${item.ogTeacher} (${item.period}) or drag onto any grid cell`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="font-bold text-xs sm:text-sm text-amber-300">
+                            {item.task}
+                          </div>
+                          <div className="w-4 h-4 rounded-full bg-amber-500/20 group-hover:bg-amber-500/40 flex items-center justify-center text-amber-300 text-[10px] transition-colors">
+                            <ArrowUpRight className="w-2.5 h-2.5" />
+                          </div>
+                        </div>
+                        <div className="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5">
+                          From: <span className="text-slate-300">{item.ogTeacher}</span> ({item.period})
+                        </div>
                       </div>
-                      <div className="w-4 h-4 rounded-full bg-amber-500/20 group-hover:bg-amber-500/40 flex items-center justify-center text-amber-300 text-[10px] transition-colors">
-                        <ArrowUpRight className="w-2.5 h-2.5" />
-                      </div>
-                    </div>
-                    <div className="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5">
-                      From: <span className="text-slate-300">{item.ogTeacher}</span> ({item.period})
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </motion.div>
           </div>
         </motion.div>
       )}

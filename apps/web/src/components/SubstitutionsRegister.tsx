@@ -694,6 +694,10 @@ export const SubstitutionsRegister: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
               {uncoveredSlots.map((slot, idx) => {
                 const parsed = parseCellSlot(slot.task);
+                const absenceRecord = absences.find(
+                  (a) => a.day === selectedDay && a.teacherName === slot.originalTeacher
+                );
+                const isAwayDuty = absenceRecord?.type === 'AWAY_OFFICIAL';
 
                 return (
                   <div
@@ -708,11 +712,21 @@ export const SubstitutionsRegister: React.FC = () => {
                         task: slot.task,
                       });
                     }}
-                    className="glass-panel border border-rose-500/30 hover:border-rose-500/60 bg-rose-950/10 hover:bg-rose-950/20 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg transition-all group cursor-pointer select-none active:scale-[0.99]"
+                    className={`glass-panel border rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg transition-all group cursor-pointer select-none active:scale-[0.99] ${
+                      isAwayDuty
+                        ? 'border-indigo-500/30 hover:border-indigo-500/60 bg-indigo-950/15 hover:bg-indigo-950/25'
+                        : 'border-rose-500/30 hover:border-rose-500/60 bg-rose-950/10 hover:bg-rose-950/20'
+                    }`}
                     title={`Tap anywhere to assign substitute for Period ${slot.period} (${parsed.className || 'KG'})`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border bg-rose-500/15 text-rose-400 border-rose-500/30">
+                      <span
+                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                          isAwayDuty
+                            ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
+                            : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                        }`}
+                      >
                         {slot.period} Period
                       </span>
                       <span className="text-xs font-bold text-white">
@@ -722,14 +736,36 @@ export const SubstitutionsRegister: React.FC = () => {
 
                     <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between text-xs">
                       <div>
-                        <div className="text-[10px] text-slate-400">Absent Teacher</div>
+                        <div
+                          className={`text-[10px] ${
+                            isAwayDuty ? 'text-indigo-400 font-medium' : 'text-slate-400'
+                          }`}
+                        >
+                          {isAwayDuty
+                            ? absenceRecord?.venue
+                              ? `📍 Duty: ${absenceRecord.venue}`
+                              : '📍 On Official Duty'
+                            : 'Absent Teacher'}
+                        </div>
                         <div className="font-bold truncate max-w-[130px] text-slate-200">
                           {slot.originalTeacher}
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-[10px] text-rose-400 font-semibold">Status</div>
-                        <div className="font-bold text-rose-400 animate-pulse">Needs Sub!</div>
+                        <div
+                          className={`text-[10px] font-semibold ${
+                            isAwayDuty ? 'text-indigo-400' : 'text-rose-400'
+                          }`}
+                        >
+                          Status
+                        </div>
+                        <div
+                          className={`font-bold ${
+                            isAwayDuty ? 'text-indigo-400' : 'text-rose-400'
+                          } animate-pulse`}
+                        >
+                          Needs Sub!
+                        </div>
                       </div>
                     </div>
 
@@ -759,6 +795,10 @@ export const SubstitutionsRegister: React.FC = () => {
               {uncoveredSlots.map((slot, idx) => {
                 const parsed = parseCellSlot(slot.task);
                 const isCT = isClassTeacher(slot.originalTeacher);
+                const absenceRecord = absences.find(
+                  (a) => a.day === selectedDay && a.teacherName === slot.originalTeacher
+                );
+                const isAwayDuty = absenceRecord?.type === 'AWAY_OFFICIAL';
 
                 return (
                   <motion.div
@@ -776,12 +816,22 @@ export const SubstitutionsRegister: React.FC = () => {
                         task: slot.task,
                       });
                     }}
-                    className="glass-panel px-3 sm:px-4 py-2.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-950/10 hover:bg-rose-950/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm transition-all cursor-pointer select-none active:scale-[0.99] group"
+                    className={`glass-panel px-3 sm:px-4 py-2.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm transition-all cursor-pointer select-none active:scale-[0.99] group ${
+                      isAwayDuty
+                        ? 'border-indigo-500/30 hover:border-indigo-500/60 bg-indigo-950/15 hover:bg-indigo-950/25'
+                        : 'border-rose-500/30 hover:border-rose-500/60 bg-rose-950/10 hover:bg-rose-950/20'
+                    }`}
                     title={`Tap anywhere to assign substitute for Period ${slot.period} (${parsed.className || 'KG'})`}
                   >
                     {/* Left: Period & Class */}
                     <div className="flex items-center gap-2.5 min-w-[160px]">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-rose-500/15 text-rose-400 border-rose-500/30">
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                          isAwayDuty
+                            ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
+                            : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                        }`}
+                      >
                         {slot.period}
                       </span>
                       <div>
@@ -790,16 +840,29 @@ export const SubstitutionsRegister: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Middle: Absent Teacher & Needs Sub badge */}
+                    {/* Middle: Absent / Away Teacher & Needs Sub badge */}
                     <div className="flex items-center gap-2 sm:gap-3 text-xs">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] text-slate-400">Absent:</span>
-                        <span className="font-bold text-rose-300">
+                        <span className={`text-[10px] ${isAwayDuty ? 'text-indigo-400' : 'text-slate-400'}`}>
+                          {isAwayDuty ? 'On Duty:' : 'Absent:'}
+                        </span>
+                        <span className={`font-bold ${isAwayDuty ? 'text-indigo-300' : 'text-rose-300'}`}>
                           {slot.originalTeacher}
+                          {isAwayDuty && absenceRecord?.venue && (
+                            <span className="text-[10px] text-indigo-400/90 font-normal ml-1">
+                              ({absenceRecord.venue})
+                            </span>
+                          )}
                           {isCT && <span className="text-[10px] text-amber-400/80 font-normal ml-1">(CT)</span>}
                         </span>
                       </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-semibold border border-rose-500/30 animate-pulse">
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border animate-pulse ${
+                          isAwayDuty
+                            ? 'bg-indigo-500/25 text-indigo-200 border-indigo-500/40'
+                            : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                        }`}
+                      >
                         Needs Sub!
                       </span>
                     </div>

@@ -16,6 +16,7 @@ import { ResetPurgeContextMenu } from './components/ResetPurgeContextMenu.js';
 import { AssignSubstituteModal } from './components/AssignSubstituteModal.js';
 import { DisputeModal } from './components/DisputeModal.js';
 import { NotificationCenterDrawer } from './components/NotificationCenterDrawer.js';
+import { AwayOfficialModal } from './components/AwayOfficialModal.js';
 
 export const App: React.FC = () => {
   const { activeTab, isFitGrid, undo, redo } = useTimetableStore();
@@ -60,6 +61,7 @@ export const App: React.FC = () => {
         <SettingsModal />
         <DisputeModal />
         <NotificationCenterDrawer />
+        <AwayOfficialModal />
       </div>
     );
   }
@@ -100,6 +102,7 @@ export const App: React.FC = () => {
       <SettingsModal />
       <DisputeModal />
       <NotificationCenterDrawer />
+      <AwayOfficialModal />
 
       {/* Footer Status Bar */}
       <footer className="w-full glass-panel border-t border-slate-800/80 px-6 py-3 text-center text-xs text-slate-500 pb-20 sm:pb-3">
