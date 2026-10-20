@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Teacher } from '@lfps/core';
 import { Check, UserX, SlidersHorizontal } from 'lucide-react';
+import { TeacherNameOverlay } from '../common/TeacherNameOverlay.js';
 
 interface RosterCompactCardProps {
   teacher: Teacher;
@@ -53,9 +54,12 @@ export const RosterCompactCard: React.FC<RosterCompactCardProps> = ({
           {teacher.initials}
         </div>
         <div className="overflow-hidden flex-1">
-          <div className="font-bold text-white text-xs truncate cursor-help" title={teacher.fullName}>
-            {teacher.abbr}
-          </div>
+          <TeacherNameOverlay
+            abbr={teacher.abbr}
+            fullName={teacher.fullName}
+            className="font-bold text-white text-xs truncate"
+            roleSubtitle={isCT ? teacher.primaryClass : teacher.role}
+          />
           <div className="text-[10px] text-slate-400 truncate">
             {isCT ? teacher.primaryClass : teacher.role}
           </div>

@@ -67,26 +67,53 @@ export function findTeacher(
 }
 
 /**
+ * Compares two teachers according to the authentic school hierarchy:
+ * 1. Academic Coordinator (Mrs. R. Pahwa)
+ * 2. Assistant Academic Coordinator (Mrs. S. Lakra)
+ * 3. Class Teachers (KG A -> KG B -> PREP A -> PREP B)
+ * 4. 2nd Teachers (KG A -> KG B -> PREP A -> PREP B)
+ * 5. Other Staff (Activity, Hindi, Games, etc.)
+ * Within the same rank: class section order or alphabetical by full name.
+ */
+export function compareTeachersByHierarchy(a: Teacher, b: Teacher): number {
+  const getRank = (t: Teacher): number => {
+    if (t.abbr === 'Mrs. R. Pahwa' || (t.role.includes('Academic Coordinator') && !t.role.includes('Asst.'))) return 1;
+    if (t.abbr === 'Mrs. S. Lakra' || t.role.includes('Asst. Academic Coordinator')) return 2;
+    if (t.role.includes('Class Teacher')) return 3;
+    if (t.role.includes('2nd Teacher') || t.role.includes('Second Teacher')) return 4;
+    return 5;
+  };
+
+  const rankA = getRank(a);
+  const rankB = getRank(b);
+  if (rankA !== rankB) return rankA - rankB;
+
+  // Within CT or 2T, sort by class section: KG A -> KG B -> PREP A -> PREP B
+  const sectionOrder = ['KG A', 'KG B', 'PREP A', 'PREP B'];
+  if (a.primaryClass && b.primaryClass && a.primaryClass !== b.primaryClass) {
+    const idxA = sectionOrder.indexOf(a.primaryClass);
+    const idxB = sectionOrder.indexOf(b.primaryClass);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+  }
+
+  return a.fullName.localeCompare(b.fullName);
+}
+
+/**
+ * Compares two teachers alphabetically by full name (A-Z)
+ */
+export function compareTeachersByName(a: Teacher, b: Teacher): number {
+  return a.fullName.localeCompare(b.fullName);
+}
+
+/**
  * Returns all teachers sorted with Class Teachers and Coordinators first
  */
 export function getSortedTeachers(
   directory: StaffDirectory = DEFAULT_STAFF_DIRECTORY
 ): Teacher[] {
-  return Object.values(directory).sort((a, b) => {
-    // Coordinators first
-    const aIsCoord = a.role.includes('Coordinator');
-    const bIsCoord = b.role.includes('Coordinator');
-    if (aIsCoord && !bIsCoord) return -1;
-    if (!aIsCoord && bIsCoord) return 1;
-
-    // Class teachers next
-    const aIsCT = a.role.includes('Class Teacher');
-    const bIsCT = b.role.includes('Class Teacher');
-    if (aIsCT && !bIsCT) return -1;
-    if (!aIsCT && bIsCT) return 1;
-
-    // Sort by ID
-    return a.id.localeCompare(b.id);
-  });
+  return Object.values(directory).sort(compareTeachersByHierarchy);
 }
 

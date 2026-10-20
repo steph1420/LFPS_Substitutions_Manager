@@ -207,9 +207,10 @@ export function calculateCandidateAffinity(
   let secondTeacherMatch = 0;
   let preferredOverride = 0;
 
-  // 0. Whole-Day Designated Officiating CT (BUG-18)
+  // 0. Officiating Class Teacher Class Familiarity (BUG-18)
+  // Note: Off. CT handles whole-day class admin/parent duties; teaching periods are allotted per subject rules.
   if (isDesignatedOffCT && policyConfig.prioritizeOfficiatingCT) {
-    officiatingMatch = 250; // Decisive priority for appointed whole-day Off. CT
+    officiatingMatch = 30; // Modest familiarity preference
   }
 
   // 1. Principal Preferred Subject Override

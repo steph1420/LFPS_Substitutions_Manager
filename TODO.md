@@ -615,7 +615,39 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] **Strict 1-Pulse Amber Attention Glow**:
     - Updated amber glow animation iteration count strictly to 1 in `index.css` and `RosterNormalCard.tsx`.
 
-### Job Bundle 30: Theme Engine, Restored Developer Options & Routine Drag Reordering
+### Job Bundle 30: Whole-Day Off. CT Domain Alignment, Teacher Self-Service Login Scoping, Ergonomic Card Full-Name Overlays & Hierarchy Sorting
+- **Status**: 🟢 Completed
+- **Scope & Work Items**:
+  - [x] **Whole-Day Officiating Class Teacher Domain Alignment & Precedence Clarification**:
+    - Aligned domain understanding: Officiating Class Teacher (`Off. CT`) is a **whole-day class responsibility** appointed for a section (e.g. `KG A`), taking care of parent communication, child issues, attendance, and administrative duties for that class for the day.
+    - Individual teaching periods of the absent CT are substituted period-by-period by subject teachers as per normal allocation rules.
+    - Removed `{sub.period} • CT` period stamping across both Grid Card and List view modes in `SubstitutionsRegister.tsx`. Period substitutions are clean period slots (e.g. `G/PD`, `1st Period`, `2nd Period`) with absent CT identification.
+    - Updated `calculateCandidateAffinity` in `@lfps/core` so Off. CT gets modest familiarity preference (+30 pts) without monopolizing teaching periods over subject specialists.
+    - Unified engine attribution from `Auto-Resolve CT Engine` to `Auto-Resolve Engine`.
+  - [x] **Teacher Self-Service Acceptance / Dispute Scoping (`FEAT-49` refinement)**:
+    - Scoped `[ ✓ Accept ]` and `[ ⚑ Dispute ]` actions strictly to logged-in teachers looking at their own assigned substitutions (`loggedInTeacher && loggedInTeacher === sub.substituteTeacher`).
+    - Unauthenticated front-desk coordinators and other staff see clean status pills (`Assigned`, `✓ Accepted`, `⚑ Disputed`) with administrative `[ Release Sub ]` and `[ Reassign ]` controls, completely eliminating unauthenticated dispute prompts.
+  - [x] **Staff Roster Tab Bar Glow Removal**:
+    - In `TabBar.tsx`, completely removed `isUrgent` and amber text from the Staff Roster tab under all conditions. Staff Roster tab text and pill strictly remain in standard typography.
+  - [x] **Ordering of Teacher Names by Name and Roles (Hierarchy)**:
+    - Engineered canonical 5-tier role hierarchy sorting in `@lfps/core`:
+      1. Academic Coordinator (`Mrs. R. Pahwa`)
+      2. Assistant Academic Coordinator (`Mrs. S. Lakra`)
+      3. Class Teachers (`KG A` -> `KG B` -> `PREP A` -> `PREP B`)
+      4. 2nd Teachers (`KG A` -> `KG B` -> `PREP A` -> `PREP B`)
+      5. Other Staff (Activity, Hindi, Games, etc.)
+      Within the same rank: class section order or alphabetical by full name.
+    - Implemented `routineSortBy: 'role' | 'name'` in `useTimetableStore` with local storage persistence.
+    - Added clean segmented sorting selector `[ Role | A-Z ]` to the `RoutineGrid.tsx` toolbar, and unified sorting across both `RoutineGrid.tsx` and `AbsenceRoster.tsx`.
+  - [x] **Zero-Shift Full Name Overlay for Teacher Cards (Desktop Hover & Mobile Touch)**:
+    - Built reusable `TeacherNameOverlay.tsx`: established static dimensions via base abbreviated name (preventing any layout reflow or UI shifts), while rendering an elevated, seamless overlay panel (`bg-slate-900/98 border border-slate-700/80 shadow-xl`) directly over the abbreviation.
+    - Desktop: Instant zero-delay display on hover.
+    - Mobile: Tap toggles the full name in-place with auto-dismiss on outside interaction.
+    - Integrated across `RosterNormalCard.tsx`, `RosterCompactCard.tsx`, `RosterNormalListRow.tsx`, `RosterCompactListRow.tsx`, and `RoutineGrid.tsx`.
+  - [x] **Off. CT Assign Pill Reordering Above Attendance Button**:
+    - In `RosterNormalCard.tsx`, repositioned the Off. CT and Off. AC appointment pills directly ABOVE the mark absence/present button for immediate visibility when a teacher is marked absent.
+
+### Job Bundle 31: Theme Engine, Restored Developer Options & Routine Drag Reordering
 - **Status**: 🔴 Queued
 - **Scope & Work Items**:
   - [ ] **FEAT-46 (Complete 12-Theme Engine Adapted from THEMES.md)**:

@@ -210,7 +210,7 @@ describe('LFPS Core Solver & Domain Engine', () => {
       expect(plan.unresolvedSlots.length).toBe(0);
     });
 
-    it('prioritizes designated Officiating Class Teacher across whole-day uncovered periods (BUG-18)', () => {
+    it('allots subject substitutes as per curriculum rules while respecting designated Officiating CT (BUG-18 & USER-DIRECTIVE)', () => {
       const schedule = DEFAULT_MASTER_SCHEDULE['MON'];
       const absences: AbsenceRecord[] = [
         {
@@ -248,9 +248,9 @@ describe('LFPS Core Solver & Domain Engine', () => {
       });
 
       expect(plan.assignments.length).toBe(2);
-      // Both periods should be assigned to the designated whole-day Off. CT Mrs. S. Bage who is free in 1st & 3rd
-      expect(plan.assignments[0].substituteTeacher).toBe('Mrs. S. Bage');
-      expect(plan.assignments[1].substituteTeacher).toBe('Mrs. S. Bage');
+      // Allots subject specialist (Ms. N. Horo for English Recitation) per subject rules
+      expect(plan.assignments[0].substituteTeacher).toBe('Ms. N. Horo');
+      expect(plan.unresolvedSlots.length).toBe(0);
     });
 
     it('respects Principal preferred subject override in policy configuration (FEAT-61)', () => {

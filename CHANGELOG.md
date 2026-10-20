@@ -15,6 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [v2.0.0-alpha.1] - 2026-10-18
 
 ### Added
+- **Whole-Day Off. CT Domain Alignment, Teacher Self-Service Login Scoping, Ergonomic Card Full-Name Overlays & Hierarchy Sorting (Job Bundle 30)**:
+  - **Whole-Day Off. CT Precedence & Clean Period Substitutions**: Officiating Class Teacher (`Off. CT`) is anchored as a whole-day class responsibility for parent communication, attendance, and administrative duties. Teaching periods are substituted by subject specialists without misleading period-level `• CT` stamps.
+  - **Scoped Teacher Self-Service Acceptance / Dispute**: `[ ✓ Accept ]` and `[ ⚑ Dispute ]` actions appear strictly for authenticated staff viewing their own assigned duties. Unauthenticated coordinators view clean status pills (`Assigned`, `✓ Accepted`, `⚑ Disputed`) with administrative controls.
+  - **Staff Roster Tab Bar Glow Removal**: Completely eliminated `isUrgent` and amber text from the Staff Roster navigation tab.
+  - **Role Hierarchy & Alphabetical Faculty Sorting**: Implemented 5-tier role hierarchy sorting (`Academic Coordinator` -> `Assistant Academic Coordinator` -> `Class Teachers` -> `2nd Teachers` -> `Other Staff`) and alphabetical ordering across both `RoutineGrid.tsx` and `AbsenceRoster.tsx` with a clean segmented toggle.
+  - **Zero-Shift Full Name Overlay Component (`TeacherNameOverlay.tsx`)**: Displays abbreviated names in static flow with zero layout reflow, while instantly revealing the full name directly over the abbreviation on desktop hover or mobile touch with outside-tap dismissal.
+  - **Off. CT Assign Pill Reordering**: Placed the Off. CT and Off. AC appointment pills directly above the attendance toggle button on teacher roster cards.
 - **Security RBAC, Teacher Self-Service & Universal Notification Center (Job Bundle 29)**:
   - **Three-Tier Role-Based Access Control (`SEC-01`)**: Implemented `UserRole` (`'ADMIN' | 'TEACHER' | 'GUEST'`), `<PermissionGuard>` component, and `usePermissions()` hook. Unlocks teacher self-service while safeguarding master schedule integrity and destructive actions.
   - **Teacher Substitution Acceptance & Dispute Workflow (`FEAT-49`)**: Wired `[ ✓ Accept ]` and `[ ⚑ Dispute ]` actions across both Grid Card and List view modes in `SubstitutionsRegister.tsx`. Disputing summons `DisputeModal.tsx` allowing staff to record dispute remarks, marks status as `DISPUTED`, dispatches a real-time notification to coordinators, and surfaces a 1-tap `[ Reassign ]` button.

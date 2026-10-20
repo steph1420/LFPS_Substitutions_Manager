@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
-import { PeriodId, getEffectiveOfficiatingAC } from '@lfps/core';
+import { PeriodId } from '@lfps/core';
 import { useTimetableStore, ActiveTab } from '../store/useTimetableStore.js';
 import { Table2, Sparkles, Users } from 'lucide-react';
 
@@ -14,8 +14,6 @@ export const TabBar: React.FC = () => {
     absences,
     substitutions,
     directory,
-    officiatingAC,
-    officiatingCT,
     isFitGrid,
     isMinimalUI,
   } = useTimetableStore();
@@ -29,17 +27,6 @@ export const TabBar: React.FC = () => {
     if (!teacher) return false;
     return teacher.role.includes('Class Teacher');
   };
-
-  // Evaluate Academic Coordinator Succession (LOGIC-04)
-  const offACResult = React.useMemo(() => {
-    return getEffectiveOfficiatingAC({
-      day: selectedDay,
-      absences,
-      officiatingACMap: officiatingAC,
-    });
-  }, [selectedDay, absences, officiatingAC]);
-
-  const needsOffACAppointment = offACResult.needsAppointment;
 
   // Calculate live badge for Uncovered Substitution Slots & CT status (LOGIC-05)
   const currentSchedule = schedule[selectedDay] || {};
@@ -75,17 +62,6 @@ export const TabBar: React.FC = () => {
   const absentCount = absences.filter(
     (a) => a.day === selectedDay && a.type !== 'AWAY_OFFICIAL'
   ).length;
-
-  // Check if any absent Class Teacher has not been appointed an Officiating CT yet
-  const hasUnassignedCTAppointments = React.useMemo(() => {
-    const activeAbsences = absences.filter((a) => a.day === selectedDay && a.type !== 'AWAY_OFFICIAL');
-    return activeAbsences.some((abs) => {
-      const teacher = directory[abs.teacherName];
-      if (!teacher || !isClassTeacher(abs.teacherName)) return false;
-      const section = teacher.primaryClass;
-      return section ? !officiatingCT[selectedDay]?.[section] : false;
-    });
-  }, [selectedDay, absences, directory, officiatingCT]);
 
   const triggerHaptic = (ms = 20) => {
     if (typeof window !== 'undefined' && 'vibrate' in navigator) {
@@ -158,8 +134,8 @@ export const TabBar: React.FC = () => {
         const Icon = tab.icon;
         const isUrgent =
           !isActive &&
-          ((tab.id === 'substitutions' && (uncoveredCount > 0 || hasUncoveredCTSlots)) ||
-           (tab.id === 'roster' && (needsOffACAppointment || hasUnassignedCTAppointments)));
+          tab.id === 'substitutions' &&
+          (uncoveredCount > 0 || hasUncoveredCTSlots);
 
         return (
           <button

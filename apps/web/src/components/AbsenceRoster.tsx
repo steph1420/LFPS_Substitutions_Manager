@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
-import { Teacher, getEffectiveOfficiatingAC } from '@lfps/core';
+import { getEffectiveOfficiatingAC, compareTeachersByHierarchy, compareTeachersByName } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
 import {
   Check,
@@ -48,23 +48,12 @@ export const AbsenceRoster: React.FC = () => {
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'present' | 'absent' | 'free_from_sub'>('all');
   const [isOverviewCollapsed, setIsOverviewCollapsed] = React.useState(hideOverviewsByDefault);
 
-  // Hierarchy Sorting: AC -> AAC -> CT -> ST (FEAT-36)
-  const getHierarchyRank = (t: Teacher): number => {
-    if (t.abbr === 'Mrs. R. Pahwa' || (t.role.includes('Academic Coordinator') && !t.role.includes('Asst.'))) return 1;
-    if (t.abbr === 'Mrs. S. Lakra' || t.role.includes('Asst. Academic Coordinator')) return 2;
-    if (t.role.includes('Class Teacher')) return 3;
-    return 4;
-  };
-
-  const allTeachers = Object.values(directory).sort((a, b) => {
-    if (rosterSortBy === 'name') {
-      return a.fullName.localeCompare(b.fullName);
-    }
-    // Default: 'role' hierarchy
-    const rankDiff = getHierarchyRank(a) - getHierarchyRank(b);
-    if (rankDiff !== 0) return rankDiff;
-    return a.fullName.localeCompare(b.fullName);
-  });
+  // Hierarchy vs Name Sorting (FEAT-36)
+  const allTeachers = React.useMemo(() => {
+    return Object.values(directory).sort(
+      rosterSortBy === 'name' ? compareTeachersByName : compareTeachersByHierarchy
+    );
+  }, [directory, rosterSortBy]);
 
   // KPI Calculations for today
   const activeAbsences = absences.filter((a) => a.day === selectedDay);

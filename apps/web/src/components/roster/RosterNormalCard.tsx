@@ -9,6 +9,7 @@ import {
   ChevronRight,
   ShieldAlert,
 } from 'lucide-react';
+import { TeacherNameOverlay } from '../common/TeacherNameOverlay.js';
 
 interface RosterNormalCardProps {
   teacher: Teacher;
@@ -125,12 +126,12 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
 
           {/* Teacher Identity & Badges */}
           <div className="overflow-hidden flex-1">
-            <h3
-              className="font-bold text-white text-base tracking-tight truncate cursor-help"
-              title={teacher.fullName}
-            >
-              {teacher.abbr}
-            </h3>
+            <TeacherNameOverlay
+              abbr={teacher.abbr}
+              fullName={teacher.fullName}
+              className="font-bold text-white text-base tracking-tight"
+              roleSubtitle={teacher.role}
+            />
 
             <div className="flex items-center gap-1.5 mt-1 text-xs">
               <span
@@ -180,41 +181,9 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
         </button>
       </div>
 
-      {/* Attendance Toggle Button */}
+      {/* Card Action Slots */}
       <div className="space-y-2 pt-1">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleAbsence(teacher.abbr);
-          }}
-          className={`w-full py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-between transition-all cursor-pointer shadow-sm active:scale-[0.99] ${
-            isAbsent
-              ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-900/50'
-              : isAwayOfficial
-              ? 'bg-gradient-to-r from-indigo-600/40 to-indigo-700/40 text-indigo-200 border border-indigo-500/60'
-              : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 hover:border-emerald-500/60'
-          }`}
-        >
-          <span className="flex items-center gap-2">
-            {isAbsent ? (
-              <UserX className="w-4 h-4 text-white" />
-            ) : (
-              <Check className="w-4 h-4 text-emerald-300" />
-            )}
-            <span>
-              {isAbsent
-                ? 'Marked Absent Today'
-                : isAwayOfficial
-                ? 'Away on Official Duty'
-                : 'Present on Duty'}
-            </span>
-          </span>
-          <span className="text-[10px] font-medium opacity-80 bg-black/20 px-2 py-0.5 rounded-md">
-            {isAbsent ? 'Tap to Mark Present' : 'Tap to Mark Absent'}
-          </span>
-        </button>
-
-        {/* Stable Action Slot (UI-05 & UI-07: Stacked full-width officiating rows, Assign/Reassign) */}
+        {/* Officiating Assignment Pills (Placed ABOVE attendance toggle button per user directive) */}
         <div className="flex flex-col gap-1.5 w-full">
           {/* Class Teacher Officiating Assignment */}
           {isCT && isAbsent && (
@@ -252,8 +221,8 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
                 <span className="text-white font-medium truncate">
                   {offACResult.effectiveAC
                     ? offACResult.isAutoOfficiating
-                      ? `${offACResult.effectiveAC} (Acting)`
-                      : offACResult.effectiveAC
+                    ? `${offACResult.effectiveAC} (Acting)`
+                    : offACResult.effectiveAC
                     : 'Needs Appointment'}
                 </span>
               </div>
@@ -280,6 +249,39 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
             </div>
           )}
         </div>
+
+        {/* Attendance Toggle Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleAbsence(teacher.abbr);
+          }}
+          className={`w-full py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-between transition-all cursor-pointer shadow-sm active:scale-[0.99] ${
+            isAbsent
+              ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-900/50'
+              : isAwayOfficial
+              ? 'bg-gradient-to-r from-indigo-600/40 to-indigo-700/40 text-indigo-200 border border-indigo-500/60'
+              : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 hover:border-emerald-500/60'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            {isAbsent ? (
+              <UserX className="w-4 h-4 text-white" />
+            ) : (
+              <Check className="w-4 h-4 text-emerald-300" />
+            )}
+            <span>
+              {isAbsent
+                ? 'Marked Absent Today'
+                : isAwayOfficial
+                ? 'Away on Official Duty'
+                : 'Present on Duty'}
+            </span>
+          </span>
+          <span className="text-[10px] font-medium opacity-80 bg-black/20 px-2 py-0.5 rounded-md">
+            {isAbsent ? 'Tap to Mark Present' : 'Tap to Mark Absent'}
+          </span>
+        </button>
       </div>
     </motion.div>
   );

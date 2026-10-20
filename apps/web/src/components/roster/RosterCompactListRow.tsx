@@ -1,6 +1,7 @@
 import React from 'react';
 import { Teacher } from '@lfps/core';
 import { Check, UserX, SlidersHorizontal } from 'lucide-react';
+import { TeacherNameOverlay } from '../common/TeacherNameOverlay.js';
 
 interface RosterCompactListRowProps {
   teacher: Teacher;
@@ -58,9 +59,12 @@ export const RosterCompactListRow: React.FC<RosterCompactListRowProps> = ({
           {teacher.initials}
         </div>
         <div className="truncate">
-          <span className="font-bold text-white truncate cursor-help" title={teacher.fullName}>
-            {teacher.abbr}
-          </span>
+          <TeacherNameOverlay
+            abbr={teacher.abbr}
+            fullName={teacher.fullName}
+            className="font-bold text-white text-xs truncate"
+            roleSubtitle={teacher.role}
+          />
         </div>
       </div>
 

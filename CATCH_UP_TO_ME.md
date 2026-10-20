@@ -15,18 +15,17 @@
 - **Production Build Status**: Passes cleanly via `npm run build`.
 - **Live Deployment**: `https://steph1420.github.io/LFPS_Substitutions_Manager/` (tracks branch `next-gen`).
 
-### 2. What Was Just Completed (Job Bundle 29)
-- **`SEC-01` (Three-Tier RBAC Architecture: Admin, Teacher, Guest)**: Universal rights segregation with `<PermissionGuard>` component and `usePermissions()` hook. Front-desk unauthenticated sessions operate as Admin, with Teacher self-service and Guest viewing modes.
-- **`FEAT-49` (Teacher Substitution Acceptance & Dispute Workflow)**: Active substitution cards and rows in `SubstitutionsRegister.tsx` display interactive `[ ✓ Accept ]` and `[ ⚑ Dispute ]` actions. Disputing opens `DisputeModal.tsx` for entering reasons, marks the duty as `DISPUTED`, dispatches a notification, and surfaces a 1-tap `[ Reassign ]` button for coordinators.
-- **`FEAT-50` (Universal Notification Center & Live Alert Hub)**: Header Bell button (`🔔`) with reactive unread counter badge opening `NotificationCenterDrawer.tsx` slide-over drawer aggregating disputes, clashing commitments, pending duties, officiating prompts, and acceptance receipts.
-- **Routine Grid Clean Teacher Names**: Eradicated golden and purple colors from teacher names in Routine Grid; strictly rendered in clean standard text (`text-slate-100` / `text-rose-100`).
-- **Universal Class Teacher Recognition**: Eliminated `&& !isAC && !isAAC` exclusion across `RoutineGrid.tsx`, `SubstitutionsRegister.tsx`, and `TabBar.tsx`. Academic Coordinators who are Class Teachers (`Mrs. R. Pahwa` - PREP A, `Mrs. S. Lakra` - KG A) now show both their AC/AAC badge and CT badge with full CT auto-resolve participation.
-- **Segregated Unavailable Staff in Popup Selector**: Replaced the small accordion toggle in `AssignSubstituteModal.tsx` with segregated Available Candidates and Unavailable/Busy Staff sections, showing clear conflict reasons and `[ Override ]` button.
-- **Strict 1-Pulse Amber Attention Glow**: Updated amber glow animation iteration count strictly to 1 in `index.css` and `RosterNormalCard.tsx`.
+### 2. What Was Just Completed (Job Bundle 30)
+- **Whole-Day Off. CT Domain Alignment & Clean Period Substitutions**: Officiating Class Teacher (`Off. CT`) is anchored as a whole-day class responsibility for parent communication, attendance, and administrative duties. Teaching periods are substituted by subject specialists without misleading period-level `• CT` stamps.
+- **Scoped Teacher Self-Service Acceptance / Dispute**: `[ ✓ Accept ]` and `[ ⚑ Dispute ]` actions appear strictly for authenticated staff viewing their own assigned duties. Unauthenticated coordinators view clean status pills (`Assigned`, `✓ Accepted`, `⚑ Disputed`) with administrative controls.
+- **Staff Roster Tab Bar Glow Removal**: Completely eliminated `isUrgent` and amber text from the Staff Roster navigation tab.
+- **Role Hierarchy & Alphabetical Faculty Sorting**: Implemented 5-tier role hierarchy sorting (`Academic Coordinator` -> `Assistant Academic Coordinator` -> `Class Teachers` -> `2nd Teachers` -> `Other Staff`) and alphabetical ordering across both `RoutineGrid.tsx` and `AbsenceRoster.tsx` with a clean segmented toggle.
+- **Zero-Shift Full Name Overlay Component (`TeacherNameOverlay.tsx`)**: Displays abbreviated names in static flow with zero layout reflow, while instantly revealing the full name directly over the abbreviation on desktop hover or mobile touch with outside-tap dismissal.
+- **Off. CT Assign Pill Reordering**: Placed the Off. CT and Off. AC appointment pills directly above the attendance toggle button on teacher roster cards.
 
 ### 3. What To Do On Your Very First Turn
 - If the user says **"Go"**, **"Yes"**, or tells you to proceed, **DO NOT ASK WHAT TO DO**. They are approving:
-  👉 **Job Bundle 30: Theme Engine, Restored Developer Options & Routine Drag Reordering**:
+  👉 **Job Bundle 31: Theme Engine, Restored Developer Options & Routine Drag Reordering**:
   1. **`FEAT-46`**: Complete 12-Theme Engine Adapted from THEMES.md across 4 design families with visual swatches.
   2. **`FEAT-47`**: Restored Developer Options & Diagnostics Panel (5-tap version easter egg unlock; cross-period lock, target cell halo pulse indicator, etc.).
   3. **`FEAT-37A` & `FEAT-37B`**: Routine Matrix Drag-and-Drop Reordering with undo/redo and dedicated Class View context menu.
@@ -629,14 +628,14 @@ LFPS_Substitutions_Manager/
 
 ### Current Git State
 - **Branch**: `next-gen`
-- **Head Commit**: Job Bundle 29 Complete (`SEC-01`, `FEAT-49`, `FEAT-50`, clean Routine Grid teacher names, AC CT recognition, segregated teacher selector, 1-pulse amber glow)
+- **Head Commit**: Job Bundle 30 Complete (Whole-day Off. CT domain alignment, scoped accept/dispute, TabBar glow removal, faculty hierarchy/name ordering, zero-shift TeacherNameOverlay, Off. CT pill repositioning)
 - **Working Tree**: Clean.
 - **All Unit Tests**: 18/18 Passing (`npm test`).
 - **Production Build**: Passes cleanly (`npm run build`).
 
 ### Queued High-Capacity Backlog (Consolidated Thematic Bundles)
 
-1. **Job Bundle 30: Theme Engine, Restored Developer Options & Routine Drag Reordering (ACTIVE NEXT)**:
+1. **Job Bundle 31: Theme Engine, Restored Developer Options & Routine Drag Reordering (ACTIVE NEXT)**:
    - **`FEAT-46` (Complete 12-Theme Engine)**: CSS token architecture for 12 themes across 4 design families with visual swatches.
    - **`FEAT-47` (Restored Developer Options Panel)**: 5-tap version Easter egg unlock; cross-period lock, target cell halo indicator, countdown timer, etc.
    - **`FEAT-37A` & `FEAT-37B`**: Routine Matrix Drag-and-Drop Reordering with undo/redo and dedicated Class View context menu.

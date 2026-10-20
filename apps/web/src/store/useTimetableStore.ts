@@ -106,6 +106,7 @@ interface TimetableState {
   rosterViewMode: RosterViewMode;
   substitutionsSortBy: 'name' | 'role' | 'period';
   rosterSortBy: 'role' | 'name';
+  routineSortBy: 'role' | 'name';
 
   // Master Data
   directory: StaffDirectory;
@@ -158,6 +159,7 @@ interface TimetableState {
   setRosterViewMode: (mode: RosterViewMode) => void;
   setSubstitutionsSortBy: (sort: 'name' | 'role' | 'period') => void;
   setRosterSortBy: (sort: 'role' | 'name') => void;
+  setRoutineSortBy: (sort: 'role' | 'name') => void;
   savePreferences: () => void;
   resetPreferences: () => void;
 
@@ -244,6 +246,7 @@ interface StoredPreferences {
   rosterViewMode?: RosterViewMode;
   substitutionsSortBy?: 'name' | 'role' | 'period';
   rosterSortBy?: 'role' | 'name';
+  routineSortBy?: 'role' | 'name';
   isMinimalUI?: boolean;
 }
 
@@ -306,6 +309,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   rosterViewMode: getInitialRosterMode(initialPrefs.rosterViewMode),
   substitutionsSortBy: initialPrefs.substitutionsSortBy ?? 'period',
   rosterSortBy: initialPrefs.rosterSortBy ?? 'role',
+  routineSortBy: initialPrefs.routineSortBy ?? 'role',
   autoResolvePolicy: initialPolicy,
 
   directory: DEFAULT_STAFF_DIRECTORY,
@@ -376,6 +380,10 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     autoPersistPreferences({ rosterSortBy: sort });
     set({ rosterSortBy: sort });
   },
+  setRoutineSortBy: (sort) => {
+    autoPersistPreferences({ routineSortBy: sort });
+    set({ routineSortBy: sort });
+  },
   savePreferences: () => {
     const state = get();
     autoPersistPreferences({
@@ -385,6 +393,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       rosterViewMode: state.rosterViewMode,
       substitutionsSortBy: state.substitutionsSortBy,
       rosterSortBy: state.rosterSortBy,
+      routineSortBy: state.routineSortBy,
       isMinimalUI: state.isMinimalUI,
     });
   },
@@ -403,6 +412,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       rosterViewMode: 'grid',
       substitutionsSortBy: 'period',
       rosterSortBy: 'role',
+      routineSortBy: 'role',
       isMinimalUI: false,
     });
   },

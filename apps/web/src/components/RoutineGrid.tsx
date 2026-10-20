@@ -1,8 +1,17 @@
 import React from 'react';
-import { DEFAULT_PERIODS, PeriodId, DayOfWeek, parseCellSlot, isTeacherCoTeachingInSlot } from '@lfps/core';
+import {
+  DEFAULT_PERIODS,
+  PeriodId,
+  DayOfWeek,
+  parseCellSlot,
+  isTeacherCoTeachingInSlot,
+  compareTeachersByHierarchy,
+  compareTeachersByName,
+} from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
-import { Maximize2, Minimize2, Users, School, Eye, EyeOff } from 'lucide-react';
+import { Maximize2, Minimize2, Users, School, Eye, EyeOff, ArrowUpDown } from 'lucide-react';
 import { UndoRedoControls } from './UndoRedoControls.js';
+import { TeacherNameOverlay } from './common/TeacherNameOverlay.js';
 
 const DAYS: DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
@@ -35,6 +44,8 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
     hideAbsentStaff,
     toggleHideAbsentStaff,
     isMinimalUI,
+    routineSortBy,
+    setRoutineSortBy,
   } = useTimetableStore();
 
   const [isColumnCollapsed, setIsColumnCollapsed] = React.useState(false);
@@ -42,16 +53,22 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
 
   const isExpanded = isFitGrid || isFullscreen;
   const currentSchedule = schedule[selectedDay] || {};
-  const allTeachers = Object.values(directory);
+
+  // Sort teachers by role hierarchy or alphabetical by name
+  const sortedTeachers = React.useMemo(() => {
+    return Object.values(directory).sort(
+      routineSortBy === 'name' ? compareTeachersByName : compareTeachersByHierarchy
+    );
+  }, [directory, routineSortBy]);
 
   // Filter teachers when hideAbsentStaff is active (FEAT-55)
   const teachers = React.useMemo(() => {
-    if (!hideAbsentStaff) return allTeachers;
-    return allTeachers.filter((t) => {
+    if (!hideAbsentStaff) return sortedTeachers;
+    return sortedTeachers.filter((t) => {
       const abs = absences.find((a) => a.teacherName === t.abbr && a.day === selectedDay);
       return !abs || abs.type === 'AWAY_OFFICIAL';
     });
-  }, [allTeachers, hideAbsentStaff, absences, selectedDay]);
+  }, [sortedTeachers, hideAbsentStaff, absences, selectedDay]);
 
   // List of distinct classes for Class View (LOGIC-07: Nursery removed)
   const classSections = ['KG A', 'KG B', 'PREP A', 'PREP B'];
@@ -195,13 +212,12 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                   ) : (
                     // Normal full name display
                     <div className="flex items-center gap-1">
-                      <span
-                        className={`truncate text-xs font-bold ${
-                          isAbsent ? 'text-rose-100' : 'text-slate-100'
-                        }`}
-                      >
-                        {teacher.abbr}
-                      </span>
+                      <TeacherNameOverlay
+                        abbr={teacher.abbr}
+                        fullName={teacher.fullName}
+                        className={isAbsent ? 'text-rose-100 text-xs font-bold' : 'text-slate-100 text-xs font-bold'}
+                        roleSubtitle={teacher.role}
+                      />
                       {isAbsent && (
                         <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-rose-500/30 text-rose-200 border border-rose-400/40">
                           ABS
@@ -482,6 +498,31 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
             <span className="hidden xs:inline">Classes</span>
           </button>
         </div>
+
+        {/* Ordering Selector for Teachers: Role Hierarchy vs Name (A-Z) */}
+        {viewMode === 'teachers' && (
+          <div className="flex items-center bg-slate-900/90 p-0.5 sm:p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+            <button
+              onClick={() => setRoutineSortBy('role')}
+              className={`px-2 py-1 rounded-lg transition-colors flex items-center gap-1 ${
+                routineSortBy === 'role' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Sort by school role hierarchy (AC -> AAC -> CT -> 2T -> Staff)"
+            >
+              <ArrowUpDown className="w-3 h-3" />
+              <span className="hidden sm:inline">Role</span>
+            </button>
+            <button
+              onClick={() => setRoutineSortBy('name')}
+              className={`px-2 py-1 rounded-lg transition-colors ${
+                routineSortBy === 'name' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Sort alphabetically by Name (A-Z)"
+            >
+              A-Z
+            </button>
+          </div>
+        )}
 
         {/* Hide Absent Staff Toggle Button (FEAT-55) */}
         {viewMode === 'teachers' && (

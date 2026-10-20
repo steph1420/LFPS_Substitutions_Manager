@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Teacher, EffectiveOfficiatingACResult } from '@lfps/core';
 import { Check, UserX, SlidersHorizontal, ChevronRight, ShieldAlert } from 'lucide-react';
+import { TeacherNameOverlay } from '../common/TeacherNameOverlay.js';
 
 interface RosterNormalListRowProps {
   teacher: Teacher;
@@ -88,9 +89,12 @@ export const RosterNormalListRow: React.FC<RosterNormalListRowProps> = ({
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-bold text-white text-sm cursor-help" title={teacher.fullName}>
-              {teacher.abbr}
-            </span>
+            <TeacherNameOverlay
+              abbr={teacher.abbr}
+              fullName={teacher.fullName}
+              className="font-bold text-white text-sm"
+              roleSubtitle={teacher.role}
+            />
             {teacher.primaryClass && (
               <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-200 border border-amber-500/30 font-bold">
                 {teacher.primaryClass}

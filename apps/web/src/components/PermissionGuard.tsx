@@ -70,3 +70,4 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
 
   return <>{children}</>;
 };
+

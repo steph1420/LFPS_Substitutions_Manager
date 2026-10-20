@@ -158,7 +158,7 @@ export const SubstitutionsRegister: React.FC = () => {
         className: assignment.className,
         subject: assignment.subject,
         status: 'COVERED',
-        assignedBy: 'Auto-Resolve CT Engine',
+        assignedBy: 'Auto-Resolve Engine',
       });
     });
   };
@@ -254,15 +254,15 @@ export const SubstitutionsRegister: React.FC = () => {
               </button>
             )}
 
-            {/* Dedicated CT Auto-Resolve Button (LOGIC-05) */}
+            {/* Dedicated CT Classes Auto-Resolve Button (LOGIC-05) */}
             {ctUncoveredSlots.length > 0 && (
               <button
                 onClick={handleAutoResolveCT}
                 className="w-fit flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs font-bold shadow-lg shadow-amber-500/30 active:scale-95 transition-all cursor-pointer"
-                title="Auto-resolve uncovered periods strictly for absent Class Teachers"
+                title="Auto-resolve subject substitutions for classes with absent Class Teachers"
               >
                 <Sparkles className="w-4 h-4 text-amber-200 animate-spin" style={{ animationDuration: '4s' }} />
-                <span>⚡ Auto-Resolve CT ({ctUncoveredSlots.length})</span>
+                <span>⚡ Auto-Resolve CT Classes ({ctUncoveredSlots.length})</span>
               </button>
             )}
 
@@ -604,27 +604,20 @@ export const SubstitutionsRegister: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 {filteredSubstitutions.map((sub) => {
                   const isCT = isClassTeacher(sub.originalTeacher);
+                  const isCurrentTeacherDuty = Boolean(
+                    loggedInTeacher && loggedInTeacher === sub.substituteTeacher
+                  );
                   return (
                     <motion.div
                       key={sub.id}
                       initial={{ opacity: 0, scale: 0.96 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={SPRING_TRANSITIONS.snappy}
-                      className={`glass-panel border rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg transition-all ${
-                        isCT
-                          ? 'border-amber-500/60 bg-gradient-to-br from-amber-950/35 via-slate-900/95 to-amber-900/25 shadow-[0_0_16px_rgba(245,158,11,0.18)] ring-1 ring-amber-500/40 hover:border-amber-400'
-                          : 'border-slate-800 hover:border-slate-700'
-                      }`}
+                      className="glass-panel border border-slate-800 hover:border-slate-700 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg transition-all"
                     >
                       <div className="flex items-center justify-between">
-                        <span
-                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
-                            isCT
-                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                              : 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
-                          }`}
-                        >
-                          {sub.period} Period {isCT && '• CT'}
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border bg-blue-500/15 text-blue-400 border-blue-500/30">
+                          {sub.period} Period
                         </span>
                         <span className="text-xs font-bold text-white">
                           {sub.className} • {sub.subject}
@@ -634,12 +627,10 @@ export const SubstitutionsRegister: React.FC = () => {
                       {/* Teacher Transfer Row */}
                       <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between text-xs">
                         <div>
-                          <div className="text-[10px] text-slate-400">Absent</div>
-                          <div
-                            className={`font-semibold line-through truncate max-w-[110px] ${
-                              isCT ? 'text-amber-200' : 'text-rose-300'
-                            }`}
-                          >
+                          <div className="text-[10px] text-slate-400">
+                            Absent {isCT && <span className="text-amber-400/90 font-medium">(Class Teacher)</span>}
+                          </div>
+                          <div className="font-semibold line-through truncate max-w-[110px] text-rose-300">
                             {sub.originalTeacher}
                           </div>
                         </div>
@@ -672,7 +663,7 @@ export const SubstitutionsRegister: React.FC = () => {
                             </div>
                           )}
                         </div>
-                      ) : (
+                      ) : isCurrentTeacherDuty ? (
                         <div className="flex items-center gap-2 pt-0.5">
                           <button
                             onClick={() => acceptSubstitution(sub.id)}
@@ -690,6 +681,11 @@ export const SubstitutionsRegister: React.FC = () => {
                             <Flag className="w-3.5 h-3.5" />
                             <span>Dispute</span>
                           </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/60 border border-slate-700/50 text-[11px] text-slate-300 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                          <span>Assigned to {sub.substituteTeacher}</span>
                         </div>
                       )}
 
@@ -737,28 +733,21 @@ export const SubstitutionsRegister: React.FC = () => {
               <div className="space-y-2">
                 {filteredSubstitutions.map((sub) => {
                   const isCT = isClassTeacher(sub.originalTeacher);
+                  const isCurrentTeacherDuty = Boolean(
+                    loggedInTeacher && loggedInTeacher === sub.substituteTeacher
+                  );
                   return (
                     <motion.div
                       key={sub.id}
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={SPRING_TRANSITIONS.snappy}
-                      className={`glass-panel px-3 sm:px-4 py-2.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm transition-all ${
-                        isCT
-                          ? 'border-amber-500/50 bg-gradient-to-r from-amber-950/30 via-slate-900/90 to-amber-900/20 shadow-[0_0_12px_rgba(245,158,11,0.15)] ring-1 ring-amber-500/30'
-                          : 'border-slate-800 hover:border-slate-700'
-                      }`}
+                      className="glass-panel px-3 sm:px-4 py-2.5 rounded-xl border border-slate-800 hover:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm transition-all"
                     >
                       {/* Left: Period & Class */}
                       <div className="flex items-center gap-2.5 min-w-[160px]">
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                            isCT
-                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                              : 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
-                          }`}
-                        >
-                          {sub.period} {isCT && '• CT'}
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                          {sub.period}
                         </span>
                         <div>
                           <div className="font-bold text-white text-xs">{sub.className}</div>
@@ -768,15 +757,12 @@ export const SubstitutionsRegister: React.FC = () => {
 
                       {/* Middle: Transfer */}
                       <div className="flex items-center gap-2 sm:gap-3 text-xs">
-                        <span
-                          className={`font-semibold line-through text-xs ${
-                            isCT ? 'text-amber-300' : 'text-rose-300'
-                          }`}
-                        >
+                        <span className="font-semibold line-through text-xs text-rose-300">
                           {sub.originalTeacher}
+                          {isCT && <span className="text-[10px] text-amber-400/80 font-normal ml-1">(CT)</span>}
                         </span>
                         <ArrowRight className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-                        <span className={`font-bold text-xs ${isCT ? 'text-amber-200' : 'text-emerald-300'}`}>
+                        <span className="font-bold text-xs text-emerald-300">
                           {sub.substituteTeacher}
                         </span>
                       </div>
@@ -810,7 +796,7 @@ export const SubstitutionsRegister: React.FC = () => {
                               Reassign
                             </button>
                           </div>
-                        ) : (
+                        ) : isCurrentTeacherDuty ? (
                           <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => acceptSubstitution(sub.id)}
@@ -829,6 +815,10 @@ export const SubstitutionsRegister: React.FC = () => {
                               <span>Dispute</span>
                             </button>
                           </div>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 bg-slate-800/80 border border-slate-700/60 px-2 py-0.5 rounded-full">
+                            Assigned
+                          </span>
                         )}
 
                         <span className="text-[10px] text-slate-500 hidden md:inline ml-1">
