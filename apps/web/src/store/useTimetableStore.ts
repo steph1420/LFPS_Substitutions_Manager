@@ -89,6 +89,20 @@ function pushSnapshot<T>(stack: HistoryStack<T>, current: T, max = 30): HistoryS
   };
 }
 
+export type ThemeId =
+  | 'system'
+  | 'light'
+  | 'warm-sepia'
+  | 'dark'
+  | 'midnight'
+  | 'slate-nord'
+  | 'utopian-glass'
+  | 'utopian-night'
+  | 'aero-frost'
+  | 'cyber-glass'
+  | 'retro-glass'
+  | 'high-contrast';
+
 interface TimetableState {
   // Navigation & View
   selectedDay: DayOfWeek;
@@ -98,6 +112,39 @@ interface TimetableState {
   isFitGrid: boolean;
   isSettingsOpen: boolean;
   isStaffLoginOpen: boolean;
+
+  // Theme Engine (FEAT-46)
+  currentTheme: ThemeId;
+  setTheme: (theme: ThemeId) => void;
+
+  // Developer & Diagnostics Options (FEAT-47)
+  isDeveloperMode: boolean;
+  setDeveloperMode: (enabled: boolean) => void;
+  samePeriodLock: boolean;
+  setSamePeriodLock: (locked: boolean) => void;
+  subHaloIndicator: boolean;
+  setSubHaloIndicator: (enabled: boolean) => void;
+  subHaloColor: 'emerald' | 'cyan' | 'amber' | 'violet';
+  setSubHaloColor: (color: 'emerald' | 'cyan' | 'amber' | 'violet') => void;
+  acceptanceCountdown: boolean;
+  setAcceptanceCountdown: (enabled: boolean) => void;
+  acceptanceDuration: 5 | 10 | 30 | 60;
+  setAcceptanceDuration: (duration: 5 | 10 | 30 | 60) => void;
+  undoIconStyle: 'curved' | 'circular' | 'geometric' | 'micro';
+  setUndoIconStyle: (style: 'curved' | 'circular' | 'geometric' | 'micro') => void;
+
+  // Routine Matrix Reordering (FEAT-37A)
+  swapRoutineSlots: (
+    day: DayOfWeek,
+    source: { teacher: string; period: PeriodId },
+    target: { teacher: string; period: PeriodId }
+  ) => void;
+  updatePeriodTask: (
+    day: DayOfWeek,
+    period: PeriodId,
+    teacherName: string,
+    newTask: string
+  ) => void;
 
   // User Preferences (FEAT-45, FEAT-55, FEAT-58, FEAT-60)
   hideOverviewsByDefault: boolean;
@@ -248,6 +295,24 @@ interface StoredPreferences {
   rosterSortBy?: 'role' | 'name';
   routineSortBy?: 'role' | 'name';
   isMinimalUI?: boolean;
+  currentTheme?: ThemeId;
+  isDeveloperMode?: boolean;
+  samePeriodLock?: boolean;
+  subHaloIndicator?: boolean;
+  subHaloColor?: 'emerald' | 'cyan' | 'amber' | 'violet';
+  acceptanceCountdown?: boolean;
+  acceptanceDuration?: 5 | 10 | 30 | 60;
+  undoIconStyle?: 'curved' | 'circular' | 'geometric' | 'micro';
+}
+
+export function applyThemeToDom(theme: ThemeId) {
+  if (typeof document === 'undefined') return;
+  if (theme === 'system') {
+    const isDark = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  } else {
+    document.documentElement.setAttribute('data-theme', theme);
+  }
 }
 
 function loadStoredPreferences(): StoredPreferences {
@@ -286,6 +351,9 @@ function loadStoredPolicy(): AutoResolvePolicyConfig {
 const initialPrefs = loadStoredPreferences();
 const initialPolicy = loadStoredPolicy();
 
+// Apply initial theme to document DOM
+applyThemeToDom(initialPrefs.currentTheme ?? 'dark');
+
 const getInitialRosterMode = (saved?: RosterViewMode): RosterViewMode => {
   if (saved === 'list' || saved === 'compact-list') return 'compact-list';
   if (saved === 'detailed-list' || saved === 'normal-list') return 'normal-list';
@@ -302,6 +370,15 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   isFitGrid: false,
   isSettingsOpen: false,
   isStaffLoginOpen: false,
+
+  currentTheme: initialPrefs.currentTheme ?? 'dark',
+  isDeveloperMode: initialPrefs.isDeveloperMode ?? false,
+  samePeriodLock: initialPrefs.samePeriodLock ?? true,
+  subHaloIndicator: initialPrefs.subHaloIndicator ?? true,
+  subHaloColor: initialPrefs.subHaloColor ?? 'emerald',
+  acceptanceCountdown: initialPrefs.acceptanceCountdown ?? false,
+  acceptanceDuration: initialPrefs.acceptanceDuration ?? 10,
+  undoIconStyle: initialPrefs.undoIconStyle ?? 'curved',
 
   hideOverviewsByDefault: initialPrefs.hideOverviewsByDefault ?? false,
   hideAbsentStaff: initialPrefs.hideAbsentStaff ?? false,
@@ -416,6 +493,88 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       isMinimalUI: false,
     });
   },
+
+  setTheme: (theme) => {
+    applyThemeToDom(theme);
+    autoPersistPreferences({ currentTheme: theme });
+    set({ currentTheme: theme });
+  },
+  setDeveloperMode: (enabled) => {
+    autoPersistPreferences({ isDeveloperMode: enabled });
+    set({ isDeveloperMode: enabled });
+  },
+  setSamePeriodLock: (locked) => {
+    autoPersistPreferences({ samePeriodLock: locked });
+    set({ samePeriodLock: locked });
+  },
+  setSubHaloIndicator: (enabled) => {
+    autoPersistPreferences({ subHaloIndicator: enabled });
+    set({ subHaloIndicator: enabled });
+  },
+  setSubHaloColor: (color) => {
+    autoPersistPreferences({ subHaloColor: color });
+    set({ subHaloColor: color });
+  },
+  setAcceptanceCountdown: (enabled) => {
+    autoPersistPreferences({ acceptanceCountdown: enabled });
+    set({ acceptanceCountdown: enabled });
+  },
+  setAcceptanceDuration: (duration) => {
+    autoPersistPreferences({ acceptanceDuration: duration });
+    set({ acceptanceDuration: duration });
+  },
+  setUndoIconStyle: (style) => {
+    autoPersistPreferences({ undoIconStyle: style });
+    set({ undoIconStyle: style });
+  },
+
+  swapRoutineSlots: (day, source, target) =>
+    set((state) => {
+      const routineHistory = pushSnapshot(state.routineHistory, {
+        schedule: state.schedule,
+      });
+
+      const daySched = { ...(state.schedule[day] || {}) };
+      const sourcePeriodMap = { ...(daySched[source.period] || {}) };
+      const targetPeriodMap = { ...(daySched[target.period] || {}) };
+
+      const taskA = sourcePeriodMap[source.teacher] || 'Free';
+      const taskB = targetPeriodMap[target.teacher] || 'Free';
+
+      sourcePeriodMap[source.teacher] = taskB;
+      targetPeriodMap[target.teacher] = taskA;
+
+      daySched[source.period] = sourcePeriodMap;
+      daySched[target.period] = targetPeriodMap;
+
+      return {
+        schedule: {
+          ...state.schedule,
+          [day]: daySched,
+        },
+        routineHistory,
+      };
+    }),
+
+  updatePeriodTask: (day, period, teacherName, newTask) =>
+    set((state) => {
+      const routineHistory = pushSnapshot(state.routineHistory, {
+        schedule: state.schedule,
+      });
+
+      const daySched = { ...(state.schedule[day] || {}) };
+      const periodMap = { ...(daySched[period] || {}) };
+      periodMap[teacherName] = newTask;
+      daySched[period] = periodMap;
+
+      return {
+        schedule: {
+          ...state.schedule,
+          [day]: daySched,
+        },
+        routineHistory,
+      };
+    }),
 
   updateAutoResolvePolicy: (policyUpdate) =>
     set((state) => {

@@ -46,8 +46,11 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
     isMinimalUI,
     routineSortBy,
     setRoutineSortBy,
+    swapRoutineSlots,
   } = useTimetableStore();
 
+  const [dragOverTarget, setDragOverTarget] = React.useState<{ teacher: string; period: PeriodId } | null>(null);
+  const [dragSource, setDragSource] = React.useState<{ teacher: string; period: PeriodId; task: string } | null>(null);
   const [isColumnCollapsed, setIsColumnCollapsed] = React.useState(false);
   const tableWrapperRef = React.useRef<HTMLDivElement>(null);
 
@@ -329,9 +332,68 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                       s.substituteTeacher === teacher.abbr
                   );
 
+                  const isDraggable = isBusy && !covering && !sub && period.id !== 'BREAK';
+                  const isDragOver = dragOverTarget?.teacher === teacher.abbr && dragOverTarget?.period === period.id;
+
                   return (
                     <td
                       key={period.id}
+                      draggable={isDraggable}
+                      onDragStart={(e) => {
+                        if (!isDraggable) return;
+                        setDragSource({ teacher: teacher.abbr, period: period.id, task: originalTask });
+                        e.dataTransfer.setData(
+                          'application/json',
+                          JSON.stringify({
+                            teacher: teacher.abbr,
+                            period: period.id,
+                            task: originalTask,
+                          })
+                        );
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragEnd={() => {
+                        setDragSource(null);
+                        setDragOverTarget(null);
+                      }}
+                      onDragOver={(e) => {
+                        if (period.id === 'BREAK') return;
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        if (
+                          !dragOverTarget ||
+                          dragOverTarget.teacher !== teacher.abbr ||
+                          dragOverTarget.period !== period.id
+                        ) {
+                          setDragOverTarget({ teacher: teacher.abbr, period: period.id });
+                        }
+                      }}
+                      onDragLeave={(e) => {
+                        if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                        setDragOverTarget(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setDragOverTarget(null);
+                        setDragSource(null);
+                        try {
+                          const data = JSON.parse(e.dataTransfer.getData('application/json'));
+                          if (data && data.teacher && data.period) {
+                            if (data.teacher === teacher.abbr && data.period === period.id) return;
+                            swapRoutineSlots(
+                              selectedDay,
+                              { teacher: data.teacher, period: data.period },
+                              { teacher: teacher.abbr, period: period.id }
+                            );
+                            if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+                              try {
+                                navigator.vibrate(40);
+                              } catch {}
+                            }
+                          }
+                        } catch {}
+                      }}
+                      onContextMenu={(e) => handleContextMenu(e, teacher.abbr, period.id)}
                       onClick={() => {
                         if (isCoTeaching) {
                           openCoTeachModal({
@@ -342,9 +404,20 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                           });
                         }
                       }}
-                      className={`text-center border-l border-slate-800/60 ${
+                      className={`text-center border-l border-slate-800/60 transition-all select-none ${
+                        isDragOver ? 'ring-2 ring-blue-400 ring-inset bg-blue-500/20' : ''
+                      } ${
+                        dragSource?.teacher === teacher.abbr && dragSource?.period === period.id
+                          ? 'opacity-40 scale-95'
+                          : ''
+                      } ${isDraggable ? 'cursor-grab active:cursor-grabbing hover:bg-slate-800/50' : ''} ${
                         isMinimalUI ? 'px-0.5 py-0.5' : 'px-1 py-1 sm:px-1.5 sm:py-1.5'
                       }`}
+                      title={
+                        isDraggable
+                          ? `Drag to swap with another period (Undo available)`
+                          : undefined
+                      }
                     >
                       {covering ? (
                         <div className="rounded-lg bg-emerald-500/15 border border-emerald-500/30 p-1 text-[11px] font-semibold text-emerald-300 shadow-sm">
@@ -450,6 +523,11 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                 return (
                   <td
                     key={period.id}
+                    onContextMenu={(e) => {
+                      if (assignedTeacher) {
+                        handleContextMenu(e, assignedTeacher, period.id);
+                      }
+                    }}
                     className={`text-center border-l border-slate-800/60 ${
                       isMinimalUI ? 'px-0.5 py-0.5' : 'px-1 py-1 sm:px-1.5 sm:py-1.5'
                     }`}

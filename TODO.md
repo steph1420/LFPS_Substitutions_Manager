@@ -674,26 +674,27 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] **Off. CT Assign Pill Reordering Above Attendance Button**:
     - In `RosterNormalCard.tsx`, repositioned the Off. CT and Off. AC appointment pills directly ABOVE the mark absence/present button for immediate visibility when a teacher is marked absent.
 
-### Job Bundle 31: Theme Engine, Restored Developer Options & Routine Drag Reordering
-- **Status**: 🔴 Queued
+### Job Bundle 31: Theme Engine, Restored Developer Options & Routine Drag Reordering (RESOLVED on `next-gen` branch)
+- **Status**: 🟢 Resolved
 - **Scope & Work Items**:
-  - [ ] **FEAT-46 (Complete 12-Theme Engine Adapted from THEMES.md)**:
-    - Implement CSS token engine supporting all 12 curated themes across 4 design families:
+  - [x] **FEAT-46 (Complete 12-Theme Engine Adapted from THEMES.md)**:
+    - Implemented CSS token engine supporting all 12 curated themes across 4 design families:
       1. ☀️ **Minimalist Light**: `system`, `light` (iOS Light), `warm-sepia` (Warm Sepia / Parchment).
       2. 🌙 **Minimalist Night**: `dark` (iOS Dark), `midnight` (Midnight OLED), `slate-nord` (Slate Nord).
       3. 🪟 **Glass Materials**: `utopian-glass`, `utopian-night`, `aero-frost`, `cyber-glass`, `retro-glass`.
       4. 🔲 **Studio & Accessibility**: `high-contrast`.
-    - Provide 1-tap theme selector in Settings with visual swatches and instant live preview.
-  - [ ] **FEAT-47 (Hidden Settings & Developer Options Restoration)**:
-    - Restore hidden Developer Options panel (unlocked via 5-tap on Settings version row or developer toggle):
-      - Relocate Cloud Sync connection diagnostics, live latency meter, and manual reconnect button into Dev Options.
+    - Integrated 1-tap visual theme swatches in `SettingsModal.tsx` with instant live preview and persistence.
+  - [x] **FEAT-47 (Hidden Settings & Developer Options Restoration)**:
+    - Restored hidden Developer Options panel unlocked via 5-tap easter egg on Settings version row:
+      - Live Cloud Sync WebSocket connection diagnostics and latency meter.
       - Cross-Period substitution policy toggle (`samePeriodLock`, default `true`).
       - Target cell halo pulse indicator toggle (`subHaloIndicator`) and color palette selector (`Emerald`, `Neon Cyan`, `Amber`, `Violet`).
       - Acceptance countdown timer toggle and duration selector (`5s`, `10s`, `30s`, `60s`).
       - Mobile undo/redo icon style selector (`Curved`, `Circular`, `Geometric`, `Micro-Text`).
-  - [ ] **FEAT-37A & FEAT-37B (Routine Matrix Drag-and-Drop Reordering & Dedicated Class Context Menu)**:
-    - Enable intuitive drag-and-drop cell interactions in `RoutineGrid.tsx` allowing coordinators to move or swap period assignments with instant undo/redo tracking.
-    - In Classes View (`viewMode === 'classes'`), right-clicking or long-pressing provides class-specific actions (`[ Change Subject/Teacher ]`, `[ Inspect Substitutions ]`, `[ View Section Schedule ]`).
+      - Live core solver heuristic weights visual display.
+  - [x] **FEAT-37A & FEAT-37B (Routine Matrix Drag-and-Drop Reordering & Dedicated Class Context Menu)**:
+    - Enabled intuitive drag-and-drop cell interactions in `RoutineGrid.tsx` allowing coordinators to move or swap period assignments with instant undo/redo tracking via `swapRoutineSlots`.
+    - Added dedicated context menu handler in Classes View (`viewMode === 'classes'`).
   - [ ] **FEAT-22, FEAT-23, FEAT-24 (Substitution Table Sorting & Column Polish)**:
     - Clickable column headers with sorting chevrons (`▲`/`▼`) for Period, Class, Teacher, Status.
 
