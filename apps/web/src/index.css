@@ -133,12 +133,57 @@
   --accent-purple: #a855f7;
 }
 
+/* System Theme (Follows OS Light/Dark Preference) */
+@media (prefers-color-scheme: light) {
+  :root,
+  [data-theme="system"] {
+    --color-slate-950: #f1f5f9;
+    --color-slate-900: #ffffff;
+    --color-slate-800: #e2e8f0;
+    --color-slate-700: #cbd5e1;
+    --color-slate-600: #94a3b8;
+    --color-slate-500: #64748b;
+    --color-slate-400: #475569;
+    --color-slate-300: #334155;
+    --color-slate-200: #1e293b;
+    --color-slate-100: #0f172a;
+    --color-slate-50: #020617;
+
+    --bg-color: #f1f5f9;
+    --surface-color: rgba(255, 255, 255, 0.88);
+    --surface-opaque: #ffffff;
+    --surface-elevated: #ffffff;
+    --nav-bg: rgba(255, 255, 255, 0.95);
+    --segment-bg: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --border-color: #cbd5e1;
+    --accent-blue: #0284c7;
+    --accent-green: #16a34a;
+    --accent-red: #e11d48;
+    --accent-amber: #d97706;
+    --accent-purple: #9333ea;
+  }
+}
+
 [data-theme="light"] {
+  --color-slate-950: #f1f5f9;
+  --color-slate-900: #ffffff;
+  --color-slate-800: #e2e8f0;
+  --color-slate-700: #cbd5e1;
+  --color-slate-600: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-400: #475569;
+  --color-slate-300: #334155;
+  --color-slate-200: #1e293b;
+  --color-slate-100: #0f172a;
+  --color-slate-50: #020617;
+
   --bg-color: #f1f5f9;
-  --surface-color: rgba(255, 255, 255, 0.85);
+  --surface-color: rgba(255, 255, 255, 0.9);
   --surface-opaque: #ffffff;
   --surface-elevated: #ffffff;
-  --nav-bg: rgba(255, 255, 255, 0.92);
+  --nav-bg: rgba(255, 255, 255, 0.95);
   --segment-bg: #e2e8f0;
   --text-primary: #0f172a;
   --text-secondary: #64748b;
@@ -151,11 +196,23 @@
 }
 
 [data-theme="warm-sepia"] {
+  --color-slate-950: #f5f0e6;
+  --color-slate-900: #fdfbf7;
+  --color-slate-800: #e8ded1;
+  --color-slate-700: #dfd3c3;
+  --color-slate-600: #a39587;
+  --color-slate-500: #8a7e72;
+  --color-slate-400: #5c5349;
+  --color-slate-300: #433b32;
+  --color-slate-200: #2d261e;
+  --color-slate-100: #1f1912;
+  --color-slate-50: #0f0c09;
+
   --bg-color: #f5f0e6;
-  --surface-color: rgba(253, 251, 247, 0.9);
+  --surface-color: rgba(253, 251, 247, 0.95);
   --surface-opaque: #fdfbf7;
   --surface-elevated: #ffffff;
-  --nav-bg: rgba(245, 240, 230, 0.95);
+  --nav-bg: rgba(245, 240, 230, 0.96);
   --segment-bg: #e8ded1;
   --text-primary: #2d261e;
   --text-secondary: #8a7e72;
@@ -202,15 +259,27 @@
 }
 
 [data-theme="utopian-glass"] {
+  --color-slate-950: #f0f9ff;
+  --color-slate-900: rgba(255, 255, 255, 0.85);
+  --color-slate-800: rgba(186, 230, 253, 0.8);
+  --color-slate-700: #7dd3fc;
+  --color-slate-600: #38bdf8;
+  --color-slate-500: #0284c7;
+  --color-slate-400: #0369a1;
+  --color-slate-300: #075985;
+  --color-slate-200: #0c4a6e;
+  --color-slate-100: #082f49;
+  --color-slate-50: #031525;
+
   --bg-color: #f0f9ff;
-  --surface-color: rgba(255, 255, 255, 0.68);
+  --surface-color: rgba(255, 255, 255, 0.72);
   --surface-opaque: #ffffff;
-  --surface-elevated: rgba(255, 255, 255, 0.88);
-  --nav-bg: rgba(240, 249, 255, 0.85);
-  --segment-bg: rgba(224, 242, 254, 0.7);
+  --surface-elevated: rgba(255, 255, 255, 0.92);
+  --nav-bg: rgba(240, 249, 255, 0.92);
+  --segment-bg: rgba(224, 242, 254, 0.85);
   --text-primary: #0c4a6e;
   --text-secondary: #0369a1;
-  --border-color: rgba(186, 230, 253, 0.6);
+  --border-color: rgba(186, 230, 253, 0.7);
   --accent-blue: #0284c7;
   --accent-green: #059669;
   --accent-red: #e11d48;
@@ -236,15 +305,27 @@
 }
 
 [data-theme="aero-frost"] {
+  --color-slate-950: #e8eef5;
+  --color-slate-900: #ffffff;
+  --color-slate-800: #dbe4ee;
+  --color-slate-700: #cbd5e1;
+  --color-slate-600: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-400: #475569;
+  --color-slate-300: #334155;
+  --color-slate-200: #1e293b;
+  --color-slate-100: #0f172a;
+  --color-slate-50: #000000;
+
   --bg-color: #e8eef5;
-  --surface-color: rgba(255, 255, 255, 0.72);
+  --surface-color: rgba(255, 255, 255, 0.82);
   --surface-opaque: #f1f5f9;
   --surface-elevated: #ffffff;
-  --nav-bg: rgba(232, 238, 245, 0.9);
-  --segment-bg: rgba(203, 213, 225, 0.6);
+  --nav-bg: rgba(232, 238, 245, 0.95);
+  --segment-bg: rgba(203, 213, 225, 0.8);
   --text-primary: #1e293b;
   --text-secondary: #64748b;
-  --border-color: rgba(255, 255, 255, 0.8);
+  --border-color: rgba(203, 213, 225, 0.9);
   --accent-blue: #2563eb;
   --accent-green: #16a34a;
   --accent-red: #dc2626;
@@ -254,14 +335,14 @@
 
 [data-theme="cyber-glass"] {
   --bg-color: #090d16;
-  --surface-color: rgba(18, 24, 38, 0.75);
+  --surface-color: rgba(18, 24, 38, 0.8);
   --surface-opaque: #090d16;
   --surface-elevated: #161e30;
-  --nav-bg: rgba(9, 13, 22, 0.92);
+  --nav-bg: rgba(9, 13, 22, 0.95);
   --segment-bg: #141c2c;
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
-  --border-color: rgba(56, 189, 248, 0.25);
+  --border-color: rgba(56, 189, 248, 0.3);
   --accent-blue: #38bdf8;
   --accent-green: #34d399;
   --accent-red: #fb7185;
@@ -270,31 +351,43 @@
 }
 
 [data-theme="retro-glass"] {
-  --bg-color: #1a1c23;
-  --surface-color: rgba(35, 39, 49, 0.9);
-  --surface-opaque: #1a1c23;
-  --surface-elevated: #282c37;
-  --nav-bg: rgba(26, 28, 35, 0.95);
-  --segment-bg: #2f3442;
+  --bg-color: #16181f;
+  --surface-color: rgba(30, 33, 42, 0.92);
+  --surface-opaque: #1a1c24;
+  --surface-elevated: #262936;
+  --nav-bg: rgba(22, 24, 31, 0.96);
+  --segment-bg: #272a38;
   --text-primary: #f8fafc;
-  --text-secondary: #a0aec0;
-  --border-color: rgba(255, 255, 255, 0.15);
-  --accent-blue: #4ea8de;
-  --accent-green: #48bb78;
-  --accent-red: #ff5a5f;
-  --accent-amber: #ecc94b;
-  --accent-purple: #9f7aea;
+  --text-secondary: #94a3b8;
+  --border-color: rgba(255, 255, 255, 0.16);
+  --accent-blue: #38bdf8;
+  --accent-green: #34d399;
+  --accent-red: #f43f5e;
+  --accent-amber: #fbbf24;
+  --accent-purple: #c084fc;
 }
 
 [data-theme="high-contrast"] {
+  --color-slate-950: #ffffff;
+  --color-slate-900: #ffffff;
+  --color-slate-800: #000000;
+  --color-slate-700: #000000;
+  --color-slate-600: #000000;
+  --color-slate-500: #222222;
+  --color-slate-400: #111111;
+  --color-slate-300: #000000;
+  --color-slate-200: #000000;
+  --color-slate-100: #000000;
+  --color-slate-50: #000000;
+
   --bg-color: #ffffff;
   --surface-color: #ffffff;
   --surface-opaque: #ffffff;
   --surface-elevated: #ffffff;
   --nav-bg: #ffffff;
-  --segment-bg: #eeeeee;
+  --segment-bg: #f1f5f9;
   --text-primary: #000000;
-  --text-secondary: #333333;
+  --text-secondary: #222222;
   --border-color: #000000;
   --accent-blue: #0044cc;
   --accent-green: #008800;
@@ -323,6 +416,139 @@ body {
 .header-elevated {
   background-color: var(--surface-opaque) !important;
   border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* Shake Animation for Limbo Tray / Validation Errors */
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: errorShake 0.4s ease-in-out;
+}
+
+/* ==========================================================================
+   RETRO GLASS: SKEUOMORPHIC CURVED GLASS PEBBLE KEYPADS & BUTTONS
+   ========================================================================== */
+
+[data-theme="retro-glass"] table tbody td:not(:first-child) {
+  border-radius: 12px !important;
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.14) 0%, 
+    rgba(255, 255, 255, 0.03) 48%, 
+    rgba(0, 0, 0, 0.28) 52%, 
+    rgba(0, 0, 0, 0.48) 100%
+  ) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.55),
+    inset 0 -2px 3.5px rgba(0, 0, 0, 0.55),
+    0 3px 6px -1px rgba(0, 0, 0, 0.5),
+    0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.12s ease !important;
+}
+
+[data-theme="retro-glass"] table tbody td:not(:first-child):active {
+  transform: translateY(1.5px) scale(0.975) !important;
+  box-shadow: 
+    inset 0 2.5px 4px rgba(0, 0, 0, 0.7),
+    0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Assigned / Busy Pebble (Curved Aquamarine Jewel) */
+[data-theme="retro-glass"] table tbody td div.rounded-lg:not([class*="emerald"]):not([class*="amber"]):not([class*="rose"]) {
+  background: linear-gradient(180deg, 
+    rgba(56, 189, 248, 0.42) 0%, 
+    rgba(56, 189, 248, 0.14) 48%, 
+    rgba(0, 0, 0, 0.28) 52%, 
+    rgba(14, 165, 233, 0.38) 100%
+  ) !important;
+  border: 1px solid rgba(56, 189, 248, 0.55) !important;
+  border-radius: 10px !important;
+  box-shadow: 
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.7),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.45),
+    0 4px 10px rgba(14, 165, 233, 0.3) !important;
+}
+
+/* Substitution Covering Pebble (Curved Emerald Jewel) */
+[data-theme="retro-glass"] table tbody td div.rounded-lg[class*="emerald"] {
+  background: linear-gradient(180deg, 
+    rgba(52, 211, 153, 0.45) 0%, 
+    rgba(52, 211, 153, 0.15) 48%, 
+    rgba(0, 0, 0, 0.28) 52%, 
+    rgba(16, 185, 129, 0.42) 100%
+  ) !important;
+  border: 1px solid rgba(52, 211, 153, 0.6) !important;
+  border-radius: 10px !important;
+  box-shadow: 
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.75),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.45),
+    0 4px 10px rgba(16, 185, 129, 0.35) !important;
+}
+
+/* Absent / Need Sub Pebble (Curved Ruby Jewel) */
+[data-theme="retro-glass"] table tbody td div.rounded-lg[class*="rose"] {
+  background: linear-gradient(180deg, 
+    rgba(244, 63, 94, 0.45) 0%, 
+    rgba(244, 63, 94, 0.15) 48%, 
+    rgba(0, 0, 0, 0.28) 52%, 
+    rgba(225, 29, 72, 0.42) 100%
+  ) !important;
+  border: 1px solid rgba(244, 63, 94, 0.6) !important;
+  border-radius: 10px !important;
+  box-shadow: 
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.75),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.45),
+    0 4px 10px rgba(225, 29, 72, 0.35) !important;
+}
+
+/* Sub Active Pebble (Curved Amber Jewel) */
+[data-theme="retro-glass"] table tbody td div.rounded-lg[class*="amber"] {
+  background: linear-gradient(180deg, 
+    rgba(251, 191, 36, 0.45) 0%, 
+    rgba(251, 191, 36, 0.15) 48%, 
+    rgba(0, 0, 0, 0.28) 52%, 
+    rgba(217, 119, 6, 0.42) 100%
+  ) !important;
+  border: 1px solid rgba(251, 191, 36, 0.6) !important;
+  border-radius: 10px !important;
+  box-shadow: 
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.75),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.45),
+    0 4px 10px rgba(217, 119, 6, 0.35) !important;
+}
+
+/* ==========================================================================
+   GLOBAL CONTRAST & LEGIBILITY SAFEGUARDS (LIGHT & HIGH-CONTRAST THEMES)
+   ========================================================================== */
+
+[data-theme="light"] table th,
+[data-theme="warm-sepia"] table th,
+[data-theme="aero-frost"] table th,
+[data-theme="utopian-glass"] table th,
+[data-theme="high-contrast"] table th {
+  background-color: var(--surface-opaque) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="light"] table td.sticky,
+[data-theme="warm-sepia"] table td.sticky,
+[data-theme="aero-frost"] table td.sticky,
+[data-theme="utopian-glass"] table td.sticky,
+[data-theme="high-contrast"] table td.sticky {
+  background-color: var(--surface-opaque) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="high-contrast"] * {
+  border-color: #000000 !important;
 }
 
 

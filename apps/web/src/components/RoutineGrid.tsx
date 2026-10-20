@@ -12,6 +12,7 @@ import { useTimetableStore } from '../store/useTimetableStore.js';
 import { Maximize2, Minimize2, Users, School, Eye, EyeOff } from 'lucide-react';
 import { UndoRedoControls } from './UndoRedoControls.js';
 import { TeacherNameOverlay } from './common/TeacherNameOverlay.js';
+import { LimboTray } from './LimboTray.js';
 
 const DAYS: DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
@@ -46,7 +47,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
     isMinimalUI,
     routineSortBy,
     setRoutineSortBy,
-    swapRoutineSlots,
+    moveRoutineSlot,
   } = useTimetableStore();
 
   const [dragOverTarget, setDragOverTarget] = React.useState<{ teacher: string; period: PeriodId } | null>(null);
@@ -345,6 +346,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                         e.dataTransfer.setData(
                           'application/json',
                           JSON.stringify({
+                            type: 'grid',
                             teacher: teacher.abbr,
                             period: period.id,
                             task: originalTask,
@@ -378,11 +380,29 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                         setDragSource(null);
                         try {
                           const data = JSON.parse(e.dataTransfer.getData('application/json'));
-                          if (data && data.teacher && data.period) {
-                            if (data.teacher === teacher.abbr && data.period === period.id) return;
-                            swapRoutineSlots(
+                          if (!data) return;
+
+                          if (data.type === 'limbo' && data.item) {
+                            moveRoutineSlot(
                               selectedDay,
-                              { teacher: data.teacher, period: data.period },
+                              { type: 'limbo', item: data.item },
+                              { teacher: teacher.abbr, period: period.id }
+                            );
+                            if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+                              try {
+                                navigator.vibrate(40);
+                              } catch {}
+                            }
+                          } else if (data.teacher && data.period) {
+                            if (data.teacher === teacher.abbr && data.period === period.id) return;
+                            moveRoutineSlot(
+                              selectedDay,
+                              {
+                                type: 'grid',
+                                teacher: data.teacher,
+                                period: data.period,
+                                task: data.task,
+                              },
                               { teacher: teacher.abbr, period: period.id }
                             );
                             if (typeof window !== 'undefined' && 'vibrate' in navigator) {
@@ -685,6 +705,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
         >
           {renderTable()}
         </div>
+        <LimboTray />
       </section>
     );
   }
@@ -704,6 +725,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
       >
         {renderTable()}
       </div>
+      <LimboTray />
     </section>
   );
 };

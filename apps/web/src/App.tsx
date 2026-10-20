@@ -47,7 +47,7 @@ export const App: React.FC = () => {
   // Fullscreen Workstation Mode: Render directly at root, immune to containing blocks and mobile viewport clipping (BUG-10)
   if (isFitGrid) {
     return (
-      <div className="fixed inset-0 h-screen h-[100dvh] w-screen bg-slate-950 flex flex-col p-2.5 sm:p-4 overflow-hidden z-[100] select-none">
+      <div className="fixed inset-0 h-screen h-[100dvh] w-screen bg-[var(--bg-color)] text-[var(--text-primary)] flex flex-col p-2.5 sm:p-4 overflow-hidden z-[100] select-none transition-colors duration-200">
         <RoutineGrid isFullscreen />
         {/* Modals & Micro Context Menus remain fully interactive in Fullscreen */}
         <MicroContextMenu />
@@ -65,7 +65,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white relative">
+    <div className="min-h-screen min-h-[100dvh] bg-[var(--bg-color)] text-[var(--text-primary)] flex flex-col font-sans selection:bg-blue-600 selection:text-white relative transition-colors duration-200">
       {/* Apple HIG Sticky Header with Dynamic Island */}
       <Header />
 

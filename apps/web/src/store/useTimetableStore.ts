@@ -63,8 +63,18 @@ export interface HistoryStack<T> {
   future: T[];
 }
 
+export interface DisplacedItem {
+  id: string;
+  task: string;
+  ogTeacher: string;
+  period: PeriodId;
+  day: DayOfWeek;
+  timestamp?: number;
+}
+
 export interface RoutineSnapshot {
   schedule: MasterSchedule;
+  displaced: Record<DayOfWeek, DisplacedItem[]>;
 }
 
 export interface SubstitutionsSnapshot {
@@ -133,7 +143,16 @@ interface TimetableState {
   undoIconStyle: 'curved' | 'circular' | 'geometric' | 'micro';
   setUndoIconStyle: (style: 'curved' | 'circular' | 'geometric' | 'micro') => void;
 
-  // Routine Matrix Reordering (FEAT-37A)
+  // Routine Matrix Reordering & Limbo Tray Displacement (FEAT-37A, BUG-01)
+  moveRoutineSlot: (
+    day: DayOfWeek,
+    source:
+      | { type: 'grid'; teacher: string; period: PeriodId; task?: string }
+      | { type: 'limbo'; item: DisplacedItem },
+    target: { teacher: string; period: PeriodId }
+  ) => void;
+  restoreDisplacedItem: (item: DisplacedItem) => { success: boolean; reason?: string };
+  clearDisplaced: (day: DayOfWeek) => void;
   swapRoutineSlots: (
     day: DayOfWeek,
     source: { teacher: string; period: PeriodId },
@@ -163,6 +182,7 @@ interface TimetableState {
   absences: AbsenceRecord[];
   availabilities: Record<string, StaffAvailabilityRecord>;
   substitutions: SubstitutionAssignment[];
+  displaced: Record<DayOfWeek, DisplacedItem[]>;
 
   // Authentication, RBAC & Officiating (SEC-01)
   loggedInTeacher: string | null;
@@ -395,6 +415,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   absences: [],
   availabilities: {},
   substitutions: [],
+  displaced: { MON: [], TUE: [], WED: [], THU: [], FRI: [], SAT: [] },
 
   loggedInTeacher: null,
   operatingRole: 'ADMIN',
@@ -528,24 +549,160 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     set({ undoIconStyle: style });
   },
 
+  moveRoutineSlot: (day, source, target) =>
+    set((state) => {
+      const routineHistory = pushSnapshot(state.routineHistory, {
+        schedule: state.schedule,
+        displaced: state.displaced,
+      });
+
+      const daySched = { ...(state.schedule[day] || {}) };
+      let sourceTask = '';
+
+      if (source.type === 'grid') {
+        sourceTask = daySched[source.period]?.[source.teacher] || source.task || 'Free';
+      } else {
+        sourceTask = source.item.task;
+      }
+
+      if (!sourceTask || sourceTask.toLowerCase() === 'free' || sourceTask === '-') {
+        return {};
+      }
+
+      const targetPeriodMap = { ...(daySched[target.period] || {}) };
+      const targetCurrentTask = targetPeriodMap[target.teacher] || 'Free';
+
+      let newlyDisplaced: DisplacedItem | null = null;
+      if (
+        targetCurrentTask &&
+        targetCurrentTask.toLowerCase() !== 'free' &&
+        targetCurrentTask !== '-'
+      ) {
+        newlyDisplaced = {
+          id: `displaced-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          task: targetCurrentTask,
+          ogTeacher: target.teacher,
+          period: target.period,
+          day,
+          timestamp: Date.now(),
+        };
+      }
+
+      if (source.type === 'grid' && source.period === target.period) {
+        targetPeriodMap[source.teacher] = 'Free';
+        targetPeriodMap[target.teacher] = sourceTask;
+        daySched[target.period] = targetPeriodMap;
+      } else {
+        if (source.type === 'grid') {
+          const sourcePeriodMap = { ...(daySched[source.period] || {}) };
+          sourcePeriodMap[source.teacher] = 'Free';
+          daySched[source.period] = sourcePeriodMap;
+        }
+        targetPeriodMap[target.teacher] = sourceTask;
+        daySched[target.period] = targetPeriodMap;
+      }
+
+      let dayDisplaced = [...(state.displaced[day] || [])];
+      if (source.type === 'limbo') {
+        dayDisplaced = dayDisplaced.filter((d) => d.id !== source.item.id);
+      }
+      if (newlyDisplaced) {
+        dayDisplaced.push(newlyDisplaced);
+      }
+
+      return {
+        schedule: {
+          ...state.schedule,
+          [day]: daySched,
+        },
+        displaced: {
+          ...state.displaced,
+          [day]: dayDisplaced,
+        },
+        routineHistory,
+      };
+    }),
+
+  restoreDisplacedItem: (item) => {
+    const state = get();
+    const day = item.day;
+    const currentTask = state.schedule[day]?.[item.period]?.[item.ogTeacher] || 'Free';
+
+    if (currentTask && currentTask.toLowerCase() !== 'free' && currentTask !== '-') {
+      return {
+        success: false,
+        reason: `Slot for ${item.ogTeacher} (${item.period}) is currently occupied by "${currentTask}"`,
+      };
+    }
+
+    const routineHistory = pushSnapshot(state.routineHistory, {
+      schedule: state.schedule,
+      displaced: state.displaced,
+    });
+
+    const daySched = { ...(state.schedule[day] || {}) };
+    const periodMap = { ...(daySched[item.period] || {}) };
+    periodMap[item.ogTeacher] = item.task;
+    daySched[item.period] = periodMap;
+
+    const dayDisplaced = (state.displaced[day] || []).filter((d) => d.id !== item.id);
+
+    set({
+      schedule: {
+        ...state.schedule,
+        [day]: daySched,
+      },
+      displaced: {
+        ...state.displaced,
+        [day]: dayDisplaced,
+      },
+      routineHistory,
+    });
+
+    return { success: true };
+  },
+
+  clearDisplaced: (day) =>
+    set((state) => {
+      const routineHistory = pushSnapshot(state.routineHistory, {
+        schedule: state.schedule,
+        displaced: state.displaced,
+      });
+      return {
+        displaced: {
+          ...state.displaced,
+          [day]: [],
+        },
+        routineHistory,
+      };
+    }),
+
   swapRoutineSlots: (day, source, target) =>
     set((state) => {
       const routineHistory = pushSnapshot(state.routineHistory, {
         schedule: state.schedule,
+        displaced: state.displaced,
       });
 
       const daySched = { ...(state.schedule[day] || {}) };
-      const sourcePeriodMap = { ...(daySched[source.period] || {}) };
-      const targetPeriodMap = { ...(daySched[target.period] || {}) };
 
-      const taskA = sourcePeriodMap[source.teacher] || 'Free';
-      const taskB = targetPeriodMap[target.teacher] || 'Free';
-
-      sourcePeriodMap[source.teacher] = taskB;
-      targetPeriodMap[target.teacher] = taskA;
-
-      daySched[source.period] = sourcePeriodMap;
-      daySched[target.period] = targetPeriodMap;
+      if (source.period === target.period) {
+        const periodMap = { ...(daySched[source.period] || {}) };
+        const taskA = periodMap[source.teacher] || 'Free';
+        const taskB = periodMap[target.teacher] || 'Free';
+        periodMap[source.teacher] = taskB;
+        periodMap[target.teacher] = taskA;
+        daySched[source.period] = periodMap;
+      } else {
+        const sourcePeriodMap = { ...(daySched[source.period] || {}) };
+        const targetPeriodMap = { ...(daySched[target.period] || {}) };
+        const taskA = sourcePeriodMap[source.teacher] || 'Free';
+        const taskB = targetPeriodMap[target.teacher] || 'Free';
+        sourcePeriodMap[source.teacher] = taskB;
+        targetPeriodMap[target.teacher] = taskA;
+        daySched[source.period] = sourcePeriodMap;
+        daySched[target.period] = targetPeriodMap;
+      }
 
       return {
         schedule: {
@@ -560,6 +717,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     set((state) => {
       const routineHistory = pushSnapshot(state.routineHistory, {
         schedule: state.schedule,
+        displaced: state.displaced,
       });
 
       const daySched = { ...(state.schedule[day] || {}) };
@@ -794,6 +952,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     set((state) => {
       const routineHistory = pushSnapshot(state.routineHistory, {
         schedule: state.schedule,
+        displaced: state.displaced,
       });
 
       const day = state.selectedDay;
@@ -945,9 +1104,10 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         if (state.routineHistory.past.length === 0) return {};
         const past = [...state.routineHistory.past];
         const previous = past.pop()!;
-        const future = [{ schedule: state.schedule }, ...state.routineHistory.future];
+        const future = [{ schedule: state.schedule, displaced: state.displaced }, ...state.routineHistory.future];
         return {
           schedule: previous.schedule,
+          displaced: previous.displaced || state.displaced,
           routineHistory: { past, future },
         };
       }
@@ -997,9 +1157,10 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         if (state.routineHistory.future.length === 0) return {};
         const future = [...state.routineHistory.future];
         const next = future.shift()!;
-        const past = [...state.routineHistory.past, { schedule: state.schedule }];
+        const past = [...state.routineHistory.past, { schedule: state.schedule, displaced: state.displaced }];
         return {
           schedule: next.schedule,
+          displaced: next.displaced || state.displaced,
           routineHistory: { past, future },
         };
       }
@@ -1064,7 +1225,10 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       const day = targetDay || state.selectedDay;
 
       // Save snapshots to history across all 3 stacks so the reset is completely undoable
-      const routineHistory = pushSnapshot(state.routineHistory, { schedule: state.schedule });
+      const routineHistory = pushSnapshot(state.routineHistory, {
+        schedule: state.schedule,
+        displaced: state.displaced,
+      });
       const substitutionsHistory = pushSnapshot(state.substitutionsHistory, {
         substitutions: state.substitutions,
       });
@@ -1097,6 +1261,10 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
       return {
         schedule: newSchedule,
+        displaced: {
+          ...state.displaced,
+          [day]: [],
+        },
         absences: newAbsences,
         substitutions: newSubstitutions,
         officiatingAC: newOffAC,

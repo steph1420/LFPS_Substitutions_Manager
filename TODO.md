@@ -958,6 +958,13 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 
 ## 📋 Completed Tasks (Recent)
 
+- [x] **Next-Gen Bundle 32 (2026-10-20)**:
+  - **Limbo Tray Restoration & Integration**: Restored `LimboTray.tsx` beneath the Routine Grid with fluid spring expansion (`AnimatePresence`), displaying displaced unallocated classes with original teacher/period tags, drag-to-reallocate to any grid cell, tap-to-restore with shake animation & error toast on occupied slots, and "Clear All" action.
+  - **Move vs Swap Displacement Logic**: Refactored grid drag-and-drop to clean move semantics (`moveRoutineSlot`): dropping on a free cell cleanly moves the task and clears the source to `Free`; dropping on an occupied cell moves the task and displaces the existing class to the Limbo Tray without arbitrary cross-teacher swaps.
+  - **Co-Teach Duplication Fix**: Fixed same-period move bug where modifying separate shallow copies of the period dictionary retained the source task and assigned it to the target, duplicating the slot and falsely triggering co-teaching detection.
+  - **12-Theme Contrast & Visibility Engine**: Overrode Tailwind v4 `--color-slate-*` custom property tokens across all light and contrasting themes (`light`, `warm-sepia`, `aero-frost`, `utopian-glass`, `high-contrast`, `system-light`) so all cards, borders, text, and sticky columns immediately adapt with ultra-crisp contrast and zero illegible white-on-white text.
+  - **Retro Glass Pebble Keypads**: Re-engineered `retro-glass` with authentic skeuomorphic curved glass pebble keypads inspired by vintage calculators, featuring domed gloss reflections (`inset 0 1.5px 1.5px rgba(255,255,255,0.55)`), specular mid-point inflection, bottom rim shadows, jewel-toned cell pills (aquamarine assigned, emerald covering, ruby need-sub, amber sub-active), and springy physical tactile bounce on click (`:active`).
+
 - [x] **v1.35.0 (2026-10-14)**:
   - **BUG-01 (Limbo Tray Drag & Smart Restore with Haptic Jitter)**: Enabled direct drag-and-drop from Limbo tray across all application modes; implemented one-tap smart restoration to original teacher/period cell if free; built phone-style side-by-side error jitter animation (`@keyframes errorJitter`) with native tactile vibration (`navigator.vibrate([45, 55, 45])`) and full undo/redo integration (`restore_displaced`).
   - **BUG-02 (Instant Viewport & Silk-Scroll Optimization)**: Promoted table scroll container and sticky cells to dedicated GPU composite layers (`transform: translateZ(0)`, `contain: paint layout`); decoupled viewport calculations with width-change guards to stop mobile address-bar scrolling from triggering layout thrashing; isolated `backdrop-filter` from the scrolling element.
