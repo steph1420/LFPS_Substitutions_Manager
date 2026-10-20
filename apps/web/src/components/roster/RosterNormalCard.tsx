@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Teacher, EffectiveOfficiatingACResult } from '@lfps/core';
 import { COLOR_ROLES } from '@lfps/ui';
+import { useTimetableStore } from '../../store/useTimetableStore.js';
 import {
   Check,
   UserX,
@@ -47,6 +48,10 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
   onOpenOfficiatingCT,
   onOpenOfficiatingAC,
 }) => {
+  const directory = useTimetableStore((s) => s.directory);
+  const effectiveACTeacher = offACResult.effectiveAC ? directory[offACResult.effectiveAC] : undefined;
+  const ctTeacher = offCTSection ? directory[offCTSection] : undefined;
+
   const [hasPulsed, setHasPulsed] = React.useState(false);
   const [shouldPulse, setShouldPulse] = React.useState(false);
 
@@ -239,10 +244,14 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
               </span>
             </div>
             {offCTSection ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-300 truncate max-w-full leading-none mt-0.5">
+              <div className="inline-flex items-center justify-center gap-1 max-w-full leading-none mt-0.5">
                 <Check className="w-2.5 h-2.5 text-emerald-400 flex-shrink-0" />
-                <span className="truncate">{offCTSection}</span>
-              </span>
+                <TeacherNameOverlay
+                  abbr={ctTeacher?.abbr || offCTSection}
+                  fullName={ctTeacher?.fullName || ''}
+                  className="font-bold text-white text-[11px] leading-none truncate"
+                />
+              </div>
             ) : (
               <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-amber-200 truncate max-w-full leading-none mt-0.5">
                 <Plus className="w-3 h-3 text-amber-300 flex-shrink-0" />
@@ -268,7 +277,7 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
             title={
               offACResult.needsAppointment
                 ? 'Officiating Academic Coordinator vacant — Tap to Appoint'
-                : `Officiating AC Covered (${offACResult.isAutoOfficiating ? 'SL Acting' : offACResult.effectiveAC}) — Tap to reassign`
+                : `Officiating AC: ${effectiveACTeacher?.fullName || offACResult.effectiveAC} — Tap to reassign`
             }
           >
             <div className="flex items-center gap-1">
@@ -287,10 +296,14 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
                 <span>Appoint</span>
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-200/90 truncate max-w-full leading-none mt-0.5">
+              <div className="inline-flex items-center justify-center gap-1 max-w-full leading-none mt-0.5">
                 <Check className="w-2.5 h-2.5 text-emerald-400 flex-shrink-0" />
-                <span className="truncate">{offACResult.isAutoOfficiating ? 'SL Acting' : offACResult.effectiveAC}</span>
-              </span>
+                <TeacherNameOverlay
+                  abbr={effectiveACTeacher?.abbr || offACResult.effectiveAC || ''}
+                  fullName={effectiveACTeacher?.fullName || ''}
+                  className="font-bold text-white text-[11px] leading-none truncate"
+                />
+              </div>
             )}
           </button>
         )}

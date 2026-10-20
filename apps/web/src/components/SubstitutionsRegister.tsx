@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
-import { autoResolveSubstitutions, PeriodId, parseCellSlot, getEffectiveOfficiatingAC, Teacher } from '@lfps/core';
+import { autoResolveSubstitutions, PeriodId, parseCellSlot, getEffectiveOfficiatingAC, Teacher, compareTeachersByHierarchy } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
 import {
   Sparkles,
@@ -24,6 +24,16 @@ import {
 } from 'lucide-react';
 import { UndoRedoControls } from './UndoRedoControls.js';
 import { AutoResolveBrainModal } from './AutoResolveBrainModal.js';
+
+const PERIOD_ORDER: Record<string, number> = {
+  'G/PD': 0,
+  '1st': 1,
+  '2nd': 2,
+  '3rd': 3,
+  '4th': 4,
+  '5th': 5,
+  '6th': 6,
+};
 
 export const SubstitutionsRegister: React.FC = () => {
   const {
@@ -79,7 +89,7 @@ export const SubstitutionsRegister: React.FC = () => {
   const currentSchedule = schedule[selectedDay] || {};
 
   // Find all uncovered teaching slots from absent teachers on this day
-  const uncoveredSlots = React.useMemo(() => {
+  const rawUncoveredSlots = React.useMemo(() => {
     const slots: Array<{ period: PeriodId; originalTeacher: string; task: string }> = [];
     const activeAbsences = absences.filter((a) => a.day === selectedDay);
     const periods: PeriodId[] = ['G/PD', '1st', '2nd', '3rd', '4th', '5th', '6th'];
@@ -102,6 +112,51 @@ export const SubstitutionsRegister: React.FC = () => {
 
     return slots;
   }, [selectedDay, schedule, absences, substitutions]);
+
+  // Sort uncovered slots by period, teacher name, or role hierarchy (FEAT-58)
+  const sortedUncoveredSlots = React.useMemo(() => {
+    const list = [...rawUncoveredSlots];
+    if (substitutionsSortBy === 'name') {
+      return list.sort((a, b) => {
+        const nameCmp = a.originalTeacher.localeCompare(b.originalTeacher);
+        if (nameCmp !== 0) return nameCmp;
+        return (PERIOD_ORDER[a.period] ?? 99) - (PERIOD_ORDER[b.period] ?? 99);
+      });
+    }
+    if (substitutionsSortBy === 'role') {
+      return list.sort((a, b) => {
+        const tA = directory[a.originalTeacher];
+        const tB = directory[b.originalTeacher];
+        if (tA && tB) {
+          const roleCmp = compareTeachersByHierarchy(tA, tB);
+          if (roleCmp !== 0) return roleCmp;
+        }
+        return (PERIOD_ORDER[a.period] ?? 99) - (PERIOD_ORDER[b.period] ?? 99);
+      });
+    }
+    // Default: 'period'
+    return list.sort((a, b) => {
+      const pCmp = (PERIOD_ORDER[a.period] ?? 99) - (PERIOD_ORDER[b.period] ?? 99);
+      if (pCmp !== 0) return pCmp;
+      return a.originalTeacher.localeCompare(b.originalTeacher);
+    });
+  }, [rawUncoveredSlots, substitutionsSortBy, directory]);
+
+  // Filter uncovered slots by search query
+  const uncoveredSlots = React.useMemo(() => {
+    if (!searchQuery.trim()) return sortedUncoveredSlots;
+    const q = searchQuery.toLowerCase();
+    return sortedUncoveredSlots.filter((slot) => {
+      const parsed = parseCellSlot(slot.task);
+      return (
+        slot.originalTeacher.toLowerCase().includes(q) ||
+        slot.period.toLowerCase().includes(q) ||
+        (parsed.className && parsed.className.toLowerCase().includes(q)) ||
+        (parsed.subject && parsed.subject.toLowerCase().includes(q)) ||
+        slot.task.toLowerCase().includes(q)
+      );
+    });
+  }, [sortedUncoveredSlots, searchQuery]);
 
   // Check if a teacher is a Class Teacher (LOGIC-05, FEAT-56)
   const isClassTeacher = (teacherName: string): boolean => {
@@ -146,11 +201,11 @@ export const SubstitutionsRegister: React.FC = () => {
 
   // Handle 1-Tap Auto Resolve for All Slots
   const handleAutoResolve = () => {
-    if (uncoveredSlots.length === 0) return;
+    if (rawUncoveredSlots.length === 0) return;
 
     const plan = autoResolveSubstitutions({
       day: selectedDay,
-      uncoveredSlots,
+      uncoveredSlots: rawUncoveredSlots,
       schedule: currentSchedule,
       absences,
       availabilities,
@@ -179,26 +234,29 @@ export const SubstitutionsRegister: React.FC = () => {
   const sortedSubstitutions = React.useMemo(() => {
     const list = [...daySubstitutions];
     if (substitutionsSortBy === 'name') {
-      return list.sort((a, b) => a.originalTeacher.localeCompare(b.originalTeacher));
+      return list.sort((a, b) => {
+        const nameCmp = a.originalTeacher.localeCompare(b.originalTeacher);
+        if (nameCmp !== 0) return nameCmp;
+        return (PERIOD_ORDER[a.period] ?? 99) - (PERIOD_ORDER[b.period] ?? 99);
+      });
     }
     if (substitutionsSortBy === 'role') {
       return list.sort((a, b) => {
-        const roleA = directory[a.originalTeacher]?.role || '';
-        const roleB = directory[b.originalTeacher]?.role || '';
-        return roleA.localeCompare(roleB);
+        const tA = directory[a.originalTeacher];
+        const tB = directory[b.originalTeacher];
+        if (tA && tB) {
+          const roleCmp = compareTeachersByHierarchy(tA, tB);
+          if (roleCmp !== 0) return roleCmp;
+        }
+        return (PERIOD_ORDER[a.period] ?? 99) - (PERIOD_ORDER[b.period] ?? 99);
       });
     }
     // Default: 'period'
-    const periodOrder: Record<string, number> = {
-      'G/PD': 0,
-      '1st': 1,
-      '2nd': 2,
-      '3rd': 3,
-      '4th': 4,
-      '5th': 5,
-      '6th': 6,
-    };
-    return list.sort((a, b) => (periodOrder[a.period] ?? 99) - (periodOrder[b.period] ?? 99));
+    return list.sort((a, b) => {
+      const pCmp = (PERIOD_ORDER[a.period] ?? 99) - (PERIOD_ORDER[b.period] ?? 99);
+      if (pCmp !== 0) return pCmp;
+      return a.originalTeacher.localeCompare(b.originalTeacher);
+    });
   }, [daySubstitutions, substitutionsSortBy, directory]);
 
   // Filtered lists
@@ -563,9 +621,10 @@ export const SubstitutionsRegister: React.FC = () => {
             {/* Sorting Selector (FEAT-58) */}
             <div className="flex items-center bg-slate-900/90 p-0.5 sm:p-1 rounded-xl border border-slate-800 text-xs font-semibold">
               <button
+                type="button"
                 onClick={() => setSubstitutionsSortBy('period')}
-                className={`px-2 py-1 rounded-lg transition-colors flex items-center gap-1 ${
-                  substitutionsSortBy === 'period' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                className={`px-2 py-1 rounded-lg transition-colors flex items-center gap-1 cursor-pointer select-none active:scale-95 ${
+                  substitutionsSortBy === 'period' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
                 }`}
                 title="Sort by period order"
               >
@@ -573,18 +632,20 @@ export const SubstitutionsRegister: React.FC = () => {
                 <span className="hidden sm:inline">Period</span>
               </button>
               <button
+                type="button"
                 onClick={() => setSubstitutionsSortBy('name')}
-                className={`px-2 py-1 rounded-lg transition-colors ${
-                  substitutionsSortBy === 'name' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                className={`px-2 py-1 rounded-lg transition-colors cursor-pointer select-none active:scale-95 ${
+                  substitutionsSortBy === 'name' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
                 }`}
                 title="Sort by teacher name A-Z"
               >
                 Name
               </button>
               <button
+                type="button"
                 onClick={() => setSubstitutionsSortBy('role')}
-                className={`px-2 py-1 rounded-lg transition-colors ${
-                  substitutionsSortBy === 'role' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                className={`px-2 py-1 rounded-lg transition-colors cursor-pointer select-none active:scale-95 ${
+                  substitutionsSortBy === 'role' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
                 }`}
                 title="Sort by role hierarchy"
               >
@@ -595,18 +656,20 @@ export const SubstitutionsRegister: React.FC = () => {
             {/* View Mode Toggle: Grid vs List (FEAT-58) */}
             <div className="flex items-center bg-slate-900/90 p-0.5 sm:p-1 rounded-xl border border-slate-800 text-xs font-semibold">
               <button
+                type="button"
                 onClick={() => setSubstitutionsViewMode('grid')}
-                className={`p-1.5 rounded-lg transition-colors ${
-                  substitutionsViewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer select-none active:scale-95 ${
+                  substitutionsViewMode === 'grid' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
                 }`}
                 title="Grid Card View"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
               </button>
               <button
+                type="button"
                 onClick={() => setSubstitutionsViewMode('list')}
-                className={`p-1.5 rounded-lg transition-colors ${
-                  substitutionsViewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer select-none active:scale-95 ${
+                  substitutionsViewMode === 'list' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
                 }`}
                 title="Compact List View"
               >
@@ -627,51 +690,15 @@ export const SubstitutionsRegister: React.FC = () => {
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {uncoveredSlots.map((slot, idx) => {
-              const parsed = parseCellSlot(slot.task);
+          {substitutionsViewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {uncoveredSlots.map((slot, idx) => {
+                const parsed = parseCellSlot(slot.task);
 
-              return (
-                <div
-                  key={`${slot.period}-${slot.originalTeacher}-${idx}`}
-                  onClick={() => {
-                    openAssignSubModal({
-                      day: selectedDay,
-                      period: slot.period,
-                      originalTeacher: slot.originalTeacher,
-                      className: parsed.className || 'KG',
-                      subject: parsed.subject || slot.task,
-                      task: slot.task,
-                    });
-                  }}
-                  className="glass-panel border border-rose-500/30 hover:border-rose-500/60 bg-rose-950/10 hover:bg-rose-950/20 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg transition-all group cursor-pointer select-none active:scale-[0.99]"
-                  title={`Tap anywhere to assign substitute for Period ${slot.period} (${parsed.className || 'KG'})`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border bg-rose-500/15 text-rose-400 border-rose-500/30">
-                      {slot.period} Period
-                    </span>
-                    <span className="text-xs font-bold text-white">
-                      {parsed.className || 'KG'} • {parsed.subject || slot.task}
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between text-xs">
-                    <div>
-                      <div className="text-[10px] text-slate-400">Absent Teacher</div>
-                      <div className="font-bold truncate max-w-[130px] text-slate-200">
-                        {slot.originalTeacher}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-[10px] text-rose-400 font-semibold">Status</div>
-                      <div className="font-bold text-rose-400 animate-pulse">Needs Sub!</div>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
+                return (
+                  <div
+                    key={`${slot.period}-${slot.originalTeacher}-${idx}`}
+                    onClick={() => {
                       openAssignSubModal({
                         day: selectedDay,
                         period: slot.period,
@@ -681,15 +708,127 @@ export const SubstitutionsRegister: React.FC = () => {
                         task: slot.task,
                       });
                     }}
-                    className="w-full py-2 px-3 rounded-xl bg-blue-600 group-hover:bg-blue-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/30 transition-all cursor-pointer"
+                    className="glass-panel border border-rose-500/30 hover:border-rose-500/60 bg-rose-950/10 hover:bg-rose-950/20 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg transition-all group cursor-pointer select-none active:scale-[0.99]"
+                    title={`Tap anywhere to assign substitute for Period ${slot.period} (${parsed.className || 'KG'})`}
                   >
-                    <UserCheck className="w-3.5 h-3.5" />
-                    <span>Assign Substitute</span>
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border bg-rose-500/15 text-rose-400 border-rose-500/30">
+                        {slot.period} Period
+                      </span>
+                      <span className="text-xs font-bold text-white">
+                        {parsed.className || 'KG'} • {parsed.subject || slot.task}
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between text-xs">
+                      <div>
+                        <div className="text-[10px] text-slate-400">Absent Teacher</div>
+                        <div className="font-bold truncate max-w-[130px] text-slate-200">
+                          {slot.originalTeacher}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] text-rose-400 font-semibold">Status</div>
+                        <div className="font-bold text-rose-400 animate-pulse">Needs Sub!</div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openAssignSubModal({
+                          day: selectedDay,
+                          period: slot.period,
+                          originalTeacher: slot.originalTeacher,
+                          className: parsed.className || 'KG',
+                          subject: parsed.subject || slot.task,
+                          task: slot.task,
+                        });
+                      }}
+                      className="w-full py-2 px-3 rounded-xl bg-blue-600 group-hover:bg-blue-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/30 transition-all cursor-pointer"
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>Assign Substitute</span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {uncoveredSlots.map((slot, idx) => {
+                const parsed = parseCellSlot(slot.task);
+                const isCT = isClassTeacher(slot.originalTeacher);
+
+                return (
+                  <motion.div
+                    key={`${slot.period}-${slot.originalTeacher}-${idx}`}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={SPRING_TRANSITIONS.snappy}
+                    onClick={() => {
+                      openAssignSubModal({
+                        day: selectedDay,
+                        period: slot.period,
+                        originalTeacher: slot.originalTeacher,
+                        className: parsed.className || 'KG',
+                        subject: parsed.subject || slot.task,
+                        task: slot.task,
+                      });
+                    }}
+                    className="glass-panel px-3 sm:px-4 py-2.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-950/10 hover:bg-rose-950/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm transition-all cursor-pointer select-none active:scale-[0.99] group"
+                    title={`Tap anywhere to assign substitute for Period ${slot.period} (${parsed.className || 'KG'})`}
+                  >
+                    {/* Left: Period & Class */}
+                    <div className="flex items-center gap-2.5 min-w-[160px]">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-rose-500/15 text-rose-400 border-rose-500/30">
+                        {slot.period}
+                      </span>
+                      <div>
+                        <div className="font-bold text-white text-xs">{parsed.className || 'KG'}</div>
+                        <div className="text-[10px] text-slate-400">{parsed.subject || slot.task}</div>
+                      </div>
+                    </div>
+
+                    {/* Middle: Absent Teacher & Needs Sub badge */}
+                    <div className="flex items-center gap-2 sm:gap-3 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-slate-400">Absent:</span>
+                        <span className="font-bold text-rose-300">
+                          {slot.originalTeacher}
+                          {isCT && <span className="text-[10px] text-amber-400/80 font-normal ml-1">(CT)</span>}
+                        </span>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-semibold border border-rose-500/30 animate-pulse">
+                        Needs Sub!
+                      </span>
+                    </div>
+
+                    {/* Right: Assign Button */}
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openAssignSubModal({
+                            day: selectedDay,
+                            period: slot.period,
+                            originalTeacher: slot.originalTeacher,
+                            className: parsed.className || 'KG',
+                            subject: parsed.subject || slot.task,
+                            task: slot.task,
+                          });
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-blue-600 group-hover:bg-blue-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm shadow-blue-600/30 transition-all cursor-pointer"
+                      >
+                        <UserCheck className="w-3.5 h-3.5" />
+                        <span>Assign</span>
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
         </section>
       )}
 
