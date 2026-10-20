@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
-import { AutoResolvePolicyConfig, DEFAULT_AUTORESOLVE_POLICY } from '@lfps/core';
+import { AutoResolvePolicyConfig, DEFAULT_AUTORESOLVE_POLICY, getSubjectFullName } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
 import {
   Brain,
@@ -384,7 +384,7 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
                   <option value="">Select Subject...</option>
                   {COMMON_SUBJECTS.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {s} — {getSubjectFullName(s)}
                     </option>
                   ))}
                 </select>

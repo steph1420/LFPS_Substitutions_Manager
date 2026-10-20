@@ -52,6 +52,16 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - In `getEffectiveOfficiatingAC`: If the primary AC is on duty (`!isAcAbsent`), `effectiveAC` strictly resolves to the primary AC (`Mrs. R. Pahwa`), ignoring stale manual entries in `officiatingACMap`.
   - In `useTimetableStore.ts`: Automatically prune/reconcile `officiatingAC[day]` when AC absence is untoggled and during `handleMarkAllPresent()`. Added unit tests in `solver.test.ts`.
 
+### BUG-20: Misleading CT Auto-Resolve Count & Period Stamp
+- **Status**: 🟢 Resolved (Job Bundle 31)
+- **Reported**: When 1 Class Teacher was absent, the header button displayed "⚡ Auto-Resolve CT Classes (4)" because the teacher taught 4 periods, leading the user to believe 4 CTs were absent. Furthermore, uncovered cards stamped `• CT` on all individual periods.
+- **Fix**: Removed the redundant CT Auto-Resolve button. Uncovered duty cards no longer display `• CT` on individual teaching periods and use clean card styling. Unified under `Auto-Resolve (X Slots)`.
+
+### BUG-21: Missing Officiating CT Appointment Cards on Substitutions Page
+- **Status**: 🟢 Resolved (Job Bundle 31)
+- **Reported**: When a Class Teacher was absent, the Substitutions page displayed an appointment card for AC, but did not display any appointment card for absent Class Teachers unless already appointed.
+- **Fix**: Added `unappointedCTs` computation in `SubstitutionsRegister.tsx`. Surfaced `OFFICIATING CT Required - Appointment Needed` cards with `[ Appoint ]` action button in both top toolbar and Section 3 (`OFFICIATING STAFF`), with alert status in the KPI summary strip.
+
 
 ### BUG-04: Fit-Grid Portrait Mode Screen Overflow & Cell Height Distortion (RESOLVED in v1.40.0)
 - **Status**: 🟢 Resolved (v1.40.0)

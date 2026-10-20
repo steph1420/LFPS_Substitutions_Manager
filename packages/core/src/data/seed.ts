@@ -21,6 +21,42 @@ export const DEFAULT_PERIODS: PeriodMetadata[] = [
 export const PRIMARY_AC = 'Mrs. R. Pahwa';
 export const ASSISTANT_AC = 'Mrs. S. Lakra';
 
+/**
+ * Canonical Subject Nomenclature Dictionary
+ * Note: 'M. SC.' explicitly stands for 'Moral Science' (not Mental Science).
+ */
+export const SUBJECT_FULL_NAMES: Record<string, string> = {
+  'M. SC.': 'Moral Science',
+  'ENG. REC.': 'English Recitation',
+  'ENG. WR.': 'English Writing',
+  'ENG. ORAL': 'English Oral',
+  'ENG. ACT.': 'English Activity',
+  'ENG. CONV.': 'English Conversation',
+  'ENG. STORY': 'English Story',
+  'ENG. LANG.': 'English Language',
+  'ENG. LIT.': 'English Literature',
+  'ENG. SPELL.': 'English Spelling',
+  'ENG. CR. WR.': 'Creative Writing',
+  'M. Bas.': 'Math Basics',
+  'M. ORAL': 'Math Oral',
+  'M. PR.': 'Math Practical',
+  'M. NO. WK.': 'Math Number Work',
+  'M. ACT.': 'Math Activity',
+  'M. GEN.': 'Math General',
+  'SUB. TABLE': 'Sub. Tables',
+  'ST. TIME.': 'Story Time',
+  'HIN. KAV./GEET': 'Hindi Kavita / Geet',
+  'GAMES': 'Games & Physical Ed.',
+  'SING.': 'Singing & Music',
+  'DRAW.': 'Drawing & Art',
+  'DRILL': 'Physical Drill',
+  'GK': 'General Knowledge',
+};
+
+export function getSubjectFullName(code: string): string {
+  return SUBJECT_FULL_NAMES[code] || code;
+}
+
 export const DEFAULT_STAFF_DIRECTORY: StaffDirectory = {
     "Mrs. S. Lakra": {
         id: "STAFF-01",

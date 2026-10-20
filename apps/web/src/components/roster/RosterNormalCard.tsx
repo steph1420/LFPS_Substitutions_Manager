@@ -72,7 +72,7 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
         if ((e.target as HTMLElement).closest('button, input, select, a')) return;
         onToggleAbsence(teacher.abbr);
       }}
-      className={`glass-panel p-4 sm:p-5 rounded-2xl border transition-all flex flex-col justify-between gap-4 min-h-[210px] cursor-pointer select-none group relative overflow-hidden ${
+      className={`glass-panel p-4 sm:p-5 rounded-2xl border transition-all flex flex-col justify-between gap-4 min-h-[210px] cursor-pointer select-none group relative ${
         isAbsent
           ? 'card-absent-illuminated text-rose-100'
           : isAwayOfficial
@@ -84,7 +84,7 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
     >
       {/* Top Header: Avatar, Full Name & Duties button */}
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3 overflow-hidden flex-1">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           {/* Role Avatar Blob */}
           <div
             className="relative w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-sm shadow-inner flex-shrink-0"
@@ -125,7 +125,7 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
           </div>
 
           {/* Teacher Identity & Badges */}
-          <div className="overflow-hidden flex-1">
+          <div className="min-w-0 flex-1">
             <TeacherNameOverlay
               abbr={teacher.abbr}
               fullName={teacher.fullName}

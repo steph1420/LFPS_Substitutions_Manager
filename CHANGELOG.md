@@ -15,6 +15,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [v2.0.0-alpha.1] - 2026-10-18
 
 ### Added
+- **Moral Science Nomenclature, Auto-Resolve Period Normalization, Officiating CT Appointment Cards & Column Header Sorter (Job Bundle 31)**:
+  - **Canonical Subject Nomenclature (`M. SC.` = Moral Science)**: Defined `SUBJECT_FULL_NAMES` dictionary and `getSubjectFullName()` in `@lfps/core` with vitest test coverage. Guaranteed that "M. SC." is strictly Moral Science (never Mental). Integrated into Brain Studio and subject selection dropdowns.
+  - **Auto-Resolve Count & Misleading Period Stamp Resolution**: Completely removed redundant and misleading `⚡ Auto-Resolve CT Classes (X)` button that caused confusion when 1 CT had 4 uncovered teaching slots. Stripped `• CT` stamp and amber borders from uncovered duty cards; all slots display clean `{period} Period` cards under unified `Auto-Resolve (X Slots)`.
+  - **Officiating CT Appointment in Substitutions Page**: Added `OFFICIATING CT Required - Appointment Needed` cards with direct `[ Appoint ]` action in both the top toolbar and Section 3 (`OFFICIATING STAFF`), with alert status in the KPI summary strip, mirroring the Officiating AC workflow.
+  - **Native Faculty Column Header Sorter**: Embedded the `[ Role | A-Z ]` sorting switcher directly inside the sticky Faculty table column header (`<th>`) in `RoutineGrid.tsx`, removing duplicate toolbar clutter.
+  - **Apple-Grade Sliding Window Overlay (`TeacherNameOverlay.tsx`)**: Upgraded full-name overlay to a smooth sliding acrylic window (`stiffness: 450, damping: 28`) with acrylic grip accent that glides open horizontally over the abbreviation with zero layout reflow, overlaying freely over neighboring elements.
 - **Whole-Day Off. CT Domain Alignment, Teacher Self-Service Login Scoping, Ergonomic Card Full-Name Overlays & Hierarchy Sorting (Job Bundle 30)**:
   - **Whole-Day Off. CT Precedence & Clean Period Substitutions**: Officiating Class Teacher (`Off. CT`) is anchored as a whole-day class responsibility for parent communication, attendance, and administrative duties. Teaching periods are substituted by subject specialists without misleading period-level `• CT` stamps.
   - **Scoped Teacher Self-Service Acceptance / Dispute**: `[ ✓ Accept ]` and `[ ⚑ Dispute ]` actions appear strictly for authenticated staff viewing their own assigned duties. Unauthenticated coordinators view clean status pills (`Assigned`, `✓ Accepted`, `⚑ Disputed`) with administrative controls.

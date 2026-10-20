@@ -39,7 +39,7 @@ export const RosterCompactCard: React.FC<RosterCompactCardProps> = ({
           : 'border-slate-800 hover:border-slate-700 bg-slate-900/60'
       }`}
     >
-      <div className="flex items-center gap-2 overflow-hidden">
+      <div className="flex items-center gap-2 min-w-0">
         <div
           className={`w-8 h-8 rounded-lg font-bold flex items-center justify-center text-xs flex-shrink-0 ${
             isAbsent
@@ -53,7 +53,7 @@ export const RosterCompactCard: React.FC<RosterCompactCardProps> = ({
         >
           {teacher.initials}
         </div>
-        <div className="overflow-hidden flex-1">
+        <div className="min-w-0 flex-1">
           <TeacherNameOverlay
             abbr={teacher.abbr}
             fullName={teacher.fullName}

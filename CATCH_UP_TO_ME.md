@@ -11,17 +11,16 @@
 
 ### 1. Where You Are Right Now
 - **Current Branch**: `next-gen` (Clean working tree, tracking `origin/next-gen`).
-- **Unit Tests Status**: **18/18 passing** via `npm test`.
+- **Unit Tests Status**: **19/19 passing** via `npm test`.
 - **Production Build Status**: Passes cleanly via `npm run build`.
 - **Live Deployment**: `https://steph1420.github.io/LFPS_Substitutions_Manager/` (tracks branch `next-gen`).
 
-### 2. What Was Just Completed (Job Bundle 30)
-- **Whole-Day Off. CT Domain Alignment & Clean Period Substitutions**: Officiating Class Teacher (`Off. CT`) is anchored as a whole-day class responsibility for parent communication, attendance, and administrative duties. Teaching periods are substituted by subject specialists without misleading period-level `• CT` stamps.
-- **Scoped Teacher Self-Service Acceptance / Dispute**: `[ ✓ Accept ]` and `[ ⚑ Dispute ]` actions appear strictly for authenticated staff viewing their own assigned duties. Unauthenticated coordinators view clean status pills (`Assigned`, `✓ Accepted`, `⚑ Disputed`) with administrative controls.
-- **Staff Roster Tab Bar Glow Removal**: Completely eliminated `isUrgent` and amber text from the Staff Roster navigation tab.
-- **Role Hierarchy & Alphabetical Faculty Sorting**: Implemented 5-tier role hierarchy sorting (`Academic Coordinator` -> `Assistant Academic Coordinator` -> `Class Teachers` -> `2nd Teachers` -> `Other Staff`) and alphabetical ordering across both `RoutineGrid.tsx` and `AbsenceRoster.tsx` with a clean segmented toggle.
-- **Zero-Shift Full Name Overlay Component (`TeacherNameOverlay.tsx`)**: Displays abbreviated names in static flow with zero layout reflow, while instantly revealing the full name directly over the abbreviation on desktop hover or mobile touch with outside-tap dismissal.
-- **Off. CT Assign Pill Reordering**: Placed the Off. CT and Off. AC appointment pills directly above the attendance toggle button on teacher roster cards.
+### 2. What Was Just Completed (Job Bundle 31)
+- **Canonical Subject Nomenclature (`M. SC.` = Moral Science)**: Added `SUBJECT_FULL_NAMES` dictionary and `getSubjectFullName()` to `@lfps/core` with vitest coverage. "M. SC." is strictly Moral Science (never Mental).
+- **Auto-Resolve Count & Misleading Period Cards Fixed**: Completely removed redundant and misleading `⚡ Auto-Resolve CT Classes (X)` button that confused coordinators when a single CT had 4 uncovered periods. Stripped `• CT` stamp and amber borders from all uncovered duty cards. Unified under `Auto-Resolve (X Slots)`.
+- **Officiating CT Appointment in Substitutions Page**: Added `OFFICIATING CT Required - Appointment Needed` action buttons and cards in both top action toolbar and Section 3 (`OFFICIATING STAFF`), plus alert counters in the KPI summary strip, mirroring the Officiating AC workflow.
+- **Native Faculty Column Header Sorter**: Embedded `[ Role | A-Z ]` sorting switcher directly inside the sticky Faculty table column header (`<th>`) in `RoutineGrid.tsx`, removing duplicate toolbar clutter.
+- **Apple-Grade Sliding Window Overlay (`TeacherNameOverlay.tsx`)**: Upgraded full-name overlay to a smooth sliding acrylic window (`stiffness: 450, damping: 28`) that glides open horizontally over the abbreviation with zero DOM layout reflow and overlays smoothly over adjacent elements without being clipped.
 
 ### 3. What To Do On Your Very First Turn
 - If the user says **"Go"**, **"Yes"**, or tells you to proceed, **DO NOT ASK WHAT TO DO**. They are approving:

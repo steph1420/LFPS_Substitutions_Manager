@@ -12,6 +12,8 @@ import {
   AbsenceRecord,
   StaffAvailabilityRecord,
   getEffectiveOfficiatingAC,
+  getSubjectFullName,
+  SUBJECT_FULL_NAMES,
 } from '../src/index.js';
 
 describe('LFPS Core Solver & Domain Engine', () => {
@@ -54,6 +56,11 @@ describe('LFPS Core Solver & Domain Engine', () => {
       expect(parseCellSlot('Free').isFree).toBe(true);
       expect(parseCellSlot('free').isFree).toBe(true);
       expect(parseCellSlot('-').isBreak).toBe(true);
+    });
+
+    it('canonical subject nomenclature: M. SC. is strictly Moral Science (not Mental)', () => {
+      expect(getSubjectFullName('M. SC.')).toBe('Moral Science');
+      expect(SUBJECT_FULL_NAMES['M. SC.']).toBe('Moral Science');
     });
   });
 

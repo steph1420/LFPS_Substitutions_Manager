@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface TeacherNameOverlayProps {
   abbr: string;
@@ -10,8 +11,8 @@ interface TeacherNameOverlayProps {
 /**
  * TeacherNameOverlay
  * Renders an abbreviated teacher name that, on desktop hover or mobile touch,
- * instantly displays the full name in an in-place overlay drawn directly over
- * the abbreviation with ZERO layout shift.
+ * smoothly reveals the full name in an in-place sliding window overlay drawn
+ * directly over the abbreviation with ZERO layout shift.
  */
 export const TeacherNameOverlay: React.FC<TeacherNameOverlayProps> = ({
   abbr,
@@ -24,7 +25,7 @@ export const TeacherNameOverlay: React.FC<TeacherNameOverlayProps> = ({
 
   const hasDistinctFullName = Boolean(fullName && fullName.trim() !== abbr.trim());
 
-  // Auto-dismiss on mobile when user taps anywhere outside
+  // Auto-dismiss on mobile or outside click
   useEffect(() => {
     if (!isRevealed) return;
 
@@ -60,20 +61,33 @@ export const TeacherNameOverlay: React.FC<TeacherNameOverlayProps> = ({
         {abbr}
       </span>
 
-      {/* Floating Full Name Overlay Panel: Positioned exactly over the abbreviation */}
-      {isRevealed && hasDistinctFullName && (
-        <span
-          className="absolute left-0 -top-1 z-40 px-2.5 py-1 rounded-xl bg-slate-900/98 border border-slate-700/80 shadow-[0_12px_28px_rgba(0,0,0,0.85)] backdrop-blur-xl whitespace-nowrap text-white font-bold text-sm tracking-tight animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-0.5"
-          style={{ transformOrigin: 'left center' }}
-        >
-          <span>{fullName}</span>
-          {roleSubtitle && (
-            <span className="text-[10px] text-slate-400 font-normal tracking-normal">
-              {roleSubtitle}
-            </span>
-          )}
-        </span>
-      )}
+      {/* Apple-grade Sliding Window Full Name Overlay */}
+      <AnimatePresence>
+        {isRevealed && hasDistinctFullName && (
+          <motion.div
+            initial={{ opacity: 0, x: -6, scaleX: 0.94 }}
+            animate={{ opacity: 1, x: 0, scaleX: 1 }}
+            exit={{ opacity: 0, x: -4, scaleX: 0.96 }}
+            transition={{ type: 'spring', stiffness: 450, damping: 28, mass: 0.5 }}
+            style={{ transformOrigin: 'left center' }}
+            className="absolute left-0 -top-1.5 z-50 flex items-center gap-2.5 pl-2.5 pr-3.5 py-1.5 rounded-xl bg-slate-900/98 border border-slate-700/90 shadow-[0_14px_34px_rgba(0,0,0,0.85)] backdrop-blur-2xl whitespace-nowrap pointer-events-auto"
+          >
+            {/* Sliding Window Acrylic Grip Bar Accent */}
+            <span className="w-1 h-3.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50 flex-shrink-0" />
+
+            <div className="flex flex-col">
+              <span className="font-bold text-white text-sm tracking-tight leading-snug">
+                {fullName}
+              </span>
+              {roleSubtitle && (
+                <span className="text-[10px] text-slate-400 font-medium tracking-normal leading-tight">
+                  {roleSubtitle}
+                </span>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

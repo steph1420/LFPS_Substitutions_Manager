@@ -9,7 +9,7 @@ import {
   compareTeachersByName,
 } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
-import { Maximize2, Minimize2, Users, School, Eye, EyeOff, ArrowUpDown } from 'lucide-react';
+import { Maximize2, Minimize2, Users, School, Eye, EyeOff } from 'lucide-react';
 import { UndoRedoControls } from './UndoRedoControls.js';
 import { TeacherNameOverlay } from './common/TeacherNameOverlay.js';
 
@@ -122,21 +122,70 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
         <tr className="border-b border-slate-800 text-slate-300 font-semibold text-xs">
           {/* Sticky Corner Header with solid masking flange (BUG-05, BUG-08, FEAT-53) */}
           <th
-            className={`sticky top-0 left-0 z-40 bg-slate-900 py-2 sm:py-2.5 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)] transition-all ${
+            className={`sticky top-0 left-0 z-40 bg-slate-900 py-1.5 sm:py-2 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)] transition-all ${
               isColumnCollapsed
                 ? 'w-[64px] min-w-[64px] max-w-[64px] px-1 text-center'
-                : 'px-2 sm:px-3.5 min-w-[84px] sm:min-w-[130px]'
+                : 'px-2 sm:px-3 min-w-[130px] sm:min-w-[155px]'
             }`}
           >
-            <span className="truncate">
-              {isColumnCollapsed
-                ? viewMode === 'teachers'
-                  ? 'Fac.'
-                  : 'Sec.'
-                : viewMode === 'teachers'
-                ? 'Faculty'
-                : 'Class / Sec'}
-            </span>
+            {isColumnCollapsed ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (viewMode === 'teachers') {
+                    setRoutineSortBy(routineSortBy === 'role' ? 'name' : 'role');
+                  }
+                }}
+                className="w-full truncate text-[11px] font-bold text-slate-300 hover:text-white"
+                title={
+                  viewMode === 'teachers'
+                    ? `Faculty (${routineSortBy === 'role' ? 'Role' : 'A-Z'}). Tap to switch.`
+                    : 'Class / Sec'
+                }
+              >
+                {viewMode === 'teachers'
+                  ? routineSortBy === 'role'
+                    ? 'Fac (R)'
+                    : 'Fac (A)'
+                  : 'Sec.'}
+              </button>
+            ) : viewMode === 'teachers' ? (
+              <div className="flex items-center justify-between gap-1.5 w-full">
+                <span className="truncate text-xs font-semibold text-slate-300">Faculty</span>
+                <div className="flex items-center bg-slate-950/80 p-0.5 rounded-lg border border-slate-800 text-[10px] font-medium flex-shrink-0">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRoutineSortBy('role');
+                    }}
+                    className={`px-1.5 py-0.5 rounded transition-colors ${
+                      routineSortBy === 'role'
+                        ? 'bg-blue-600 text-white font-bold shadow-sm'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                    title="Sort by school role hierarchy (AC -> AAC -> CT -> 2T -> Staff)"
+                  >
+                    Role
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRoutineSortBy('name');
+                    }}
+                    className={`px-1.5 py-0.5 rounded transition-colors ${
+                      routineSortBy === 'name'
+                        ? 'bg-blue-600 text-white font-bold shadow-sm'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                    title="Sort alphabetically by Name (A-Z)"
+                  >
+                    A-Z
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <span className="truncate text-xs font-semibold text-slate-300">Class / Sec</span>
+            )}
           </th>
 
           {DEFAULT_PERIODS.map((period) => (
@@ -498,31 +547,6 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
             <span className="hidden xs:inline">Classes</span>
           </button>
         </div>
-
-        {/* Ordering Selector for Teachers: Role Hierarchy vs Name (A-Z) */}
-        {viewMode === 'teachers' && (
-          <div className="flex items-center bg-slate-900/90 p-0.5 sm:p-1 rounded-xl border border-slate-800 text-xs font-semibold">
-            <button
-              onClick={() => setRoutineSortBy('role')}
-              className={`px-2 py-1 rounded-lg transition-colors flex items-center gap-1 ${
-                routineSortBy === 'role' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
-              }`}
-              title="Sort by school role hierarchy (AC -> AAC -> CT -> 2T -> Staff)"
-            >
-              <ArrowUpDown className="w-3 h-3" />
-              <span className="hidden sm:inline">Role</span>
-            </button>
-            <button
-              onClick={() => setRoutineSortBy('name')}
-              className={`px-2 py-1 rounded-lg transition-colors ${
-                routineSortBy === 'name' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
-              }`}
-              title="Sort alphabetically by Name (A-Z)"
-            >
-              A-Z
-            </button>
-          </div>
-        )}
 
         {/* Hide Absent Staff Toggle Button (FEAT-55) */}
         {viewMode === 'teachers' && (
