@@ -18,6 +18,19 @@ export const OfficiatingModal: React.FC = () => {
     assignOfficiatingCT,
   } = useTimetableStore();
 
+  // Standard UI Pillars: ESC key and backdrop click to dismiss
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && activeOfficiatingTarget) {
+        closeOfficiatingModal();
+      }
+    };
+    if (activeOfficiatingTarget) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeOfficiatingTarget, closeOfficiatingModal]);
+
   if (!activeOfficiatingTarget) return null;
 
   const { type, section } = activeOfficiatingTarget;

@@ -40,6 +40,19 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
   const { directory, autoResolvePolicy, updateAutoResolvePolicy, resetAutoResolvePolicy } =
     useTimetableStore();
 
+  // Standard UI Pillars: ESC key to dismiss
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   const [policy, setPolicy] = React.useState<AutoResolvePolicyConfig>(autoResolvePolicy);
   const [newSubject, setNewSubject] = React.useState('');
   const [newTeacher, setNewTeacher] = React.useState('');

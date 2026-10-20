@@ -106,13 +106,17 @@ export const AssignSubstituteModal: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 pointer-events-auto">
+      <div
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 pointer-events-auto"
+        onClick={closeAssignSubModal}
+      >
         <motion.div
           ref={modalRef}
           initial={{ opacity: 0, scale: 0.94, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 12 }}
           transition={SPRING_TRANSITIONS.bouncy}
+          onClick={(e) => e.stopPropagation()}
           className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[85vh] select-none"
         >
           {/* Header */}

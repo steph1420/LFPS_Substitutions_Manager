@@ -16,6 +16,19 @@ export const SubAvailabilityModal: React.FC = () => {
 
   const [customRemark, setCustomRemark] = useState('');
 
+  // Standard UI Pillars: ESC key to dismiss
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && activeAvailabilityTeacher) {
+        closeAvailabilityModal();
+      }
+    };
+    if (activeAvailabilityTeacher) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeAvailabilityTeacher, closeAvailabilityModal]);
+
   if (!activeAvailabilityTeacher) return null;
 
   const teacher = activeAvailabilityTeacher;

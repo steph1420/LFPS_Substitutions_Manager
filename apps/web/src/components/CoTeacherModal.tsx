@@ -13,6 +13,19 @@ export const CoTeacherModal: React.FC = () => {
     schedule,
   } = useTimetableStore();
 
+  // Standard UI Pillars: ESC key to dismiss
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && activeCoTeachSlot) {
+        closeCoTeachModal();
+      }
+    };
+    if (activeCoTeachSlot) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeCoTeachSlot, closeCoTeachModal]);
+
   if (!activeCoTeachSlot) return null;
 
   const { period, teacher, partnerTeacher, className, subject } = activeCoTeachSlot;

@@ -634,7 +634,18 @@ export const SubstitutionsRegister: React.FC = () => {
               return (
                 <div
                   key={`${slot.period}-${slot.originalTeacher}-${idx}`}
-                  className="glass-panel border border-rose-500/30 hover:border-rose-500/50 bg-rose-950/10 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg transition-all group"
+                  onClick={() => {
+                    openAssignSubModal({
+                      day: selectedDay,
+                      period: slot.period,
+                      originalTeacher: slot.originalTeacher,
+                      className: parsed.className || 'KG',
+                      subject: parsed.subject || slot.task,
+                      task: slot.task,
+                    });
+                  }}
+                  className="glass-panel border border-rose-500/30 hover:border-rose-500/60 bg-rose-950/10 hover:bg-rose-950/20 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg transition-all group cursor-pointer select-none active:scale-[0.99]"
+                  title={`Tap anywhere to assign substitute for Period ${slot.period} (${parsed.className || 'KG'})`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border bg-rose-500/15 text-rose-400 border-rose-500/30">
@@ -659,7 +670,8 @@ export const SubstitutionsRegister: React.FC = () => {
                   </div>
 
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       openAssignSubModal({
                         day: selectedDay,
                         period: slot.period,
@@ -669,7 +681,7 @@ export const SubstitutionsRegister: React.FC = () => {
                         task: slot.task,
                       });
                     }}
-                    className="w-full py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/30 transition-all cursor-pointer group-hover:bg-blue-500"
+                    className="w-full py-2 px-3 rounded-xl bg-blue-600 group-hover:bg-blue-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/30 transition-all cursor-pointer"
                   >
                     <UserCheck className="w-3.5 h-3.5" />
                     <span>Assign Substitute</span>
@@ -952,7 +964,11 @@ export const SubstitutionsRegister: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
             {/* Pending AC Appointment Card (In Coordinator Purple) */}
             {offACResult.needsAppointment && (
-              <div className="bg-purple-950/40 border border-purple-500/60 rounded-xl p-3 flex items-center justify-between purple-attention-pulse">
+              <div
+                onClick={() => openOfficiatingModal({ type: 'AC' })}
+                className="bg-purple-950/40 border border-purple-500/60 hover:border-purple-400 rounded-xl p-3 flex items-center justify-between purple-attention-pulse cursor-pointer select-none active:scale-[0.99] transition-all group"
+                title="Tap anywhere to designate Officiating AC"
+              >
                 <div>
                   <div className="flex items-center gap-1.5 mb-1">
                     <span className="text-[10px] text-purple-400 font-bold uppercase tracking-wider">Officiating AC</span>
@@ -963,8 +979,11 @@ export const SubstitutionsRegister: React.FC = () => {
                   <div className="font-bold text-purple-200 text-sm">Both AC & AAC absent today</div>
                 </div>
                 <button
-                  onClick={() => openOfficiatingModal({ type: 'AC' })}
-                  className="px-2.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs active:scale-95 transition-all shadow-md shadow-purple-600/30 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openOfficiatingModal({ type: 'AC' });
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl bg-purple-600 group-hover:bg-purple-500 text-white font-bold text-xs active:scale-95 transition-all shadow-md shadow-purple-600/30 cursor-pointer"
                 >
                   Appoint
                 </button>
@@ -975,7 +994,9 @@ export const SubstitutionsRegister: React.FC = () => {
             {unappointedCTs.length === 1 && (
               <div
                 key={`unappointed-${unappointedCTs[0].section}`}
-                className="bg-amber-950/40 border border-amber-500/60 rounded-xl p-3 flex items-center justify-between attention-pulse"
+                onClick={() => openOfficiatingModal({ type: 'CT', section: unappointedCTs[0].section })}
+                className="bg-amber-950/40 border border-amber-500/60 hover:border-amber-400 rounded-xl p-3 flex items-center justify-between attention-pulse cursor-pointer select-none active:scale-[0.99] transition-all group"
+                title={`Tap anywhere to appoint Officiating CT for ${unappointedCTs[0].section}`}
               >
                 <div>
                   <div className="flex items-center gap-1.5 mb-0.5">
@@ -990,8 +1011,11 @@ export const SubstitutionsRegister: React.FC = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => openOfficiatingModal({ type: 'CT', section: unappointedCTs[0].section })}
-                  className="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs active:scale-95 transition-all shadow-sm cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openOfficiatingModal({ type: 'CT', section: unappointedCTs[0].section });
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl bg-amber-500 group-hover:bg-amber-400 text-slate-950 font-bold text-xs active:scale-95 transition-all shadow-sm cursor-pointer"
                 >
                   Appoint
                 </button>
@@ -1016,15 +1040,20 @@ export const SubstitutionsRegister: React.FC = () => {
                   {unappointedCTs.map(({ teacher, section }) => (
                     <div
                       key={section}
-                      className="flex items-center justify-between p-2 rounded-lg bg-slate-900/90 border border-amber-500/30 text-xs"
+                      onClick={() => openOfficiatingModal({ type: 'CT', section })}
+                      className="flex items-center justify-between p-2 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-amber-500/30 hover:border-amber-400 text-xs cursor-pointer select-none active:scale-95 transition-all group"
+                      title={`Tap to appoint Officiating CT for ${section}`}
                     >
                       <div className="truncate mr-1.5">
                         <div className="font-bold text-amber-300 text-xs">{section}</div>
                         <div className="text-[10px] text-slate-400 truncate">{teacher.abbr}</div>
                       </div>
                       <button
-                        onClick={() => openOfficiatingModal({ type: 'CT', section })}
-                        className="px-2 py-1 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[10px] active:scale-95 transition-all shadow-sm cursor-pointer flex-shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openOfficiatingModal({ type: 'CT', section });
+                        }}
+                        className="px-2 py-1 rounded-md bg-amber-500 group-hover:bg-amber-400 text-slate-950 font-bold text-[10px] active:scale-95 transition-all shadow-sm cursor-pointer flex-shrink-0"
                       >
                         Appoint
                       </button>
@@ -1035,7 +1064,11 @@ export const SubstitutionsRegister: React.FC = () => {
             )}
 
             {offACResult.isManuallyAssigned && effectiveAC && (
-              <div className="bg-slate-900/90 border border-purple-500/40 rounded-xl p-3 flex items-center justify-between">
+              <div
+                onClick={() => openOfficiatingModal({ type: 'AC' })}
+                className="bg-slate-900/90 hover:bg-slate-800 border border-purple-500/40 hover:border-purple-400 rounded-xl p-3 flex items-center justify-between cursor-pointer select-none active:scale-[0.99] transition-all group"
+                title="Tap anywhere to reassign Officiating AC"
+              >
                 <div>
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <span className="text-[10px] text-purple-400 font-bold uppercase">Officiating AC</span>
@@ -1049,7 +1082,10 @@ export const SubstitutionsRegister: React.FC = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => openOfficiatingModal({ type: 'AC' })}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openOfficiatingModal({ type: 'AC' });
+                  }}
                   className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 flex items-center justify-center font-bold transition-colors cursor-pointer"
                   title="Reassign Officiating AC"
                 >
@@ -1061,7 +1097,9 @@ export const SubstitutionsRegister: React.FC = () => {
             {Object.entries(offCTMap).map(([section, teacherName]) => (
               <div
                 key={section}
-                className="bg-slate-900/90 border border-amber-500/40 rounded-xl p-3 flex items-center justify-between"
+                onClick={() => openOfficiatingModal({ type: 'CT', section })}
+                className="bg-slate-900/90 hover:bg-slate-800 border border-amber-500/40 hover:border-amber-400 rounded-xl p-3 flex items-center justify-between cursor-pointer select-none active:scale-[0.99] transition-all group"
+                title={`Tap anywhere to change Officiating CT for ${section}`}
               >
                 <div>
                   <span className="text-[10px] text-amber-400 font-bold uppercase">Off. CT • {section}</span>
@@ -1069,7 +1107,10 @@ export const SubstitutionsRegister: React.FC = () => {
                   <div className="text-[10px] text-slate-400">Class Teacher Responsibilities</div>
                 </div>
                 <button
-                  onClick={() => openOfficiatingModal({ type: 'CT', section })}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openOfficiatingModal({ type: 'CT', section });
+                  }}
                   className="w-8 h-8 rounded-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 flex items-center justify-center font-bold transition-colors cursor-pointer"
                   title={`Change Officiating CT for ${section}`}
                 >

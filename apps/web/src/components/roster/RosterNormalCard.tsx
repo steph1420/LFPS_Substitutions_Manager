@@ -7,8 +7,10 @@ import {
   UserX,
   SlidersHorizontal,
   ShieldAlert,
+  ShieldCheck,
   School,
   MapPin,
+  Plus,
 } from 'lucide-react';
 import { TeacherNameOverlay } from '../common/TeacherNameOverlay.js';
 
@@ -221,20 +223,32 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
             }}
             className={`h-[54px] min-w-[80px] flex-1 max-w-[125px] px-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 border transition-all cursor-pointer select-none active:scale-95 shadow-sm text-center ${
               offCTSection
-                ? 'bg-amber-500/15 border-amber-500/40 hover:bg-amber-500/25 text-amber-200'
+                ? 'bg-emerald-950/20 border-emerald-500/40 hover:bg-emerald-900/30 text-emerald-200'
                 : 'bg-amber-950/40 border-amber-500/60 hover:bg-amber-900/50 text-amber-300 attention-pulse'
             }`}
-            title={`Officiating Class Teacher (${teacher.primaryClass || 'Section'}) — Tap to assign`}
+            title={
+              offCTSection
+                ? `Officiating Class Teacher assigned to ${offCTSection} — Tap to reassign`
+                : `Officiating Class Teacher (${teacher.primaryClass || 'Section'}) vacant — Tap to Appoint`
+            }
           >
             <div className="flex items-center gap-1">
-              <School className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-tight">
+              <School className={`w-3.5 h-3.5 flex-shrink-0 ${offCTSection ? 'text-emerald-400' : 'text-amber-400'}`} />
+              <span className={`text-[10px] font-bold uppercase tracking-tight ${offCTSection ? 'text-emerald-400' : 'text-amber-400'}`}>
                 Off. CT
               </span>
             </div>
-            <span className="text-[11px] font-bold text-white truncate max-w-full leading-none mt-0.5">
-              {offCTSection ? offCTSection : 'Appoint'}
-            </span>
+            {offCTSection ? (
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-300 truncate max-w-full leading-none mt-0.5">
+                <Check className="w-2.5 h-2.5 text-emerald-400 flex-shrink-0" />
+                <span className="truncate">{offCTSection}</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-amber-200 truncate max-w-full leading-none mt-0.5">
+                <Plus className="w-3 h-3 text-amber-300 flex-shrink-0" />
+                <span>Appoint</span>
+              </span>
+            )}
           </button>
         )}
 
@@ -249,37 +263,52 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
             className={`h-[54px] min-w-[80px] flex-1 max-w-[125px] px-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 border transition-all cursor-pointer select-none active:scale-95 shadow-sm text-center ${
               offACResult.needsAppointment
                 ? 'bg-purple-950/40 border-purple-500/60 hover:bg-purple-900/50 text-purple-200 purple-attention-pulse'
-                : 'bg-purple-500/15 border-purple-500/40 hover:bg-purple-500/25 text-purple-200'
+                : 'bg-purple-950/20 border-purple-500/30 hover:bg-purple-900/30 text-purple-200'
             }`}
-            title="Officiating Academic Coordinator — Tap to assign"
+            title={
+              offACResult.needsAppointment
+                ? 'Officiating Academic Coordinator vacant — Tap to Appoint'
+                : `Officiating AC Covered (${offACResult.isAutoOfficiating ? 'SL Acting' : offACResult.effectiveAC}) — Tap to reassign`
+            }
           >
             <div className="flex items-center gap-1">
-              <ShieldAlert className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
-              <span className="text-[10px] font-bold text-purple-400 uppercase tracking-tight">
+              {offACResult.needsAppointment ? (
+                <ShieldAlert className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+              ) : (
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-300 flex-shrink-0" />
+              )}
+              <span className={`text-[10px] font-bold uppercase tracking-tight ${offACResult.needsAppointment ? 'text-purple-400' : 'text-purple-300'}`}>
                 Off. AC
               </span>
             </div>
-            <span className="text-[11px] font-bold text-white truncate max-w-full leading-none mt-0.5">
-              {offACResult.effectiveAC
-                ? offACResult.isAutoOfficiating
-                  ? 'Acting'
-                  : offACResult.effectiveAC
-                : 'Appoint'}
-            </span>
+            {offACResult.needsAppointment ? (
+              <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-purple-200 truncate max-w-full leading-none mt-0.5">
+                <Plus className="w-3 h-3 text-purple-300 flex-shrink-0" />
+                <span>Appoint</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-200/90 truncate max-w-full leading-none mt-0.5">
+                <Check className="w-2.5 h-2.5 text-emerald-400 flex-shrink-0" />
+                <span className="truncate">{offACResult.isAutoOfficiating ? 'SL Acting' : offACResult.effectiveAC}</span>
+              </span>
+            )}
           </button>
         )}
 
         {/* 4. Acting AC Badge Squircle (when AAC is acting for AC) */}
         {isAAC && offACResult.isAutoOfficiating && (
           <div
-            className="h-[54px] min-w-[80px] flex-1 max-w-[125px] px-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 border border-purple-500/30 bg-purple-500/15 text-purple-300 shadow-sm text-center"
+            className="h-[54px] min-w-[80px] flex-1 max-w-[125px] px-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 border border-purple-500/30 bg-purple-950/20 text-purple-300 shadow-sm text-center"
             title="Currently acting as Academic Coordinator for Mrs. R. Pahwa"
           >
             <div className="flex items-center gap-1">
-              <ShieldAlert className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
               <span className="text-[10px] font-bold text-purple-300 uppercase tracking-tight">Acting AC</span>
             </div>
-            <span className="text-[10px] text-purple-200/90 font-medium leading-none mt-0.5">On Duty</span>
+            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-300 font-semibold leading-none mt-0.5">
+              <Check className="w-2.5 h-2.5 text-emerald-400 flex-shrink-0" />
+              <span>On Duty</span>
+            </span>
           </div>
         )}
       </div>

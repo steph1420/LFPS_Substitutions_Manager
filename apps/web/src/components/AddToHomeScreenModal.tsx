@@ -29,6 +29,19 @@ export const AddToHomeScreenModal: React.FC<AddToHomeScreenModalProps> = ({
     }
   };
 
+  // Standard UI Pillars: ESC key to dismiss
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
