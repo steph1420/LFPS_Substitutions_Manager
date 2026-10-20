@@ -51,6 +51,21 @@
   animation: softAmberAttention 2.4s ease-in-out infinite;
 }
 
+@keyframes softPurpleAttention {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(168, 85, 247, 0.35), inset 0 0 4px rgba(168, 85, 247, 0.15);
+    border-color: rgba(168, 85, 247, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(168, 85, 247, 0.75), inset 0 0 8px rgba(168, 85, 247, 0.3);
+    border-color: rgba(168, 85, 247, 0.95);
+  }
+}
+
+.purple-attention-pulse {
+  animation: softPurpleAttention 2.4s ease-in-out infinite;
+}
+
 /* Tactile Console Backlight: Absent Teacher Card Illuminated Red Shift (UI-06) */
 .card-absent-illuminated {
   background: radial-gradient(130% 120% at 50% -10%, rgba(225, 29, 72, 0.45) 0%, rgba(159, 18, 57, 0.28) 45%, rgba(20, 10, 20, 0.94) 100%) !important;

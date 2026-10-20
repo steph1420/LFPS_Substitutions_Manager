@@ -70,6 +70,15 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - In Section 3 (`OFFICIATING STAFF`), styled the AC appointment card in AC's coordinator purple theme, and clubbed multiple unappointed CT sections into a single consolidated card with direct section appoint tiles.
   - Removed designation/subtitle completely from `TeacherNameOverlay.tsx` so it cleanly displays only the full teacher name.
 
+### BUG-23: Appoint Card Pass-Thru Toggle Absence, Wide Pills to Squircle Redesign & AC Card Decluttering
+- **Status**: 🟢 Resolved (Job Bundle 33)
+- **Reported**: In roster CT/AC cards, tapping anywhere on the appoint pill other than the tiny button text passed through to the card and toggled teacher absence; wide stacked action pills felt visually uncomfortable; AC bottom card had amber glow instead of purple and redundant stacked copy; clubbed CT card had unnecessary explanatory text.
+- **Fix**:
+  - Replaced wide stacked action pills in `RosterNormalCard.tsx` with tactile **squircle cards**: left-aligned `[ Present / Absent ]` squircle, with `[ Off. CT ]` and `[ Off. AC ]` squircles sitting side-by-side in one compact row (holding up to 3 squircles without wrapping).
+  - Made the entire appoint squircle an explicit `<button>` with `e.stopPropagation()`, ensuring tapping ANYWHERE on the appoint card opens the appointment modal directly with ZERO pass-thru to absence toggle.
+  - Created `.purple-attention-pulse` in `index.css` so the Officiating AC card pulses strictly in coordinator purple rather than amber.
+  - Decluttered the AC card by removing redundant "Appointment Needed" headline, and removed the unnecessary explanatory paragraph from the clubbed CT card.
+
 
 ### BUG-04: Fit-Grid Portrait Mode Screen Overflow & Cell Height Distortion (RESOLVED in v1.40.0)
 - **Status**: 🟢 Resolved (v1.40.0)

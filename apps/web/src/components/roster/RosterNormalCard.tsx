@@ -6,8 +6,9 @@ import {
   Check,
   UserX,
   SlidersHorizontal,
-  ChevronRight,
   ShieldAlert,
+  School,
+  MapPin,
 } from 'lucide-react';
 import { TeacherNameOverlay } from '../common/TeacherNameOverlay.js';
 
@@ -180,107 +181,107 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
         </button>
       </div>
 
-      {/* Card Action Slots */}
-      <div className="space-y-2 pt-1">
-        {/* Officiating Assignment Pills (Placed ABOVE attendance toggle button per user directive) */}
-        <div className="flex flex-col gap-1.5 w-full">
-          {/* Class Teacher Officiating Assignment */}
-          {isCT && isAbsent && (
-            <div className="w-full flex items-center justify-between text-xs px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-[10px] font-bold text-amber-300 uppercase flex-shrink-0">Off. CT:</span>
-                <span className="text-white font-medium truncate">
-                  {offCTSection ? offCTSection : 'None Appointed'}
-                </span>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenOfficiatingCT(teacher.primaryClass);
-                }}
-                className="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-0.5 cursor-pointer ml-2 flex-shrink-0"
-              >
-                <span>{offCTSection ? 'Reassign' : 'Assign'}</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-
-          {/* Academic Coordinator Succession & Appointment */}
-          {isAC && isAbsent && (
-            <div
-              className={`w-full flex items-center justify-between text-xs px-3 py-1.5 rounded-xl border ${
-                offACResult.needsAppointment
-                  ? 'bg-amber-950/40 border-amber-500/60 attention-pulse'
-                  : 'bg-purple-500/10 border-purple-500/30'
-              }`}
-            >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-[10px] font-bold text-purple-300 uppercase flex-shrink-0">Off. AC:</span>
-                <span className="text-white font-medium truncate">
-                  {offACResult.effectiveAC
-                    ? offACResult.isAutoOfficiating
-                    ? `${offACResult.effectiveAC} (Acting)`
-                    : offACResult.effectiveAC
-                    : 'Needs Appointment'}
-                </span>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenOfficiatingAC();
-                }}
-                className="text-xs font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-0.5 cursor-pointer ml-2 flex-shrink-0"
-              >
-                <span>{offACResult.isManuallyAssigned ? 'Reassign' : 'Assign'}</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-
-          {/* Assistant Academic Coordinator Acting status */}
-          {isAAC && offACResult.isAutoOfficiating && (
-            <div className="w-full flex items-center gap-2 text-xs px-3 py-1.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300">
-              <ShieldAlert className="w-4 h-4 text-purple-400 flex-shrink-0" />
-              <span className="text-xs font-medium truncate">
-                Acting for Mrs. R. Pahwa today
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Attendance Toggle Button */}
+      {/* Bottom Action Squircle Row (Left-aligned presence, side-by-side appointment cards) */}
+      <div className="flex items-center gap-2 pt-2 w-full">
+        {/* 1. Absence / Presence Squircle Card (Left-aligned) */}
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onToggleAbsence(teacher.abbr);
           }}
-          className={`w-full py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-between transition-all cursor-pointer shadow-sm active:scale-[0.99] ${
+          className={`h-[54px] min-w-[76px] sm:min-w-[82px] px-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 border transition-all cursor-pointer select-none active:scale-95 shadow-sm ${
             isAbsent
-              ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-900/50'
+              ? 'bg-rose-600 hover:bg-rose-500 text-white border-rose-500 shadow-rose-900/40'
               : isAwayOfficial
-              ? 'bg-gradient-to-r from-indigo-600/40 to-indigo-700/40 text-indigo-200 border border-indigo-500/60'
-              : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 hover:border-emerald-500/60'
+              ? 'bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-200 border-indigo-500/50'
+              : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/40'
           }`}
+          title={isAbsent ? 'Currently Absent — Tap to Mark Present' : 'Currently Present — Tap to Mark Absent'}
         >
-          <span className="flex items-center gap-2">
-            {isAbsent ? (
-              <UserX className="w-4 h-4 text-white" />
-            ) : (
-              <Check className="w-4 h-4 text-emerald-300" />
-            )}
-            <span>
-              {isAbsent
-                ? 'Marked Absent Today'
-                : isAwayOfficial
-                ? 'Away on Official Duty'
-                : 'Present on Duty'}
-            </span>
-          </span>
-          <span className="text-[10px] font-medium opacity-80 bg-black/20 px-2 py-0.5 rounded-md">
-            {isAbsent ? 'Tap to Mark Present' : 'Tap to Mark Absent'}
+          {isAbsent ? (
+            <UserX className="w-4 h-4 text-white" />
+          ) : isAwayOfficial ? (
+            <MapPin className="w-4 h-4 text-indigo-300" />
+          ) : (
+            <Check className="w-4 h-4 text-emerald-400" />
+          )}
+          <span className="text-[11px] font-bold tracking-tight leading-none mt-0.5">
+            {isAbsent ? 'Absent' : isAwayOfficial ? 'Away' : 'Present'}
           </span>
         </button>
+
+        {/* 2. Officiating CT Squircle Card (Fully tappable anywhere, zero pass-thru) */}
+        {isCT && isAbsent && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenOfficiatingCT(teacher.primaryClass);
+            }}
+            className={`h-[54px] min-w-[80px] flex-1 max-w-[125px] px-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 border transition-all cursor-pointer select-none active:scale-95 shadow-sm text-center ${
+              offCTSection
+                ? 'bg-amber-500/15 border-amber-500/40 hover:bg-amber-500/25 text-amber-200'
+                : 'bg-amber-950/40 border-amber-500/60 hover:bg-amber-900/50 text-amber-300 attention-pulse'
+            }`}
+            title={`Officiating Class Teacher (${teacher.primaryClass || 'Section'}) — Tap to assign`}
+          >
+            <div className="flex items-center gap-1">
+              <School className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-tight">
+                Off. CT
+              </span>
+            </div>
+            <span className="text-[11px] font-bold text-white truncate max-w-full leading-none mt-0.5">
+              {offCTSection ? offCTSection : 'Appoint'}
+            </span>
+          </button>
+        )}
+
+        {/* 3. Officiating AC Squircle Card (Fully tappable anywhere, zero pass-thru) */}
+        {isAC && isAbsent && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenOfficiatingAC();
+            }}
+            className={`h-[54px] min-w-[80px] flex-1 max-w-[125px] px-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 border transition-all cursor-pointer select-none active:scale-95 shadow-sm text-center ${
+              offACResult.needsAppointment
+                ? 'bg-purple-950/40 border-purple-500/60 hover:bg-purple-900/50 text-purple-200 purple-attention-pulse'
+                : 'bg-purple-500/15 border-purple-500/40 hover:bg-purple-500/25 text-purple-200'
+            }`}
+            title="Officiating Academic Coordinator — Tap to assign"
+          >
+            <div className="flex items-center gap-1">
+              <ShieldAlert className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+              <span className="text-[10px] font-bold text-purple-400 uppercase tracking-tight">
+                Off. AC
+              </span>
+            </div>
+            <span className="text-[11px] font-bold text-white truncate max-w-full leading-none mt-0.5">
+              {offACResult.effectiveAC
+                ? offACResult.isAutoOfficiating
+                  ? 'Acting'
+                  : offACResult.effectiveAC
+                : 'Appoint'}
+            </span>
+          </button>
+        )}
+
+        {/* 4. Acting AC Badge Squircle (when AAC is acting for AC) */}
+        {isAAC && offACResult.isAutoOfficiating && (
+          <div
+            className="h-[54px] min-w-[80px] flex-1 max-w-[125px] px-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 border border-purple-500/30 bg-purple-500/15 text-purple-300 shadow-sm text-center"
+            title="Currently acting as Academic Coordinator for Mrs. R. Pahwa"
+          >
+            <div className="flex items-center gap-1">
+              <ShieldAlert className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+              <span className="text-[10px] font-bold text-purple-300 uppercase tracking-tight">Acting AC</span>
+            </div>
+            <span className="text-[10px] text-purple-200/90 font-medium leading-none mt-0.5">On Duty</span>
+          </div>
+        )}
       </div>
     </motion.div>
   );

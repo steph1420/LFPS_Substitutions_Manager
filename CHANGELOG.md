@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [v2.0.0-alpha.1] - 2026-10-18
 
 ### Added
+- **Tactile Squircle Action Cards, Zero-Pass-Thru Appoint Squircles, Purple Attention Glow & AC Decluttering (Job Bundle 33)**:
+  - **Tactile Squircle Action Row**: Replaced wide stacked action pills in `RosterNormalCard.tsx` with Apple-grade squircle cards. The left-aligned `[ Present / Absent ]` squircle sits side-by-side with `[ Off. CT ]` and `[ Off. AC ]` appointment squircles in one clean, horizontal row capable of holding 3 squircles without wrapping.
+  - **Zero Pass-Thru Direct Appointment Tap**: Converted entire appointment squircles into explicit buttons with `e.stopPropagation()`. Tapping anywhere on the squircle card opens the designation modal directly with zero risk of toggling teacher absence.
+  - **Coordinator Purple Glow (`.purple-attention-pulse`)**: Added dedicated purple pulsing keyframes and class in `index.css`. The Officiating AC card now pulses with an authentic coordinator purple halo rather than conflicting amber.
+  - **AC & CT Card Decluttering**: Streamlined the bottom AC card by removing redundant "Appointment Needed" headline, and stripped away the unnecessary explanatory paragraph from the clubbed Class Teacher appointment card.
 - **Clubbed Officiating Appointments, Coordinator Purple AC Appoint Card & Clean Name Overlays (Job Bundle 32)**:
   - **Clubbed Officiating Appointment Actions**: In the top action toolbar, multiple pending officiating appointments (AC and/or multiple CTs) are consolidated into a single sleek dropdown button (`[ 🛡️ Appoint Staff (X) ▾ ]`) with an auto-dismissing selection menu. When only 1 appointment is needed, renders a single direct pill button.
   - **Consolidated Officiating CT Cards in Section 3**: In Section 3 (`OFFICIATING STAFF`), multiple unappointed CT sections are clubbed into a single unified card (`Officiating Class Teachers (N Required)`) containing direct section appoint tiles (`KG A`, `KG B`, etc.), eliminating redundant multi-card clutter.

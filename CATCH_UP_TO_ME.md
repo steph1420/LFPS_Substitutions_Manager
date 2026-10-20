@@ -15,11 +15,11 @@
 - **Production Build Status**: Passes cleanly via `npm run build`.
 - **Live Deployment**: `https://steph1420.github.io/LFPS_Substitutions_Manager/` (tracks branch `next-gen`).
 
-### 2. What Was Just Completed (Job Bundle 32)
-- **Clubbed Officiating Appointment Actions**: In the top action toolbar, multiple pending officiating appointments (AC and/or multiple CTs) are consolidated into a single sleek dropdown button (`[ 🛡️ Appoint Staff (X) ▾ ]`) with an auto-dismissing selection menu. When only 1 appointment is needed, renders a single direct pill button.
-- **Consolidated Officiating CT Cards in Section 3**: In Section 3 (`OFFICIATING STAFF`), multiple unappointed CT sections are clubbed into a single unified card (`Officiating Class Teachers (N Required)`) containing direct section appoint tiles (`KG A`, `KG B`, etc.), eliminating redundant multi-card clutter.
-- **Coordinator Purple Theme for AC Appoint Card**: The Officiating AC appointment card is styled strictly in Coordinator Purple (`border-purple-500/60 bg-purple-950/40 text-purple-200` with purple `[ Appoint ]` button), visibly distinguishing AC succession from Class Teacher duties.
-- **Designation-Free Full Teacher Name Overlay**: Removed role and designation subtitles from `TeacherNameOverlay.tsx`. The sliding acrylic window displays strictly the clean, full teacher name with zero layout shift.
+### 2. What Was Just Completed (Job Bundle 33)
+- **Tactile Squircle Action Row**: Replaced wide stacked action pills in `RosterNormalCard.tsx` with tactile Apple-grade squircle cards. The left-aligned `[ Present / Absent ]` squircle sits side-by-side with `[ Off. CT ]` and `[ Off. AC ]` appointment squircles in one clean, horizontal row capable of holding 3 squircles without wrapping.
+- **Zero Pass-Thru Direct Appointment Tap**: Converted entire appointment squircles into explicit buttons with `e.stopPropagation()`. Tapping anywhere on the squircle card opens the designation modal directly with zero risk of toggling teacher absence.
+- **Coordinator Purple Glow (`.purple-attention-pulse`)**: Added dedicated purple pulsing keyframes and class in `index.css`. The Officiating AC card now pulses with an authentic coordinator purple halo rather than conflicting amber.
+- **AC & CT Card Decluttering**: Streamlined the bottom AC card by removing redundant "Appointment Needed" headline, and stripped away the unnecessary explanatory paragraph from the clubbed Class Teacher appointment card.
 
 ### 3. What To Do On Your Very First Turn
 - If the user says **"Go"**, **"Yes"**, or tells you to proceed, **DO NOT ASK WHAT TO DO**. They are approving:

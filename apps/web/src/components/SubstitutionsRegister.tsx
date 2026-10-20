@@ -952,16 +952,15 @@ export const SubstitutionsRegister: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
             {/* Pending AC Appointment Card (In Coordinator Purple) */}
             {offACResult.needsAppointment && (
-              <div className="bg-purple-950/40 border border-purple-500/60 rounded-xl p-3 flex items-center justify-between attention-pulse">
+              <div className="bg-purple-950/40 border border-purple-500/60 rounded-xl p-3 flex items-center justify-between purple-attention-pulse">
                 <div>
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <span className="text-[10px] text-purple-400 font-bold uppercase">Officiating AC</span>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-[10px] text-purple-400 font-bold uppercase tracking-wider">Officiating AC</span>
                     <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-semibold">
                       Required
                     </span>
                   </div>
-                  <div className="font-bold text-purple-200 text-sm">Appointment Needed</div>
-                  <div className="text-[10px] text-slate-300">Both AC & AAC absent today</div>
+                  <div className="font-bold text-purple-200 text-sm">Both AC & AAC absent today</div>
                 </div>
                 <button
                   onClick={() => openOfficiatingModal({ type: 'AC' })}
@@ -1002,18 +1001,15 @@ export const SubstitutionsRegister: React.FC = () => {
             {unappointedCTs.length > 1 && (
               <div className="bg-amber-950/40 border border-amber-500/60 rounded-xl p-3.5 flex flex-col justify-between gap-2.5 attention-pulse sm:col-span-2">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="text-[10px] text-amber-400 font-bold uppercase">Officiating Class Teachers</span>
-                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">
-                        {unappointedCTs.length} Classes Required
-                      </span>
-                    </div>
-                    <div className="font-bold text-amber-200 text-sm">Appointments Needed</div>
-                    <div className="text-[10px] text-slate-300">
-                      Multiple Class Teachers absent without designated temporary cover
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">
+                      Officiating Class Teachers
+                    </span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">
+                      {unappointedCTs.length} Classes Required
+                    </span>
                   </div>
+                  <div className="text-xs font-bold text-amber-200">Appointments Needed</div>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 pt-1 border-t border-amber-500/20">
