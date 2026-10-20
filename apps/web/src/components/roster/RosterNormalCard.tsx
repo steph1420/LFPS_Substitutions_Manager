@@ -130,7 +130,6 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
               abbr={teacher.abbr}
               fullName={teacher.fullName}
               className="font-bold text-white text-base tracking-tight"
-              roleSubtitle={teacher.role}
             />
 
             <div className="flex items-center gap-1.5 mt-1 text-xs">

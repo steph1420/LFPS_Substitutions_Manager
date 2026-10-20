@@ -62,6 +62,14 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - **Reported**: When a Class Teacher was absent, the Substitutions page displayed an appointment card for AC, but did not display any appointment card for absent Class Teachers unless already appointed.
 - **Fix**: Added `unappointedCTs` computation in `SubstitutionsRegister.tsx`. Surfaced `OFFICIATING CT Required - Appointment Needed` cards with `[ Appoint ]` action button in both top toolbar and Section 3 (`OFFICIATING STAFF`), with alert status in the KPI summary strip.
 
+### BUG-22: Cluttered Multiple Appoint Cards & Designation Leak in Teacher Name Overlay
+- **Status**: 🟢 Resolved (Job Bundle 32)
+- **Reported**: Multiple appointment buttons cluttered the top toolbar when several CTs were absent; bottom AC appoint card used amber instead of AC's semantic purple; Teacher Name Overlay displayed role designation subtitles.
+- **Fix**:
+  - Clubbed multiple appoint actions in the top toolbar into a single cohesive dropdown menu (`[ 🛡️ Appoint Staff (X) ▾ ]`) when `pending > 1`.
+  - In Section 3 (`OFFICIATING STAFF`), styled the AC appointment card in AC's coordinator purple theme, and clubbed multiple unappointed CT sections into a single consolidated card with direct section appoint tiles.
+  - Removed designation/subtitle completely from `TeacherNameOverlay.tsx` so it cleanly displays only the full teacher name.
+
 
 ### BUG-04: Fit-Grid Portrait Mode Screen Overflow & Cell Height Distortion (RESOLVED in v1.40.0)
 - **Status**: 🟢 Resolved (v1.40.0)

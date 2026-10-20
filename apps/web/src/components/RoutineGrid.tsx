@@ -265,7 +265,6 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                         abbr={teacher.abbr}
                         fullName={teacher.fullName}
                         className={isAbsent ? 'text-rose-100 text-xs font-bold' : 'text-slate-100 text-xs font-bold'}
-                        roleSubtitle={teacher.role}
                       />
                       {isAbsent && (
                         <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-rose-500/30 text-rose-200 border border-rose-400/40">

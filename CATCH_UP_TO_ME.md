@@ -15,12 +15,11 @@
 - **Production Build Status**: Passes cleanly via `npm run build`.
 - **Live Deployment**: `https://steph1420.github.io/LFPS_Substitutions_Manager/` (tracks branch `next-gen`).
 
-### 2. What Was Just Completed (Job Bundle 31)
-- **Canonical Subject Nomenclature (`M. SC.` = Moral Science)**: Added `SUBJECT_FULL_NAMES` dictionary and `getSubjectFullName()` to `@lfps/core` with vitest coverage. "M. SC." is strictly Moral Science (never Mental).
-- **Auto-Resolve Count & Misleading Period Cards Fixed**: Completely removed redundant and misleading `⚡ Auto-Resolve CT Classes (X)` button that confused coordinators when a single CT had 4 uncovered periods. Stripped `• CT` stamp and amber borders from all uncovered duty cards. Unified under `Auto-Resolve (X Slots)`.
-- **Officiating CT Appointment in Substitutions Page**: Added `OFFICIATING CT Required - Appointment Needed` action buttons and cards in both top action toolbar and Section 3 (`OFFICIATING STAFF`), plus alert counters in the KPI summary strip, mirroring the Officiating AC workflow.
-- **Native Faculty Column Header Sorter**: Embedded `[ Role | A-Z ]` sorting switcher directly inside the sticky Faculty table column header (`<th>`) in `RoutineGrid.tsx`, removing duplicate toolbar clutter.
-- **Apple-Grade Sliding Window Overlay (`TeacherNameOverlay.tsx`)**: Upgraded full-name overlay to a smooth sliding acrylic window (`stiffness: 450, damping: 28`) that glides open horizontally over the abbreviation with zero DOM layout reflow and overlays smoothly over adjacent elements without being clipped.
+### 2. What Was Just Completed (Job Bundle 32)
+- **Clubbed Officiating Appointment Actions**: In the top action toolbar, multiple pending officiating appointments (AC and/or multiple CTs) are consolidated into a single sleek dropdown button (`[ 🛡️ Appoint Staff (X) ▾ ]`) with an auto-dismissing selection menu. When only 1 appointment is needed, renders a single direct pill button.
+- **Consolidated Officiating CT Cards in Section 3**: In Section 3 (`OFFICIATING STAFF`), multiple unappointed CT sections are clubbed into a single unified card (`Officiating Class Teachers (N Required)`) containing direct section appoint tiles (`KG A`, `KG B`, etc.), eliminating redundant multi-card clutter.
+- **Coordinator Purple Theme for AC Appoint Card**: The Officiating AC appointment card is styled strictly in Coordinator Purple (`border-purple-500/60 bg-purple-950/40 text-purple-200` with purple `[ Appoint ]` button), visibly distinguishing AC succession from Class Teacher duties.
+- **Designation-Free Full Teacher Name Overlay**: Removed role and designation subtitles from `TeacherNameOverlay.tsx`. The sliding acrylic window displays strictly the clean, full teacher name with zero layout shift.
 
 ### 3. What To Do On Your Very First Turn
 - If the user says **"Go"**, **"Yes"**, or tells you to proceed, **DO NOT ASK WHAT TO DO**. They are approving:

@@ -5,7 +5,6 @@ interface TeacherNameOverlayProps {
   abbr: string;
   fullName: string;
   className?: string;
-  roleSubtitle?: string;
 }
 
 /**
@@ -18,7 +17,6 @@ export const TeacherNameOverlay: React.FC<TeacherNameOverlayProps> = ({
   abbr,
   fullName,
   className = '',
-  roleSubtitle,
 }) => {
   const [isRevealed, setIsRevealed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -73,18 +71,11 @@ export const TeacherNameOverlay: React.FC<TeacherNameOverlayProps> = ({
             className="absolute left-0 -top-1.5 z-50 flex items-center gap-2.5 pl-2.5 pr-3.5 py-1.5 rounded-xl bg-slate-900/98 border border-slate-700/90 shadow-[0_14px_34px_rgba(0,0,0,0.85)] backdrop-blur-2xl whitespace-nowrap pointer-events-auto"
           >
             {/* Sliding Window Acrylic Grip Bar Accent */}
-            <span className="w-1 h-3.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50 flex-shrink-0" />
+            <span className="w-1 h-3 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50 flex-shrink-0" />
 
-            <div className="flex flex-col">
-              <span className="font-bold text-white text-sm tracking-tight leading-snug">
-                {fullName}
-              </span>
-              {roleSubtitle && (
-                <span className="text-[10px] text-slate-400 font-medium tracking-normal leading-tight">
-                  {roleSubtitle}
-                </span>
-              )}
-            </div>
+            <span className="font-bold text-white text-xs sm:text-sm tracking-tight leading-none">
+              {fullName}
+            </span>
           </motion.div>
         )}
       </AnimatePresence>

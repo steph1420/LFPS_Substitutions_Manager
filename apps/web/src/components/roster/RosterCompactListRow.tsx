@@ -63,7 +63,6 @@ export const RosterCompactListRow: React.FC<RosterCompactListRowProps> = ({
             abbr={teacher.abbr}
             fullName={teacher.fullName}
             className="font-bold text-white text-xs truncate"
-            roleSubtitle={teacher.role}
           />
         </div>
       </div>

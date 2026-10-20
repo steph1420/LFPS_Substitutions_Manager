@@ -55,6 +55,26 @@ export const SubstitutionsRegister: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [isOverviewCollapsed, setIsOverviewCollapsed] = React.useState(hideOverviewsByDefault);
   const [isBrainModalOpen, setIsBrainModalOpen] = React.useState(false);
+  const [isAppointDropdownOpen, setIsAppointDropdownOpen] = React.useState(false);
+  const appointDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  // Auto-dismiss appoint dropdown on outside interaction
+  React.useEffect(() => {
+    if (!isAppointDropdownOpen) return;
+
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      if (appointDropdownRef.current && !appointDropdownRef.current.contains(e.target as Node)) {
+        setIsAppointDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
+  }, [isAppointDropdownOpen]);
 
   const currentSchedule = schedule[selectedDay] || {};
 
@@ -121,6 +141,8 @@ export const SubstitutionsRegister: React.FC = () => {
 
     return result;
   }, [absences, selectedDay, directory, officiatingCT]);
+
+  const pendingAppointmentsCount = (offACResult.needsAppointment ? 1 : 0) + unappointedCTs.length;
 
   // Handle 1-Tap Auto Resolve for All Slots
   const handleAutoResolve = () => {
@@ -230,30 +252,105 @@ export const SubstitutionsRegister: React.FC = () => {
             {/* Substitutions Tab Undo / Redo Controls (FEAT-40) */}
             <UndoRedoControls tab="substitutions" />
 
-            {/* Stable Off. AC Prompt (UI-05: Non-shifting action in toolbar) */}
-            {offACResult.needsAppointment && (
+            {/* Clubbed Officiating Appointments Prompt (Dropdown when >1, single pill when 1) */}
+            {pendingAppointmentsCount === 1 && offACResult.needsAppointment && (
               <button
                 onClick={() => openOfficiatingModal({ type: 'AC' })}
-                className="w-fit flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 text-xs font-bold active:scale-95 transition-all cursor-pointer shadow-sm attention-pulse"
+                className="w-fit flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/50 text-purple-300 text-xs font-bold active:scale-95 transition-all cursor-pointer shadow-sm attention-pulse"
                 title="Both AC and AAC are absent today — designate Officiating AC"
               >
-                <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                <ShieldAlert className="w-3.5 h-3.5 text-purple-400" />
                 <span>Appoint Off. AC</span>
               </button>
             )}
 
-            {/* Stable Off. CT Prompts for absent Class Teachers */}
-            {unappointedCTs.map(({ teacher, section }) => (
+            {pendingAppointmentsCount === 1 && unappointedCTs.length === 1 && (
               <button
-                key={section}
-                onClick={() => openOfficiatingModal({ type: 'CT', section })}
+                onClick={() => openOfficiatingModal({ type: 'CT', section: unappointedCTs[0].section })}
                 className="w-fit flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 text-xs font-bold active:scale-95 transition-all cursor-pointer shadow-sm attention-pulse"
-                title={`Class Teacher ${teacher.abbr} is absent today — appoint Officiating CT for ${section}`}
+                title={`Class Teacher ${unappointedCTs[0].teacher.abbr} is absent today — appoint Officiating CT for ${unappointedCTs[0].section}`}
               >
                 <School className="w-3.5 h-3.5 text-amber-400" />
-                <span>Appoint Off. CT ({section})</span>
+                <span>Appoint Off. CT ({unappointedCTs[0].section})</span>
               </button>
-            ))}
+            )}
+
+            {pendingAppointmentsCount > 1 && (
+              <div className="relative" ref={appointDropdownRef}>
+                <button
+                  onClick={() => setIsAppointDropdownOpen((prev) => !prev)}
+                  className="w-fit flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-purple-500/20 via-amber-500/20 to-purple-500/20 hover:from-purple-500/30 hover:to-amber-500/30 border border-amber-500/50 text-amber-300 text-xs font-bold active:scale-95 transition-all cursor-pointer shadow-sm attention-pulse"
+                  title="Multiple officiating appointments required today — tap to select"
+                >
+                  <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Appoint Staff ({pendingAppointmentsCount})</span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-amber-400 transition-transform duration-200 ${
+                      isAppointDropdownOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+
+                <AnimatePresence>
+                  {isAppointDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 4, scale: 0.96 }}
+                      transition={SPRING_TRANSITIONS.snappy}
+                      className="absolute right-0 top-full mt-2 z-50 w-64 p-2 rounded-2xl bg-slate-900/98 border border-slate-700 shadow-2xl backdrop-blur-2xl space-y-1.5"
+                    >
+                      <div className="text-[10px] font-bold text-slate-400 px-2 py-0.5 uppercase tracking-wider">
+                        Required Appointments ({pendingAppointmentsCount})
+                      </div>
+
+                      {offACResult.needsAppointment && (
+                        <button
+                          onClick={() => {
+                            setIsAppointDropdownOpen(false);
+                            openOfficiatingModal({ type: 'AC' });
+                          }}
+                          className="w-full flex items-center justify-between p-2 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/40 text-purple-200 text-xs font-semibold transition-colors cursor-pointer text-left group"
+                        >
+                          <div className="flex items-center gap-2">
+                            <ShieldAlert className="w-3.5 h-3.5 text-purple-400" />
+                            <div>
+                              <div className="font-bold text-purple-200">Officiating AC</div>
+                              <div className="text-[10px] text-slate-400">Both AC & AAC absent</div>
+                            </div>
+                          </div>
+                          <span className="text-[10px] px-2 py-0.5 rounded-lg bg-purple-600 group-hover:bg-purple-500 text-white font-bold shadow-sm">
+                            Appoint
+                          </span>
+                        </button>
+                      )}
+
+                      {unappointedCTs.map(({ teacher, section }) => (
+                        <button
+                          key={section}
+                          onClick={() => {
+                            setIsAppointDropdownOpen(false);
+                            openOfficiatingModal({ type: 'CT', section });
+                          }}
+                          className="w-full flex items-center justify-between p-2 rounded-xl bg-amber-950/30 hover:bg-amber-900/40 border border-amber-500/40 text-amber-200 text-xs font-semibold transition-colors cursor-pointer text-left group"
+                        >
+                          <div className="flex items-center gap-2">
+                            <School className="w-3.5 h-3.5 text-amber-400" />
+                            <div>
+                              <div className="font-bold text-amber-200">Off. CT • {section}</div>
+                              <div className="text-[10px] text-slate-400">{teacher.abbr} absent</div>
+                            </div>
+                          </div>
+                          <span className="text-[10px] px-2 py-0.5 rounded-lg bg-amber-500 group-hover:bg-amber-400 text-slate-950 font-bold shadow-sm">
+                            Appoint
+                          </span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
 
             {uncoveredSlots.length > 0 && (
               <button
@@ -853,20 +950,48 @@ export const SubstitutionsRegister: React.FC = () => {
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+            {/* Pending AC Appointment Card (In Coordinator Purple) */}
             {offACResult.needsAppointment && (
-              <div className="bg-amber-950/40 border border-amber-500/60 rounded-xl p-3 flex items-center justify-between attention-pulse">
+              <div className="bg-purple-950/40 border border-purple-500/60 rounded-xl p-3 flex items-center justify-between attention-pulse">
                 <div>
                   <div className="flex items-center gap-1.5 mb-0.5">
-                    <span className="text-[10px] text-amber-400 font-bold uppercase">Officiating AC</span>
+                    <span className="text-[10px] text-purple-400 font-bold uppercase">Officiating AC</span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-semibold">
+                      Required
+                    </span>
+                  </div>
+                  <div className="font-bold text-purple-200 text-sm">Appointment Needed</div>
+                  <div className="text-[10px] text-slate-300">Both AC & AAC absent today</div>
+                </div>
+                <button
+                  onClick={() => openOfficiatingModal({ type: 'AC' })}
+                  className="px-2.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs active:scale-95 transition-all shadow-md shadow-purple-600/30 cursor-pointer"
+                >
+                  Appoint
+                </button>
+              </div>
+            )}
+
+            {/* Pending CT Appointment Card: Single Card if 1, Clubbed Card if >1 */}
+            {unappointedCTs.length === 1 && (
+              <div
+                key={`unappointed-${unappointedCTs[0].section}`}
+                className="bg-amber-950/40 border border-amber-500/60 rounded-xl p-3 flex items-center justify-between attention-pulse"
+              >
+                <div>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="text-[10px] text-amber-400 font-bold uppercase">Officiating CT • {unappointedCTs[0].section}</span>
                     <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">
                       Required
                     </span>
                   </div>
                   <div className="font-bold text-amber-200 text-sm">Appointment Needed</div>
-                  <div className="text-[10px] text-slate-300">Both AC & AAC absent today</div>
+                  <div className="text-[10px] text-slate-300">
+                    CT {unappointedCTs[0].teacher.abbr} absent today
+                  </div>
                 </div>
                 <button
-                  onClick={() => openOfficiatingModal({ type: 'AC' })}
+                  onClick={() => openOfficiatingModal({ type: 'CT', section: unappointedCTs[0].section })}
                   className="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs active:scale-95 transition-all shadow-sm cursor-pointer"
                 >
                   Appoint
@@ -874,32 +999,44 @@ export const SubstitutionsRegister: React.FC = () => {
               </div>
             )}
 
-            {/* Pending CT Appointment Cards for Absent Class Teachers */}
-            {unappointedCTs.map(({ teacher, section }) => (
-              <div
-                key={`unappointed-${section}`}
-                className="bg-amber-950/40 border border-amber-500/60 rounded-xl p-3 flex items-center justify-between attention-pulse"
-              >
-                <div>
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <span className="text-[10px] text-amber-400 font-bold uppercase">Officiating CT • {section}</span>
-                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">
-                      Required
-                    </span>
-                  </div>
-                  <div className="font-bold text-amber-200 text-sm">Appointment Needed</div>
-                  <div className="text-[10px] text-slate-300">
-                    CT {teacher.abbr} absent today
+            {unappointedCTs.length > 1 && (
+              <div className="bg-amber-950/40 border border-amber-500/60 rounded-xl p-3.5 flex flex-col justify-between gap-2.5 attention-pulse sm:col-span-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-[10px] text-amber-400 font-bold uppercase">Officiating Class Teachers</span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">
+                        {unappointedCTs.length} Classes Required
+                      </span>
+                    </div>
+                    <div className="font-bold text-amber-200 text-sm">Appointments Needed</div>
+                    <div className="text-[10px] text-slate-300">
+                      Multiple Class Teachers absent without designated temporary cover
+                    </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => openOfficiatingModal({ type: 'CT', section })}
-                  className="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs active:scale-95 transition-all shadow-sm cursor-pointer"
-                >
-                  Appoint
-                </button>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 pt-1 border-t border-amber-500/20">
+                  {unappointedCTs.map(({ teacher, section }) => (
+                    <div
+                      key={section}
+                      className="flex items-center justify-between p-2 rounded-lg bg-slate-900/90 border border-amber-500/30 text-xs"
+                    >
+                      <div className="truncate mr-1.5">
+                        <div className="font-bold text-amber-300 text-xs">{section}</div>
+                        <div className="text-[10px] text-slate-400 truncate">{teacher.abbr}</div>
+                      </div>
+                      <button
+                        onClick={() => openOfficiatingModal({ type: 'CT', section })}
+                        className="px-2 py-1 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[10px] active:scale-95 transition-all shadow-sm cursor-pointer flex-shrink-0"
+                      >
+                        Appoint
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
+            )}
 
             {offACResult.isManuallyAssigned && effectiveAC && (
               <div className="bg-slate-900/90 border border-purple-500/40 rounded-xl p-3 flex items-center justify-between">

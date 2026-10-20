@@ -58,7 +58,6 @@ export const RosterCompactCard: React.FC<RosterCompactCardProps> = ({
             abbr={teacher.abbr}
             fullName={teacher.fullName}
             className="font-bold text-white text-xs truncate"
-            roleSubtitle={isCT ? teacher.primaryClass : teacher.role}
           />
           <div className="text-[10px] text-slate-400 truncate">
             {isCT ? teacher.primaryClass : teacher.role}

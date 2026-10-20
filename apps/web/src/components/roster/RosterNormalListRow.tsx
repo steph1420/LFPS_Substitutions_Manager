@@ -93,7 +93,6 @@ export const RosterNormalListRow: React.FC<RosterNormalListRowProps> = ({
               abbr={teacher.abbr}
               fullName={teacher.fullName}
               className="font-bold text-white text-sm"
-              roleSubtitle={teacher.role}
             />
             {teacher.primaryClass && (
               <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-200 border border-amber-500/30 font-bold">

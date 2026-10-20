@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [v2.0.0-alpha.1] - 2026-10-18
 
 ### Added
+- **Clubbed Officiating Appointments, Coordinator Purple AC Appoint Card & Clean Name Overlays (Job Bundle 32)**:
+  - **Clubbed Officiating Appointment Actions**: In the top action toolbar, multiple pending officiating appointments (AC and/or multiple CTs) are consolidated into a single sleek dropdown button (`[ 🛡️ Appoint Staff (X) ▾ ]`) with an auto-dismissing selection menu. When only 1 appointment is needed, renders a single direct pill button.
+  - **Consolidated Officiating CT Cards in Section 3**: In Section 3 (`OFFICIATING STAFF`), multiple unappointed CT sections are clubbed into a single unified card (`Officiating Class Teachers (N Required)`) containing direct section appoint tiles (`KG A`, `KG B`, etc.), eliminating redundant multi-card clutter.
+  - **Coordinator Purple Theme for AC Appoint Card**: The Officiating AC appointment card is styled strictly in Coordinator Purple (`border-purple-500/60 bg-purple-950/40 text-purple-200` with purple `[ Appoint ]` button), visibly distinguishing AC succession from Class Teacher duties.
+  - **Designation-Free Full Teacher Name Overlay**: Removed role and designation subtitles from `TeacherNameOverlay.tsx`. The sliding acrylic window displays strictly the clean, full teacher name with zero layout shift.
 - **Moral Science Nomenclature, Auto-Resolve Period Normalization, Officiating CT Appointment Cards & Column Header Sorter (Job Bundle 31)**:
   - **Canonical Subject Nomenclature (`M. SC.` = Moral Science)**: Defined `SUBJECT_FULL_NAMES` dictionary and `getSubjectFullName()` in `@lfps/core` with vitest test coverage. Guaranteed that "M. SC." is strictly Moral Science (never Mental). Integrated into Brain Studio and subject selection dropdowns.
   - **Auto-Resolve Count & Misleading Period Stamp Resolution**: Completely removed redundant and misleading `⚡ Auto-Resolve CT Classes (X)` button that caused confusion when 1 CT had 4 uncovered teaching slots. Stripped `• CT` stamp and amber borders from uncovered duty cards; all slots display clean `{period} Period` cards under unified `Auto-Resolve (X Slots)`.
