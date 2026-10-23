@@ -13,7 +13,6 @@ import {
   DEFAULT_AUTORESOLVE_POLICY,
   DEFAULT_STAFF_DIRECTORY,
   DEFAULT_MASTER_SCHEDULE,
-  UserRole,
   AppNotification,
 } from '@lfps/core';
 import {
@@ -31,10 +30,19 @@ import {
   readAdminLockout,
   recordFailedAdminAttempt,
   getConfiguredAdminHash,
-  hasAdminSession,
+  readAdminSession,
   startAdminSession,
   verifyAdminPasscode,
 } from '../lib/adminGate.js';
+import {
+  adminOfficeToday,
+  readEditingOverride,
+  resolveAccess,
+  sameAccess,
+  writeEditingOverride,
+  type Access,
+  type AccessInputs,
+} from '../lib/access.js';
 
 export interface ContextMenuTarget {
   x: number;
@@ -216,7 +224,12 @@ interface TimetableState {
 
   // Authentication, RBAC & Officiating (SEC-01)
   loggedInTeacher: string | null;
-  operatingRole: UserRole;
+  /** Identity holding this tab's admin session (entered the passcode at login). */
+  adminIdentity: string | null;
+  /** Dev Options → "Edit without login" (this device only; lib/access.ts). */
+  editingOverride: boolean;
+  /** Derived from resolveAccess() after every change — read-only for components. */
+  access: Access;
   officiatingAC: Record<DayOfWeek, string | null>;
   officiatingCT: Record<DayOfWeek, Record<string, string>>;
 
@@ -319,13 +332,18 @@ interface TimetableState {
   // FEAT-31: Co-teacher per-period release
   releaseCoTeacher: (period: PeriodId, teacherName: string) => void;
 
-  /** Identity selection only (no credential): enables a teacher's own accept/dispute. */
-  login: (teacherName: string) => void;
-  /** Clears the selected identity AND locks admin. */
+  /**
+   * Identity selection for staff without an admin office (no credential): enables a
+   * teacher's own accept/dispute. Admin office holders (Principal, AC, AAC, today's
+   * Off. AC) are refused with needsPasscode — they sign in with loginWithPasscode.
+   */
+  login: (identity: string) => { ok: boolean; needsPasscode?: boolean };
+  /** Admin login: passcode (SHA-256 vs VITE_ADMIN_PASSCODE_SHA256, lockout) → admin session for `identity`. */
+  loginWithPasscode: (identity: string, passcode: string) => Promise<AdminLoginResult>;
+  /** Clears the identity and ends the admin session. */
   logout: () => void;
-  /** Admin unlock via passcode (SHA-256 vs VITE_ADMIN_PASSCODE_SHA256). See lib/adminGate.ts. */
-  unlockAdmin: (passcode: string) => Promise<{ ok: boolean; reason?: string; lockedUntil?: number | null }>;
-  lockAdmin: () => void;
+  /** Enabling needs canEdit (Dev Options are admin-gated); disabling is always allowed. */
+  setEditingOverride: (on: boolean) => void;
   /** Consecutive wrong passcode attempts (mirrors lfps_admin_lockout_v1). */
   adminFailedAttempts: number;
   /** Epoch ms until which unlock attempts are refused (escalating waits). */
@@ -429,9 +447,18 @@ const initialPolicy = loadStoredPolicy();
 // Apply initial theme to document DOM
 applyThemeToDom(initialPrefs.currentTheme ?? 'dark');
 
-const ADMIN_REQUIRED = 'Admin access required (Settings → Admin Access).';
-/** Admin-only actions re-check here, not just in the UI (defence in depth; still client-side). */
-const isAdmin = (state: { operatingRole: UserRole }) => state.operatingRole === 'ADMIN';
+const ADMIN_REQUIRED = 'Admin login required (Staff Login).';
+/**
+ * Admin-only actions re-check here, not just in the UI (defence in depth; still client-side).
+ * Same helper as the UI: lib/access.ts resolveAccess().
+ */
+const isAdmin = (state: AccessInputs) => resolveAccess(state).canEdit;
+
+export interface AdminLoginResult {
+  ok: boolean;
+  reason?: string;
+  lockedUntil?: number | null;
+}
 
 const getInitialRosterMode = (saved?: RosterViewMode): RosterViewMode => {
   if (saved === 'list' || saved === 'compact-list') return 'compact-list';
@@ -478,9 +505,12 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   substitutions: initialOperational.substitutions,
   displaced: initialOperational.displaced,
 
-  loggedInTeacher: null,
   // SEC-01: never default to ADMIN. Front desk (GUEST) can do all day-to-day work.
-  operatingRole: hasAdminSession() ? 'ADMIN' : 'GUEST',
+  // A same-tab admin session restores its identity on reload (re-checked by resolveAccess).
+  loggedInTeacher: readAdminSession(),
+  adminIdentity: readAdminSession(),
+  editingOverride: readEditingOverride(),
+  access: { role: 'GUEST', isAdmin: false, office: null, canEdit: false, editingUnlocked: false },
   adminFailedAttempts: readAdminLockout().failures,
   adminLockedUntil: readAdminLockout().lockedUntil,
   isNotificationCenterOpen: false,
@@ -1173,17 +1203,26 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       };
     }),
 
-  // Choosing a name never grants admin (it used to for two names, with no credential).
-  login: (teacherName) =>
-    set((state) => ({
-      loggedInTeacher: teacherName,
-      operatingRole: state.operatingRole === 'ADMIN' ? 'ADMIN' : 'TEACHER',
-    })),
+  // Choosing a name never grants admin; admin office holders must use the passcode.
+  login: (identity) => {
+    if (adminOfficeToday(identity, get())) return { ok: false, needsPasscode: true };
+    endAdminSession();
+    set({ loggedInTeacher: identity, adminIdentity: null });
+    return { ok: true };
+  },
   logout: () => {
     endAdminSession();
-    set({ loggedInTeacher: null, operatingRole: 'GUEST' });
+    set({ loggedInTeacher: null, adminIdentity: null });
   },
-  unlockAdmin: async (passcode) => {
+  setEditingOverride: (on) => {
+    if (on && !isAdmin(get())) return;
+    writeEditingOverride(on);
+    set({ editingOverride: on });
+  },
+  loginWithPasscode: async (identity, passcode) => {
+    if (!adminOfficeToday(identity, get())) {
+      return { ok: false, reason: 'Not an admin today.' };
+    }
     const hash = getConfiguredAdminHash();
     if (!hash) {
       return { ok: false, reason: 'Admin passcode is not configured for this build. See docs/ADMIN_ACCESS.md.' };
@@ -1222,16 +1261,9 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         : { ok: false, reason: 'Incorrect passcode.', lockedUntil: null };
     }
     clearAdminLockout();
-    startAdminSession(hash);
-    set({ operatingRole: 'ADMIN', adminFailedAttempts: 0, adminLockedUntil: null });
+    startAdminSession(hash, identity);
+    set({ loggedInTeacher: identity, adminIdentity: identity, adminFailedAttempts: 0, adminLockedUntil: null });
     return { ok: true, lockedUntil: null };
-  },
-  lockAdmin: () => {
-    endAdminSession();
-    set((state) => ({
-      operatingRole: state.loggedInTeacher ? 'TEACHER' : 'GUEST',
-      isDeveloperMode: false,
-    }));
   },
 
   acceptSubstitution: (id) =>
@@ -1541,6 +1573,18 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         : {}
     ),
 }));
+
+// Bundle 34a: keep the derived `access` in step with its inputs (one helper for every gate),
+// and close Developer Options the moment editing is no longer allowed.
+const refreshAccess = (state: TimetableState) => {
+  const next = resolveAccess(state);
+  const patch: Partial<TimetableState> = {};
+  if (!sameAccess(next, state.access)) patch.access = next;
+  if (!next.canEdit && state.isDeveloperMode) patch.isDeveloperMode = false;
+  if (Object.keys(patch).length) useTimetableStore.setState(patch);
+};
+refreshAccess(useTimetableStore.getState());
+useTimetableStore.subscribe((state) => refreshAccess(state));
 
 // FEAT-62: reload-safe local persistence of operational state (per calendar date).
 if (operationalStorage && typeof window !== 'undefined') {

@@ -16,7 +16,9 @@
  */
 
 const SHA256_HEX = /^[0-9a-f]{64}$/;
-export const ADMIN_SESSION_KEY = 'lfps_admin_session_v1';
+export const ADMIN_SESSION_KEY = 'lfps_admin_session_v2';
+/** Pre-34a sessions (no identity). Ignored and cleared on logout. */
+export const LEGACY_ADMIN_SESSION_KEY = 'lfps_admin_session_v1';
 export const ADMIN_LOCKOUT_KEY = 'lfps_admin_lockout_v1';
 
 /** The admin passcode is exactly six digits (entered on a numeric keypad). */
@@ -164,15 +166,30 @@ function sessionStore(): KeyValue | null {
 /**
  * The unlock lasts for this browser tab only (sessionStorage) and only while the
  * configured hash is unchanged — rotating the passcode signs every device out.
+ * Since Bundle 34a a session belongs to one identity (the admin office holder who
+ * entered the passcode), stored as `{ hash, identity }`; pre-34a (v1) sessions are ignored.
  */
-export function hasAdminSession(configuredHash: string | null = getConfiguredAdminHash()): boolean {
-  if (!configuredHash) return false;
-  return sessionStore()?.getItem(ADMIN_SESSION_KEY) === configuredHash;
+export function readAdminSession(configuredHash: string | null = getConfiguredAdminHash()): string | null {
+  if (!configuredHash) return null;
+  try {
+    const raw = sessionStore()?.getItem(ADMIN_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { hash?: unknown; identity?: unknown };
+    return parsed.hash === configuredHash && typeof parsed.identity === 'string' && parsed.identity
+      ? parsed.identity
+      : null;
+  } catch {
+    return null;
+  }
 }
 
-export function startAdminSession(configuredHash: string): void {
+export function hasAdminSession(configuredHash: string | null = getConfiguredAdminHash()): boolean {
+  return readAdminSession(configuredHash) !== null;
+}
+
+export function startAdminSession(configuredHash: string, identity: string): void {
   try {
-    sessionStore()?.setItem(ADMIN_SESSION_KEY, configuredHash);
+    sessionStore()?.setItem(ADMIN_SESSION_KEY, JSON.stringify({ hash: configuredHash, identity }));
   } catch {
     // Storage unavailable: admin stays unlocked in memory for this page only.
   }
@@ -181,6 +198,7 @@ export function startAdminSession(configuredHash: string): void {
 export function endAdminSession(): void {
   try {
     sessionStore()?.removeItem(ADMIN_SESSION_KEY);
+    sessionStore()?.removeItem(LEGACY_ADMIN_SESSION_KEY);
   } catch {
     // ignore
   }

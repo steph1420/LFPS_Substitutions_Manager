@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
 import { DayOfWeek } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
+import { usePermissions } from './PermissionGuard.js';
 import {
   User,
   LogOut,
@@ -41,9 +42,8 @@ export const Header: React.FC = () => {
     notifications,
     substitutions,
     openNotificationCenter,
-    operatingRole,
   } = useTimetableStore();
-  const isAdmin = operatingRole === 'ADMIN';
+  const { isAdmin, editingUnlocked } = usePermissions();
 
   const unreadNotifCount = notifications.filter((n) => !n.isRead).length;
   const disputedSubCount = substitutions.filter(
@@ -316,9 +316,18 @@ export const Header: React.FC = () => {
                   {isAdmin && (
                     <span
                       className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                      title="Admin access unlocked in this tab (lock it in Settings)"
+                      title="Signed in as admin in this tab (Log Out ends it)"
                     >
                       Admin
+                    </span>
+                  )}
+                  {editingUnlocked && (
+                    <span
+                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 whitespace-nowrap"
+                      title="Dev Options: editing allowed on this device without login (turn off in Settings)"
+                      data-testid="editing-unlocked-badge"
+                    >
+                      Editing unlocked
                     </span>
                   )}
                 </h1>
