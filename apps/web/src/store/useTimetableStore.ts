@@ -11,10 +11,9 @@ import {
   SubAvailabilityStatus,
   AutoResolvePolicyConfig,
   DEFAULT_AUTORESOLVE_POLICY,
-  DEFAULT_STAFF_DIRECTORY,
-  DEFAULT_MASTER_SCHEDULE,
   AppNotification,
 } from '@lfps/core';
+import { adoptStoredReference, getBaseDirectory, getBaseSchedule, initReference, REFERENCE_KEY } from '../sync/reference.js';
 import {
   getBrowserStorage,
   installOperationalPersistence,
@@ -441,7 +440,9 @@ function loadStoredPolicy(): AutoResolvePolicyConfig {
 
 const initialPrefs = loadStoredPreferences();
 const operationalStorage = getBrowserStorage();
-const initialOperational = loadInitialOperationalState(operationalStorage, DEFAULT_MASTER_SCHEDULE);
+// FEAT-62 part 3: the Sheet's reference data (cached) is the base; the bundled seed otherwise.
+initReference(operationalStorage);
+const initialOperational = loadInitialOperationalState(operationalStorage, getBaseSchedule());
 const initialPolicy = loadStoredPolicy();
 
 // Apply initial theme to document DOM
@@ -495,7 +496,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   routineSortBy: initialPrefs.routineSortBy ?? 'role',
   autoResolvePolicy: initialPolicy,
 
-  directory: DEFAULT_STAFF_DIRECTORY,
+  directory: getBaseDirectory(),
   schedule: initialOperational.schedule,
 
   activeWeekStart: initialOperational.activeWeekStart,
@@ -1526,7 +1527,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
       const newSchedule = {
         ...state.schedule,
-        [day]: DEFAULT_MASTER_SCHEDULE[day] || {},
+        [day]: getBaseSchedule()[day] || {},
       };
 
       const newAbsences = state.absences.filter((a) => a.day !== day);
@@ -1590,9 +1591,17 @@ useTimetableStore.subscribe((state) => refreshAccess(state));
 if (operationalStorage && typeof window !== 'undefined') {
   installOperationalPersistence(useTimetableStore, {
     storage: operationalStorage,
-    defaults: DEFAULT_MASTER_SCHEDULE,
+    defaults: getBaseSchedule,
     appVersion: APP_VERSION,
     target: window,
     rolloverCheckMs: 60_000,
+  });
+  // FEAT-62 part 3: another tab applied newer Sheet data — rebase onto it here too.
+  window.addEventListener('storage', (e) => {
+    if (e.key !== REFERENCE_KEY) return;
+    adoptStoredReference({
+      getState: () => useTimetableStore.getState(),
+      setState: (patch) => useTimetableStore.setState(patch as Partial<TimetableState>),
+    });
   });
 }

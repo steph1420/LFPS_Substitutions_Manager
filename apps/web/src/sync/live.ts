@@ -4,12 +4,13 @@
  * ref count plus a short grace period keeps React StrictMode's mount → unmount → mount
  * from opening a second socket.
  */
-import { DEFAULT_MASTER_SCHEDULE } from '@lfps/core';
 import { APP_VERSION } from '../lib/buildInfo.js';
 import { getBrowserStorage, type KeyValueStorage } from '../store/persistence.js';
 import { useTimetableStore } from '../store/useTimetableStore.js';
 import { createLiveSyncClient, type LiveSyncClient } from './client.js';
 import { getDeviceId } from './engine.js';
+import { applySheetSnapshot, getBaseSchedule } from './reference.js';
+import type { SheetSnapshot } from './sheetData.js';
 
 export const WS_BASE_URL: string = import.meta.env.VITE_WS_URL || 'ws://localhost:8080';
 export const API_BASE_URL: string = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -36,7 +37,17 @@ export function startLiveSync(): () => void {
     const session = sessionStore();
     client = createLiveSyncClient({
       store: useTimetableStore,
-      defaults: DEFAULT_MASTER_SCHEDULE,
+      defaults: getBaseSchedule,
+      onSheetSnapshot: (snap) => {
+        const outcome = applySheetSnapshot(
+          {
+            getState: () => useTimetableStore.getState(),
+            setState: (patch) => useTimetableStore.setState(patch as never),
+          },
+          snap as unknown as SheetSnapshot,
+        );
+        if (outcome === 'applied') console.info('[LiveSync] Sheet data applied');
+      },
       url: `${WS_BASE_URL}/api/v1/ws`,
       appVersion: APP_VERSION,
       deviceId: getDeviceId(getBrowserStorage(), session),

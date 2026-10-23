@@ -37,7 +37,10 @@ interface SocketLike {
 
 export interface LiveSyncOptions<S extends SyncStoreState> {
   store: SyncStoreApi<S>;
-  defaults: MasterSchedule;
+  /** Base routine sched entities are diffed against; a getter follows Sheet updates. */
+  defaults: MasterSchedule | (() => MasterSchedule);
+  /** Read-only Sheet data from the relay (FEAT-62 part 3); applied by the caller. */
+  onSheetSnapshot?: (snapshot: Record<string, unknown>) => void;
   url: string;
   appVersion: string;
   deviceId: string;
@@ -91,7 +94,8 @@ export function takeBatch(pending: Entity[], maxCount: number, maxBytes: number)
 }
 
 export function createLiveSyncClient<S extends SyncStoreState>(opts: LiveSyncOptions<S>): LiveSyncClient {
-  const { store, defaults, url, appVersion, deviceId } = opts;
+  const { store, url, appVersion, deviceId } = opts;
+  const base = (): MasterSchedule => (typeof opts.defaults === 'function' ? opts.defaults() : opts.defaults);
   const now = opts.now ?? Date.now;
   const setStatus = opts.setStatus ?? ((p: Partial<SyncStatus>) => useSyncStatus.setState(p));
   const createSocket = opts.createSocket ?? ((u: string) => new WebSocket(u) as unknown as SocketLike);
@@ -133,12 +137,13 @@ export function createLiveSyncClient<S extends SyncStoreState>(opts: LiveSyncOpt
   let diffTimer: ReturnType<typeof setTimeout> | null = null;
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
   let inflight: { id: string; timer: ReturnType<typeof setTimeout> } | null = null;
+  let retryFlushTimer: ReturnType<typeof setTimeout> | null = null;
   let batchSeq = 0;
   let unsubscribe: (() => void) | null = null;
 
   const local = () => {
     const s = store.getState();
-    return extractEntities(s, s.activeWeekStart, defaults);
+    return extractEntities(s, s.activeWeekStart, base());
   };
   const updatePending = () => setStatus({ pending: engine.pendingCount() });
 
@@ -149,7 +154,7 @@ export function createLiveSyncClient<S extends SyncStoreState>(opts: LiveSyncOpt
   const applyChanges = (changes: EntityChanges) => {
     if (!Object.keys(changes).length) return;
     const s = store.getState();
-    const patch = applyEntityChanges(s, s.activeWeekStart, defaults, changes);
+    const patch = applyEntityChanges(s, s.activeWeekStart, base(), changes);
     if (!Object.keys(patch).length) return;
     applying = true;
     try {
@@ -269,11 +274,31 @@ export function createLiveSyncClient<S extends SyncStoreState>(opts: LiveSyncOpt
           hiddenTabs: Number(payload.hiddenTabs) || 0,
         };
         setStatus({ sheets: summary, sheetsState: 'ok' });
+        if (opts.onSheetSnapshot) {
+          diffNow(); // pending edits are captured against the old base first
+          try {
+            opts.onSheetSnapshot(payload);
+          } catch (err) {
+            log.warn(`[LiveSync] Sheet data not applied: ${(err as Error).message}`);
+          }
+          diffNow(); // redundant overrides become tombstones; everything else is unchanged
+          flush(); // the first diffNow() cancelled the pending diff timer: send what it queued
+        }
         break;
       }
       case 'ERROR':
         log.warn(`[LiveSync] Relay error: ${String(payload.reason)}`);
-        if (inflight && payload.batchId === inflight.id) clearInflight();
+        if (inflight && payload.batchId === inflight.id) {
+          clearInflight();
+          // "hydrating": the relay is reloading Subs after a restart — the batch stays in
+          // the outbox and is sent again shortly.
+          if (payload.reason === 'hydrating' && !retryFlushTimer) {
+            retryFlushTimer = setTimeout(() => {
+              retryFlushTimer = null;
+              flush();
+            }, 2000);
+          }
+        }
         break;
       default:
         break;
@@ -366,6 +391,8 @@ export function createLiveSyncClient<S extends SyncStoreState>(opts: LiveSyncOpt
       opts.target?.removeEventListener('focus', onVisible);
       if (retryTimer) clearTimeout(retryTimer);
       retryTimer = null;
+      if (retryFlushTimer) clearTimeout(retryFlushTimer);
+      retryFlushTimer = null;
       clearWake();
       clearInflight();
       const ws = socket;

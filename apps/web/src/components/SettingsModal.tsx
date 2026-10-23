@@ -35,6 +35,7 @@ import { AddToHomeScreenModal } from './AddToHomeScreenModal.js';
 import { AdminAccessPanel } from './AdminAccessPanel.js';
 import { usePermissions } from './PermissionGuard.js';
 import { BUILD_LABEL, BUILD_TIME } from '../lib/buildInfo.js';
+import { useReferenceInfo } from '../sync/reference.js';
 
 interface ThemeOption {
   id: ThemeId;
@@ -140,6 +141,10 @@ const THEME_OPTIONS: ThemeOption[] = [
 
 export const SettingsModal: React.FC = () => {
   const sync = useLiveSync();
+  const reference = useReferenceInfo();
+  const referenceTime = reference.fetchedAt
+    ? new Date(reference.fetchedAt).toLocaleString(undefined, { timeZone: SCHOOL_TIME_ZONE, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+    : null;
   const {
     isSettingsOpen,
     closeSettings,
@@ -800,6 +805,23 @@ export const SettingsModal: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* FEAT-62 part 3: what the Sheet mapping used and skipped (no personal data) */}
+                    <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-[10px] text-slate-400">
+                      <div className="font-semibold text-slate-200 text-xs">Sheet mapping</div>
+                      {reference.source === 'sheet' ? (
+                        <>
+                          <div>
+                            {reference.staff} staff · {reference.routineTeachers} routines · {reference.unmappedTabs.length} tabs unused
+                          </div>
+                          {reference.issues.map((i) => (
+                            <div key={i} className="text-amber-400/90">{i}</div>
+                          ))}
+                        </>
+                      ) : (
+                        <div>Bundled seed in use</div>
+                      )}
+                    </div>
+
                     {/* Bundle 34a: device-local editing override (lib/access.ts). Never synced. */}
                     <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-900/90 border border-amber-500/30">
                       <div>
@@ -1030,6 +1052,16 @@ export const SettingsModal: React.FC = () => {
                   </span>
                 )}
               </button>
+              {/* FEAT-62 part 3: which reference data this device uses (App_Meta data_version) */}
+              <div
+                className="px-3 -mt-1 flex items-center justify-between text-[10px] text-slate-500"
+                data-testid="sheet-data-version"
+              >
+                <span>{reference.source === 'sheet' ? 'Sheet data' : 'Bundled data'}</span>
+                <span className="font-mono" title={reference.hash ?? undefined}>
+                  {reference.source === 'sheet' ? `${(reference.hash ?? '').slice(0, 7)} · ${referenceTime}` : 'No Sheet yet'}
+                </span>
+              </div>
             </div>
           </motion.div>
         </div>

@@ -24,10 +24,15 @@
  *     lacks or holds older (this is how a restarted, empty relay is refilled).
  *   • A new school week starts a fresh meta.
  *
+ *   • Deletions are tombstones (v = null) with their own (ts, by). In sheets mode the relay
+ *     reloads substitutions and their tombstones from the Subs tab before it lets devices
+ *     in (Bundle 35a), so a newer tombstone in HYDRATE removes a stale local copy and
+ *     drops it from the outbox; only an edit made after the deletion wins.
+ *
  * Not covered (documented in docs/SAS.md §6.3): undo/redo history is not rewritten for
- * remote changes (undo restores this device's snapshot and syncs that as a new edit),
- * and a relay restart forgets deletions, so a long-offline device may re-publish an
- * entity someone else deleted.
+ * remote changes (undo restores this device's snapshot and syncs that as a new edit).
+ * In relay-only mode (no Sheet) a relay restart still forgets non-sub entities and their
+ * deletions; in sheets mode only substitutions are reloaded from Subs.
  */
 import type { KeyValueStorage } from '../store/persistence.js';
 import { stableStringify, type EntityChanges, type EntityMap } from './entities.js';

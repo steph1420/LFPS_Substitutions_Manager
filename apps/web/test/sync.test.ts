@@ -412,3 +412,94 @@ describe('sync batching', () => {
     expect(takeBatch([], 500, 1024)).toEqual([]);
   });
 });
+
+describe('live sync client: Sheet data (FEAT-62 part 3)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
+    vi.setSystemTime(new Date(2026, 9, 21, 9, 0));
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('SHEETS_SNAPSHOT rebases onto the new base without losing an in-progress edit', async () => {
+    const relay = new FakeRelay();
+    const sockets: FakeSocket[] = [];
+    let base = defaults;
+    const store = createStore<SyncStoreState>(() => ({ ...emptySlice(), activeWeekStart: WEEK }));
+    const { period, teacher } = firstCell('TUE');
+    const other = Object.keys((defaults.TUE as never as Record<string, Record<string, string>>)[period])[1];
+    const client = createLiveSyncClient({
+      store,
+      defaults: () => base,
+      url: 'ws://relay',
+      appVersion: 'test',
+      deviceId: 'dA',
+      metaStorage: new MemoryStorage(),
+      createSocket: () => {
+        const s = new FakeSocket(relay);
+        sockets.push(s);
+        return s;
+      },
+      setStatus: () => {},
+      diffDelayMs: 10,
+      log: { info: () => {}, warn: () => {} },
+      onSheetSnapshot: () => {
+        // what reference.applySheetSnapshot does: new base first, then rebase the store
+        const next = JSON.parse(JSON.stringify(defaults));
+        next.TUE[period][teacher] = 'SHEET KG A';
+        next.TUE[period][other] = 'SHEET KG B';
+        const s = store.getState();
+        const old = base;
+        base = next;
+        const sch = { ...s.schedule };
+        for (const d of SCHOOL_DAYS) {
+          const day = JSON.parse(JSON.stringify(next[d]));
+          for (const [p, byT] of Object.entries(s.schedule[d] as Record<string, Record<string, string>>))
+            for (const [t, v] of Object.entries(byT)) if ((old[d] as never as Record<string, Record<string, string>>)[p]?.[t] !== v) (day[p] ??= {})[t] = v;
+          sch[d] = day;
+        }
+        store.setState({ schedule: sch });
+      },
+    });
+    client.start();
+    await settle();
+    // an edit, still inside the diff delay, when the Sheet data arrives
+    const s = store.getState();
+    store.setState({ schedule: { ...s.schedule, TUE: { ...s.schedule.TUE, [period]: { ...(s.schedule.TUE as never)[period], [teacher]: 'MINE' } } } });
+    sockets[0].emit('SHEETS_SNAPSHOT', { hash: 'h1', fetchedAt: 1, tabs: [] });
+    await settle();
+    const cell = (k: string) => (store.getState().schedule.TUE as never as Record<string, Record<string, string>>)[period][k];
+    expect(cell(teacher)).toBe('MINE');
+    expect(cell(other)).toBe('SHEET KG B');
+    const sched = [...relay.entities.values()].filter((e) => e.k.startsWith('sched|'));
+    expect(sched.map((e) => e.v)).toEqual(['MINE']); // only the real edit was synced
+    client.stop();
+  });
+
+  it('a batch refused while the relay is hydrating is sent again', async () => {
+    const relay = new FakeRelay();
+    const sockets: FakeSocket[] = [];
+    const A = makeDevice(relay, 'dA', sockets);
+    A.client.start();
+    await settle();
+    const sock = sockets[0];
+    const realSend = sock.send.bind(sock);
+    let refused = 0;
+    sock.send = (data: string) => {
+      const msg = JSON.parse(data);
+      if (msg.type === 'STATE_MUTATION' && refused === 0) {
+        refused++;
+        sock.sent.push(msg);
+        sock.emit('ERROR', { reason: 'hydrating', batchId: msg.payload.batchId });
+        return;
+      }
+      realSend(data);
+    };
+    A.store.setState({ officiatingAC: { ...A.store.getState().officiatingAC, THU: 'Mr. X' } });
+    await settle();
+    expect(refused).toBe(1);
+    expect(relay.entities.get('oac|2026-10-22')).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(2100);
+    expect(relay.entities.get('oac|2026-10-22')!.v).toBe('Mr. X');
+    A.client.stop();
+  });
+});
