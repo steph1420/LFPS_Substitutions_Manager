@@ -164,6 +164,18 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] Teacher identity for self-service actions (accept/dispute) once identity matters.
   - [ ] Keep the passcode/secret only in Render environment variables, never in the repo.
 
+### FEAT-68: Admin Hierarchy at Staff Login + "Edit without login" Dev Override
+- **Status**: 🟢 Done on `bundle/34a` (Job Bundle 34a, not shipped; ships as 2.0.0-alpha.3 with the next release, see VERSIONING §2.5).
+- **Reported** (owner 2026-10-24): *"The principal, the academic coordinator, the asst. academic coordinator and the officiating academic coordinator are all admins. So logging them in should require passcode and enable editing. But add dev opt: Enable editing without logging in."*
+- **Delivered**:
+  - [x] `@lfps/core` `adminOfficeFor()`: PRINCIPAL / AC / AAC / OFF_AC (Off. AC only on the day the appointment is in force). `StaffRole` gains `'Principal'`.
+  - [x] Staff Login: admin offices are tagged and continue to the 6-digit keypad (same lockout); success = admin session for that identity. Others are identified at a tap. Logout or switching name ends admin.
+  - [x] Principal by designation: no Principal exists in the seed or the Sheet, so no name was invented. A future Staff Directory row with Role `Principal` takes over automatically.
+  - [x] The standalone Settings keypad is folded into Staff Login; Settings → Admin Access is status + Log Out.
+  - [x] Dev Options → "Edit without login": device-local `localStorage`, never synced, "Editing unlocked" header badge, Turn off in Settings.
+  - [x] One permission helper (`lib/access.ts` `resolveAccess`) behind every gate. Tests: core 5, web access 19.
+- **Related**: Developer Options (and so this override) stay admin-gated until **SEC-03** (separate dev passcode, deferred). **FEAT-67** (lockout settings) is still deferred. Real enforcement is SEC-02.
+
 ### FEAT-67: Admin Lockout Penalty Settings in Developer Options
 - **Status**: ⚪ Deferred (owner 2026-10-24: "we'll add later"). Not scheduled.
 - **Ask**: let the owner set the admin-passcode lockout penalty from Developer Options instead of a code change.
@@ -279,9 +291,8 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - **Seen**: 2026-10-24 (IST), during the v2.0.0-alpha.2 release window. The owner's cron-job.org uptime job pinging `/api/v1/health` reported "Failed (output too large)".
 - **Now**: `GET /api/v1/health` returns 200 JSON, about 148 bytes (`version` 2.0.0-alpha.2, `timeZone` Asia/Kolkata). The new server is live.
 - **Likely cause (unconfirmed)**: while Render was redeploying or cold-starting, Render, not our relay, answered with its own large HTML page (an interstitial or error page). cron-job.org reads at most **64 KB** of a response and fails the run if a response is bigger ([cron-job.org FAQ](https://cron-job.org/en/faq/), [blog](https://blog.cron-job.org/service/2021/12/01/errors-explained-output-too-large.html)). Our JSON is far below that.
-- **Recommendation (owner, in the cron-job.org job settings)**:
-  - Preferred: set the request method to **HEAD** (`/api/v1/health` supports it), so no body is downloaded and success depends only on the status code.
-  - Also: turn off saving responses in the job history if desired. On its own this may not avoid the limit, because cron-job.org applies it while reading.
+- **Owner update (2026-10-24):** saving responses was **already off** on the job, so that setting is not the cause and not the fix.
+- **Fix (owner, in cron-job.org)**: switch the job's request method to **HEAD**: cron-job.org → Cronjobs → the job → **Edit** → **Advanced** → **Request method** → `HEAD` → Save (`/api/v1/health` answers HEAD with 200 and no body). With HEAD no body is downloaded, so the 64 KB output limit can't trip; success depends only on the status code. Verified against cron-job.org's docs: the job's Advanced section has "Request method" (FAQ: GET/POST/PUT/HEAD… supported; REST API `requestMethod`, default GET). If the owner uses the cron-job.org API instead, that is `requestMethod: 3` (HEAD).
   - Expect an occasional failure during deploys and after a sleep. Render takes about a minute to wake, and cron-job.org gives up after 30 s. A single failed run in a deploy window is not an outage.
 - **Repo contract** (unchanged, PERF-03): health stays cheap and small, and answers GET and HEAD.
 

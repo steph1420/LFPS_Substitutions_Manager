@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+> Job Bundle 34a (branch `bundle/34a`, the owner's "34.1"): not shipped. It ships as `2.0.0-alpha.3` with the next approved release (VERSIONING §2.6).
+
+### Added
+- **Admin Hierarchy at Staff Login (FEAT-68, Job Bundle 34a)**: The Principal, the Academic Coordinator, the Asst. Academic Coordinator and **today's** Officiating AC are the admins. In Staff Login they are tagged "Admin" (or "Off. AC today"). Choosing one asks for the 6-digit admin passcode (same keypad and lockout), and success turns on editing in that tab for that person. Everyone else is still identified at a tap. Log Out, or choosing another name, ends admin. An Off. AC is an admin only on the day the appointment is in force. `@lfps/core` adds `adminOfficeFor()` and the `'Principal'` staff role. The school data names no Principal, so Staff Login offers the Principal **by designation**; a Staff Directory row with Role `Principal` replaces it automatically.
+- **Dev Options → "Edit without login" (FEAT-68)**: A device-local switch (`localStorage`, never synced) that allows editing with nobody logged in. While it is on, the header shows an amber **Editing unlocked** badge, and Settings → Admin Access offers **Turn off**. Developer Options themselves still need an admin login (until SEC-03). See the risks in `docs/ADMIN_ACCESS.md`.
+
+### Changed
+- **One sign-in place (FEAT-68)**: The separate Settings → Admin Access keypad is folded into Staff Login. The Admin Access panel shows who is signed in as admin, with Log Out, or an "Admin login" button that opens Staff Login. The Settings "I am…" picker is replaced by a **Staff Login** button (this also fixes its overflow at phone width).
+- **One permission helper (FEAT-68)**: `apps/web/src/lib/access.ts` `resolveAccess()` now decides every admin-gated action and screen (store guards, `usePermissions`, `PermissionGuard`, Developer Options). Admin sessions are tied to the identity that entered the passcode (`lfps_admin_session_v2`); sessions from before 34a are ignored, so admins sign in once more.
+- The lockout countdown is announced to screen readers (`role="status"`).
+
+### Docs
+- **BUG-31 (ops)**: Saving responses was already off on the owner's cron-job.org job, so the fix is switching its request method to **HEAD** (job → Edit → Advanced → Request method).
+
 ### Planned
 - **Deferred by the owner (2026-10-24, "we'll add later")**:
   - FEAT-67: Developer Options controls for the admin lockout penalty (free misses, wait steps).
