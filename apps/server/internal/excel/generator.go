@@ -3,15 +3,14 @@ package excel
 import (
 	"bytes"
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"github.com/xuri/excelize/v2"
 	"lfps/server/internal/storage"
 )
 
-// GenerateSubstitutionWorkbook creates a publication-grade Excel sheet and saves a dated backup
-func GenerateSubstitutionWorkbook(state storage.DailyState, backupDir string) ([]byte, string, error) {
+// GenerateSubstitutionWorkbook creates a publication-grade Excel register in memory.
+func GenerateSubstitutionWorkbook(state storage.DailyState) ([]byte, string, error) {
 	f := excelize.NewFile()
 	defer func() {
 		_ = f.Close()
@@ -146,15 +145,11 @@ func GenerateSubstitutionWorkbook(state storage.DailyState, backupDir string) ([
 		return nil, "", err
 	}
 
-	// Save dated server backup (FEAT-25)
+	// Relay model (Bundle 34): no server-side copy is written; the browser download is the
+	// only artefact. Archival belongs in Google Sheets (Bundle 35).
 	dateStr := state.Date
 	if dateStr == "" {
 		dateStr = time.Now().Format("2006-01-02")
 	}
-	backupFileName := fmt.Sprintf("LFPS_Daily_Substitutions_%s.xlsx", dateStr)
-	backupPath := filepath.Join(backupDir, backupFileName)
-	_ = f.SaveAs(backupPath)
-
-	return buf.Bytes(), backupFileName, nil
+	return buf.Bytes(), fmt.Sprintf("LFPS_Daily_Substitutions_%s.xlsx", dateStr), nil
 }
-

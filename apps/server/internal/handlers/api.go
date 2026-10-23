@@ -2,197 +2,116 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
-	"os"
-	"path/filepath"
-	"time"
 
 	"lfps/server/internal/excel"
 	"lfps/server/internal/storage"
 	"lfps/server/internal/ws"
 )
 
+// MaxRequestBytes caps mutation payloads.
+const MaxRequestBytes = 1 << 20 // 1 MiB
+
 type APIHandler struct {
-	store     *storage.Store
-	hub       *ws.Hub
-	backupDir string
+	store *storage.Store
+	hub   *ws.Hub
 }
 
-func NewAPIHandler(store *storage.Store, hub *ws.Hub, backupDir string) *APIHandler {
-	return &APIHandler{
-		store:     store,
-		hub:       hub,
-		backupDir: backupDir,
+func NewAPIHandler(store *storage.Store, hub *ws.Hub) *APIHandler {
+	return &APIHandler{store: store, hub: hub}
+}
+
+// writeJSON surfaces encode failures in the log instead of discarding them (BUG-28).
+func writeJSON(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		log.Printf("[API] failed to write JSON response: %v", err)
 	}
+}
+
+func decode(w http.ResponseWriter, r *http.Request, dst any) bool {
+	r.Body = http.MaxBytesReader(w, r.Body, MaxRequestBytes)
+	if err := json.NewDecoder(r.Body).Decode(dst); err != nil {
+		var tooBig *http.MaxBytesError
+		if errors.As(err, &tooBig) {
+			http.Error(w, "payload too large", http.StatusRequestEntityTooLarge)
+		} else {
+			http.Error(w, fmt.Sprintf("invalid payload: %v", err), http.StatusBadRequest)
+		}
+		return false
+	}
+	return true
+}
+
+// respond maps store errors to status codes, then broadcasts and returns the new state.
+func (h *APIHandler) respond(w http.ResponseWriter, state storage.DailyState, err error) {
+	if err != nil {
+		if errors.Is(err, storage.ErrValidation) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			log.Printf("[API] mutation failed: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+	// state is already a deep copy owned by this request; give the hub its own copy too.
+	h.hub.Broadcast("STATE_MUTATION", state.Clone())
+	writeJSON(w, http.StatusOK, state)
 }
 
 func (h *APIHandler) GetState(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	state := h.store.GetState()
-	_ = json.NewEncoder(w).Encode(state)
+	writeJSON(w, http.StatusOK, h.store.GetState())
 }
 
 func (h *APIHandler) ToggleAbsence(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	if r.Method == http.MethodOptions {
-		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
 	var req storage.AbsenceRecord
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, fmt.Sprintf("invalid payload: %v", err), http.StatusBadRequest)
+	if !decode(w, r, &req) {
 		return
 	}
-
-	newState, err := h.store.ToggleAbsence(req)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Instant live WebSocket broadcast to all connected devices
-	h.hub.Broadcast("STATE_MUTATION", newState)
-
-	_ = json.NewEncoder(w).Encode(newState)
+	state, err := h.store.ToggleAbsence(req)
+	h.respond(w, state, err)
 }
 
 func (h *APIHandler) SetAvailability(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	if r.Method == http.MethodOptions {
-		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
 	var req storage.StaffAvailability
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, fmt.Sprintf("invalid payload: %v", err), http.StatusBadRequest)
+	if !decode(w, r, &req) {
 		return
 	}
-
-	newState, err := h.store.SetAvailability(req)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	h.hub.Broadcast("STATE_MUTATION", newState)
-	_ = json.NewEncoder(w).Encode(newState)
+	state, err := h.store.SetAvailability(req)
+	h.respond(w, state, err)
 }
 
 func (h *APIHandler) AssignSubstitution(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	if r.Method == http.MethodOptions {
-		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
 	var req storage.SubstitutionAssignment
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, fmt.Sprintf("invalid payload: %v", err), http.StatusBadRequest)
+	if !decode(w, r, &req) {
 		return
 	}
-
-	newState, err := h.store.AssignSubstitution(req)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	h.hub.Broadcast("STATE_MUTATION", newState)
-	_ = json.NewEncoder(w).Encode(newState)
+	state, err := h.store.AssignSubstitution(req)
+	h.respond(w, state, err)
 }
 
 func (h *APIHandler) RemoveSubstitution(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	if r.Method == http.MethodOptions {
-		w.Header().Set("Access-Control-Allow-Methods", "DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	id := r.URL.Query().Get("id")
-	if id == "" {
-		http.Error(w, "missing 'id' query parameter", http.StatusBadRequest)
-		return
-	}
-
-	newState, err := h.store.RemoveSubstitution(id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	h.hub.Broadcast("STATE_MUTATION", newState)
-	_ = json.NewEncoder(w).Encode(newState)
+	state, err := h.store.RemoveSubstitution(r.URL.Query().Get("id"))
+	h.respond(w, state, err)
 }
 
-// ExportExcel generates publication-ready Excel register and triggers browser download
+// ExportExcel streams the register for the relay's current week. Nothing is saved on the
+// server (relay model; the old dated-backup copy was removed together with /backups, BUG-27).
 func (h *APIHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	state := h.store.GetState()
-	bytes, filename, err := excel.GenerateSubstitutionWorkbook(state, h.backupDir)
+	data, filename, err := excel.GenerateSubstitutionWorkbook(h.store.GetState())
 	if err != nil {
+		log.Printf("[API] excel export failed: %v", err)
 		http.Error(w, fmt.Sprintf("failed to generate excel: %v", err), http.StatusInternalServerError)
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(bytes)))
-	_, _ = w.Write(bytes)
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(data)))
+	if _, err := w.Write(data); err != nil {
+		log.Printf("[API] excel write failed: %v", err)
+	}
 }
-
-// ListBackups returns audit log of server-side Excel backups (FEAT-25)
-func (h *APIHandler) ListBackups(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	entries, err := os.ReadDir(h.backupDir)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	type BackupItem struct {
-		FileName string    `json:"fileName"`
-		ModTime  time.Time `json:"modTime"`
-		SizeKB   float64   `json:"sizeKb"`
-		Download string    `json:"downloadUrl"`
-	}
-
-	var results []BackupItem
-	for _, e := range entries {
-		if !e.IsDir() && filepath.Ext(e.Name()) == ".xlsx" {
-			info, _ := e.Info()
-			results = append(results, BackupItem{
-				FileName: e.Name(),
-				ModTime:  info.ModTime(),
-				SizeKB:   float64(info.Size()) / 1024.0,
-				Download: fmt.Sprintf("/api/v1/backups/download?file=%s", e.Name()),
-			})
-		}
-	}
-
-	_ = json.NewEncoder(w).Encode(results)
-}
-

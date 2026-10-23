@@ -1,13 +1,21 @@
+// Package storage holds the relay's in-memory view of the active school week.
+//
+// Bundle 34 (relay model, see docs/SAS.md): Google Sheets is the source of truth and the
+// Render server is only a live relay. Nothing is written to disk: a restart or redeploy
+// empties this cache and clients re-publish / the Sheets bridge (Bundle 35) reloads it.
+// The cache is scoped to the active school week and resets itself when the week changes.
 package storage
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
+
+// ErrValidation marks client errors (HTTP 400).
+var ErrValidation = errors.New("validation failed")
 
 // AbsenceRecord represents an absence or official deputation
 type AbsenceRecord struct {
@@ -33,167 +41,221 @@ type StaffAvailability struct {
 	UpdatedAt   int64  `json:"updatedAt"`
 }
 
-// SubstitutionAssignment represents an assigned substitution
+// SubstitutionAssignment mirrors @lfps/core SubstitutionAssignment (packages/core/src/types).
 type SubstitutionAssignment struct {
 	ID                string `json:"id"`
 	Day               string `json:"day"`
 	Period            string `json:"period"`
 	OriginalTeacher   string `json:"originalTeacher"`
-	SubstituteTeacher string `json:"substituteTeacher"`
+	SubstituteTeacher string `json:"substituteTeacher,omitempty"`
 	ClassName         string `json:"className"`
 	Subject           string `json:"subject"`
-	Status            string `json:"status"` // "PENDING", "COVERED", "FREE_FROM_SUB", "DISPUTED"
+	Status            string `json:"status"` // see ValidSubstitutionStatuses
 	Remark            string `json:"remark,omitempty"`
+	DisputeRemark     string `json:"disputeRemark,omitempty"`
+	AcceptedAt        int64  `json:"acceptedAt,omitempty"`
+	DisputedAt        int64  `json:"disputedAt,omitempty"`
 	AssignedAt        int64  `json:"assignedAt"`
 	AssignedBy        string `json:"assignedBy,omitempty"`
 }
 
-// DailyState encapsulates all active state for the school day
+// ValidSubstitutionStatuses mirrors core's SubstitutionStatus union.
+var ValidSubstitutionStatuses = map[string]bool{
+	"PENDING": true, "COVERED": true, "FREE_FROM_SUB": true, "ACCEPTED": true, "DISPUTED": true,
+}
+
+var validDays = map[string]bool{"MON": true, "TUE": true, "WED": true, "THU": true, "FRI": true, "SAT": true}
+
+// DailyState is the relay's snapshot of the active school week.
 type DailyState struct {
-	Date          string                            `json:"date"`
-	SelectedDay   string                            `json:"selectedDay"`
-	Absences      []AbsenceRecord                   `json:"absences"`
-	Availability  map[string]StaffAvailability      `json:"availability"`
-	Substitutions []SubstitutionAssignment          `json:"substitutions"`
-	OfficiatingAC map[string]string                 `json:"officiatingAC"` // day -> teacher
-	OfficiatingCT map[string]map[string]string      `json:"officiatingCT"` // day -> class -> teacher
-	UpdatedAt     int64                             `json:"updatedAt"`
+	Date          string                       `json:"date"`        // today, server local time (TZ)
+	SelectedDay   string                       `json:"selectedDay"` // today's school day (Sunday → MON)
+	WeekStart     string                       `json:"weekStart"`   // Monday of the active school week
+	Absences      []AbsenceRecord              `json:"absences"`
+	Availability  map[string]StaffAvailability `json:"availability"`
+	Substitutions []SubstitutionAssignment     `json:"substitutions"`
+	OfficiatingAC map[string]string            `json:"officiatingAC"` // day -> teacher
+	OfficiatingCT map[string]map[string]string `json:"officiatingCT"` // day -> class -> teacher
+	UpdatedAt     int64                        `json:"updatedAt"`
 }
 
-// Store provides thread-safe disk persistence for school operations
-type Store struct {
-	dataDir  string
-	filePath string
-	state    DailyState
-	mutex    sync.RWMutex
-}
-
-func NewStore(dataDir string) (*Store, error) {
-	if err := os.MkdirAll(dataDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create data dir: %w", err)
+// Clone returns a deep copy, so callers (HTTP encoders, the WS hub) never share
+// slices or maps with the store.
+func (d DailyState) Clone() DailyState {
+	out := d
+	out.Absences = make([]AbsenceRecord, len(d.Absences))
+	for i, a := range d.Absences {
+		a.Periods = append([]string(nil), a.Periods...)
+		out.Absences[i] = a
 	}
-
-	backupDir := filepath.Join(dataDir, "backups")
-	if err := os.MkdirAll(backupDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create backup dir: %w", err)
+	out.Availability = make(map[string]StaffAvailability, len(d.Availability))
+	for k, v := range d.Availability {
+		out.Availability[k] = v
 	}
-
-	statePath := filepath.Join(dataDir, "current_state.json")
-	store := &Store{
-		dataDir:  dataDir,
-		filePath: statePath,
-		state: DailyState{
-			Date:          time.Now().Format("2006-01-02"),
-			SelectedDay:   "MON",
-			Absences:      make([]AbsenceRecord, 0),
-			Availability:  make(map[string]StaffAvailability),
-			Substitutions: make([]SubstitutionAssignment, 0),
-			OfficiatingAC: make(map[string]string),
-			OfficiatingCT: make(map[string]map[string]string),
-			UpdatedAt:     time.Now().UnixMilli(),
-		},
+	out.Substitutions = append(make([]SubstitutionAssignment, 0, len(d.Substitutions)), d.Substitutions...)
+	out.OfficiatingAC = make(map[string]string, len(d.OfficiatingAC))
+	for k, v := range d.OfficiatingAC {
+		out.OfficiatingAC[k] = v
 	}
-
-	// Load existing state if file exists
-	if _, err := os.Stat(statePath); err == nil {
-		data, err := os.ReadFile(statePath)
-		if err == nil {
-			var loaded DailyState
-			if err := json.Unmarshal(data, &loaded); err == nil {
-				store.state = loaded
-			}
+	out.OfficiatingCT = make(map[string]map[string]string, len(d.OfficiatingCT))
+	for day, classes := range d.OfficiatingCT {
+		inner := make(map[string]string, len(classes))
+		for c, t := range classes {
+			inner[c] = t
 		}
+		out.OfficiatingCT[day] = inner
 	}
-
-	return store, nil
+	return out
 }
 
+// Store is a thread-safe, in-memory, week-scoped cache. No disk I/O.
+type Store struct {
+	mu    sync.Mutex
+	state DailyState
+	now   func() time.Time
+}
+
+// NewStore uses the wall clock in the process time zone (set TZ on the host).
+func NewStore() *Store { return NewStoreWithClock(time.Now) }
+
+// NewStoreWithClock allows tests to control "today".
+func NewStoreWithClock(now func() time.Time) *Store {
+	s := &Store{now: now}
+	s.state = emptyState(ActiveWeekStart(now()))
+	return s
+}
+
+func emptyState(weekStart string) DailyState {
+	return DailyState{
+		WeekStart:     weekStart,
+		Absences:      make([]AbsenceRecord, 0),
+		Availability:  make(map[string]StaffAvailability),
+		Substitutions: make([]SubstitutionAssignment, 0),
+		OfficiatingAC: make(map[string]string),
+		OfficiatingCT: make(map[string]map[string]string),
+	}
+}
+
+var dayCodes = [...]string{"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"}
+
+// ActiveWeekStart mirrors core's activeWeekStart: Monday of this week; Sunday rolls forward.
+func ActiveWeekStart(t time.Time) string {
+	d := time.Date(t.Year(), t.Month(), t.Day(), 12, 0, 0, 0, t.Location())
+	wd := int(d.Weekday())
+	offset := 1 - wd // to Monday
+	if wd == 0 {
+		offset = 1
+	}
+	return d.AddDate(0, 0, offset).Format("2006-01-02")
+}
+
+// SchoolDay returns today's school-day code; Sunday maps to the coming Monday.
+func SchoolDay(t time.Time) string {
+	if t.Weekday() == time.Sunday {
+		return "MON"
+	}
+	return dayCodes[t.Weekday()]
+}
+
+// prepareLocked resets the cache on a week change and stamps per-request date fields.
+func (s *Store) prepareLocked() time.Time {
+	now := s.now()
+	if ws := ActiveWeekStart(now); ws != s.state.WeekStart {
+		s.state = emptyState(ws)
+	}
+	s.state.Date = now.Format("2006-01-02")
+	s.state.SelectedDay = SchoolDay(now)
+	return now
+}
+
+func (s *Store) touchLocked(now time.Time) DailyState {
+	s.state.UpdatedAt = now.UnixMilli()
+	return s.state.Clone()
+}
+
+// GetState returns a deep copy of the current week.
 func (s *Store) GetState() DailyState {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-	return s.state
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.prepareLocked()
+	return s.state.Clone()
 }
 
-func (s *Store) SaveState(state DailyState) error {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	state.UpdatedAt = time.Now().UnixMilli()
-	s.state = state
-
-	bytes, err := json.MarshalIndent(state, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(s.filePath, bytes, 0644)
+func validationErr(format string, args ...any) error {
+	return fmt.Errorf("%w: %s", ErrValidation, fmt.Sprintf(format, args...))
 }
 
 func (s *Store) ToggleAbsence(record AbsenceRecord) (DailyState, error) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	record.Day = strings.ToUpper(record.Day)
+	if record.TeacherName == "" || !validDays[record.Day] {
+		return DailyState{}, validationErr("teacherName and a day MON–SAT are required")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now := s.prepareLocked()
 
-	foundIndex := -1
 	for i, a := range s.state.Absences {
 		if a.TeacherName == record.TeacherName && a.Day == record.Day {
-			foundIndex = i
-			break
+			s.state.Absences = append(s.state.Absences[:i:i], s.state.Absences[i+1:]...)
+			return s.touchLocked(now), nil
 		}
 	}
-
-	if foundIndex >= 0 {
-		// Remove absence
-		s.state.Absences = append(s.state.Absences[:foundIndex], s.state.Absences[foundIndex+1:]...)
-	} else {
-		// Add absence
-		record.MarkedAt = time.Now().UnixMilli()
-		s.state.Absences = append(s.state.Absences, record)
-	}
-
-	s.state.UpdatedAt = time.Now().UnixMilli()
-	_ = s.persistLocked()
-	return s.state, nil
+	record.MarkedAt = now.UnixMilli()
+	record.Periods = append([]string(nil), record.Periods...)
+	s.state.Absences = append(s.state.Absences, record)
+	return s.touchLocked(now), nil
 }
 
 func (s *Store) SetAvailability(avail StaffAvailability) (DailyState, error) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	avail.UpdatedAt = time.Now().UnixMilli()
-	if s.state.Availability == nil {
-		s.state.Availability = make(map[string]StaffAvailability)
+	if avail.TeacherName == "" {
+		return DailyState{}, validationErr("teacherName is required")
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now := s.prepareLocked()
+	avail.UpdatedAt = now.UnixMilli()
 	s.state.Availability[avail.TeacherName] = avail
-	s.state.UpdatedAt = time.Now().UnixMilli()
-	_ = s.persistLocked()
-	return s.state, nil
+	return s.touchLocked(now), nil
 }
 
 func (s *Store) AssignSubstitution(sub SubstitutionAssignment) (DailyState, error) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	sub.Day = strings.ToUpper(sub.Day)
+	if sub.Status == "" {
+		sub.Status = "PENDING"
+	}
+	if !ValidSubstitutionStatuses[sub.Status] {
+		return DailyState{}, validationErr("unknown status %q", sub.Status)
+	}
+	if !validDays[sub.Day] || sub.Period == "" || sub.OriginalTeacher == "" {
+		return DailyState{}, validationErr("day MON–SAT, period and originalTeacher are required")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now := s.prepareLocked()
 
-	// Filter out existing sub for the exact same slot
-	filtered := make([]SubstitutionAssignment, 0, len(s.state.Substitutions))
+	filtered := make([]SubstitutionAssignment, 0, len(s.state.Substitutions)+1)
 	for _, existing := range s.state.Substitutions {
 		if !(existing.Day == sub.Day && existing.Period == sub.Period && existing.OriginalTeacher == sub.OriginalTeacher) {
 			filtered = append(filtered, existing)
 		}
 	}
-
 	if sub.ID == "" {
-		sub.ID = fmt.Sprintf("sub-%d", time.Now().UnixNano())
+		sub.ID = fmt.Sprintf("sub-%d", now.UnixNano())
 	}
-	sub.AssignedAt = time.Now().UnixMilli()
+	if sub.AssignedAt == 0 {
+		sub.AssignedAt = now.UnixMilli()
+	}
 	s.state.Substitutions = append(filtered, sub)
-	s.state.UpdatedAt = time.Now().UnixMilli()
-	_ = s.persistLocked()
-	return s.state, nil
+	return s.touchLocked(now), nil
 }
 
 func (s *Store) RemoveSubstitution(id string) (DailyState, error) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	if id == "" {
+		return DailyState{}, validationErr("id is required")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now := s.prepareLocked()
 
 	filtered := make([]SubstitutionAssignment, 0, len(s.state.Substitutions))
 	for _, sub := range s.state.Substitutions {
@@ -202,16 +264,5 @@ func (s *Store) RemoveSubstitution(id string) (DailyState, error) {
 		}
 	}
 	s.state.Substitutions = filtered
-	s.state.UpdatedAt = time.Now().UnixMilli()
-	_ = s.persistLocked()
-	return s.state, nil
+	return s.touchLocked(now), nil
 }
-
-func (s *Store) persistLocked() error {
-	bytes, err := json.MarshalIndent(s.state, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(s.filePath, bytes, 0644)
-}
-

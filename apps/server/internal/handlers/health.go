@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+
+	"lfps/server/internal/version"
 )
 
 type HealthResponse struct {
@@ -17,11 +19,10 @@ var startTime = time.Now()
 
 func HealthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	
+
 	resp := HealthResponse{
 		Status:    "healthy",
-		Version:   "2.0.0-alpha.1",
+		Version:   version.Version,
 		Timestamp: time.Now(),
 		UptimeSec: time.Since(startTime).Seconds(),
 	}
@@ -29,4 +30,3 @@ func HealthHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(resp)
 }
-

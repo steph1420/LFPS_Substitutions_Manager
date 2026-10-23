@@ -26,14 +26,13 @@ WORKDIR /app
 # Install ca-certificates for secure outbound connections
 RUN apk add --no-cache ca-certificates tzdata
 
-# Create data directory for backups and state
-RUN mkdir -p /app/data/backups
-
 # Copy binary from builder
 COPY --from=builder /app/server /app/server
 
+# Stateless relay (Bundle 34): no data directory or disk is needed.
+# Set TZ (e.g. Asia/Kolkata) on the host so "today" matches the school's calendar,
+# and ALLOWED_ORIGINS if the web app is served from somewhere other than the defaults.
 ENV PORT=8080
-ENV DATA_DIR=/app/data
 
 EXPOSE 8080
 

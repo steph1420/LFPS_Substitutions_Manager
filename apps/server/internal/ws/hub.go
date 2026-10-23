@@ -9,15 +9,13 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all school intranet origins
-	},
-}
+// MaxMessageBytes is the largest inbound frame accepted. Clients don't send state over the
+// socket yet (Bundle 35 will); 512 bytes would have disconnected them as soon as they did.
+const MaxMessageBytes = 256 << 10 // 256 KiB
 
 // Event represents a live WebSocket packet
 type Event struct {
-	Type      string      `json:"type"`      // "STATE_MUTATION", "PING", "CONNECT_ACK"
+	Type      string      `json:"type"` // "STATE_MUTATION", "PING", "CONNECT_ACK"
 	Payload   interface{} `json:"payload"`
 	Timestamp int64       `json:"timestamp"`
 }
@@ -36,10 +34,19 @@ type Hub struct {
 	register   chan *Client
 	unregister chan *Client
 	mutex      sync.RWMutex
+	upgrader   websocket.Upgrader
 }
 
-func NewHub() *Hub {
+// NewHub creates a hub. originAllowed gates the WebSocket handshake by Origin header
+// (same allowlist as HTTP CORS); nil allows every origin.
+func NewHub(originAllowed func(origin string) bool) *Hub {
+	if originAllowed == nil {
+		originAllowed = func(string) bool { return true }
+	}
 	return &Hub{
+		upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool { return originAllowed(r.Header.Get("Origin")) },
+		},
 		clients:    make(map[*Client]bool),
 		broadcast:  make(chan Event, 256),
 		register:   make(chan *Client),
@@ -74,7 +81,8 @@ func (h *Hub) Run() {
 			log.Printf("[WebSocket Hub] Client disconnected. Total active: %d\n", clientCount)
 
 		case event := <-h.broadcast:
-			h.mutex.RLock()
+			// Write lock: slow clients are removed from the map here (BUG-26).
+			h.mutex.Lock()
 			for client := range h.clients {
 				select {
 				case client.send <- event:
@@ -83,9 +91,16 @@ func (h *Hub) Run() {
 					delete(h.clients, client)
 				}
 			}
-			h.mutex.RUnlock()
+			h.mutex.Unlock()
 		}
 	}
+}
+
+// ClientCount reports connected clients (tests, diagnostics).
+func (h *Hub) ClientCount() int {
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+	return len(h.clients)
 }
 
 func (h *Hub) Broadcast(eventType string, payload interface{}) {
@@ -99,7 +114,7 @@ func (h *Hub) Broadcast(eventType string, payload interface{}) {
 
 // ServeWS handles incoming websocket requests from clients
 func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := h.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("[WebSocket Upgrade Error] %v\n", err)
 		return
@@ -125,7 +140,7 @@ func (c *Client) readPump() {
 		_ = c.conn.Close()
 	}()
 
-	c.conn.SetReadLimit(512)
+	c.conn.SetReadLimit(MaxMessageBytes)
 	_ = c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	c.conn.SetPongHandler(func(string) error {
 		_ = c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
