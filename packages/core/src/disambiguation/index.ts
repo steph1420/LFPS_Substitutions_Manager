@@ -68,6 +68,7 @@ export function findTeacher(
 
 /**
  * Compares two teachers according to the authentic school hierarchy:
+ * 0. Principal (role 'Principal', if the Staff Directory ever lists one)
  * 1. Academic Coordinator (Mrs. R. Pahwa)
  * 2. Assistant Academic Coordinator (Mrs. S. Lakra)
  * 3. Class Teachers (KG A -> KG B -> PREP A -> PREP B)
@@ -77,6 +78,7 @@ export function findTeacher(
  */
 export function compareTeachersByHierarchy(a: Teacher, b: Teacher): number {
   const getRank = (t: Teacher): number => {
+    if (t.role === 'Principal') return 0;
     if (t.abbr === 'Mrs. R. Pahwa' || (t.role.includes('Academic Coordinator') && !t.role.includes('Asst.'))) return 1;
     if (t.abbr === 'Mrs. S. Lakra' || t.role.includes('Asst. Academic Coordinator')) return 2;
     if (t.role.includes('Class Teacher')) return 3;

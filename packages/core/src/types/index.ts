@@ -18,6 +18,7 @@ export type PeriodId =
   | (string & {});
 
 export type StaffRole =
+  | 'Principal'
   | 'Class Teacher / Academic Coordinator'
   | 'Class Teacher / Asst. Academic Coordinator'
   | 'Class Teacher'
