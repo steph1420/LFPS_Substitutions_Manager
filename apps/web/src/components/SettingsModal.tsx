@@ -4,6 +4,7 @@ import { SCHOOL_TIME_ZONE } from '@lfps/core';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
 import { useTimetableStore, ThemeId } from '../store/useTimetableStore.js';
 import { useLiveSync } from '../hooks/useLiveSync.js';
+import { phaseLabel } from '../sync/status.js';
 import {
   X,
   LogOut,
@@ -619,28 +620,45 @@ export const SettingsModal: React.FC = () => {
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Cloud Synchronization & Health
                 </span>
-                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between">
+                <div
+                  data-testid="sync-card"
+                  data-phase={sync.status.phase}
+                  className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between"
+                >
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        sync.status.isConnected ? 'bg-emerald-500/15 text-emerald-400' : 'bg-slate-800 text-slate-500'
+                        sync.status.phase === 'live'
+                          ? 'bg-emerald-500/15 text-emerald-400'
+                          : sync.status.phase === 'connecting'
+                            ? 'bg-amber-500/15 text-amber-300'
+                            : 'bg-slate-800 text-slate-500'
                       }`}
                     >
                       <Cloud className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="font-semibold text-slate-200 flex items-center gap-1.5">
-                        {sync.status.isConnected ? 'Connected to Cloud Hub' : 'Offline / Standalone Mode'}
+                        {phaseLabel(sync.status.phase)}
                         <span
                           className={`w-2 h-2 rounded-full ${
-                            sync.status.isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'
+                            sync.status.phase === 'live'
+                              ? 'bg-emerald-400 animate-pulse'
+                              : sync.status.phase === 'connecting'
+                                ? 'bg-amber-400 animate-pulse'
+                                : 'bg-slate-500'
                           }`}
                         />
                       </div>
                       <div className="text-[11px] text-slate-400">
-                        {sync.status.isConnected
-                          ? `Live broadcast active (${sync.status.activeClients} peers connected)`
-                          : 'Local optimistic updates enabled'}
+                        {sync.status.phase === 'live'
+                          ? `${sync.status.activeClients} device${sync.status.activeClients === 1 ? '' : 's'} · ${
+                              sync.status.mode === 'sheets' ? 'Sheets linked' : 'Relay only'
+                            }`
+                          : sync.status.phase === 'connecting'
+                            ? 'Waking server · local data ready'
+                            : 'Saved on device'}
+                        {sync.status.pending > 0 && ` · ${sync.status.pending} pending`}
                       </div>
                     </div>
                   </div>
@@ -648,11 +666,11 @@ export const SettingsModal: React.FC = () => {
                   <button
                     onClick={() => {
                       sync.connect();
-                      showToast('Reconnected to Cloud WebSocket Hub');
+                      showToast(sync.status.phase === 'live' ? 'Already live' : 'Reconnecting…');
                     }}
                     className="px-2.5 py-1.5 rounded-xl glass-pill border-slate-700 hover:border-slate-600 text-slate-300 text-xs font-semibold"
                   >
-                    Ping Hub
+                    Reconnect
                   </button>
                 </div>
               </div>
@@ -746,29 +764,36 @@ export const SettingsModal: React.FC = () => {
                   </div>
 
                   <div className="space-y-3 pt-1">
-                    {/* Diagnostic Latency & Cloud Hub */}
+                    {/* Live sync diagnostics (Bundle 35): real values only */}
                     <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between">
                       <div>
                         <div className="font-semibold text-slate-200 flex items-center gap-1.5">
                           <Activity className="w-3.5 h-3.5 text-emerald-400" />
-                          Live Cloud Hub Latency
+                          Live sync
                         </div>
                         <div className="text-[10px] text-slate-400">
-                          Active Full-Duplex WebSocket ping roundtrip
+                          {sync.status.mode === 'sheets'
+                            ? `Sheets bridge: ${sync.status.sheetsState ?? 'starting'}`
+                            : sync.status.mode
+                              ? 'Relay only (no Sheets)'
+                              : 'Mode unknown'}
+                          {sync.status.lastSyncTime
+                            ? ` · synced ${new Date(sync.status.lastSyncTime).toLocaleTimeString()}`
+                            : ''}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-emerald-400 font-bold bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded text-[11px]">
-                          {sync.status.isConnected ? '24ms (Healthy)' : 'Offline (Simulated)'}
+                          {phaseLabel(sync.status.phase)} · {sync.status.pending} pending
                         </span>
                         <button
                           type="button"
                           onClick={() => {
                             sync.connect();
-                            showToast('Reconnected to Cloud Hub');
+                            showToast('Reconnecting…');
                           }}
                           className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
-                          title="Force Reconnect"
+                          title="Reconnect now"
                         >
                           <RefreshCw className="w-3.5 h-3.5" />
                         </button>
