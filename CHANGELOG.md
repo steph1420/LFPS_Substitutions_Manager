@@ -18,9 +18,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [v2.0.0-alpha.2] - 2026-10-23
+## [v2.0.0-alpha.2] - 2026-10-24
 
-> Job Bundle 34, branch `bundle/34` (off `refine/jb31`). **Not yet deployed**: GitHub Pages serves `next-gen`, and going live is the owner's call.
+> Job Bundle 34, branch `bundle/34` (off `refine/jb31`). **Released 2026-10-24** on the owner's approval ("Go live now"): merged into `next-gen` (GitHub Pages and Render auto-deploy from it), tag `v2.0.0-alpha.2`. Rollback point: tag `rollback/pre-v2.0.0-alpha.2` (the previous `next-gen`, `19c1a1a`).
 > The 2026-10-24 follow-ups (6-digit passcode, school time zone, owner clarifications) are part of Job Bundle 34 and **keep the version at 2.0.0-alpha.2**: nothing has shipped, and VERSIONING §2.1 bumps `-alpha.N` once per bundle shipped to Pages (see VERSIONING §2.5).
 > Owner direction recorded here: **Google Sheets is the source of truth; the Render server is a stateless live relay, not storage.**
 

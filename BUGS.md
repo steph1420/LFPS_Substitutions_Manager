@@ -45,7 +45,7 @@ Some cells say "Not recorded". That means neither source states the value, and n
 
 ## Open items
 
-- **BUG-24, BUG-26, BUG-27 and BUG-28** were resolved in Job Bundle 34 (v2.0.0-alpha.2, branch `bundle/34`, not yet deployed). **BUG-25** is partially resolved (same-device reload); cross-device sync is Bundle 35. **BUG-29 and BUG-30** remain open. All were logged 2026-10-23 on `refine/jb31`. The narratives are in the `TODO.md` section "🔴 OPEN — User-Reported Items". Severities are **proposed** and need owner confirmation.
+- **BUG-24, BUG-26, BUG-27 and BUG-28** were resolved in Job Bundle 34 (v2.0.0-alpha.2, released 2026-10-24). **BUG-25** is partially resolved (same-device reload); cross-device sync is Bundle 35. **BUG-29 and BUG-30** remain open. All were logged 2026-10-23 on `refine/jb31`. The narratives are in the `TODO.md` section "🔴 OPEN — User-Reported Items". Severities are **proposed** and need owner confirmation.
 - BUG-29 and BUG-30 are user reports that have **not yet been reproduced**.
 - The tracker also lists **PERF-01** ("Master Routine Initial Render Stutter & In-Memory Pre-Render / Keep-Warm Engine") as 🔴 Open. It is a performance item, not a numbered bug, and is kept in `TODO.md`.
 

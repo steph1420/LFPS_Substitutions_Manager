@@ -73,7 +73,7 @@ Bundle numbers must be **unique**. Bundle numbers 28, 29 and 31 are currently re
 
 Job Bundle 34 set the version to `2.0.0-alpha.2` on `bundle/34`. On 2026-10-24 the owner asked for follow-ups: a 6-digit admin passcode, the school time zone, and plan clarifications. They **do not bump** the version, for three reasons:
 
-1. `2.0.0-alpha.2` has **not been released**: it is not on `next-gen`, not deployed to Pages or Render, and has no pushed tag. §2.1 bumps `-alpha.N` once per Job Bundle **shipped**, so later work in the same unshipped bundle joins the same version.
+1. When the follow-ups were made, `2.0.0-alpha.2` had **not been released**: it was not on `next-gen`, not deployed to Pages or Render, and had no pushed tag. (It was released with them on 2026-10-24.) §2.1 bumps `-alpha.N` once per Job Bundle **shipped**, so later work in the same unshipped bundle joins the same version.
 2. The follow-ups belong to Job Bundle 34's own scope (SEC-01 interim, persistence rollover).
 3. Nothing outside the branch has seen `alpha.2`, so no released state format changes. The new `lfps_admin_lockout_v1` key is additive, and the persisted schema stays v1.
 
