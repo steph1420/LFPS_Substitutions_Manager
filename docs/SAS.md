@@ -294,6 +294,10 @@ The Go `DailyState`/`SubstitutionAssignment` structs are hand-maintained copies 
 
 - **Web:** `npm run build` writes `apps/web/dist` and copies it into the repo root. The root `index.html` and `assets/` are committed on `next-gen`, and GitHub Pages serves that branch root at `https://steph1420.github.io/LFPS_Substitutions_Manager/`. See ADR-0004.
 - **Server:** `apps/server/Dockerfile` is a multi-stage build, from `golang:1.23-alpine` to `alpine:3.20`, with CA certificates only (zone data is embedded in the binary), no data directory, and port 8080. No time-zone variable is needed. To override the zone or set `ALLOWED_ORIGINS`, use Render Dashboard → the service → **Environment** (left pane) → Environment Variables → **+ Add Environment Variable**, then "Save and deploy". These settings are not under the service's **Settings** page. It deploys on Render at `https://lfps-substitutions-manager.onrender.com`. The health check is `/api/v1/health`.
+- **Ops: uptime pinger (BUG-31).** The owner's cron-job.org job keeps the relay warm in school hours (PERF-03).
+  - During the v2.0.0-alpha.2 deploy (2026-10-24) it reported "Failed (output too large)". The likely cause: while Render redeployed or cold-started, Render answered with its own large HTML page instead of our ~150-byte JSON. cron-job.org reads at most 64 KB and gives up after 30 s ([FAQ](https://cron-job.org/en/faq/)).
+  - Recommended pinger settings: request method **HEAD** on `/api/v1/health`, so only the status code counts and no body is read. Optionally, don't save responses.
+  - Expect isolated failures during deploys or after a sleep (Render wakes in about a minute). Status: monitor, and reopen if it recurs outside a deploy.
 - **Known build characteristics** (verified 2026-10-23):
   - The Vite bundle is about 635 kB of JS (it triggers the >500 kB chunk warning) and about 106 kB of CSS.
   - The build is reproducible. A rebuild produced assets byte-identical to the committed ones.

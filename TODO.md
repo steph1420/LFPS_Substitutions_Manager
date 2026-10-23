@@ -228,7 +228,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - **Status**: 🟢 Handled externally (owner, 2026-10-24). No work in this repo.
 - **Context**: Render's free tier spins a web service down after 15 minutes without inbound traffic and needs about a minute to wake ([Render docs](https://render.com/docs/free)).
 - **Resolution**: the owner already runs an **uptime ping bot during school hours**, so the relay stays warm while the front desk is in use and sleeps otherwise (which also saves free instance hours). The keep-warm cron that was briefly proposed for Bundle 35 is **dropped**.
-- **Contract for the repo**: keep `GET /api/v1/health` (also `HEAD`) **cheap**: no store lock, no I/O, no Sheets call, no `Origin` needed. The pinger should call `https://lfps-substitutions-manager.onrender.com/api/v1/health`. Client-side cold-start handling is FEAT-66.
+- **Contract for the repo**: keep `GET /api/v1/health` (also `HEAD`) **cheap**: no store lock, no I/O, no Sheets call, no `Origin` needed. The pinger should call `https://lfps-substitutions-manager.onrender.com/api/v1/health`. Client-side cold-start handling is FEAT-66. **Pinger setup:** use **HEAD** if the pinger supports it. A cold start or deploy can return a large Render HTML page, which tripped cron-job.org's 64 KB output limit once (BUG-31).
 - *Not the same as PERF-01* (client pre-render of the routine grid, below).
 
 ### ARCH-07: School Time Zone (Asia/Kolkata) on Client and Server
@@ -273,6 +273,17 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] **BUG-28** (JB34, `88e640a`): State save errors are silently ignored (`_ = s.persistLocked()` in `internal/storage/store.go`), as is the Excel backup `SaveAs`.
 
 ---
+
+### BUG-31: Uptime Pinger Reported "Failed (output too large)" During the v2.0.0-alpha.2 Deploy (ops)
+- **Status**: 🟡 Monitor (ops note, not an app defect). Reopen if it recurs **outside** a deploy or cold start.
+- **Seen**: 2026-10-24 (IST), during the v2.0.0-alpha.2 release window. The owner's cron-job.org uptime job pinging `/api/v1/health` reported "Failed (output too large)".
+- **Now**: `GET /api/v1/health` returns 200 JSON, about 148 bytes (`version` 2.0.0-alpha.2, `timeZone` Asia/Kolkata). The new server is live.
+- **Likely cause (unconfirmed)**: while Render was redeploying or cold-starting, Render, not our relay, answered with its own large HTML page (an interstitial or error page). cron-job.org reads at most **64 KB** of a response and fails the run if a response is bigger ([cron-job.org FAQ](https://cron-job.org/en/faq/), [blog](https://blog.cron-job.org/service/2021/12/01/errors-explained-output-too-large.html)). Our JSON is far below that.
+- **Recommendation (owner, in the cron-job.org job settings)**:
+  - Preferred: set the request method to **HEAD** (`/api/v1/health` supports it), so no body is downloaded and success depends only on the status code.
+  - Also: turn off saving responses in the job history if desired. On its own this may not avoid the limit, because cron-job.org applies it while reading.
+  - Expect an occasional failure during deploys and after a sleep. Render takes about a minute to wake, and cron-job.org gives up after 30 s. A single failed run in a deploy window is not an outage.
+- **Repo contract** (unchanged, PERF-03): health stays cheap and small, and answers GET and HEAD.
 
 ## 🐛 Critical Bug & Performance Tracker
 
