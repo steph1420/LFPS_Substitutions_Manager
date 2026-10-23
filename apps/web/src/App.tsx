@@ -6,6 +6,7 @@ import { AbsenceRoster } from './components/AbsenceRoster.js';
 import { SubstitutionsRegister } from './components/SubstitutionsRegister.js';
 import { RoutineGrid } from './components/RoutineGrid.js';
 import { TabBar } from './components/TabBar.js';
+import { BUILD_LABEL, BUILD_TIME } from './lib/buildInfo.js';
 import { MicroContextMenu } from './components/MicroContextMenu.js';
 import { SubAvailabilityModal } from './components/SubAvailabilityModal.js';
 import { CoTeacherModal } from './components/CoTeacherModal.js';
@@ -72,7 +73,7 @@ export const App: React.FC = () => {
       <Header />
 
       {/* Main Content Viewport with slim mobile margins to maximize table space */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-1.5 sm:px-6 py-3 sm:py-6 pb-28">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-1.5 sm:px-6 py-3 sm:py-6">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -105,8 +106,10 @@ export const App: React.FC = () => {
       <AwayOfficialModal />
 
       {/* Footer Status Bar */}
-      <footer className="w-full glass-panel border-t border-slate-800/80 px-6 py-3 text-center text-xs text-slate-500 pb-20 sm:pb-3">
-        LFPS Substitutions Manager Next-Gen v2.0 • React 19 + TypeScript + Framer Motion + Go Cloud API
+      {/* Bottom padding clears the floating TabBar (bottom offset + height + gap) and the
+          home-indicator safe area on every breakpoint, so the build label is never covered. */}
+      <footer className="w-full glass-panel border-t border-slate-800/80 px-6 pt-3 pb-[calc(6rem+env(safe-area-inset-bottom))] text-center text-xs text-slate-500">
+        <span title={`Built ${BUILD_TIME}`}>LFPS Substitutions Manager · {BUILD_LABEL}</span>
       </footer>
     </div>
   );

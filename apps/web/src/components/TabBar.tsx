@@ -125,7 +125,7 @@ export const TabBar: React.FC = () => {
   return (
     <nav
       aria-label="Navigation Tabs"
-      className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-slate-950/92 backdrop-blur-2xl border border-slate-700/80 rounded-full shadow-[0_16px_40px_rgba(0,0,0,0.85)] flex items-center gap-1 sm:gap-2 select-none transition-all ${
+      className={`fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-40 bg-slate-950/92 backdrop-blur-2xl border border-slate-700/80 rounded-full shadow-[0_16px_40px_rgba(0,0,0,0.85)] flex items-center gap-1 sm:gap-2 select-none transition-all ${
         isMinimalUI ? 'p-1' : 'p-1.5'
       }`}
     >
