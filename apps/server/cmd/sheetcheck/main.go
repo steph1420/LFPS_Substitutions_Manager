@@ -11,6 +11,12 @@
 // the same allowlisted bridge the server uses), then proves that no other tab changed by
 // comparing a fingerprint of every other tab before and after.
 //
+// With -selftest it runs the restart/tombstone cycle on the Subs tab (sheets.SelfTest):
+// three test substitutions keyed "zz-itest-…" are written, reloaded by a fresh store,
+// one is deleted and reloaded as a tombstone; then every test row is removed again. Only
+// Subs and App_Meta are written, and the other tabs are verified unchanged as for -ensure.
+// -clean removes leftover test rows only.
+//
 // With -protect (owner's choice, see docs/SHEETS_SETUP.md §5) it adds a protection to each
 // existing app-owned tab that lists only the service account as editor. The spreadsheet
 // owner can always edit and can remove it in Data → Protect sheets and ranges.
@@ -47,6 +53,8 @@ type tabState struct {
 
 func main() {
 	ensure := flag.Bool("ensure", false, "create the app-owned tabs if missing and write App_Meta")
+	selftest := flag.Bool("selftest", false, "write, reload, delete and clean up test rows in Subs (see docs/SHEETS_SETUP.md)")
+	clean := flag.Bool("clean", false, "remove leftover self-test rows from Subs")
 	protect := flag.Bool("protect", false, "protect the app-owned tabs so only the service account (and the file owner) can edit them")
 	flag.Parse()
 	id := os.Getenv("SHEETS_SPREADSHEET_ID")
@@ -82,7 +90,7 @@ func main() {
 		protectAppTabs(ctx, svc, id, saEmail)
 		return
 	}
-	if !*ensure {
+	if !*ensure && !*selftest && !*clean {
 		return
 	}
 
@@ -90,14 +98,37 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	b := sheets.New(api, livesync.NewStore(time.UTC), sheets.Config{AppVersion: version.Version})
-	if err := b.EnsureTabs(ctx); err != nil {
-		log.Fatalf("ensure tabs: %v", err)
+	failed := false
+	switch {
+	case *selftest:
+		loc, _ := time.LoadLocation("Asia/Kolkata")
+		rep, err := sheets.SelfTest(ctx, api, version.Version, loc)
+		fmt.Println()
+		for _, s := range rep.Steps {
+			fmt.Println("  ✓", s)
+		}
+		if err != nil {
+			fmt.Printf("SELFTEST FAILED: %v\n", err)
+			failed = true
+		} else {
+			fmt.Println("Self-test passed.")
+		}
+	case *clean:
+		n, err := sheets.CleanSelfTestRows(ctx, api, version.Version, time.UTC)
+		if err != nil {
+			log.Fatalf("clean: %v", err)
+		}
+		fmt.Printf("\nRemoved %d self-test row(s).\n", n)
+	default:
+		b := sheets.New(api, livesync.NewStore(time.UTC), sheets.Config{AppVersion: version.Version})
+		if err := b.EnsureTabs(ctx); err != nil {
+			log.Fatalf("ensure tabs: %v", err)
+		}
+		if err := b.WriteMeta(ctx); err != nil {
+			log.Fatalf("write App_Meta: %v", err)
+		}
+		fmt.Println("\nApp-owned tabs ready; App_Meta written.")
 	}
-	if err := b.WriteMeta(ctx); err != nil {
-		log.Fatalf("write App_Meta: %v", err)
-	}
-	fmt.Println("\nApp-owned tabs ready; App_Meta written.")
 
 	after, err := snapshot(ctx, svc, id, saEmail)
 	if err != nil {
@@ -123,7 +154,8 @@ func main() {
 	}
 	if changed == 0 {
 		fmt.Printf("Verified: none of the %d other tabs changed (values, order, visibility, protection).\n", countOther(before))
-	} else {
+	}
+	if changed > 0 || failed {
 		os.Exit(1)
 	}
 }
@@ -157,6 +189,26 @@ func snapshot(ctx context.Context, svc *sheetsv4.Service, id, saEmail string) ([
 	if err != nil {
 		return nil, err
 	}
+	// One batchGet for all visible tabs (the read quota is 60 requests a minute).
+	// Hidden tabs are the owner's private tabs: their cells are not read (properties only).
+	var ranges []string
+	for _, s := range ss.Sheets {
+		if !s.Properties.Hidden {
+			ranges = append(ranges, sheets.A1Range(s.Properties.Title, ""))
+		}
+	}
+	values := map[string][][]interface{}{}
+	if len(ranges) > 0 {
+		br, err := svc.Spreadsheets.Values.BatchGet(id).Ranges(ranges...).Context(ctx).Do()
+		if err != nil {
+			return nil, fmt.Errorf("read tabs: %w", err)
+		}
+		for i, vr := range br.ValueRanges {
+			if i < len(ranges) {
+				values[ranges[i]] = vr.Values
+			}
+		}
+	}
 	var out []tabState
 	for _, s := range ss.Sheets {
 		p := s.Properties
@@ -176,15 +228,11 @@ func snapshot(ctx context.Context, svc *sheetsv4.Service, id, saEmail string) ([
 		h.Write(props)
 		h.Write(prot)
 		t.Rows = -1
-		// Hidden tabs are the owner's private tabs: their cells are not read (properties only).
 		if !p.Hidden {
-			vr, err := svc.Spreadsheets.Values.Get(id, sheets.A1Range(p.Title, "")).Context(ctx).Do()
-			if err != nil {
-				return nil, fmt.Errorf("read %q: %w", p.Title, err)
-			}
-			t.Rows = len(vr.Values)
-			vals, _ := json.Marshal(vr.Values)
-			h.Write(vals)
+			vals := values[sheets.A1Range(p.Title, "")]
+			t.Rows = len(vals)
+			raw, _ := json.Marshal(vals)
+			h.Write(raw)
 		}
 		t.Hash = hex.EncodeToString(h.Sum(nil))
 		out = append(out, t)
