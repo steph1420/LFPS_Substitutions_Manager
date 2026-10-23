@@ -9,6 +9,14 @@
 //	server → device  MUTATION_ACK     {batchId, entities, rejected}  (to the sender)
 //	server → others  STATE_MUTATION   {changes, rev, from}
 //	server → all     PRESENCE         {clients}
+//	server → device  ERROR            {reason, batchId?}
+//
+// Start-up in sheets mode (Bundle 35a): the relay is "hydrating" until the bridge has
+// reloaded the week from the Subs tab. HELLOs are held (answered with HYDRATE once the
+// week is loaded) and STATE_MUTATIONs get ERROR "hydrating", so no device can publish an
+// old copy of something that was deleted before the restart. If the reload takes longer
+// than the start timeout the relay opens anyway (degraded); the late reload then merges
+// by last-writer-wins and is broadcast like any other change.
 //
 // See docs/SAS.md §6.3.
 package relay
@@ -45,6 +53,10 @@ type Relay struct {
 	Hub    *ws.Hub
 	mu     sync.RWMutex
 	bridge Bridge
+
+	gate      sync.Mutex
+	hydrating bool
+	pending   []*ws.Client // HELLOs held while hydrating
 }
 
 // New installs the relay as the hub's message handler.
@@ -85,6 +97,52 @@ func (r *Relay) SheetsStatus() *sheets.Status {
 	return &st
 }
 
+// BeginHydrating holds devices until Open (call before the hub accepts connections).
+func (r *Relay) BeginHydrating() {
+	r.gate.Lock()
+	r.hydrating = true
+	r.gate.Unlock()
+}
+
+// Hydrating reports whether devices are still being held.
+func (r *Relay) Hydrating() bool {
+	r.gate.Lock()
+	defer r.gate.Unlock()
+	return r.hydrating
+}
+
+// Open stops holding devices and answers the held HELLOs. Safe to call more than once.
+func (r *Relay) Open() {
+	r.gate.Lock()
+	held := r.pending
+	was := r.hydrating
+	r.hydrating, r.pending = false, nil
+	r.gate.Unlock()
+	if was {
+		log.Printf("[Relay] Open for devices (%d waiting)", len(held))
+	}
+	for _, c := range held {
+		r.sendHydrate(c)
+	}
+}
+
+// ApplyRehydrate merges the week reloaded from Sheets, broadcasts what changed (devices
+// already connected, if the relay opened before the reload finished) and opens.
+func (r *Relay) ApplyRehydrate(ents []livesync.Entity) {
+	res := r.Store.Merge(ents)
+	if len(res.Rejected) > 0 {
+		log.Printf("[Relay] Reload: %d row(s) refused (first: %s)", len(res.Rejected), res.Rejected[0].Reason)
+	}
+	if len(res.Accepted) > 0 {
+		r.Hub.Broadcast("STATE_MUTATION", map[string]any{"changes": res.Accepted, "rev": r.Store.Rev(), "from": "sheets"})
+	}
+	// Changes accepted while degraded were held back from Sheets until now.
+	if b := r.getBridge(); b != nil {
+		b.NotifyChanged()
+	}
+	r.Open()
+}
+
 // PublishSnapshot streams a changed Sheets snapshot to every device.
 func (r *Relay) PublishSnapshot(s sheets.Snapshot) { r.Hub.Broadcast("SHEETS_SNAPSHOT", s) }
 
@@ -108,17 +166,20 @@ func (r *Relay) HandleMessage(c *ws.Client, msg ws.Inbound) {
 			h.DeviceID = h.DeviceID[:livesync.MaxByBytes]
 		}
 		c.SetDeviceID(h.DeviceID)
-		snap := r.Store.Snapshot()
-		payload := map[string]any{"weekStart": snap.WeekStart, "rev": snap.Rev, "entities": snap.Entities, "mode": r.Mode()}
-		if st := r.SheetsStatus(); st != nil {
-			payload["sheets"] = st
-		}
-		c.Send("HYDRATE", payload)
-		if b := r.getBridge(); b != nil {
-			if s := b.Snapshot(); s != nil {
-				c.Send("SHEETS_SNAPSHOT", s)
+		r.gate.Lock()
+		if r.hydrating {
+			for _, p := range r.pending {
+				if p == c {
+					r.gate.Unlock()
+					return
+				}
 			}
+			r.pending = append(r.pending, c)
+			r.gate.Unlock()
+			return
 		}
+		r.gate.Unlock()
+		r.sendHydrate(c)
 
 	case "STATE_MUTATION":
 		var m mutation
@@ -126,27 +187,49 @@ func (r *Relay) HandleMessage(c *ws.Client, msg ws.Inbound) {
 			c.Send("ERROR", map[string]string{"reason": "malformed STATE_MUTATION"})
 			return
 		}
-		if len(m.Changes) > MaxBatch {
-			c.Send("ERROR", map[string]any{"reason": "batch too large", "batchId": m.BatchID})
+		if r.Hydrating() {
+			c.Send("ERROR", map[string]any{"reason": "hydrating", "batchId": m.BatchID})
 			return
 		}
-		res := r.Store.Merge(m.Changes)
-		if len(res.Rejected) > 0 {
-			log.Printf("[Relay] %d change(s) rejected from %s (first: %s)", len(res.Rejected), c.DeviceID(), res.Rejected[0].Reason)
-		}
-		// Wake the Sheets writer before the ACK (non-blocking), so "acked" implies "queued for Sheets".
-		if len(res.Accepted) > 0 {
-			if b := r.getBridge(); b != nil {
-				b.NotifyChanged()
-			}
-		}
-		c.Send("MUTATION_ACK", map[string]any{"batchId": m.BatchID, "entities": nonNil(res.Stored), "rejected": res.Rejected})
-		if len(res.Accepted) > 0 {
-			r.Hub.BroadcastExcept(c, "STATE_MUTATION", map[string]any{"changes": res.Accepted, "rev": r.Store.Rev(), "from": c.DeviceID()})
-		}
+		r.mutate(c, m)
 
 	default:
 		c.Send("ERROR", map[string]string{"reason": "unknown packet type"})
+	}
+}
+
+func (r *Relay) sendHydrate(c *ws.Client) {
+	snap := r.Store.Snapshot()
+	payload := map[string]any{"weekStart": snap.WeekStart, "rev": snap.Rev, "entities": snap.Entities, "mode": r.Mode()}
+	if st := r.SheetsStatus(); st != nil {
+		payload["sheets"] = st
+	}
+	c.Send("HYDRATE", payload)
+	if b := r.getBridge(); b != nil {
+		if s := b.Snapshot(); s != nil {
+			c.Send("SHEETS_SNAPSHOT", s)
+		}
+	}
+}
+
+func (r *Relay) mutate(c *ws.Client, m mutation) {
+	if len(m.Changes) > MaxBatch {
+		c.Send("ERROR", map[string]any{"reason": "batch too large", "batchId": m.BatchID})
+		return
+	}
+	res := r.Store.Merge(m.Changes)
+	if len(res.Rejected) > 0 {
+		log.Printf("[Relay] %d change(s) rejected from %s (first: %s)", len(res.Rejected), c.DeviceID(), res.Rejected[0].Reason)
+	}
+	// Wake the Sheets writer before the ACK (non-blocking), so "acked" implies "queued for Sheets".
+	if len(res.Accepted) > 0 {
+		if b := r.getBridge(); b != nil {
+			b.NotifyChanged()
+		}
+	}
+	c.Send("MUTATION_ACK", map[string]any{"batchId": m.BatchID, "entities": nonNil(res.Stored), "rejected": res.Rejected})
+	if len(res.Accepted) > 0 {
+		r.Hub.BroadcastExcept(c, "STATE_MUTATION", map[string]any{"changes": res.Accepted, "rev": r.Store.Rev(), "from": c.DeviceID()})
 	}
 }
 

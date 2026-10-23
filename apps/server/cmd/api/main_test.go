@@ -102,4 +102,16 @@ func TestReadSheetsEnv(t *testing.T) {
 	if cfg, _ = readSheetsEnv(env(full), yes); cfg.PullInterval != 5*time.Minute {
 		t.Fatalf("floor: %+v", cfg)
 	}
+	if cfg.HydrateTimeout != 20*time.Second || cfg.FakeFile != "" {
+		t.Fatalf("hydrate defaults: %+v", cfg)
+	}
+	// The fake Sheet is for local tests only: a real spreadsheet ID always wins.
+	full["SHEETS_FAKE_FILE"] = "/tmp/fake.json"
+	if cfg, off = readSheetsEnv(env(full), yes); off != "" || cfg.FakeFile != "" {
+		t.Fatalf("fake must yield to a real sheet: %+v", cfg)
+	}
+	fake := map[string]string{"SHEETS_FAKE_FILE": "/tmp/fake.json", "SHEETS_HYDRATE_TIMEOUT": "3s"}
+	if cfg, off = readSheetsEnv(env(fake), no); off != "" || cfg.FakeFile != "/tmp/fake.json" || cfg.HydrateTimeout != 3*time.Second {
+		t.Fatalf("fake: %+v %q", cfg, off)
+	}
 }
