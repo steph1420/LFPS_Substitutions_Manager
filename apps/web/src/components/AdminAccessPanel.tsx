@@ -1,7 +1,8 @@
 import React from 'react';
-import { Lock, LockOpen, ShieldCheck } from 'lucide-react';
+import { Lock, LockOpen } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore.js';
-import { getConfiguredAdminHash } from '../lib/adminGate.js';
+import { ADMIN_PASSCODE_LENGTH, formatWait, getConfiguredAdminHash } from '../lib/adminGate.js';
+import { PasscodeField } from './PasscodeField.js';
 
 /**
  * Settings → Admin Access. Unlocks admin-only actions for this tab with the passcode
@@ -13,24 +14,33 @@ export const AdminAccessPanel: React.FC<{ onToast: (msg: string) => void }> = ({
   const unlockAdmin = useTimetableStore((s) => s.unlockAdmin);
   const lockAdmin = useTimetableStore((s) => s.lockAdmin);
   const isConfigured = React.useMemo(() => getConfiguredAdminHash() !== null, []);
-  const [passcode, setPasscode] = React.useState('');
+  const lockedUntil = useTimetableStore((s) => s.adminLockedUntil);
   const [error, setError] = React.useState<string | null>(null);
-  const [busy, setBusy] = React.useState(false);
+  const [now, setNow] = React.useState(() => Date.now());
   const isAdmin = operatingRole === 'ADMIN';
+  const waitMs = lockedUntil ? lockedUntil - now : 0;
+  const isLockedOut = waitMs > 0;
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (busy || !passcode) return;
-    setBusy(true);
-    const result = await unlockAdmin(passcode);
-    setBusy(false);
-    setPasscode('');
+  // Tick once a second while a wait is running, so the countdown and keypad re-enable live.
+  React.useEffect(() => {
+    if (!lockedUntil || lockedUntil <= Date.now()) return;
+    setNow(Date.now());
+    const id = setInterval(() => {
+      setNow(Date.now());
+      if (Date.now() >= lockedUntil) clearInterval(id);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [lockedUntil]);
+
+  const submit = async (code: string): Promise<boolean> => {
+    const result = await unlockAdmin(code);
     if (result.ok) {
       setError(null);
       onToast('Admin access unlocked for this tab');
-    } else {
-      setError(result.reason ?? 'Unlock failed.');
+      return true;
     }
+    setError(result.reason ?? 'Unlock failed.');
+    return false;
   };
 
   return (
@@ -67,28 +77,19 @@ export const AdminAccessPanel: React.FC<{ onToast: (msg: string) => void }> = ({
       </div>
 
       {!isAdmin && isConfigured && (
-        <form onSubmit={submit} className="flex items-center gap-2">
-          <input
-            type="password"
-            autoComplete="current-password"
-            value={passcode}
-            onChange={(e) => {
-              setPasscode(e.target.value);
-              if (error) setError(null);
-            }}
-            placeholder="Admin passcode"
-            aria-label="Admin passcode"
-            className="flex-1 min-w-0 bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+        <div className="space-y-1.5">
+          <PasscodeField
+            length={ADMIN_PASSCODE_LENGTH}
+            label="Admin passcode"
+            disabled={isLockedOut}
+            onComplete={submit}
           />
-          <button
-            type="submit"
-            disabled={busy || !passcode}
-            className="px-3 py-1.5 rounded-xl bg-blue-600/80 hover:bg-blue-600 disabled:opacity-50 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors active:scale-95"
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            Unlock
-          </button>
-        </form>
+          <div className="text-[11px] text-slate-500">
+            {isLockedOut
+              ? `Too many attempts. Try again in ${formatWait(waitMs)}.`
+              : `Enter the ${ADMIN_PASSCODE_LENGTH}-digit admin passcode.`}
+          </div>
+        </div>
       )}
 
       {!isAdmin && !isConfigured && (
@@ -98,7 +99,7 @@ export const AdminAccessPanel: React.FC<{ onToast: (msg: string) => void }> = ({
         </div>
       )}
 
-      {error && <div className="text-[11px] text-rose-300">{error}</div>}
+      {error && !isLockedOut && <div className="text-[11px] text-rose-300" role="alert">{error}</div>}
     </div>
   );
 };

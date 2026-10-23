@@ -24,9 +24,12 @@ import {
 } from './persistence.js';
 import { APP_VERSION } from '../lib/buildInfo.js';
 import {
-  LOCKOUT_MS,
-  MAX_FAILED_ATTEMPTS,
+  clearAdminLockout,
   endAdminSession,
+  formatWait,
+  isWellFormedPasscode,
+  readAdminLockout,
+  recordFailedAdminAttempt,
   getConfiguredAdminHash,
   hasAdminSession,
   startAdminSession,
@@ -321,9 +324,11 @@ interface TimetableState {
   /** Clears the selected identity AND locks admin. */
   logout: () => void;
   /** Admin unlock via passcode (SHA-256 vs VITE_ADMIN_PASSCODE_SHA256). See lib/adminGate.ts. */
-  unlockAdmin: (passcode: string) => Promise<{ ok: boolean; reason?: string }>;
+  unlockAdmin: (passcode: string) => Promise<{ ok: boolean; reason?: string; lockedUntil?: number | null }>;
   lockAdmin: () => void;
+  /** Consecutive wrong passcode attempts (mirrors lfps_admin_lockout_v1). */
   adminFailedAttempts: number;
+  /** Epoch ms until which unlock attempts are refused (escalating waits). */
   adminLockedUntil: number | null;
   assignOfficiatingAC: (day: DayOfWeek, teacherName: string) => void;
   assignOfficiatingCT: (day: DayOfWeek, section: string, teacherName: string) => void;
@@ -476,8 +481,8 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   loggedInTeacher: null,
   // SEC-01: never default to ADMIN. Front desk (GUEST) can do all day-to-day work.
   operatingRole: hasAdminSession() ? 'ADMIN' : 'GUEST',
-  adminFailedAttempts: 0,
-  adminLockedUntil: null,
+  adminFailedAttempts: readAdminLockout().failures,
+  adminLockedUntil: readAdminLockout().lockedUntil,
   isNotificationCenterOpen: false,
   notifications: initialOperational.notifications,
   officiatingAC: initialOperational.officiatingAC,
@@ -1183,10 +1188,17 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     if (!hash) {
       return { ok: false, reason: 'Admin passcode is not configured for this build. See docs/ADMIN_ACCESS.md.' };
     }
-    const { adminLockedUntil } = get();
-    if (adminLockedUntil && Date.now() < adminLockedUntil) {
-      const secs = Math.ceil((adminLockedUntil - Date.now()) / 1000);
-      return { ok: false, reason: `Too many attempts. Try again in ${secs}s.` };
+    if (!isWellFormedPasscode(passcode)) {
+      // Not counted as an attempt: the keypad only submits six digits.
+      return { ok: false, reason: 'Enter the 6-digit passcode.' };
+    }
+    const now = Date.now();
+    const stored = readAdminLockout(now);
+    const state = get();
+    const lockedUntil = Math.max(stored.lockedUntil ?? 0, state.adminLockedUntil ?? 0);
+    if (lockedUntil > now) {
+      set({ adminLockedUntil: lockedUntil });
+      return { ok: false, reason: `Too many attempts. Try again in ${formatWait(lockedUntil - now)}.`, lockedUntil };
     }
     let ok = false;
     try {
@@ -1195,14 +1207,24 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       return { ok: false, reason: err instanceof Error ? err.message : 'Passcode check failed.' };
     }
     if (!ok) {
-      const attempts = get().adminFailedAttempts + 1;
-      const lock = attempts >= MAX_FAILED_ATTEMPTS;
-      set({ adminFailedAttempts: lock ? 0 : attempts, adminLockedUntil: lock ? Date.now() + LOCKOUT_MS : null });
-      return { ok: false, reason: lock ? `Too many attempts. Try again in ${LOCKOUT_MS / 1000}s.` : 'Incorrect passcode.' };
+      const previous =
+        stored.failures >= state.adminFailedAttempts
+          ? stored
+          : { failures: state.adminFailedAttempts, lockedUntil: null, lastFailureAt: now };
+      const next = recordFailedAdminAttempt(previous, Date.now());
+      set({ adminFailedAttempts: next.failures, adminLockedUntil: next.lockedUntil });
+      return next.lockedUntil
+        ? {
+            ok: false,
+            reason: `Too many attempts. Try again in ${formatWait(next.lockedUntil - Date.now())}.`,
+            lockedUntil: next.lockedUntil,
+          }
+        : { ok: false, reason: 'Incorrect passcode.', lockedUntil: null };
     }
+    clearAdminLockout();
     startAdminSession(hash);
     set({ operatingRole: 'ADMIN', adminFailedAttempts: 0, adminLockedUntil: null });
-    return { ok: true };
+    return { ok: true, lockedUntil: null };
   },
   lockAdmin: () => {
     endAdminSession();
