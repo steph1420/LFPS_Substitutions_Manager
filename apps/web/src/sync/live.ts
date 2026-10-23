@@ -10,10 +10,23 @@ import { useTimetableStore } from '../store/useTimetableStore.js';
 import { createLiveSyncClient, type LiveSyncClient } from './client.js';
 import { getDeviceId } from './engine.js';
 import { applySheetSnapshot, getBaseSchedule } from './reference.js';
+import { checkRelayTarget } from './relayGuard.js';
 import type { SheetSnapshot } from './sheetData.js';
 
 export const WS_BASE_URL: string = import.meta.env.VITE_WS_URL || 'ws://localhost:8080';
 export const API_BASE_URL: string = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+/**
+ * Null, or why this build must not connect (dev/test build aimed at the production relay —
+ * see relayGuard.ts). vite.config.ts already refuses such builds; this is the runtime backstop.
+ */
+export const RELAY_BLOCKED: string | null = checkRelayTarget({
+  wsUrl: WS_BASE_URL,
+  apiUrl: API_BASE_URL,
+  production: import.meta.env.PROD && import.meta.env.MODE === 'production',
+  target: import.meta.env.VITE_RELAY_TARGET,
+  allowProd: import.meta.env.VITE_ALLOW_PROD_RELAY,
+});
 
 let client: LiveSyncClient | null = null;
 let refs = 0;
@@ -33,7 +46,9 @@ export function startLiveSync(): () => void {
     clearTimeout(stopTimer);
     stopTimer = null;
   }
-  if (!client) {
+  if (RELAY_BLOCKED) {
+    console.error(`[LiveSync] Not connecting: ${RELAY_BLOCKED}`);
+  } else if (!client) {
     const session = sessionStore();
     client = createLiveSyncClient({
       store: useTimetableStore,

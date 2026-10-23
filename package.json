@@ -19,7 +19,8 @@
     "test": "node scripts/version.mjs check && npm run test --workspaces --if-present",
     "version:check": "node scripts/version.mjs check",
     "version:sync": "node scripts/version.mjs sync",
-    "admin:hash": "node scripts/hash-admin-passcode.mjs"
+    "admin:hash": "node scripts/hash-admin-passcode.mjs",
+    "build:web:local": "node scripts/build-web-local.mjs"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

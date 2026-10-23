@@ -12,6 +12,10 @@ declare const __BUILD_TIME__: string;
 interface ImportMetaEnv {
   readonly VITE_API_URL?: string;
   readonly VITE_WS_URL?: string;
+  /** "local" in test scripts: the build must target a loopback relay (sync/relayGuard.ts). */
+  readonly VITE_RELAY_TARGET?: string;
+  /** "1" lets a dev/test build use the production relay on purpose. */
+  readonly VITE_ALLOW_PROD_RELAY?: string;
   /** SHA-256 hex digest of the admin passcode. Unset = admin unlock unavailable. See docs/ADMIN_ACCESS.md. */
   readonly VITE_ADMIN_PASSCODE_SHA256?: string;
 }
