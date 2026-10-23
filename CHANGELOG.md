@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+- **Standard Documentation Suite (Job Bundle 31 workspace, `refine/jb31`)**:
+  - **Docs Index**: Added `docs/README.md`, which indexes every project document and records that `DEVELOPER_GUIDE.md` is owner-controlled and only updated on explicit request.
+  - **Software Architecture Specification**: Added `docs/SAS.md`, a code-verified description of the monorepo topology, the `@lfps/core` solver and scoring, the `@lfps/ui` tokens, the web store, persistence and RBAC, the Go server API and WebSocket hub, and deployment.
+  - **Versioning Policy**: Added `docs/VERSIONING.md`, which covers SemVer lockstep across workspaces, the bump procedure, CHANGELOG conventions and the ID prefixes.
+  - **Bug Register**: Added `BUGS.md`, which tabulates BUG-01 to BUG-23 from `TODO.md`/`CHANGELOG.md` (ID, title, severity, status, found in, fixed in, notes).
+  - **Contributor & Workflow Guides**: Added `CONTRIBUTING.md` and `docs/WORKFLOW.md`, which describe the Job Bundle cycle, backups, the branch model and the verification baseline.
+  - **Architecture Decision Records**: Added `docs/DECISIONS/` with a template and ADR-0001 to ADR-0004 (monorepo with a TS core and a Go server; Zustand per-tab undo stacks; root-mounted modals for BUG-14/15; GitHub Pages served from the `next-gen` root).
+  - **Documentation Issues Audit**: Added `docs/DOC_ISSUES.md`, which lists contradictions between the existing docs and the code (DI-01 to DI-22). No existing document was rewritten.
+
 ### Planned
 - **Simple Mode**:
   - Streamlined view option presenting strictly basic manual substitution logic.
