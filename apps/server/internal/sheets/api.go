@@ -65,7 +65,34 @@ type API interface {
 }
 
 // guard is the bridge's only handle on the API: reads pass, writes outside the allowlist fail.
+// BatchReader is optional: an API that can read several tabs in one request. The live
+// Sheets API implements it (values.batchGet), so a pull costs one read, not one per tab
+// (the read quota is 60 requests a minute).
+type BatchReader interface {
+	ReadMany(ctx context.Context, tabs []string) (map[string][][]string, error)
+}
+
+// ReadMany reads tabs in one request when api supports it, else one by one.
+func ReadMany(ctx context.Context, api API, tabs []string) (map[string][][]string, error) {
+	if br, ok := api.(BatchReader); ok {
+		return br.ReadMany(ctx, tabs)
+	}
+	out := make(map[string][][]string, len(tabs))
+	for _, t := range tabs {
+		rows, err := api.Read(ctx, t)
+		if err != nil {
+			return nil, fmt.Errorf("read %q: %w", t, err)
+		}
+		out[t] = rows
+	}
+	return out, nil
+}
+
 type guard struct{ api API }
+
+func (g guard) ReadMany(ctx context.Context, tabs []string) (map[string][][]string, error) {
+	return ReadMany(ctx, g.api, tabs)
+}
 
 func (g guard) check(tab string) error {
 	if !Writable(tab) {

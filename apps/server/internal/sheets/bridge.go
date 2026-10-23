@@ -208,6 +208,7 @@ func (b *Bridge) Pull(ctx context.Context) (Snapshot, error) {
 		return Snapshot{}, err
 	}
 	snap := Snapshot{FetchedAt: b.cfg.Now().UnixMilli()}
+	var names []string
 	for _, t := range tabs {
 		if Writable(t.Title) {
 			continue
@@ -216,11 +217,14 @@ func (b *Bridge) Pull(ctx context.Context) (Snapshot, error) {
 			snap.HiddenTabs++
 			continue
 		}
-		rows, err := b.api.Read(ctx, t.Title)
-		if err != nil {
-			return Snapshot{}, fmt.Errorf("read %q: %w", t.Title, err)
-		}
-		snap.Tabs = append(snap.Tabs, Tab{Name: t.Title, Rows: rows})
+		names = append(names, t.Title)
+	}
+	data, err := ReadMany(ctx, b.api, names)
+	if err != nil {
+		return Snapshot{}, err
+	}
+	for _, n := range names {
+		snap.Tabs = append(snap.Tabs, Tab{Name: n, Rows: data[n]})
 	}
 	raw, _ := json.Marshal(snap.Tabs)
 	sum := sha256.Sum256(raw)

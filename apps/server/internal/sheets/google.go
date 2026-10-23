@@ -49,6 +49,38 @@ func (g *googleAPI) Tabs(ctx context.Context) ([]TabInfo, error) {
 	return out, nil
 }
 
+// ReadMany reads several tabs with one values.batchGet (formatted text, like Read).
+func (g *googleAPI) ReadMany(ctx context.Context, tabs []string) (map[string][][]string, error) {
+	out := make(map[string][][]string, len(tabs))
+	if len(tabs) == 0 {
+		return out, nil
+	}
+	ctx, cancel := withTimeout(ctx)
+	defer cancel()
+	ranges := make([]string, len(tabs))
+	for i, t := range tabs {
+		ranges[i] = A1Range(t, "")
+	}
+	br, err := g.svc.Spreadsheets.Values.BatchGet(g.id).Ranges(ranges...).ValueRenderOption("FORMATTED_VALUE").Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	if len(br.ValueRanges) != len(tabs) {
+		return nil, fmt.Errorf("batchGet returned %d ranges for %d tabs", len(br.ValueRanges), len(tabs))
+	}
+	for i, vr := range br.ValueRanges {
+		rows := make([][]string, len(vr.Values))
+		for r, row := range vr.Values {
+			rows[r] = make([]string, len(row))
+			for c, v := range row {
+				rows[r][c] = fmt.Sprint(v)
+			}
+		}
+		out[tabs[i]] = rows
+	}
+	return out, nil
+}
+
 func (g *googleAPI) Read(ctx context.Context, tab string) ([][]string, error) {
 	ctx, cancel := withTimeout(ctx)
 	defer cancel()
