@@ -113,10 +113,27 @@ type Store struct {
 	mu    sync.Mutex
 	state DailyState
 	now   func() time.Time
+	loc   *time.Location
 }
 
-// NewStore uses the wall clock in the process time zone (set TZ on the host).
-func NewStore() *Store { return NewStoreWithClock(time.Now) }
+// NewStore reads the wall clock in the school's time zone `loc` (see package schooltz),
+// never the host's, so "today" and the active week match the web client.
+func NewStore(loc *time.Location) *Store {
+	if loc == nil {
+		loc = time.UTC // time.Time.In panics on nil; callers should pass schooltz.Resolve(...).Location
+	}
+	s := NewStoreWithClock(func() time.Time { return time.Now().In(loc) })
+	s.loc = loc
+	return s
+}
+
+// Location is the time zone the store's calendar runs in.
+func (s *Store) Location() *time.Location {
+	if s.loc == nil {
+		return s.now().Location()
+	}
+	return s.loc
+}
 
 // NewStoreWithClock allows tests to control "today".
 func NewStoreWithClock(now func() time.Time) *Store {

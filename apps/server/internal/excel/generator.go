@@ -10,7 +10,7 @@ import (
 )
 
 // GenerateSubstitutionWorkbook creates a publication-grade Excel register in memory.
-func GenerateSubstitutionWorkbook(state storage.DailyState) ([]byte, string, error) {
+func GenerateSubstitutionWorkbook(state storage.DailyState, loc *time.Location) ([]byte, string, error) {
 	f := excelize.NewFile()
 	defer func() {
 		_ = f.Close()
@@ -149,7 +149,7 @@ func GenerateSubstitutionWorkbook(state storage.DailyState) ([]byte, string, err
 	// only artefact. Archival belongs in Google Sheets (Bundle 35).
 	dateStr := state.Date
 	if dateStr == "" {
-		dateStr = time.Now().Format("2006-01-02")
+		dateStr = time.Now().In(loc).Format("2006-01-02") // school date, not the host's
 	}
 	return buf.Bytes(), fmt.Sprintf("LFPS_Daily_Substitutions_%s.xlsx", dateStr), nil
 }

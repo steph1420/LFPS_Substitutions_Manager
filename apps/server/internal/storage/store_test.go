@@ -101,7 +101,7 @@ func TestSubstitutionStatusParityAndValidation(t *testing.T) {
 }
 
 func TestConcurrentMutations(t *testing.T) {
-	s := NewStore()
+	s := NewStore(time.UTC)
 	var wg sync.WaitGroup
 	for i := 0; i < 50; i++ {
 		wg.Add(1)
@@ -113,4 +113,27 @@ func TestConcurrentMutations(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
+}
+
+// The week must roll over at midnight in the school's zone, not the host's (UTC on Render).
+func TestWeekRollsOverAtSchoolMidnight(t *testing.T) {
+	ist, err := time.LoadLocation("Asia/Kolkata")
+	if err != nil {
+		t.Fatal(err)
+	}
+	satLate := time.Date(2026, 10, 24, 18, 29, 0, 0, time.UTC)  // Sat 23:59 IST
+	sunEarly := time.Date(2026, 10, 24, 18, 30, 0, 0, time.UTC) // Sun 00:00 IST
+	if got := NewStoreWithClock(func() time.Time { return satLate.In(ist) }).GetState().WeekStart; got != "2026-10-19" {
+		t.Fatalf("Sat 23:59 IST: week %s", got)
+	}
+	if got := NewStoreWithClock(func() time.Time { return sunEarly.In(ist) }).GetState().WeekStart; got != "2026-10-26" {
+		t.Fatalf("Sun 00:00 IST: week %s", got)
+	}
+	// The same instant read in UTC is still Saturday: this is the bug a UTC host would have.
+	if got := NewStoreWithClock(func() time.Time { return sunEarly }).GetState().WeekStart; got != "2026-10-19" {
+		t.Fatalf("UTC control: week %s", got)
+	}
+	if NewStore(ist).Location() != ist {
+		t.Fatal("NewStore must keep its zone")
+	}
 }

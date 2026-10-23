@@ -102,7 +102,7 @@ func (h *APIHandler) RemoveSubstitution(w http.ResponseWriter, r *http.Request) 
 // ExportExcel streams the register for the relay's current week. Nothing is saved on the
 // server (relay model; the old dated-backup copy was removed together with /backups, BUG-27).
 func (h *APIHandler) ExportExcel(w http.ResponseWriter, r *http.Request) {
-	data, filename, err := excel.GenerateSubstitutionWorkbook(h.store.GetState())
+	data, filename, err := excel.GenerateSubstitutionWorkbook(h.store.GetState(), h.store.Location())
 	if err != nil {
 		log.Printf("[API] excel export failed: %v", err)
 		http.Error(w, fmt.Sprintf("failed to generate excel: %v", err), http.StatusInternalServerError)

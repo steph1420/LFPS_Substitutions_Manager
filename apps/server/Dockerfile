@@ -23,15 +23,16 @@ FROM alpine:3.20
 
 WORKDIR /app
 
-# Install ca-certificates for secure outbound connections
-RUN apk add --no-cache ca-certificates tzdata
+# ca-certificates for outbound HTTPS (Google Sheets, Bundle 35). Time-zone data is embedded
+# in the binary (time/tzdata), so no tzdata package is needed.
+RUN apk add --no-cache ca-certificates
 
 # Copy binary from builder
 COPY --from=builder /app/server /app/server
 
 # Stateless relay (Bundle 34): no data directory or disk is needed.
-# Set TZ (e.g. Asia/Kolkata) on the host so "today" matches the school's calendar,
-# and ALLOWED_ORIGINS if the web app is served from somewhere other than the defaults.
+# The school time zone defaults to Asia/Kolkata in code; override with APP_TZ (or TZ) only
+# if the school moves. Set ALLOWED_ORIGINS if the web app is served from elsewhere.
 ENV PORT=8080
 
 EXPOSE 8080

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"sort"
 	"strings"
 )
 
@@ -57,6 +58,7 @@ func (p *OriginPolicy) Origins() []string {
 	for o := range p.allowed {
 		out = append(out, o)
 	}
+	sort.Strings(out) // stable order for logs
 	return out
 }
 

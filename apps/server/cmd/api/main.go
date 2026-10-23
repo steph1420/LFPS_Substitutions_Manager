@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"lfps/server/internal/handlers"
+	"lfps/server/internal/schooltz"
 	"lfps/server/internal/storage"
 	"lfps/server/internal/version"
 	"lfps/server/internal/ws"
@@ -19,7 +20,7 @@ func newRouter(store *storage.Store, hub *ws.Hub, origins *handlers.OriginPolicy
 	mux := http.NewServeMux()
 
 	// System & Metadata
-	mux.HandleFunc("GET /api/v1/health", handlers.HealthHandler)
+	mux.HandleFunc("GET /api/v1/health", handlers.HealthHandler(store.Location()))
 	mux.HandleFunc("GET /api/v1/meta", handlers.MetaHandler)
 
 	// Live week state (in-memory relay cache) & mutations. Preflights are answered by CORS.
@@ -53,8 +54,13 @@ func main() {
 		log.Println("[Server] DATA_DIR is ignored: the relay is stateless (Google Sheets is the source of truth)")
 	}
 
+	zone := schooltz.Resolve(os.Getenv)
+	if zone.Warning != "" {
+		log.Printf("[Server] Time zone override ignored (%s); using %s", zone.Warning, zone.Location)
+	}
+
 	origins := handlers.ParseOriginPolicy(os.Getenv("ALLOWED_ORIGINS"))
-	store := storage.NewStore()
+	store := storage.NewStore(zone.Location)
 	hub := ws.NewHub(origins.Allowed)
 	go hub.Run()
 
@@ -63,7 +69,8 @@ func main() {
 		Handler:           newRouter(store, hub, origins),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
-	log.Printf("[Server] LFPS relay v%s on :%s (TZ %s), allowed origins: %v", version.Version, port, time.Local, origins.Origins())
+	log.Printf("[Server] LFPS relay v%s on :%s (school time zone %s from %s), allowed origins: %v",
+		version.Version, port, zone.Location, zone.Source, origins.Origins())
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatalf("[Server Fatal] %v", err)
 	}

@@ -65,7 +65,7 @@ func newAPI(t *testing.T) (*APIHandler, *ws.Hub) {
 	t.Helper()
 	hub := ws.NewHub(nil)
 	go hub.Run()
-	return NewAPIHandler(storage.NewStore(), hub), hub
+	return NewAPIHandler(storage.NewStore(time.UTC), hub), hub
 }
 
 func TestAssignValidationAndParityFields(t *testing.T) {
@@ -107,7 +107,7 @@ func TestPayloadLimit(t *testing.T) {
 
 func TestHealthVersion(t *testing.T) {
 	rec := httptest.NewRecorder()
-	HealthHandler(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+	HealthHandler(time.UTC)(rec, httptest.NewRequest(http.MethodGet, "/", nil))
 	var h HealthResponse
 	_ = json.Unmarshal(rec.Body.Bytes(), &h)
 	if h.Version != version.Version {
@@ -122,7 +122,7 @@ func TestExportExcelStreamsWorkbook(t *testing.T) {
 	if rec.Code != http.StatusOK || rec.Body.Len() == 0 || !strings.HasPrefix(rec.Body.String(), "PK") {
 		t.Fatalf("export: %d len=%d", rec.Code, rec.Body.Len())
 	}
-	if !strings.Contains(rec.Header().Get("Content-Disposition"), time.Now().Format("2006-01-02")) {
+	if !strings.Contains(rec.Header().Get("Content-Disposition"), time.Now().In(time.UTC).Format("2006-01-02")) {
 		t.Fatalf("filename should carry today's date: %s", rec.Header().Get("Content-Disposition"))
 	}
 }
