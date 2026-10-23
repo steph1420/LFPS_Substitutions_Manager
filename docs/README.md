@@ -12,6 +12,7 @@ When documents disagree, the **source code is the ground truth**. Known contradi
 |---|---|
 | [`SAS.md`](./SAS.md) | Software Architecture Specification, verified against the code |
 | [`VERSIONING.md`](./VERSIONING.md) | Version locations, SemVer policy, bump procedure, ID prefixes |
+| [`ADMIN_ACCESS.md`](./ADMIN_ACCESS.md) | Front Desk vs admin roles, passcode setup for the owner, lockout recovery (SEC-01 interim) |
 | [`WORKFLOW.md`](./WORKFLOW.md) | Job Bundle cycle, backups, branches, verification baseline, release |
 | [`DECISIONS/`](./DECISIONS/) | Architecture Decision Records ([template](./DECISIONS/0000-template.md)) |
 | [`DOC_ISSUES.md`](./DOC_ISSUES.md) | Audit of contradictions between the docs and the code |
@@ -27,6 +28,7 @@ When documents disagree, the **source code is the ground truth**. Known contradi
 | [0002](./DECISIONS/0002-zustand-per-tab-undo-stacks.md) | Zustand store with per-tab snapshot undo stacks |
 | [0003](./DECISIONS/0003-root-mounted-modals.md) | Root-mounted modals (BUG-14/15) |
 | [0004](./DECISIONS/0004-github-pages-from-next-gen-root.md) | GitHub Pages served from the `next-gen` root |
+| [0005](./DECISIONS/0005-sheets-source-of-truth-stateless-relay.md) | Google Sheets as source of truth; Render as a stateless live relay |
 
 ## Pre-existing documents (repo root)
 

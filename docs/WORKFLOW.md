@@ -18,7 +18,7 @@ Work is grouped into numbered **Job Bundles** in `TODO.md`. Each bundle runs thr
 | 1. Backup | Snapshot tarball (§2) | A file exists in `_backups/` |
 | 2. Formulate | Add `### Job Bundle N: <title>` with status `🔴 Queued`, then `🟡 In Progress`, then `🟢 Resolved`, and with `[ ]` items carrying IDs | The bundle number is **unique** (DOC_ISSUES DI-01/DI-02) |
 | 3. Implement | Follow `CONTRIBUTING.md` §6 | |
-| 4. Verify | `npm test`; `npm run build --workspace=@lfps/ui && npm run build:core && npm run build:web`; `go build ./... && go vet ./...` for server changes | Everything passes. Record the test count |
+| 4. Verify | `npm test` (includes `version:check`); `npm run build:web` (builds ui → core → web); for server changes `cd apps/server && gofmt -l . && go vet ./... && go test -race ./...`. To check the full root `npm run build`, use a scratch `git clone` | Everything passes. Record the test count |
 | 5. Docs | `CHANGELOG.md` `[Unreleased]`, `TODO.md`, `BUGS.md`, `CATCH_UP_TO_ME.md`, an ADR if relevant | |
 | 6. Commit | Conventional commit on the feature branch | Merge and push only with the owner's approval |
 
@@ -49,6 +49,8 @@ tar -czf _backups/LFPS_Substitutions_Manager_v2.0.0_<label>_$(date +%Y%m%d_%H%M%
 
 ## 4. Verification matrix
 
+> **Job Bundle 34 baseline (`bundle/34`, 2026-10-23):** `npm test` ✅ core 26/26 + web 24/24, versions agree · fresh `git clone` → `npm ci && npm test && npm run build` ✅ (JS ≈ 651 kB, chunk warning remains) · server `go vet` ✅, `go test -race ./...` ✅ (4 packages). The table below is the pre-JB34 baseline.
+
 | Check | Command | Baseline (2026-10-23, `19c1a1a`) |
 |---|---|---|
 | Unit tests | `npm test` | ✅ 1 file, 19/19 passed (Vitest 3.2.7) |
@@ -64,4 +66,7 @@ tar -czf _backups/LFPS_Substitutions_Manager_v2.0.0_<label>_$(date +%Y%m%d_%H%M%
 2. Delete stale hashed files from `assets/`. Only the files referenced by `index.html` should remain.
 3. Bump the version per [`VERSIONING.md`](./VERSIONING.md), and move the `[Unreleased]` entries into a dated section.
 4. Commit with `chore(release): …`. **Push only when the owner approves.** Pages redeploys from the `next-gen` root, and Render auto-deploys the server.
+   - If `VITE_ADMIN_PASSCODE_SHA256` is not set in `apps/web/.env.local` on the machine that runs the build, the deployed app has **no admin access** (Settings shows "not configured"). See [`ADMIN_ACCESS.md`](./ADMIN_ACCESS.md).
+   - Render: set `TZ` to the school time zone; the relay is stateless, so a restart or redeploy clears live relay state by design (Google Sheets is the source of truth from Bundle 35).
+   - Bundle 36 (ARCH-05/06) replaces steps 1–2 with an Actions-built Pages artefact and check-gated Render deploys.
 5. To roll back, follow `CLOUD_CONNECTIONS_AND_ROLLBACK_GUIDE.md`.

@@ -8,7 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Planned
+- **Simple Mode**:
+  - Streamlined view option presenting strictly basic manual substitution logic.
+- **Codebase Technical Debt & Bloat Elimination**:
+
+---
+
+## [v2.0.0-alpha.2] - 2026-10-23
+
+> Job Bundle 34, branch `bundle/34` (off `refine/jb31`). **Not yet deployed**: GitHub Pages serves `next-gen`, and going live is the owner's call.
+> Owner direction recorded here: **Google Sheets is the source of truth; the Render server is a stateless live relay, not storage.**
+
 ### Added
+- **Reload-Safe Local Persistence (FEAT-62 part 1, BUG-25 part 1, Job Bundle 34)**: Operational state now survives a reload on the same device. It is saved to `localStorage` (`lfps_operational_state`, schema v1) 250 ms after each change and flushed when the tab is hidden or closed. Saved: absences, availability/deputations, substitutions (including Accepted/Disputed), displaced slots, Off. AC / Off. CT appointments, routine edits, the active week's undo history (last 10) and notifications (14 days, max 100). Open tabs on the same device stay in step through the `storage` event.
+- **Calendar-Date Scoping (Job Bundle 34)**: `@lfps/core` `calendar` maps MON–SAT to the active school week's dates (Sunday rolls to the coming week). Last week's absences no longer reappear; data older than 42 days is pruned. The app now opens on **today's** weekday and rolls over at midnight. Routine edits are stored as per-date overrides; permanent routine changes will come from Google Sheets (Bundle 35).
+- **Passcode-Gated Admin (SEC-01 interim, Job Bundle 34)**: The app opens as **Front Desk**. Admin (schedule editing, solver policy, Reset Day, history purge, developer mode) requires a passcode whose SHA-256 is set at build time (`VITE_ADMIN_PASSCODE_SHA256`, `npm run admin:hash`). Session is per tab; 5 wrong attempts → 30 s cooldown; Lock in Settings. Staff Login is now identity only. Client-side protection only; see `docs/ADMIN_ACCESS.md` and SEC-02.
+- **Build Info (Job Bundle 34)**: Header shows `v2.0.0-alpha.2`; the footer and Settings show `v<version> · <commit> · <branch>` (build time on hover). Settings shows "Saved on this device · <time>".
+- **Tests (Job Bundle 34)**: `@lfps/web` gets a Vitest suite (persistence 11, reload 4, access 9). `@lfps/core` gains 7 calendar tests (26 total). Go gets tests for the store, handlers, router and hub, all run under `go test -race`.
+- **Version tooling (Job Bundle 34)**: `scripts/version.mjs` (`npm run version:check` / `version:sync`) keeps the root, the three workspaces and `apps/server/internal/version` on one version; `npm test` fails on a mismatch.
 - **Standard Documentation Suite (Job Bundle 31 workspace, `refine/jb31`)**:
   - **Docs Index**: Added `docs/README.md`, which indexes every project document and records that `DEVELOPER_GUIDE.md` is owner-controlled and only updated on explicit request.
   - **Software Architecture Specification**: Added `docs/SAS.md`, a code-verified description of the monorepo topology, the `@lfps/core` solver and scoring, the `@lfps/ui` tokens, the web store, persistence and RBAC, the Go server API and WebSocket hub, and deployment.
@@ -35,10 +53,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     - BUG-28: ignored state save errors
     - BUG-29 and BUG-30: reported, not yet reproduced
 
-### Planned
-- **Simple Mode**:
-  - Streamlined view option presenting strictly basic manual substitution logic.
-- **Codebase Technical Debt & Bloat Elimination**:
+### Changed
+- **Stateless Live Relay (ARCH-02 decision, Job Bundle 34)**: The Go server keeps state in memory only, scoped to the active school week, with "today" computed per request (honours `TZ`). `DATA_DIR`/`current_state.json` are no longer used. Server model matches `@lfps/core` (`ACCEPTED`, `disputeRemark`, `acceptedAt`, `disputedAt`); invalid input → 400. Broadcasts and responses are deep copies.
+- **CORS and WebSocket origins (Job Bundle 34)**: One allowlist (`ALLOWED_ORIGINS`, default: the GitHub Pages origin and localhost 5173/4173) governs both REST and `/api/v1/ws`. Disallowed browser origins get 403.
+- **Limits (Job Bundle 34)**: WebSocket messages up to 256 KiB (was 512 bytes); request bodies capped at 1 MiB (413).
+- **Build order (Job Bundle 34)**: Root `build` runs `build:libs` (`@lfps/ui` → `@lfps/core`) before `build:web`; `npm test` runs every workspace.
+- **Repo hygiene (Job Bundle 34)**: `apps/web/tsconfig.tsbuildinfo` is no longer tracked (it marked every build "-dirty"); `*.local` env files are ignored.
+
+### Fixed
+- **BUG-24 (Job Bundle 34)**: A fresh clone now builds (`npm ci && npm test && npm run build`, verified on a scratch clone).
+- **BUG-26 (Job Bundle 34)**: WebSocket hub drops slow clients under the write lock.
+- **BUG-28 (Job Bundle 34)**: No more silently ignored save errors; encode and Excel errors are logged or returned.
+- **Footer hidden behind the tab bar (Job Bundle 34)**: The footer reserves the floating tab bar's height plus the iOS safe area on all breakpoints; the tab bar respects the safe area. Verified at 1280×800, 820×1180 and iPhone 13.
+
+### Removed
+- **BUG-27 (Job Bundle 34)**: `GET /api/v1/backups` and the server-side dated Excel copy. Under the relay model the server writes no files; `GET /api/v1/export/excel` still streams the workbook.
+
+### Security
+- Admin actions are guarded in the store as well as the UI; the developer console requires an admin session (Job Bundle 34).
+- The relay no longer answers `Access-Control-Allow-Origin: *` (Job Bundle 34).
+
 ## [v2.0.0-alpha.1] - 2026-10-18
 
 ### Added

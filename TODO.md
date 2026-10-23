@@ -6,44 +6,63 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 > **Terminology Standard**: Do NOT use the informal term `offCT`. Always use **Officiating Class Teacher**, abbreviated as **Off. CT.**. Similarly, use **Officiating AC**, abbreviated as **Off. AC**.
 
 
-## 🔴 OPEN — User-Reported Items (logged 2026-10-23 on `refine/jb31`, Job Bundle not yet assigned)
+## 🗺️ Job Bundle Plan 34–38 (approved by the owner 2026-10-23)
+
+> [!IMPORTANT]
+> **Owner facts that shape this plan**
+> - **Google Sheets is the source of truth** (the "external database"). It needs last-updated time / version tracking.
+> - The **Render server is only a live relay** between devices. It is **not storage**: the disk / Postgres direction is dropped.
+> - **GitHub Pages builds from `next-gen`** (Settings → Pages). Going live means merging/pushing to `next-gen`, which is the owner's call.
+
+| Bundle | Scope | Items | Status |
+|---|---|---|---|
+| **34** | Date-scoped local persistence; stateless relay hardening; fresh-clone build order; Front Desk by default with a passcode-gated admin; footer version visible above the tab bar; single-source versioning (2.0.0-alpha.2) | FEAT-62 (part 1), BUG-24, BUG-25 (part 1), BUG-26, BUG-27, BUG-28, SEC-01 interim, ARCH-02 (relay decision) | 🟢 Done on `bundle/34` (not deployed) |
+| **35** | Real cross-device sync through the relay; Google Sheets bridge with update-time tracking; Render re-setup guide + `render.yaml` | FEAT-62 (part 2), BUG-25 (part 2), FEAT-65, FEAT-63, ARCH-06 | 🔵 Next |
+| **36** | GitHub Actions CI (test, build, `go vet`, `go test -race`); Pages built by Actions instead of committed root assets; Render deploys only after checks pass; preview / test-branch builds | ARCH-05, ARCH-02 (adoption), ARCH-06 (gating), FEAT-64 | ⚪ Planned |
+| **37** | Header and grid motion: detach header from browser toolbar, header jitter, name-column collapse jitter | UI-10, BUG-29, BUG-30 | ⚪ Planned |
+| **38** | Server-side auth for admin writes; docs reconciliation; codebase audit | SEC-02, ARCH-03, ARCH-04 | ⚪ Planned |
+
+> Bundles 37/38 are ordered by priority and can swap if the owner prefers. SEC-02 must land before the relay writes to Google Sheets on behalf of admins (it can move into 35/36 if Sheets writes ship there).
+
+## 🔴 OPEN — User-Reported Items (logged 2026-10-23 on `refine/jb31`)
 
 > [!NOTE]
-> These items were reported by the owner on 2026-10-23. **No Job Bundle number has been assigned yet.** The owner asked for the bundle plan to be proposed and approved first. Every item below is 🔴 Open. The defects are also registered in [`BUGS.md`](BUGS.md) (BUG-24 to BUG-30).
+> These items were reported by the owner on 2026-10-23 and are scheduled in the plan above. The defects are also registered in [`BUGS.md`](BUGS.md) (BUG-24 to BUG-30).
 
 ### FEAT-62: Reload-Safe Persistence Across Website & Server (Local-First + Server Persistence & Live Broadcast)
-- **Status**: 🔴 Open
+- **Status**: 🟡 Part 1 done (Job Bundle 34, `f2c2eff`, `88e640a`); part 2 (sync) → Bundle 35
+- **Direction change (owner, 2026-10-23)**: Google Sheets is the source of truth and the server is a live relay only, so "server persistence" now means *relay + Sheets bridge*, not a server disk.
 - **Reported**: *"Changes should not be lost on reload. Fix that across website and server."*
-- **Current Behaviour (verified in code)**:
+- **Behaviour before Bundle 34 (verified in code)**:
   - Only preferences and the auto-resolve policy are written to `localStorage`.
   - Absences, availabilities, substitutions, displaced slots, Off. AC/Off. CT appointments, routine edits and notifications live only in memory, so a reload resets them.
   - The client never pushes mutations to the Go server, and it ignores incoming `STATE_MUTATION` payloads.
   - The server discards inbound WS messages. See BUG-25.
 - **Target Solution**:
-  - [ ] **Local-First Browser Persistence**: Persist the operational slices of `useTimetableStore.ts` (versioned storage key with schema migration). Exclude transient UI state such as open modals and context menus.
-  - [ ] **Date Scoping**: Key operational state by calendar date (or week), not only by `DayOfWeek`. Otherwise last week's absences would reappear after a reload.
-  - [ ] **Server Model Parity**: Bring the Go `DailyState`/`SubstitutionAssignment` up to date with `@lfps/core` types (`ACCEPTED` status, `disputeRemark`, `acceptedAt`, `disputedAt`, displaced slots, routine edits).
-  - [ ] **Hydrate & Push**: On load, hydrate from `GET /api/v1/state`. Push every mutation to the server, using either REST or a revisioned full-state endpoint.
-  - [ ] **Apply Live Broadcasts**: Apply `STATE_MUTATION` from other devices, ignoring echoes of the device's own changes.
-  - [ ] **Offline Outbox**: Queue mutations while offline and replay them on reconnect.
-  - [ ] **Single WebSocket Connection**: Use one WebSocket per tab. Today `useLiveSync()` is mounted twice, in `Header.tsx` and `SettingsModal.tsx`.
-  - [ ] **Server Hardening**: Fix the related server defects BUG-25, BUG-26, BUG-27 and BUG-28.
-  - [ ] **Tests**: Add Vitest coverage for persistence, merge and migration, and Go tests for the store and handlers.
+  - [x] **Local-First Browser Persistence** (JB34, `apps/web/src/store/persistence.ts`, key `lfps_operational_state`, schema v1): Persist the operational slices of `useTimetableStore.ts` (versioned storage key with schema migration). Exclude transient UI state such as open modals and context menus.
+  - [x] **Date Scoping** (JB34, `@lfps/core` `calendar`): Key operational state by calendar date (or week), not only by `DayOfWeek`. Otherwise last week's absences would reappear after a reload.
+  - [x] **Server Model Parity** (JB34): `ACCEPTED`, `disputeRemark`, `acceptedAt`, `disputedAt`, optional `substituteTeacher`, validation → 400. Displaced slots and routine edits are relayed in Bundle 35.
+  - [ ] **Hydrate & Push** (Bundle 35): On load, hydrate from Google Sheets / the relay. Push every mutation to the server, using either REST or a revisioned full-state endpoint.
+  - [ ] **Apply Live Broadcasts** (Bundle 35): Apply `STATE_MUTATION` from other devices, ignoring echoes of the device's own changes.
+  - [ ] **Offline Outbox** (Bundle 35): Queue mutations while offline and replay them on reconnect.
+  - [ ] **Single WebSocket Connection** (Bundle 35): Use one WebSocket per tab. Today `useLiveSync()` is mounted twice, in `Header.tsx` and `SettingsModal.tsx`.
+  - [x] **Server Hardening** (JB34, `88e640a`): BUG-26, BUG-27, BUG-28 fixed; stateless week-scoped relay, deep copies, CORS/WS origin allowlist, size limits. BUG-25 sync part remains (Bundle 35).
+  - [x] **Tests** (JB34): web Vitest (persistence, reload, access: 24 tests), core calendar tests, Go tests for store, handlers, hub and router (`go test -race`).
 
 ### FEAT-63: Render Server Re-Provisioning With the New Build / Codebase
-- **Status**: 🔴 Open (depends on FEAT-62 and ARCH-02)
+- **Status**: 🔴 Open → Bundle 35 (ARCH-02 relay decision made in JB34)
 - **Reported**: *"Help me set up the server again with new build/codebase."*
 - **Target Solution**:
   - [ ] Write a step-by-step owner guide for the Render Web Service:
     - Docker runtime with root directory `apps/server` (Dockerfile identical to the `Dockerfile.render` sidecar)
     - health check `/api/v1/health`
-    - environment variable **names**: `PORT`, `DATA_DIR`, plus any new ones FEAT-62 introduces
-  - [ ] **Durable Storage Decision**: Render's free tier has an ephemeral filesystem, so state is lost on redeploy, restart and spin-down. Choose one: a paid instance with a persistent disk mounted at `DATA_DIR`, a managed or external database, or another option.
-  - [ ] Optionally codify the service as a `render.yaml` Blueprint, so the settings live in the repo.
-  - [ ] Verify after deploy: health check, WS connect, mutation round-trip between two devices, and state surviving a restart and redeploy.
+    - environment variable **names**: `PORT`, `TZ` (school time zone, e.g. `Asia/Kolkata`), `ALLOWED_ORIGINS` (optional; defaults to the Pages origin + localhost), plus the Sheets bridge credentials Bundle 35 introduces. `DATA_DIR` is no longer used (ignored with a log line).
+  - [x] **Durable Storage Decision** (owner, 2026-10-23): **none on Render.** Google Sheets is the source of truth; the relay is stateless and an empty restart is expected. No disk, no Postgres.
+  - [ ] Codify the service as a `render.yaml` Blueprint (see ARCH-06).
+  - [ ] Verify after deploy: health check (reports `version`), WS connect from the Pages origin, mutation round-trip between two devices, and devices re-hydrating from Sheets after a relay restart.
 
 ### ARCH-02: Deployment Model Decision & Adoption
-- **Status**: 🔴 Open (needs owner approval)
+- **Status**: 🟡 Decided in part (JB34): Sheets = source of truth, Render = stateless relay, Pages from `next-gen`. Adoption of CI-built Pages and gated Render deploys → Bundle 36 (ARCH-05, ARCH-06).
 - **Reported**: *"How should deployment be handled? Suggest the best method and adhere to it."*
 - **Current Behaviour**:
   - Built assets are committed into the `next-gen` root, and GitHub Pages serves that root.
@@ -121,13 +140,59 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] Widen the hysteresis and guard against scroll events caused by the resize itself.
   - [ ] Remove `transition-all` from the sticky cells.
 
+### SEC-01 (interim): Front Desk by Default, Passcode-Gated Admin
+- **Status**: 🟢 Done (Job Bundle 34, `76c7fa0`). See [`docs/ADMIN_ACCESS.md`](docs/ADMIN_ACCESS.md).
+- **Reported**: the app opened as admin with no password, and logging out left admin powers available.
+- **Delivered**: opens as Front Desk (Guest); admin needs a passcode whose SHA-256 is baked in at build time (`VITE_ADMIN_PASSCODE_SHA256`, generate with `npm run admin:hash`); tab-scoped session; 5 failures → 30 s cooldown; schedule editing, solver policy, Reset Day, history purge and developer mode are admin-only in both the UI and the store.
+- **Limit**: client-side only. It stops accidental edits, not a determined user. Real enforcement is SEC-02.
+
+### SEC-02: Server-Side Authentication for Admin Writes
+- **Status**: 🔴 Open → Bundle 38 (earlier if Sheets writes need it)
+- **Why**: the relay accepts writes from any allowed origin, and the admin gate is client-side.
+- **Target Solution**:
+  - [ ] Relay verifies admin actions (e.g. passcode → short-lived signed token, or Google sign-in restricted to school accounts) before relaying them or writing to Sheets.
+  - [ ] Teacher identity for self-service actions (accept/dispute) once identity matters.
+  - [ ] Keep the passcode/secret only in Render environment variables, never in the repo.
+
+### FEAT-64: Preview / Test-Branch Builds ("switch to a test branch")
+- **Status**: 🔴 Open → Bundle 36 (owner to pick an option)
+- **Reported**: *"Add a way to switch to test branches."*
+- **Options**:
+  - [ ] **(A) Pages sub-path per branch (recommended)**: an Actions workflow builds each `bundle/*` or `preview/*` branch and publishes it to `https://steph1420.github.io/LFPS_Substitutions_Manager/preview/<branch>/` (Vite `base` is already `./`). Production stays at the root. Free, same origin as production. Note: a same-origin preview shares `localStorage` with production unless the persistence key is namespaced by build channel (add that with this item).
+  - [ ] **(B) Hosted previews** (Cloudflare Pages / Netlify / Vercel): automatic per-branch URLs and PR comments. Needs a third-party account; different origin, so it needs an `ALLOWED_ORIGINS` entry on the relay.
+  - [ ] **(C) Local only**: `npm run build && npm run preview --workspace=@lfps/web` on any branch checkout. No infrastructure, but only on one machine.
+  - [ ] Optional in-app "Build channel" row in Settings → Build Info that links between production and the preview list (admin only).
+
+### FEAT-65: Google Sheets Last-Updated Time & Version Tracking
+- **Status**: 🔴 Open → Bundle 35
+- **Reported**: Google Sheets is the external database and needs update-time tracking.
+- **Target Solution**:
+  - [ ] Every row the bridge writes carries `updatedAt` (ISO, school TZ), `updatedBy` (device / role / teacher if known), `appVersion` and a monotonic `revision`.
+  - [ ] A metadata tab (e.g. `_meta`) records the sheet schema version, last write time and last writer app version.
+  - [ ] Conflict rule: last-writer-wins per record by `revision`/`updatedAt`; clients show "Last synced …" in Settings next to the existing "Saved on this device" row.
+
+### ARCH-05: GitHub Actions CI
+- **Status**: 🔴 Open → Bundle 36 (owner said "sure" to automatic checks)
+- **Target Solution**:
+  - [ ] Workflow on push/PR for every branch: `npm ci`, `npm test` (includes `version:check`), `npm run build:web`, and in `apps/server`: `gofmt -l`, `go vet ./...`, `go test -race ./...`.
+  - [ ] Build the Pages artifact in Actions (inject `VITE_ADMIN_PASSCODE_SHA256` from an Actions variable, `GIT_COMMIT`/`GIT_BRANCH` from the run) so the committed root `assets/` can be removed.
+  - [ ] Branch protection on `next-gen` requiring the checks (owner action in GitHub settings).
+
+### ARCH-06: `render.yaml` and Check-Gated Render Deploys
+- **Status**: 🔴 Open → Blueprint in Bundle 35, gating in Bundle 36 (owner said "sure")
+- **Reported**: Render should redeploy only after checks pass; earlier sessions never explained the Render setup.
+- **Target Solution**:
+  - [ ] `render.yaml` Blueprint: Docker runtime, `rootDir: apps/server`, health check `/api/v1/health`, env var names (`TZ`, `ALLOWED_ORIGINS`, Sheets bridge credentials as `sync: false`), branch `next-gen`.
+  - [ ] Gate deploys: Render "Auto-Deploy: After CI checks pass" (Render waits for GitHub checks), or `autoDeploy: false` plus a deploy-hook call from the CI workflow after it passes. Document whichever the owner chooses.
+  - [ ] Step-by-step owner guide (with screenshots/field names) folded into FEAT-63.
+
 ### BUG-24 – BUG-28: Confirmed Defects Logged During Workspace Setup
-- **Status**: 🔴 Open. Full register rows are in [`BUGS.md`](BUGS.md); BUG-25 to BUG-28 are tracked for delivery under FEAT-62.
-  - [ ] **BUG-24**: Fresh-clone `build:web`/`npm run build` fails with `TS2307 Cannot find module '@lfps/ui'` because no root script builds `packages/ui`.
-  - [ ] **BUG-25**: Changes are lost on reload. The client never pushes mutations, `STATE_MUTATION` payloads are ignored, and the server discards inbound WS messages.
-  - [ ] **BUG-26**: The WebSocket hub (`internal/ws/hub.go`, broadcast branch) closes and deletes clients while holding only `RLock`.
-  - [ ] **BUG-27**: `GET /api/v1/backups` advertises `/api/v1/backups/download?file=…`, but that route is not registered (404).
-  - [ ] **BUG-28**: State save errors are silently ignored (`_ = s.persistLocked()` in `internal/storage/store.go`), as is the Excel backup `SaveAs`.
+- **Status**: 🟢 BUG-24/26/27/28 resolved in Job Bundle 34; 🟡 BUG-25 partial (sync in Bundle 35). Full register rows are in [`BUGS.md`](BUGS.md).
+  - [x] **BUG-24** (JB34, `5f9ff9c`): Fresh-clone `build:web`/`npm run build` fails with `TS2307 Cannot find module '@lfps/ui'` because no root script builds `packages/ui`.
+  - [ ] **BUG-25** (part 1 JB34 `f2c2eff`: same-device reload fixed; part 2 Bundle 35: sync): Changes are lost on reload. The client never pushes mutations, `STATE_MUTATION` payloads are ignored, and the server discards inbound WS messages.
+  - [x] **BUG-26** (JB34, `88e640a`): The WebSocket hub (`internal/ws/hub.go`, broadcast branch) closes and deletes clients while holding only `RLock`.
+  - [x] **BUG-27** (JB34, `88e640a`, route removed under the relay model): `GET /api/v1/backups` advertises `/api/v1/backups/download?file=…`, but that route is not registered (404).
+  - [x] **BUG-28** (JB34, `88e640a`): State save errors are silently ignored (`_ = s.persistLocked()` in `internal/storage/store.go`), as is the Excel backup `SaveAs`.
 
 ---
 

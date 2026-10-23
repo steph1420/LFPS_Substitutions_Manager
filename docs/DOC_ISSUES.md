@@ -218,4 +218,34 @@ DG §7.2 (l.313) requires zero `any`. There are 5 occurrences across `apps/web/s
 | DI-14, DI-15 | No for the docs; code fixes are a separate bundle | CU, DG, AR, CG; root `package.json` (code change, out of scope here) |
 | DI-17, DI-18 | No | CL (append corrections; do not rewrite released sections) |
 | DI-20 | No | CG |
-| DI-21, DI-22 | **Yes** | repo / server code (out of scope here) |
+| DI-21, DI-22 | **Yes** | repo / server code (largely done in JB34, see §D) |
+| DI-23, DI-24, DI-25 | No (DG parts are owner-only) | AR, CG, CU, TD; DG on request |
+
+---
+
+## D. Job Bundle 34 update (branch `bundle/34`, 2026-10-23)
+
+Code changes in Bundle 34 change the verdict of several items. The older docs (AR, CU, DG, CG) were **not** rewritten; that is ARCH-03 (Bundle 38), and DG stays owner-only.
+
+| ID | Status after JB34 | Detail |
+|---|---|---|
+| DI-12 | Superseded | The server no longer writes any state file (`current_state.json`, `backups/`) under the relay model. AR l.164/169, DG l.430 and CG l.106 now describe something that does not exist at all. See DI-23 |
+| DI-14 | Partly resolved in code | Same-device persistence exists now (`lfps_operational_state`, SAS §6.2), so "local persistence" is true per device. Real-time sync is **still not wired** (Bundle 35); the "full-duplex" / "offline mutations sync on reconnect" claims remain false |
+| DI-15 | Resolved in code (`5f9ff9c`) | `build` now runs `build:libs` first; a fresh clone builds. CU/DG/CG "build passes" claims are true on `bundle/34` (not yet on `next-gen`) |
+| DI-21 | Partly resolved (`1e5ce82`) | `apps/web/tsconfig.tsbuildinfo` untracked and `*.tsbuildinfo` ignored. `_backups/` tarballs, `.DS_Store` and `apps/web/.env` remain tracked (owner decision; `.env.local` patterns are now ignored for the admin hash) |
+| DI-22 | Resolved (`88e640a`) | `/backups` removed (BUG-27), write errors handled (BUG-28), write lock (BUG-26), CORS/WS origin allowlist, Go model parity. Server auth is still absent (SEC-02) |
+| DI-04 | Counts changed | Core now has **26** tests (19 solver + 7 calendar); web has 24 |
+
+### DI-23 (H): Docs describe server-side storage, which the owner has ruled out
+
+- AR l.169 ("timestamped daily snapshots `data/backups/…`"), CG l.59 (`/api/v1/backups` link), CG l.87 (`DATA_DIR` "persistent disk storage"), CG l.104 ("Persistent Disk (Optional but Recommended)"), TD l.570 (JB20 notes) and DG (server persistence) all describe the server as storage.
+- Owner direction (2026-10-23): **Google Sheets is the source of truth; Render is a stateless live relay.** Since JB34 the code matches that: in-memory week state, no disk, `DATA_DIR` ignored.
+- *Fix:* ARCH-03 for AR/CG/TD, FEAT-63 for the new Render guide; DG on the owner's request.
+
+### DI-24 (M): Version strings in older docs
+
+- CU, DG and AR quote `2.0.0-alpha.1` and "Next-Gen v2.0". The single source is now the root `package.json` (`2.0.0-alpha.2`), checked by `npm run version:check`; the app shows it in the header, footer and Settings.
+
+### DI-25 (L): Admin gate vs DESIGN_PHILOSOPHY "no login walls" (checked, compatible)
+
+- DP l.48–49 forbid compulsory login walls and require instant Front Desk access. The JB34 admin passcode only gates admin actions (schedule editing, solver policy, Reset Day, purge, developer mode); Front Desk keeps 0-second access to attendance, substitutions, Off. AC / Off. CT and export. No contradiction, but DG/CL describe SEC-01 as role selection without a passcode and should be updated (ARCH-03; DG owner-only).

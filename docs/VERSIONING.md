@@ -1,10 +1,12 @@
 # Versioning Policy
 
 > This document explains how LFPS Substitutions Manager numbers its releases, and where those numbers are kept.
-> Section 1 describes the **current, observed** practice, as verified in the repository on 2026-10-23.
+> Section 1 describes the **current, observed** practice, as verified in the repository on 2026-10-23 (updated for Job Bundle 34 on `bundle/34`).
 > Section 2 is the **policy going forward**. It changes no existing history.
 
 ## 1. Current State (observed)
+
+> **Since Job Bundle 34 (`bundle/34`, v2.0.0-alpha.2):** the **root `package.json` `version` is the single source**. `scripts/version.mjs` copies it into the three workspace manifests and `apps/server/internal/version/version.go` (`npm run version:sync`) and fails `npm test` on drift (`npm run version:check`). The web build reads it through a Vite `define`, and the header, footer and Settings → Build Info show `v<version> · <commit> · <branch>`. `GET /api/v1/health` returns the Go copy. The table below is the **pre-JB34** snapshot (`next-gen` @ `19c1a1a`), kept for history.
 
 | Location | Value | Notes |
 |---|---|---|
@@ -38,10 +40,10 @@ The project follows **[SemVer 2.0.0](https://semver.org/)**: `MAJOR.MINOR.PATCH[
 
 ### 2.2 Single version across the workspace
 
-Every workspace package moves in lockstep. `@lfps/core`, `@lfps/ui`, `@lfps/web`, the root package and the Go health string always carry **the same version**. To bump the version:
+Every workspace package moves in lockstep. `@lfps/core`, `@lfps/ui`, `@lfps/web`, the root package and the Go server (`internal/version`) always carry **the same version**. To bump the version:
 
-1. Update all four `package.json` `version` fields. `npm version <v> --workspaces --include-workspace-root --no-git-tag-version` does this.
-2. Update the hard-coded version in the Go health handler.
+1. Edit `version` in the **root** `package.json` only.
+2. Run `npm run version:sync` (updates the workspaces and the Go constant), then `npm install` to refresh `package-lock.json`. `npm test` runs `version:check` and fails if anything drifted.
 3. Move the `CHANGELOG.md` `[Unreleased]` entries under a new dated heading.
 4. Commit with `chore(release): vX.Y.Z[-pre]`.
 5. Tagging is optional. If you tag, use `vX.Y.Z` (and push the tag only when the owner approves).
