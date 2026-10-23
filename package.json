@@ -18,7 +18,8 @@
     "test:web": "npm test --workspace=@lfps/web",
     "test": "node scripts/version.mjs check && npm run test --workspaces --if-present",
     "version:check": "node scripts/version.mjs check",
-    "version:sync": "node scripts/version.mjs sync"
+    "version:sync": "node scripts/version.mjs sync",
+    "admin:hash": "node scripts/hash-admin-passcode.mjs"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useLiveSync } from '../hooks/useLiveSync.js';
 import { ResetDayButton } from './ResetDayButton.js';
+import { APP_VERSION, BUILD_LABEL } from '../lib/buildInfo.js';
 import { AddToHomeScreenModal } from './AddToHomeScreenModal.js';
 
 // Perfectly symmetrical Apple-grade spring physics (timed equally for expand and collapse)
@@ -40,7 +41,9 @@ export const Header: React.FC = () => {
     notifications,
     substitutions,
     openNotificationCenter,
+    operatingRole,
   } = useTimetableStore();
+  const isAdmin = operatingRole === 'ADMIN';
 
   const unreadNotifCount = notifications.filter((n) => !n.isRead).length;
   const disputedSubCount = substitutions.filter(
@@ -304,9 +307,20 @@ export const Header: React.FC = () => {
               <div>
                 <h1 className="text-sm font-semibold tracking-tight text-white flex items-center gap-1.5">
                   LFPS Manager
-                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                    v2.0
+                  <span
+                    className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                    title={BUILD_LABEL}
+                  >
+                    v{APP_VERSION}
                   </span>
+                  {isAdmin && (
+                    <span
+                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                      title="Admin access unlocked in this tab (lock it in Settings)"
+                    >
+                      Admin
+                    </span>
+                  )}
                 </h1>
                 <p className="text-[11px] text-slate-400 hidden xs:block">
                   Preparatory Timetable & Substitutions

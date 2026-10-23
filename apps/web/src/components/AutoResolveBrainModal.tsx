@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
 import { AutoResolvePolicyConfig, DEFAULT_AUTORESOLVE_POLICY, getSubjectFullName } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
+import { usePermissions } from './PermissionGuard.js';
 import {
   Brain,
   X,
@@ -39,6 +40,7 @@ const COMMON_SUBJECTS = [
 export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ isOpen, onClose }) => {
   const { directory, autoResolvePolicy, updateAutoResolvePolicy, resetAutoResolvePolicy } =
     useTimetableStore();
+  const { canConfigureSolver } = usePermissions();
 
   // Standard UI Pillars: ESC key to dismiss
   React.useEffect(() => {
@@ -70,11 +72,13 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
   const teachers = Object.values(directory).sort((a, b) => a.abbr.localeCompare(b.abbr));
 
   const handleSave = () => {
+    if (!canConfigureSolver) return;
     updateAutoResolvePolicy(policy);
     onClose();
   };
 
   const handleReset = () => {
+    if (!canConfigureSolver) return;
     resetAutoResolvePolicy();
     setPolicy(DEFAULT_AUTORESOLVE_POLICY);
   };
@@ -429,6 +433,7 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
 
           {/* Footer Action Bar */}
           <div className="flex items-center justify-between border-t border-slate-800/80 pt-4 flex-shrink-0">
+            {canConfigureSolver ? (
             <button
               onClick={handleReset}
               className="px-3 py-2 rounded-xl glass-pill text-slate-400 hover:text-white border-slate-700 flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer"
@@ -436,6 +441,12 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset Defaults</span>
             </button>
+            ) : (
+              <span className="text-[11px] text-slate-400 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
+                View only. Unlock Admin Access in Settings to change rules.
+              </span>
+            )}
 
             <div className="flex items-center gap-2">
               <button
@@ -444,6 +455,7 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
               >
                 Cancel
               </button>
+              {canConfigureSolver && (
               <button
                 onClick={handleSave}
                 className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-purple-500/25 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
@@ -451,6 +463,7 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
                 <Check className="w-4 h-4" />
                 <span>Save & Apply Rules</span>
               </button>
+              )}
             </div>
           </div>
         </motion.div>

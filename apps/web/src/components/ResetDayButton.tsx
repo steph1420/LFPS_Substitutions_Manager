@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore.js';
+import { usePermissions } from './PermissionGuard.js';
 
 interface ResetDayButtonProps {
   compact?: boolean;
@@ -8,6 +9,7 @@ interface ResetDayButtonProps {
 
 export const ResetDayButton: React.FC<ResetDayButtonProps> = ({ compact = false }) => {
   const { selectedDay, resetDay, openResetPurgeMenu } = useTimetableStore();
+  const { canResetDay } = usePermissions();
 
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -64,6 +66,9 @@ export const ResetDayButton: React.FC<ResetDayButtonProps> = ({ compact = false 
       resetDay(selectedDay);
     }
   };
+
+  // Admin-only (Reset Day / Purge History). Hidden rather than disabled for the front desk.
+  if (!canResetDay) return null;
 
   return (
     <button

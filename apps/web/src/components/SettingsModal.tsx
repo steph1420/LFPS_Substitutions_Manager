@@ -28,6 +28,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { AddToHomeScreenModal } from './AddToHomeScreenModal.js';
+import { AdminAccessPanel } from './AdminAccessPanel.js';
+import { BUILD_LABEL, BUILD_TIME } from '../lib/buildInfo.js';
 
 interface ThemeOption {
   id: ThemeId;
@@ -171,7 +173,10 @@ export const SettingsModal: React.FC = () => {
     undoIconStyle,
     setUndoIconStyle,
     autoResolvePolicy,
+    operatingRole,
+    persistenceStatus,
   } = useTimetableStore();
+  const isAdmin = operatingRole === 'ADMIN';
 
   const [toastMessage, setToastMessage] = React.useState<string | null>(null);
   const [isPwaModalOpen, setIsPwaModalOpen] = React.useState(false);
@@ -186,6 +191,12 @@ export const SettingsModal: React.FC = () => {
       const next = tapCount + 1;
       setTapCount(next);
       if (next >= 5) {
+        if (!isAdmin && !isDeveloperMode) {
+          setTapCount(0);
+          showToast('Developer Options need Admin Access (see Operating Identity)');
+          lastTapTimeRef.current = now;
+          return;
+        }
         const nextDevMode = !isDeveloperMode;
         setDeveloperMode(nextDevMode);
         setTapCount(0);
@@ -306,7 +317,9 @@ export const SettingsModal: React.FC = () => {
                         )}
                       </div>
                       <div className="text-[11px] text-slate-400">
-                        {currentTeacher ? currentTeacher.role : 'Read & administrative front-desk access'}
+                        {currentTeacher
+                          ? `${currentTeacher.role} · can accept / dispute own duties`
+                          : 'Front Desk: absences, availability, substitutions, Off. AC / Off. CT'}
                       </div>
                     </div>
                   </div>
@@ -315,7 +328,7 @@ export const SettingsModal: React.FC = () => {
                     <button
                       onClick={() => {
                         logout();
-                        showToast('Logged out to Front Desk mode');
+                        showToast('Signed out to Front Desk (admin locked)');
                       }}
                       className="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-semibold text-xs flex items-center gap-1.5 transition-colors active:scale-95"
                     >
@@ -334,7 +347,7 @@ export const SettingsModal: React.FC = () => {
                       className="bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer"
                     >
                       <option value="" disabled>
-                        Select Teacher Login...
+                        I am… (optional)
                       </option>
                       {Object.values(directory).map((t) => (
                         <option key={t.id} value={t.abbr}>
@@ -343,6 +356,31 @@ export const SettingsModal: React.FC = () => {
                       ))}
                     </select>
                   )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <AdminAccessPanel onToast={showToast} />
+                <div className="px-3.5 py-2 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between gap-3 text-[11px]">
+                  <span className="text-slate-400">This device</span>
+                  <span
+                    className={
+                      persistenceStatus.state === 'error'
+                        ? 'text-rose-300'
+                        : persistenceStatus.state === 'degraded'
+                          ? 'text-amber-300'
+                          : 'text-slate-300'
+                    }
+                    title={persistenceStatus.error ?? undefined}
+                  >
+                    {persistenceStatus.state === 'error'
+                      ? 'Not saving on this device (storage unavailable)'
+                      : persistenceStatus.state === 'degraded'
+                        ? 'Storage nearly full: saving without undo history'
+                        : persistenceStatus.lastSavedAt
+                          ? `Saved on this device · ${new Date(persistenceStatus.lastSavedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                          : 'Saved on this device'}
+                  </span>
                 </div>
               </div>
 
@@ -640,7 +678,8 @@ export const SettingsModal: React.FC = () => {
                     </div>
                   </button>
 
-                  {/* Reset Day Button (FEAT-41) */}
+                  {/* Reset Day Button (FEAT-41) — admin only */}
+                  {isAdmin && (
                   <button
                     onClick={() => {
                       if (window.confirm(`Reset timetable and substitutions for ${selectedDay} to master baseline? This action can be undone via Undo.`)) {
@@ -656,8 +695,10 @@ export const SettingsModal: React.FC = () => {
                       <div className="text-[10px] text-slate-400">Revert changes to master baseline</div>
                     </div>
                   </button>
+                  )}
 
-                  {/* Purge All Undo/Redo History (FEAT-41) */}
+                  {/* Purge All Undo/Redo History (FEAT-41) — admin only */}
+                  {isAdmin && (
                   <button
                     onClick={() => {
                       if (window.confirm('Purge all action history buffers across all 3 tabs? This will permanently wipe all undo/redo history.')) {
@@ -680,11 +721,12 @@ export const SettingsModal: React.FC = () => {
                       </div>
                     </div>
                   </button>
+                  )}
                 </div>
               </div>
 
               {/* Section 5.5: Developer & Diagnostics Console (FEAT-47, Unlocked via 5-tap) */}
-              {isDeveloperMode && (
+              {isAdmin && isDeveloperMode && (
                 <div className="space-y-2 border-2 border-dashed border-emerald-500/40 rounded-2xl p-3.5 bg-emerald-950/10">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -918,14 +960,14 @@ export const SettingsModal: React.FC = () => {
               >
                 <div className="flex items-center gap-2">
                   <Info className="w-3.5 h-3.5 text-slate-600 flex-shrink-0" />
-                  <span>LFPS Substitutions Manager Next-Gen v2.0 • React 19 + TypeScript + Go Cloud API</span>
+                  <span title={`Built ${BUILD_TIME}`}>LFPS Substitutions Manager · {BUILD_LABEL}</span>
                 </div>
                 {tapCount > 0 && tapCount < 5 && (
                   <span className="text-[9px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-400 font-mono">
                     {5 - tapCount} more taps
                   </span>
                 )}
-                {isDeveloperMode && (
+                {isAdmin && isDeveloperMode && (
                   <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-bold uppercase tracking-wider">
                     Dev Mode Active
                   </span>

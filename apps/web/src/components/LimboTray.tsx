@@ -2,15 +2,18 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, Trash2, ArrowUpRight } from 'lucide-react';
 import { useTimetableStore, DisplacedItem } from '../store/useTimetableStore.js';
+import { usePermissions } from './PermissionGuard.js';
 
 export const LimboTray: React.FC = () => {
   const { selectedDay, displaced, restoreDisplacedItem, clearDisplaced } = useTimetableStore();
+  const { canEditSchedule } = usePermissions();
   const [shakingItemId, setShakingItemId] = React.useState<string | null>(null);
   const [statusMessage, setStatusMessage] = React.useState<string | null>(null);
 
   const items: DisplacedItem[] = displaced[selectedDay] || [];
 
   const handleCardClick = (item: DisplacedItem) => {
+    if (!canEditSchedule) return;
     const result = restoreDisplacedItem(item);
     if (result.success) {
       if (typeof window !== 'undefined' && 'vibrate' in navigator) {
@@ -74,11 +77,14 @@ export const LimboTray: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-[10px] sm:text-[11px] text-amber-200/70">
-                    Drag onto any free cell to reallocate, or tap a card to restore to its original slot.
+                    {canEditSchedule
+                      ? 'Drag onto any free cell to reallocate, or tap a card to restore to its original slot.'
+                      : 'Classes moved off the routine today. Admin access is needed to reallocate them.'}
                   </p>
                 </div>
               </div>
 
+              {canEditSchedule && (
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
@@ -90,6 +96,7 @@ export const LimboTray: React.FC = () => {
                   <span className="hidden sm:inline">Clear All</span>
                 </button>
               </div>
+              )}
             </div>
 
             {/* Status notification toast inside tray */}
@@ -119,10 +126,10 @@ export const LimboTray: React.FC = () => {
                       }}
                     >
                       <div
-                        draggable
+                        draggable={canEditSchedule}
                         onDragStart={(e) => handleDragStart(e, item)}
                         onClick={() => handleCardClick(item)}
-                        className={`group relative rounded-xl px-3 py-2 bg-slate-900/90 border border-amber-500/50 hover:border-amber-400 shadow-md hover:shadow-amber-500/20 transition-all cursor-grab active:cursor-grabbing select-none ${
+                        className={`group relative rounded-xl px-3 py-2 bg-slate-900/90 border border-amber-500/50 hover:border-amber-400 shadow-md hover:shadow-amber-500/20 transition-all ${canEditSchedule ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'} select-none ${
                           isShaking ? 'animate-shake border-rose-500 bg-rose-950/40' : ''
                         }`}
                         title={`Click to restore to ${item.ogTeacher} (${item.period}) or drag onto any grid cell`}

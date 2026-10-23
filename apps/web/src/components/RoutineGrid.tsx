@@ -12,6 +12,7 @@ import { useTimetableStore } from '../store/useTimetableStore.js';
 import { Maximize2, Minimize2, Users, School, Eye, EyeOff, Check, Building2 } from 'lucide-react';
 import { UndoRedoControls } from './UndoRedoControls.js';
 import { LimboTray } from './LimboTray.js';
+import { usePermissions } from './PermissionGuard.js';
 
 const DAYS: DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
@@ -54,6 +55,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
     cancelAwaySelection,
     startAwaySelection,
   } = useTimetableStore();
+  const { canEditSchedule } = usePermissions();
 
   const [dragOverTarget, setDragOverTarget] = React.useState<{ teacher: string; period: PeriodId } | null>(null);
   const [dragSource, setDragSource] = React.useState<{ teacher: string; period: PeriodId; task: string } | null>(null);
@@ -373,7 +375,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                   );
                   const isDisplacedFlash = lastDisplacedDrop?.teacher === teacher.abbr && lastDisplacedDrop?.period === period.id;
 
-                  const isDraggable = !awaySelectionState?.active && isBusy && !covering && !sub && period.id !== 'BREAK';
+                  const isDraggable = canEditSchedule && !awaySelectionState?.active && isBusy && !covering && !sub && period.id !== 'BREAK';
                   const isDragOver = dragOverTarget?.teacher === teacher.abbr && dragOverTarget?.period === period.id;
 
                   return (
@@ -418,6 +420,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                         e.preventDefault();
                         setDragOverTarget(null);
                         setDragSource(null);
+                        if (!canEditSchedule) return;
                         try {
                           const data = JSON.parse(e.dataTransfer.getData('application/json'));
                           if (!data) return;

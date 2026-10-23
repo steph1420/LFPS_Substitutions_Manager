@@ -23,6 +23,15 @@ import {
   type PersistenceStatus,
 } from './persistence.js';
 import { APP_VERSION } from '../lib/buildInfo.js';
+import {
+  LOCKOUT_MS,
+  MAX_FAILED_ATTEMPTS,
+  endAdminSession,
+  getConfiguredAdminHash,
+  hasAdminSession,
+  startAdminSession,
+  verifyAdminPasscode,
+} from '../lib/adminGate.js';
 
 export interface ContextMenuTarget {
   x: number;
@@ -307,9 +316,15 @@ interface TimetableState {
   // FEAT-31: Co-teacher per-period release
   releaseCoTeacher: (period: PeriodId, teacherName: string) => void;
 
+  /** Identity selection only (no credential): enables a teacher's own accept/dispute. */
   login: (teacherName: string) => void;
+  /** Clears the selected identity AND locks admin. */
   logout: () => void;
-  setOperatingRole: (role: UserRole) => void;
+  /** Admin unlock via passcode (SHA-256 vs VITE_ADMIN_PASSCODE_SHA256). See lib/adminGate.ts. */
+  unlockAdmin: (passcode: string) => Promise<{ ok: boolean; reason?: string }>;
+  lockAdmin: () => void;
+  adminFailedAttempts: number;
+  adminLockedUntil: number | null;
   assignOfficiatingAC: (day: DayOfWeek, teacherName: string) => void;
   assignOfficiatingCT: (day: DayOfWeek, section: string, teacherName: string) => void;
 
@@ -409,6 +424,10 @@ const initialPolicy = loadStoredPolicy();
 // Apply initial theme to document DOM
 applyThemeToDom(initialPrefs.currentTheme ?? 'dark');
 
+const ADMIN_REQUIRED = 'Admin access required (Settings → Admin Access).';
+/** Admin-only actions re-check here, not just in the UI (defence in depth; still client-side). */
+const isAdmin = (state: { operatingRole: UserRole }) => state.operatingRole === 'ADMIN';
+
 const getInitialRosterMode = (saved?: RosterViewMode): RosterViewMode => {
   if (saved === 'list' || saved === 'compact-list') return 'compact-list';
   if (saved === 'detailed-list' || saved === 'normal-list') return 'normal-list';
@@ -455,7 +474,10 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   displaced: initialOperational.displaced,
 
   loggedInTeacher: null,
-  operatingRole: 'ADMIN',
+  // SEC-01: never default to ADMIN. Front desk (GUEST) can do all day-to-day work.
+  operatingRole: hasAdminSession() ? 'ADMIN' : 'GUEST',
+  adminFailedAttempts: 0,
+  adminLockedUntil: null,
   isNotificationCenterOpen: false,
   notifications: initialOperational.notifications,
   officiatingAC: initialOperational.officiatingAC,
@@ -561,6 +583,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     set({ currentTheme: theme });
   },
   setDeveloperMode: (enabled) => {
+    if (enabled && !isAdmin(get())) return;
     autoPersistPreferences({ isDeveloperMode: enabled });
     set({ isDeveloperMode: enabled });
   },
@@ -591,6 +614,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
   moveRoutineSlot: (day, source, target) =>
     set((state) => {
+      if (!isAdmin(state)) return {};
       const routineHistory = pushSnapshot(state.routineHistory, {
         schedule: state.schedule,
         displaced: state.displaced,
@@ -665,6 +689,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
   restoreDisplacedItem: (item) => {
     const state = get();
+    if (!isAdmin(state)) return { success: false, reason: ADMIN_REQUIRED };
     const day = item.day;
     const currentTask = state.schedule[day]?.[item.period]?.[item.ogTeacher] || 'Free';
 
@@ -704,6 +729,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
   clearDisplaced: (day) =>
     set((state) => {
+      if (!isAdmin(state)) return {};
       const routineHistory = pushSnapshot(state.routineHistory, {
         schedule: state.schedule,
         displaced: state.displaced,
@@ -719,6 +745,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
   swapRoutineSlots: (day, source, target) =>
     set((state) => {
+      if (!isAdmin(state)) return {};
       const routineHistory = pushSnapshot(state.routineHistory, {
         schedule: state.schedule,
         displaced: state.displaced,
@@ -755,6 +782,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
   updatePeriodTask: (day, period, teacherName, newTask) =>
     set((state) => {
+      if (!isAdmin(state)) return {};
       const routineHistory = pushSnapshot(state.routineHistory, {
         schedule: state.schedule,
         displaced: state.displaced,
@@ -776,6 +804,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
   updateAutoResolvePolicy: (policyUpdate) =>
     set((state) => {
+      if (!isAdmin(state)) return {};
       const nextPolicy = { ...state.autoResolvePolicy, ...policyUpdate };
       try {
         if (typeof window !== 'undefined') {
@@ -788,7 +817,8 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     }),
 
   resetAutoResolvePolicy: () =>
-    set(() => {
+    set((state) => {
+      if (!isAdmin(state)) return {};
       try {
         if (typeof window !== 'undefined') {
           localStorage.removeItem(AUTORESOLVE_POLICY_STORAGE_KEY);
@@ -1138,16 +1168,49 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       };
     }),
 
+  // Choosing a name never grants admin (it used to for two names, with no credential).
   login: (teacherName) =>
-    set({
+    set((state) => ({
       loggedInTeacher: teacherName,
-      operatingRole:
-        teacherName === 'Mrs. R. Pahwa' || teacherName === 'Mrs. S. Lakra'
-          ? 'ADMIN'
-          : 'TEACHER',
-    }),
-  logout: () => set({ loggedInTeacher: null, operatingRole: 'ADMIN' }),
-  setOperatingRole: (role) => set({ operatingRole: role }),
+      operatingRole: state.operatingRole === 'ADMIN' ? 'ADMIN' : 'TEACHER',
+    })),
+  logout: () => {
+    endAdminSession();
+    set({ loggedInTeacher: null, operatingRole: 'GUEST' });
+  },
+  unlockAdmin: async (passcode) => {
+    const hash = getConfiguredAdminHash();
+    if (!hash) {
+      return { ok: false, reason: 'Admin passcode is not configured for this build. See docs/ADMIN_ACCESS.md.' };
+    }
+    const { adminLockedUntil } = get();
+    if (adminLockedUntil && Date.now() < adminLockedUntil) {
+      const secs = Math.ceil((adminLockedUntil - Date.now()) / 1000);
+      return { ok: false, reason: `Too many attempts. Try again in ${secs}s.` };
+    }
+    let ok = false;
+    try {
+      ok = await verifyAdminPasscode(passcode, hash);
+    } catch (err) {
+      return { ok: false, reason: err instanceof Error ? err.message : 'Passcode check failed.' };
+    }
+    if (!ok) {
+      const attempts = get().adminFailedAttempts + 1;
+      const lock = attempts >= MAX_FAILED_ATTEMPTS;
+      set({ adminFailedAttempts: lock ? 0 : attempts, adminLockedUntil: lock ? Date.now() + LOCKOUT_MS : null });
+      return { ok: false, reason: lock ? `Too many attempts. Try again in ${LOCKOUT_MS / 1000}s.` : 'Incorrect passcode.' };
+    }
+    startAdminSession(hash);
+    set({ operatingRole: 'ADMIN', adminFailedAttempts: 0, adminLockedUntil: null });
+    return { ok: true };
+  },
+  lockAdmin: () => {
+    endAdminSession();
+    set((state) => ({
+      operatingRole: state.loggedInTeacher ? 'TEACHER' : 'GUEST',
+      isDeveloperMode: false,
+    }));
+  },
 
   acceptSubstitution: (id) =>
     set((state) => {
@@ -1389,6 +1452,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   // FEAT-41: One-Tap Global Reset for current day (undoable)
   resetDay: (targetDay) =>
     set((state) => {
+      if (!isAdmin(state)) return {};
       const day = targetDay || state.selectedDay;
 
       // Save snapshots to history across all 3 stacks so the reset is completely undoable
@@ -1445,11 +1509,15 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
   // FEAT-41: Purge all history buffers
   purgeHistory: () =>
-    set({
-      routineHistory: { past: [], future: [] },
-      substitutionsHistory: { past: [], future: [] },
-      rosterHistory: { past: [], future: [] },
-    }),
+    set((state) =>
+      isAdmin(state)
+        ? {
+            routineHistory: { past: [], future: [] },
+            substitutionsHistory: { past: [], future: [] },
+            rosterHistory: { past: [], future: [] },
+          }
+        : {}
+    ),
 }));
 
 // FEAT-62: reload-safe local persistence of operational state (per calendar date).

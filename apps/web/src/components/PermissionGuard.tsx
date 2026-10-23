@@ -16,8 +16,19 @@ export interface Permissions {
   canActOnSub: (substituteTeacher?: string) => boolean;
 }
 
+/**
+ * Role model (Bundle 34, SEC-01 interim — client-side only, NOT real security; see
+ * docs/ADMIN_ACCESS.md and TODO SEC-02):
+ * - GUEST ("Front Desk", the default) and TEACHER run the day: absences, availability,
+ *   assigning/removing substitutes, Auto-Resolve, Off. AC / Off. CT, Excel export.
+ *   The front desk never hits a login wall.
+ * - TEACHER additionally accepts/disputes their own duties.
+ * - ADMIN (passcode unlock) adds routine edits, Limbo restore/clear, Reset Day,
+ *   Purge History, Auto-Resolve policy and Developer Options.
+ */
 export function usePermissions(): Permissions {
-  const { operatingRole, loggedInTeacher } = useTimetableStore();
+  const operatingRole = useTimetableStore((s) => s.operatingRole);
+  const loggedInTeacher = useTimetableStore((s) => s.loggedInTeacher);
 
   const isAdmin = operatingRole === 'ADMIN';
   const isTeacher = operatingRole === 'TEACHER';
@@ -29,9 +40,9 @@ export function usePermissions(): Permissions {
     isTeacher,
     isGuest,
     canEditSchedule: isAdmin,
-    canAssignSubs: isAdmin,
-    canManageAttendance: isAdmin,
-    canAppointOfficiating: isAdmin,
+    canAssignSubs: true,
+    canManageAttendance: true,
+    canAppointOfficiating: true,
     canConfigureSolver: isAdmin,
     canResetDay: isAdmin,
     canActOnSub: (substituteTeacher?: string) => {

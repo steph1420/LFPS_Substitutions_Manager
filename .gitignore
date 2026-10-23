@@ -38,3 +38,8 @@ lerna-debug.log*
 # Local Backups
 _backups/
 
+
+# Local environment overrides (admin passcode hash etc.) — never commit
+*.local
+.env.local
+.env.*.local
