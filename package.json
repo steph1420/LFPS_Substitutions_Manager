@@ -1,6 +1,6 @@
 {
   "name": "lfps-substitutions-suite",
-  "version": "2.0.0-alpha.1",
+  "version": "2.0.0-alpha.2",
   "private": true,
   "workspaces": [
     "packages/*",
@@ -8,15 +8,19 @@
   ],
   "scripts": {
     "dev:web": "npm run dev --workspace=@lfps/web",
-    "build:web": "npm run build --workspace=@lfps/web",
+    "build:ui": "npm run build --workspace=@lfps/ui",
     "build:core": "npm run build --workspace=@lfps/core",
-    "build:pages": "npm run build:core && npm run build:web && node -e \"const fs = require('fs'); fs.cpSync('apps/web/dist', '.', { recursive: true });\"",
+    "build:libs": "npm run build:ui && npm run build:core",
+    "build:web": "npm run build:libs && npm run build --workspace=@lfps/web",
+    "build:pages": "npm run build:web && node -e \"const fs = require('fs'); fs.cpSync('apps/web/dist', '.', { recursive: true });\"",
+    "build": "npm run build:pages",
     "test:core": "npm test --workspace=@lfps/core",
-    "test": "npm run test --workspaces --if-present",
-    "build": "npm run build:core && npm run build:web && node -e \"const fs = require('fs'); fs.cpSync('apps/web/dist', '.', { recursive: true });\""
+    "test:web": "npm test --workspace=@lfps/web",
+    "test": "node scripts/version.mjs check && npm run test --workspaces --if-present",
+    "version:check": "node scripts/version.mjs check",
+    "version:sync": "node scripts/version.mjs sync"
   },
   "devDependencies": {
     "typescript": "^5.7.3"
   }
 }
-
