@@ -134,12 +134,15 @@ func (r *Relay) HandleMessage(c *ws.Client, msg ws.Inbound) {
 		if len(res.Rejected) > 0 {
 			log.Printf("[Relay] %d change(s) rejected from %s (first: %s)", len(res.Rejected), c.DeviceID(), res.Rejected[0].Reason)
 		}
-		c.Send("MUTATION_ACK", map[string]any{"batchId": m.BatchID, "entities": nonNil(res.Stored), "rejected": res.Rejected})
+		// Wake the Sheets writer before the ACK (non-blocking), so "acked" implies "queued for Sheets".
 		if len(res.Accepted) > 0 {
-			r.Hub.BroadcastExcept(c, "STATE_MUTATION", map[string]any{"changes": res.Accepted, "rev": r.Store.Rev(), "from": c.DeviceID()})
 			if b := r.getBridge(); b != nil {
 				b.NotifyChanged()
 			}
+		}
+		c.Send("MUTATION_ACK", map[string]any{"batchId": m.BatchID, "entities": nonNil(res.Stored), "rejected": res.Rejected})
+		if len(res.Accepted) > 0 {
+			r.Hub.BroadcastExcept(c, "STATE_MUTATION", map[string]any{"changes": res.Accepted, "rev": r.Store.Rev(), "from": c.DeviceID()})
 		}
 
 	default:
