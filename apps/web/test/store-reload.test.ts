@@ -81,4 +81,16 @@ describe('store survives a reload (FEAT-62)', () => {
     const saved = JSON.parse(localStorage.getItem(OPERATIONAL_STATE_KEY) as string);
     expect(saved.days['2026-10-21'].absences).toHaveLength(1);
   });
+
+  it('rolls over at midnight IST whatever the device time zone (instants given in UTC)', async () => {
+    vi.setSystemTime(new Date('2026-10-24T18:28:00Z')); // Sat 23:58 IST
+    const store = await loadStore();
+    expect(store.getState().activeWeekStart).toBe('2026-10-19');
+    expect(store.getState().selectedDay).toBe('SAT');
+    vi.setSystemTime(new Date('2026-10-24T18:29:30Z')); // Sat 23:59:30 IST
+    vi.advanceTimersByTime(60_000); // → Sun 00:00:30 IST
+    expect(store.getState().activeWeekStart).toBe('2026-10-26');
+    expect(store.getState().selectedDay).toBe('MON');
+  });
 });
+

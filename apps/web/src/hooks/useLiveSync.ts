@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTimetableStore } from '../store/useTimetableStore.js';
-import { AbsenceRecord, SubstitutionAssignment } from '@lfps/core';
+import { AbsenceRecord, SubstitutionAssignment, schoolDateFor } from '@lfps/core';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 const WS_BASE_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080';
@@ -91,7 +91,7 @@ export function useLiveSync() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `LFPS_Daily_Substitutions_${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.download = `LFPS_Daily_Substitutions_${schoolDateFor(new Date())}.xlsx`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

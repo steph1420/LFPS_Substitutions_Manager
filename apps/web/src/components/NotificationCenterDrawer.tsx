@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
 import { useTimetableStore } from '../store/useTimetableStore.js';
-import { getEffectiveOfficiatingAC, PeriodId } from '@lfps/core';
+import { getEffectiveOfficiatingAC, PeriodId, SCHOOL_TIME_ZONE } from '@lfps/core';
 import {
   Bell,
   X,
@@ -304,6 +304,7 @@ export const NotificationCenterDrawer: React.FC = () => {
                       {new Date(notif.timestamp).toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit',
+                        timeZone: SCHOOL_TIME_ZONE,
                       })}
                     </span>
                   </div>

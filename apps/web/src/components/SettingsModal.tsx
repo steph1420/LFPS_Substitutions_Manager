@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SCHOOL_TIME_ZONE } from '@lfps/core';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
 import { useTimetableStore, ThemeId } from '../store/useTimetableStore.js';
 import { useLiveSync } from '../hooks/useLiveSync.js';
@@ -378,7 +379,7 @@ export const SettingsModal: React.FC = () => {
                       : persistenceStatus.state === 'degraded'
                         ? 'Storage nearly full: saving without undo history'
                         : persistenceStatus.lastSavedAt
-                          ? `Saved on this device · ${new Date(persistenceStatus.lastSavedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                          ? `Saved on this device · ${new Date(persistenceStatus.lastSavedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: SCHOOL_TIME_ZONE })}`
                           : 'Saved on this device'}
                   </span>
                 </div>

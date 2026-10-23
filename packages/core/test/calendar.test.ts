@@ -6,6 +6,8 @@ import {
   daysBetweenISO,
   isISODate,
   parseISODate,
+  SCHOOL_TIME_ZONE,
+  schoolDateFor,
   schoolDayForDate,
   schoolWeekDates,
   toISODate,
@@ -53,5 +55,33 @@ describe('school calendar (FEAT-62)', () => {
   it('returns the weekday slot for a date, null on Sunday', () => {
     expect(schoolDayForDate(local(2026, 10, 23))).toBe('FRI');
     expect(schoolDayForDate(local(2026, 10, 25))).toBeNull();
+  });
+
+  describe('school time zone (Asia/Kolkata, UTC+05:30) regardless of device TZ', () => {
+    // Instants are given in UTC, so these hold on any machine.
+    const utc = (iso: string) => new Date(iso);
+
+    it('defaults to Asia/Kolkata', () => {
+      expect(SCHOOL_TIME_ZONE).toBe('Asia/Kolkata');
+    });
+
+    it('rolls the date over at midnight IST (18:30 UTC), not device midnight', () => {
+      expect(schoolDateFor(utc('2026-10-23T18:29:59Z'))).toBe('2026-10-23'); // Fri 23:59:59 IST
+      expect(schoolDateFor(utc('2026-10-23T18:30:00Z'))).toBe('2026-10-24'); // Sat 00:00 IST
+      expect(schoolDateFor(utc('2026-10-23T18:30:00Z'), 'UTC')).toBe('2026-10-23');
+    });
+
+    it('switches to the upcoming week at Sunday 00:00 IST', () => {
+      expect(activeWeekStart(utc('2026-10-24T18:29:00Z'))).toBe('2026-10-19'); // Sat 23:59 IST
+      expect(activeWeekStart(utc('2026-10-24T18:30:00Z'))).toBe('2026-10-26'); // Sun 00:00 IST
+      expect(schoolDayForDate(utc('2026-10-24T18:29:00Z'))).toBe('SAT');
+      expect(schoolDayForDate(utc('2026-10-24T18:30:00Z'))).toBeNull();
+      expect(schoolDayForDate(utc('2026-10-25T18:30:00Z'))).toBe('MON');
+    });
+
+    it('falls back to the device date for an unknown zone instead of throwing', () => {
+      const d = local(2026, 10, 23, 12);
+      expect(schoolDateFor(d, 'Not/AZone')).toBe(toISODate(d));
+    });
   });
 });

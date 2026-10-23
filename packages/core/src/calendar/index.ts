@@ -8,15 +8,55 @@ import type { DayOfWeek } from '../types/index.js';
  * On Sunday (no school) the active week is the upcoming one, so Monday's plan can be
  * prepared on Sunday evening.
  *
- * All dates are local-time ISO calendar dates ("YYYY-MM-DD"), never UTC timestamps,
- * so 00:30 local time is never mistaken for the previous day.
+ * "Today" is always the date on the SCHOOL's wall clock (Asia/Kolkata), whatever time zone
+ * the device is set to, so a laptop left on UTC or a visitor abroad still rolls over at
+ * midnight IST. Functions that take an instant (`now: Date`) convert it with
+ * `schoolDateFor`; the pure ISO helpers below work on calendar dates only.
  */
 
 export const SCHOOL_DAYS: readonly DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
+/** IANA time zone of the school calendar. The Go relay uses the same default. */
+export const SCHOOL_TIME_ZONE = 'Asia/Kolkata';
+
+const dateFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function formatterFor(timeZone: string): Intl.DateTimeFormat {
+  let f = dateFormatters.get(timeZone);
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' });
+    dateFormatters.set(timeZone, f);
+  }
+  return f;
+}
+
+/**
+ * Calendar date ("YYYY-MM-DD") of the instant `now` on the wall clock of `timeZone`
+ * (default: the school's). Falls back to the device's local date only if the runtime has
+ * no time-zone data for `timeZone`.
+ */
+export function schoolDateFor(now: Date, timeZone: string = SCHOOL_TIME_ZONE): string {
+  let parts: Intl.DateTimeFormatPart[];
+  try {
+    parts = formatterFor(timeZone).formatToParts(now);
+  } catch {
+    return toISODate(now);
+  }
+  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? '';
+  const iso = `${get('year')}-${get('month')}-${get('day')}`;
+  return ISO_DATE.test(iso) ? iso : toISODate(now);
+}
+
+/** JS weekday (0 = Sun … 6 = Sat) of an ISO calendar date. */
+export function weekdayOfISO(iso: string): number {
+  const d = parseISODate(iso);
+  if (!d) throw new Error(`Invalid ISO date: ${iso}`);
+  return d.getDay();
+}
+
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-/** Local calendar date of `d` as "YYYY-MM-DD". */
+/** Device-local calendar date of `d` as "YYYY-MM-DD" (use `schoolDateFor` for "today"). */
 export function toISODate(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -43,11 +83,12 @@ export function addDaysISO(iso: string, days: number): string {
   return toISODate(new Date(d.getFullYear(), d.getMonth(), d.getDate() + days));
 }
 
-/** Monday ("YYYY-MM-DD") of the active school week for `now`. Sunday rolls forward. */
-export function activeWeekStart(now: Date): string {
-  const jsDay = now.getDay(); // 0 = Sun … 6 = Sat
+/** Monday ("YYYY-MM-DD") of the active school week at instant `now`. Sunday rolls forward. */
+export function activeWeekStart(now: Date, timeZone: string = SCHOOL_TIME_ZONE): string {
+  const today = schoolDateFor(now, timeZone);
+  const jsDay = weekdayOfISO(today); // 0 = Sun … 6 = Sat
   const offset = jsDay === 0 ? 1 : 1 - jsDay; // Sun → next Mon, Mon → 0, Tue → -1 …
-  return toISODate(new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset));
+  return addDaysISO(today, offset);
 }
 
 /** Calendar date of a weekday slot within the week that starts on `weekStart` (a Monday). */
@@ -63,9 +104,9 @@ export function schoolWeekDates(weekStart: string): Record<DayOfWeek, string> {
   >;
 }
 
-/** Weekday slot for `now`, or null on Sunday. */
-export function schoolDayForDate(now: Date): DayOfWeek | null {
-  const jsDay = now.getDay();
+/** Weekday slot at instant `now` on the school's clock, or null on Sunday. */
+export function schoolDayForDate(now: Date, timeZone: string = SCHOOL_TIME_ZONE): DayOfWeek | null {
+  const jsDay = weekdayOfISO(schoolDateFor(now, timeZone));
   return jsDay === 0 ? null : SCHOOL_DAYS[jsDay - 1];
 }
 

@@ -30,8 +30,8 @@ import {
   dateForSchoolDay,
   daysBetweenISO,
   isISODate,
+  schoolDateFor,
   schoolDayForDate,
-  toISODate,
   SCHOOL_DAYS,
 } from '@lfps/core';
 import type {
@@ -386,7 +386,7 @@ function sameContent(a: PersistedDayRecord, b: PersistedDayRecord): boolean {
 
 /** Drop day/week records older than RETENTION_DAYS and stale/excess notifications. */
 export function pruneOperationalDoc(doc: OperationalDoc, now: Date): OperationalDoc {
-  const today = toISODate(now);
+  const today = schoolDateFor(now);
   const keep = (iso: string) => isISODate(iso) && daysBetweenISO(iso, today) <= RETENTION_DAYS;
   const notifCutoff = now.getTime() - NOTIFICATION_RETENTION_DAYS * 86_400_000;
   return {
