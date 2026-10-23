@@ -21,8 +21,8 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 | Bundle | Scope | Items | Status |
 |---|---|---|---|
 | **34** | Date-scoped local persistence; stateless relay hardening; fresh-clone build order; Front Desk by default with a **6-digit** passcode-gated admin (escalating lockout); footer version visible above the tab bar; single-source versioning (2.0.0-alpha.2); **school time zone Asia/Kolkata** on client and server | FEAT-62 (part 1), BUG-24, BUG-25 (part 1), BUG-26, BUG-27, BUG-28, SEC-01 interim, ARCH-02 (relay decision), ARCH-07 | 🟢 Live: v2.0.0-alpha.2, released 2026-10-24 |
-| **35** | Cross-device sync through the relay (devices ⇄ relay over WebSocket only); Sheets bridge: app-owned `Subs` + `App_Meta` (+ optional log) written async/batched/debounced/retried, read-only tabs pulled at startup + periodically and streamed; client "Connecting…" state for relay cold starts; Render re-setup guide + `render.yaml`. **Owner setup first:** service account + real spreadsheet ID | FEAT-62 (part 2), BUG-25 (part 2), FEAT-65, FEAT-66, FEAT-63, ARCH-06 | 🔵 Next |
-| **36** | GitHub Actions CI (test, build, `go vet`, `go test -race`); Pages built by Actions instead of committed root assets (`next-gen` → root); Render deploys only after checks pass; branch previews at `/preview/<branch>/` with a footer branch badge (option A) | ARCH-05, ARCH-02 (adoption), ARCH-06 (gating), FEAT-64 | ⚪ Planned |
+| **35** | Cross-device sync through the relay (devices ⇄ relay over WebSocket only); Sheets bridge: app-owned `Subs` + `App_Meta` (+ optional log) written async/batched/debounced/retried, read-only tabs pulled at startup + periodically and streamed; client "Connecting…" state for relay cold starts; Render re-setup guide + `render.yaml`. **Owner setup first:** service account + real spreadsheet ID | FEAT-62 (part 2), BUG-25 (part 2), BUG-32, FEAT-65, FEAT-66, FEAT-63, ARCH-06 | 🟡 Done on `bundle/35`, unreleased (ships with 34.1 as alpha.3). Also landed early: a minimal CI workflow and the `checksPass` deploy gate (part of 36). Waiting for owner decisions in [`docs/SHEETS_SETUP.md`](docs/SHEETS_SETUP.md) §5 and [`docs/RENDER_SETUP.md`](docs/RENDER_SETUP.md) |
+| **36** | GitHub Actions CI (test, build, `go vet`, `go test -race`); Pages built by Actions instead of committed root assets (`next-gen` → root); Render deploys only after checks pass; branch previews at `/preview/<branch>/` with a footer branch badge (option A) | ARCH-05 (rest), ARCH-02 (adoption), FEAT-64 | ⚪ Planned. The `checksPass` gate and a `next-gen` CI workflow already landed in 35 |
 | **37** | Header and grid motion: detach header from browser toolbar, header jitter, name-column collapse jitter | UI-10, BUG-29, BUG-30 | ⚪ Planned |
 | **38** | Server-side auth for admin writes; docs reconciliation; codebase audit | SEC-02, ARCH-03, ARCH-04 | ⚪ Planned |
 
@@ -36,7 +36,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 > These items were reported by the owner on 2026-10-23 and are scheduled in the plan above. The defects are also registered in [`BUGS.md`](BUGS.md) (BUG-24 to BUG-30).
 
 ### FEAT-62: Reload-Safe Persistence Across Website & Server (Local-First + Server Persistence & Live Broadcast)
-- **Status**: 🟡 Part 1 done (Job Bundle 34, `f2c2eff`, `88e640a`); part 2 (sync) → Bundle 35
+- **Status**: 🟡 Part 1 done (Job Bundle 34, `f2c2eff`, `88e640a`); part 2 (sync) done on `bundle/35` (unreleased); part 3 (apply the Sheets snapshot) open
 - **Direction change (owner, 2026-10-23)**: Google Sheets is the source of truth and the server is a live relay only, so "server persistence" now means *relay + Sheets bridge*, not a server disk.
 - **Reported**: *"Changes should not be lost on reload. Fix that across website and server."*
 - **Behaviour before Bundle 34 (verified in code)**:
@@ -48,27 +48,29 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] **Local-First Browser Persistence** (JB34, `apps/web/src/store/persistence.ts`, key `lfps_operational_state`, schema v1): Persist the operational slices of `useTimetableStore.ts` (versioned storage key with schema migration). Exclude transient UI state such as open modals and context menus.
   - [x] **Date Scoping** (JB34, `@lfps/core` `calendar`): Key operational state by calendar date (or week), not only by `DayOfWeek`. Otherwise last week's absences would reappear after a reload.
   - [x] **Server Model Parity** (JB34): `ACCEPTED`, `disputeRemark`, `acceptedAt`, `disputedAt`, optional `substituteTeacher`, validation → 400. Displaced slots and routine edits are relayed in Bundle 35.
-  - [ ] **Hydrate & Push** (Bundle 35): On connect, the relay sends the current state and the read-only Sheet data (staff, subjects, master routine). Devices push every mutation over the **same WebSocket** (no direct Sheets or REST calls from devices for sync).
-  - [ ] **Substitutions only to Sheets** (Bundle 35, owner 2026-10-24): date-scoped routine edits and substitutions sync to the `Subs` tab. Nothing the app does writes to the master timetable (see EPIC-01).
-  - [ ] **Apply Live Broadcasts** (Bundle 35): Apply `STATE_MUTATION` from other devices, ignoring echoes of the device's own changes.
-  - [ ] **Offline Outbox** (Bundle 35): Queue mutations while offline and replay them on reconnect.
-  - [ ] **Single WebSocket Connection** (Bundle 35): Use one WebSocket per tab. Today `useLiveSync()` is mounted twice, in `Header.tsx` and `SettingsModal.tsx`.
+  - [x] **Hydrate & Push** (JB35, `apps/web/src/sync/*`, `internal/livesync`, `internal/relay`; protocol in [`docs/SAS.md`](docs/SAS.md) §6.3): On connect, the relay sends the current state and the read-only Sheet data (staff, subjects, master routine). Devices push every mutation over the **same WebSocket** (no direct Sheets or REST calls from devices for sync).
+  - [x] **Substitutions only to Sheets** (JB35, `internal/sheets`, allowlist-guarded; owner 2026-10-24): date-scoped routine edits and substitutions sync to the `Subs` tab. Nothing the app does writes to the master timetable (see EPIC-01).
+  - [x] **Apply Live Broadcasts** (JB35, per-entity last-writer-wins): Apply `STATE_MUTATION` from other devices, ignoring echoes of the device's own changes.
+  - [x] **Offline Outbox** (JB35, per-tab `sessionStorage`; batches ≤ 500 entities and ≤ 128 KiB): Queue mutations while offline and replay them on reconnect.
+  - [x] **Single WebSocket Connection** (JB35, BUG-32, `sync/live.ts` ref-counted singleton): Use one WebSocket per tab. Before, `useLiveSync()` was mounted twice, in `Header.tsx` and `SettingsModal.tsx`; it's now a read-only status hook.
   - [x] **Server Hardening** (JB34, `88e640a`): BUG-26, BUG-27, BUG-28 fixed; stateless week-scoped relay, deep copies, CORS/WS origin allowlist, size limits. BUG-25 sync part remains (Bundle 35).
   - [x] **Tests** (JB34): web Vitest (persistence, reload, access: 30 tests), core calendar tests (incl. IST), Go tests for schooltz, store, handlers, hub and router (`go test -race`).
+  - [x] **Sync tests** (JB35): web `sync.test.ts` (entities, engine, client against a fake relay, wake window, batching) and `live-singleton.test.ts`; Go `livesync`, `relay`, `sheets` (fake API) tests; a two-browser Playwright run (scratch, not in the repo).
+  - [ ] **Part 3: apply the Sheets snapshot** (FEAT-65 follow-up): the relay pulls and streams read-only tabs (`SHEETS_SNAPSHOT`), but the client doesn't apply them yet (staff, subjects and master routine still come from the bundled defaults), and `Subs` isn't read back into a relay that restarted empty (devices refill it on HYDRATE instead).
 
 ### FEAT-63: Render Server Re-Provisioning With the New Build / Codebase
-- **Status**: 🔴 Open → Bundle 35 (ARCH-02 relay decision made in JB34)
+- **Status**: 🟡 Guide and Blueprint done on `bundle/35` ([`docs/RENDER_SETUP.md`](docs/RENDER_SETUP.md)); the owner applies them and the post-deploy check follows
 - **Reported**: *"Help me set up the server again with new build/codebase."*
 - **Target Solution**:
-  - [ ] Write a step-by-step owner guide for the Render Web Service:
+  - [x] Write a step-by-step owner guide for the Render Web Service (JB35, `docs/RENDER_SETUP.md`):
     - Docker runtime with root directory `apps/server` (Dockerfile identical to the `Dockerfile.render` sidecar)
     - health check `/api/v1/health`
     - environment variable **names**: `PORT` (Render sets it), `ALLOWED_ORIGINS` (optional; defaults to the Pages origin + localhost), `APP_TZ` (optional; the school zone is Asia/Kolkata in code since JB34, so **no TZ setting is needed**), plus the Sheets bridge credentials Bundle 35 introduces. `DATA_DIR` is no longer used (ignored with a log line).
     - where to set them: Render Dashboard → the service → **Environment** in the left pane (not **Settings**) → Environment Variables → **+ Add Environment Variable** → Save, then choose "Save and deploy" ([Render docs](https://render.com/docs/configure-environment-variables)). Secret files (e.g. the service-account key) go in the same page under **Secret Files**, mounted at `/etc/secrets/<name>`.
     - health check path `/api/v1/health` (also what the owner's uptime pinger should call; it is cheap and needs no `Origin`).
   - [x] **Durable Storage Decision** (owner, 2026-10-23): **none on Render.** Google Sheets is the source of truth; the relay is stateless and an empty restart is expected. No disk, no Postgres.
-  - [ ] Codify the service as a `render.yaml` Blueprint (see ARCH-06).
-  - [ ] Verify after deploy: health check (reports `version`), WS connect from the Pages origin, mutation round-trip between two devices, and devices re-hydrating from Sheets after a relay restart.
+  - [x] Codify the service as a `render.yaml` Blueprint (JB35, see ARCH-06).
+  - [ ] Verify after deploy (owner + agent, after approval; steps in `docs/RENDER_SETUP.md`): health check (reports `version`), WS connect from the Pages origin, mutation round-trip between two devices, and devices re-hydrating from Sheets after a relay restart.
 
 ### ARCH-02: Deployment Model Decision & Adoption
 - **Status**: 🟡 Decided in part (JB34): Sheets = source of truth, Render = stateless relay, Pages from `next-gen`. Adoption of CI-built Pages and gated Render deploys → Bundle 36 (ARCH-05, ARCH-06).
@@ -211,30 +213,30 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] Optional in-app "Build channel" row in Settings → Build Info that links between production and the preview list (admin only).
 
 ### FEAT-65: Google Sheets Bridge, Last-Updated Time & Version Tracking
-- **Status**: 🔴 Open → Bundle 35 (needs owner setup first)
+- **Status**: 🟡 Bridge done on `bundle/35` (unreleased; integration-checked against the real Sheet with the owner's service account). Owner decisions open in [`docs/SHEETS_SETUP.md`](docs/SHEETS_SETUP.md) §5
 - **Reported**: Google Sheets is the external database and needs update-time tracking. Clarified 2026-10-24: the app creates its **own** purpose-specific tabs and writes **only** to those. Every other tab is read-only information that the **server** pulls and streams to all devices.
 - **The owner's Sheet** ("subApp - CLASS AND TEACHER ROUTINES Build 4", published copy read 2026-10-24): Staff Directory, Daily_Ledger, Baseline_Updates, Subjects List, 9 per-teacher routine tabs, OVERVIEW (master timetable + subject allocations), KG A, KG B, PREP A, PREP B. Full table in [`docs/SAS.md`](docs/SAS.md) §2.1.
 - **Owner setup (blocking)**:
-  - [ ] Create a Google Cloud project, enable the **Google Sheets API**, create a **service account** and a JSON key.
-  - [ ] **Share the spreadsheet with the service account's e-mail as Editor.**
-  - [ ] Provide the **real spreadsheet ID**: the `<id>` in `https://docs.google.com/spreadsheets/d/<id>/edit`. The `2PACX-…` ID in the "Publish to web" link is read-only and cached, and cannot be used for writes.
-  - [ ] Store both on Render: service → **Environment** → `SHEETS_SPREADSHEET_ID` as a variable, and the key under **Secret Files** (e.g. `sheets-sa.json` → `/etc/secrets/sheets-sa.json`, referenced by `GOOGLE_APPLICATION_CREDENTIALS`). Never in the repo.
-  - [ ] Decide on the existing `Daily_Ledger` (earlier app's substitution log): reuse it as the Subs table, or leave it read-only and start a new `Subs` tab. Decide whether `Baseline_Updates` (earlier master-routine edits) stays as a read-only history.
+  - [x] Create a Google Cloud project, enable the **Google Sheets API**, create a **service account** and a JSON key.
+  - [x] **Share the spreadsheet with the service account's e-mail as Editor.**
+  - [x] Provide the **real spreadsheet ID** (in `render.yaml`, not in Go code): the `<id>` in `https://docs.google.com/spreadsheets/d/<id>/edit`. The `2PACX-…` ID in the "Publish to web" link is read-only and cached, and cannot be used for writes.
+  - [ ] Store both on Render (steps in `docs/RENDER_SETUP.md`; the Blueprint expects `/etc/secrets/sa.json`): service → **Environment** → `SHEETS_SPREADSHEET_ID` as a variable, and the key under **Secret Files** (e.g. `sheets-sa.json` → `/etc/secrets/sheets-sa.json`, referenced by `GOOGLE_APPLICATION_CREDENTIALS`). Never in the repo.
+  - [ ] Decide on the existing `Daily_Ledger` (left untouched for now; options A/B/C in `docs/SHEETS_SETUP.md` §5) (earlier app's substitution log): reuse it as the Subs table, or leave it read-only and start a new `Subs` tab. Decide whether `Baseline_Updates` (earlier master-routine edits) stays as a read-only history.
 - **Target Solution**:
-  - [ ] App-owned tabs, created by the relay if missing: **`Subs`** (date, day, period, absent teacher, substitute, status, note, assigned by, `updatedAt` ISO in school time, `updatedBy` device/role/teacher, `appVersion`, monotonic `revision`, stable row `id`), **`App_Meta`** (schema version, last write time, last writer app version), optional **`App_Log`**.
-  - [ ] Writes: async, **batched** (`spreadsheets.values.batchUpdate`), **debounced** (a few seconds), **retried** with backoff on 429/5xx, idempotent by row `id`. A write failure never blocks devices; the relay reports a "Sheets: last saved …" status.
-  - [ ] Reads: pull the read-only tabs **at startup and periodically** (e.g. every 5–10 min during school hours, and on admin request), parse them into the core model (OVERVIEW → master routine, Staff Directory → staff, Subjects List → subjects), and **stream** them to devices over WebSocket. Never write to those tabs.
-  - [ ] Conflict rule: last-writer-wins per record by `revision`/`updatedAt`; clients show "Last synced …" in Settings next to the existing "Saved on this device" row.
-  - [ ] Quotas: stay well under the Sheets API per-minute limits by batching. One relay talks to Google; devices never do.
+  - [x] App-owned tabs, created by the relay if missing (JB35; `App_Log` only with `SHEETS_LOG=1`): **`Subs`** (date, day, period, absent teacher, substitute, status, note, assigned by, `updatedAt` ISO in school time, `updatedBy` device/role/teacher, `appVersion`, monotonic `revision`, stable row `id`), **`App_Meta`** (schema version, last write time, last writer app version), optional **`App_Log`**.
+  - [x] Writes (JB35): async, **batched** (`spreadsheets.values.batchUpdate`), **debounced** (a few seconds), **retried** with backoff on 429/5xx, idempotent by row `id`. A write failure never blocks devices; the relay reports a "Sheets: last saved …" status.
+  - [ ] Reads (partly, JB35: pull and stream done; **applying** on devices is FEAT-62 part 3): pull the read-only tabs **at startup and periodically** (e.g. every 5–10 min during school hours, and on admin request), parse them into the core model (OVERVIEW → master routine, Staff Directory → staff, Subjects List → subjects), and **stream** them to devices over WebSocket. Never write to those tabs.
+  - [x] Conflict rule (JB35, per entity by `(ts, by)`): last-writer-wins per record by `revision`/`updatedAt`; clients show "Last synced …" in Settings next to the existing "Saved on this device" row.
+  - [x] Quotas (JB35, debounced batched writes, 5 min pulls): stay well under the Sheets API per-minute limits by batching. One relay talks to Google; devices never do.
 
 ### FEAT-66: Client Cold-Start "Connecting…" State
-- **Status**: 🔴 Open → Bundle 35
+- **Status**: 🟡 Done on `bundle/35` (unreleased)
 - **Why**: outside school hours the owner's pinger stops, Render puts the relay to sleep, and the first connection takes about a minute (PERF-03).
 - **Target Solution**:
-  - [ ] Replace the binary "Cloud Live / Offline" pill with three states: **Live**, **Connecting…** (first attempt or waking; a calm pulse in opacity only) and **Offline** (no network, or still failing after the wake window).
-  - [ ] The app stays fully usable from local data throughout. Changes queue in the outbox (FEAT-62) and flush once connected.
-  - [ ] Reconnect with backoff and jitter (1 s → 30 s) instead of a fixed 3 s. Treat a non-JSON/HTML health response as "waking" (Render serves a loading page to browsers while spinning up).
-  - [ ] Optional: a cheap `fetch('/api/v1/health')` on app open to start the wake-up early.
+  - [x] (JB35, `Header.tsx` `sync-pill`) Replace the binary "Cloud Live / Offline" pill with three states: **Live**, **Connecting…** (first attempt or waking; a calm pulse in opacity only) and **Offline** (no network, or still failing after the wake window).
+  - [x] The app stays fully usable from local data throughout. Changes queue in the outbox (FEAT-62) and flush once connected.
+  - [x] Reconnect with backoff and jitter (1 s → 30 s) instead of a fixed 3 s. The client uses only the WebSocket (no health fetch), so any failed attempt inside the 90 s wake window counts as "waking" and stays Connecting…; Offline needs no network or failures beyond that window.
+  - [ ] Optional (not done; the socket attempt on app open already wakes the relay): a cheap `fetch('/api/v1/health')` on app open to start the wake-up early.
 
 ### PERF-03: Relay Keep-Warm (Render Free-Tier Spin-Down)
 - **Status**: 🟢 Handled externally (owner, 2026-10-24). No work in this repo.
@@ -262,24 +264,24 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - Until then, the app never writes to master tabs. The earlier app's `Baseline_Updates` log is read-only.
 
 ### ARCH-05: GitHub Actions CI
-- **Status**: 🔴 Open → Bundle 36 (owner said "sure" to automatic checks)
+- **Status**: 🟡 Partly done on `bundle/35`: `.github/workflows/ci.yml` runs on push/PR to `next-gen` (server: gofmt, vet, `test -race`, no spreadsheet ID in Go; web: `npm ci`, `build:web`, `npm test`). Rest → Bundle 36
 - **Target Solution**:
-  - [ ] Workflow on push/PR for every branch: `npm ci`, `npm test` (includes `version:check`), `npm run build:web`, and in `apps/server`: `gofmt -l`, `go vet ./...`, `go test -race ./...`.
+  - [ ] (partly, JB35: `next-gen` only, so the Render gate has a check to wait for) Workflow on push/PR for every branch: `npm ci`, `npm test` (includes `version:check`), `npm run build:web`, and in `apps/server`: `gofmt -l`, `go vet ./...`, `go test -race ./...`.
   - [ ] Build the Pages artifact in Actions (inject `VITE_ADMIN_PASSCODE_SHA256` from an Actions variable, `GIT_COMMIT`/`GIT_BRANCH` from the run) so the committed root `assets/` can be removed.
   - [ ] Branch protection on `next-gen` requiring the checks (owner action in GitHub settings).
 
 ### ARCH-06: `render.yaml` and Check-Gated Render Deploys
-- **Status**: 🔴 Open → Blueprint in Bundle 35, gating in Bundle 36 (owner said "sure")
+- **Status**: 🟡 Done on `bundle/35` (Blueprint + `autoDeployTrigger: checksPass`); the owner switches the existing service over (see `docs/RENDER_SETUP.md`)
 - **Reported**: Render should redeploy only after checks pass; earlier sessions never explained the Render setup.
 - **Target Solution**:
-  - [ ] `render.yaml` Blueprint: Docker runtime, `rootDir: apps/server`, health check `/api/v1/health`, env var names (`ALLOWED_ORIGINS`, optional `APP_TZ`, `SHEETS_SPREADSHEET_ID` and the service-account secret file as `sync: false`), branch `next-gen`. No keep-warm cron (PERF-03).
-  - [ ] Gate deploys: Render "Auto-Deploy: After CI checks pass" (Render waits for GitHub checks), or `autoDeploy: false` plus a deploy-hook call from the CI workflow after it passes. Document whichever the owner chooses.
-  - [ ] Step-by-step owner guide (with screenshots/field names) folded into FEAT-63.
+  - [x] (JB35; `dockerContext`/`dockerfilePath` instead of `rootDir`, plus a `buildFilter`) `render.yaml` Blueprint: Docker runtime, `rootDir: apps/server`, health check `/api/v1/health`, env var names (`ALLOWED_ORIGINS`, optional `APP_TZ`, `SHEETS_SPREADSHEET_ID` and the service-account secret file as `sync: false`), branch `next-gen`. No keep-warm cron (PERF-03).
+  - [x] (JB35: `checksPass` chosen; no deploy-hook secret needed and it fails safe) Gate deploys: Render "Auto-Deploy: After CI checks pass" (Render waits for GitHub checks), or `autoDeploy: false` plus a deploy-hook call from the CI workflow after it passes. Document whichever the owner chooses.
+  - [x] Step-by-step owner guide (field names, no screenshots) folded into FEAT-63: `docs/RENDER_SETUP.md`.
 
 ### BUG-24 – BUG-28: Confirmed Defects Logged During Workspace Setup
-- **Status**: 🟢 BUG-24/26/27/28 resolved in Job Bundle 34; 🟡 BUG-25 partial (sync in Bundle 35). Full register rows are in [`BUGS.md`](BUGS.md).
+- **Status**: 🟢 BUG-24/26/27/28 resolved in Job Bundle 34; 🟢 BUG-25 sync part resolved on `bundle/35` (unreleased). Full register rows are in [`BUGS.md`](BUGS.md).
   - [x] **BUG-24** (JB34, `5f9ff9c`): Fresh-clone `build:web`/`npm run build` fails with `TS2307 Cannot find module '@lfps/ui'` because no root script builds `packages/ui`.
-  - [ ] **BUG-25** (part 1 JB34 `f2c2eff`: same-device reload fixed; part 2 Bundle 35: sync): Changes are lost on reload. The client never pushes mutations, `STATE_MUTATION` payloads are ignored, and the server discards inbound WS messages.
+  - [x] **BUG-25** (part 1 JB34 `f2c2eff`: same-device reload fixed; part 2 JB35: sync through the relay): Changes are lost on reload. The client never pushes mutations, `STATE_MUTATION` payloads are ignored, and the server discards inbound WS messages.
   - [x] **BUG-26** (JB34, `88e640a`): The WebSocket hub (`internal/ws/hub.go`, broadcast branch) closes and deletes clients while holding only `RLock`.
   - [x] **BUG-27** (JB34, `88e640a`, route removed under the relay model): `GET /api/v1/backups` advertises `/api/v1/backups/download?file=…`, but that route is not registered (404).
   - [x] **BUG-28** (JB34, `88e640a`): State save errors are silently ignored (`_ = s.persistLocked()` in `internal/storage/store.go`), as is the Excel backup `SaveAs`.
@@ -295,6 +297,13 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - **Fix (owner, in cron-job.org)**: switch the job's request method to **HEAD**: cron-job.org → Cronjobs → the job → **Edit** → **Advanced** → **Request method** → `HEAD` → Save (`/api/v1/health` answers HEAD with 200 and no body). With HEAD no body is downloaded, so the 64 KB output limit can't trip; success depends only on the status code. Verified against cron-job.org's docs: the job's Advanced section has "Request method" (FAQ: GET/POST/PUT/HEAD… supported; REST API `requestMethod`, default GET). If the owner uses the cron-job.org API instead, that is `requestMethod: 3` (HEAD).
   - Expect an occasional failure during deploys and after a sleep. Render takes about a minute to wake, and cron-job.org gives up after 30 s. A single failed run in a deploy window is not an outage.
 - **Repo contract** (unchanged, PERF-03): health stays cheap and small, and answers GET and HEAD.
+
+### BUG-32: Two WebSockets per Tab (RESOLVED in JB35, unreleased)
+- **Status**: 🟢 Fixed on `bundle/35`. Register row in [`BUGS.md`](BUGS.md).
+- **Was**: `useLiveSync()` opened its own socket and was mounted in both `Header.tsx` and `SettingsModal.tsx`, so opening Settings doubled the connections (and the presence count).
+- **Fix**: one ref-counted sync client per tab (`apps/web/src/sync/live.ts`, 1 s grace so a remount doesn't reconnect); `useLiveSync()` only reads status. Test: `live-singleton.test.ts`.
+
+---
 
 ## 🐛 Critical Bug & Performance Tracker
 

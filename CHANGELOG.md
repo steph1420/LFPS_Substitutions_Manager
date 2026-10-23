@@ -9,8 +9,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 > Job Bundle 34a (branch `bundle/34a`, the owner's "34.1"): not shipped. It ships as `2.0.0-alpha.3` with the next approved release (VERSIONING §2.6).
+>
+> Job Bundle 35 (branch `bundle/35`, cut from `bundle/34a`): not shipped either. It ships in the same `2.0.0-alpha.3` as 34a. The wire protocol changed: an alpha.2 client and an alpha.3 relay don't sync with each other (SAS §6.3; rollback notes in `docs/RENDER_SETUP.md`). Going live needs the owner's approval and the Render steps in `docs/RENDER_SETUP.md`.
 
 ### Added
+- **Live sync across devices (FEAT-62 part 2, BUG-25, Job Bundle 35)**: Absences, availabilities, substitutions, displaced slots, Off. AC / Off. CT appointments and dated routine edits now sync through the relay over one WebSocket. On connect a device sends `HELLO` and gets `HYDRATE` (the relay's current week). Edits go out as small per-entity changes (`STATE_MUTATION`, acknowledged, broadcast to the other devices). Conflicts resolve per entity, last writer wins. Edits made while offline queue in the tab and go out on reconnect. A relay that restarted empty is refilled by the devices.
+- **"Connecting…" state (FEAT-66)**: The header pill shows **Live**, **Connecting…** (amber, gentle pulse) or **Offline**. A sleeping Render relay takes about a minute to wake; that stays Connecting…, and the app is fully usable from local data meanwhile. Offline means no network, or still failing after 90 s. The hover text shows queued changes. Reconnects back off from 1 s to 30 s with jitter, and retry at once when the network returns or the window regains focus.
+- **Google Sheets bridge (FEAT-65)**: With credentials set, the relay writes substitutions to the app's own `Subs` tab and its state to `App_Meta` (optional `App_Log` with `SHEETS_LOG=1`). Writes are debounced, batched and retried with backoff, and never block devices. It pulls the owner's read-only tabs at startup and every 5 min and streams them to devices (`SHEETS_SNAPSHOT`; not yet applied on devices, FEAT-62 part 3). An allowlist guard means the relay can write **only** to app-owned tabs; it refuses a foreign tab that has an app tab's name, and never reads hidden tabs. Without credentials it runs **relay-only**.
+- **`sheetcheck` tool** (`apps/server/cmd/sheetcheck`): lists the Sheet's tabs and protections read-only; `-ensure` creates the app tabs; `-protect` (not run) would add warning-only protection to them.
+- **`render.yaml` Blueprint (FEAT-63, ARCH-06)**: Docker web service on `next-gen`, health check `/api/v1/health`, deploys only after CI checks pass (`autoDeployTrigger: checksPass`), and env var names (the service-account key is a Secret File). Owner guide: `docs/RENDER_SETUP.md`.
+- **CI workflow (part of ARCH-05)**: `.github/workflows/ci.yml` on push/PR to `next-gen`: gofmt, `go vet`, `go test -race`, a check that the spreadsheet ID isn't in Go code, `npm ci`, `npm run build:web`, `npm test`.
 - **Admin Hierarchy at Staff Login (FEAT-68, Job Bundle 34a)**: The Principal, the Academic Coordinator, the Asst. Academic Coordinator and **today's** Officiating AC are the admins. In Staff Login they are tagged "Admin" (or "Off. AC today"). Choosing one asks for the 6-digit admin passcode (same keypad and lockout), and success turns on editing in that tab for that person. Everyone else is still identified at a tap. Log Out, or choosing another name, ends admin. An Off. AC is an admin only on the day the appointment is in force. `@lfps/core` adds `adminOfficeFor()` and the `'Principal'` staff role. The school data names no Principal, so Staff Login offers the Principal **by designation**; a Staff Directory row with Role `Principal` replaces it automatically.
 - **Dev Options → "Edit without login" (FEAT-68)**: A device-local switch (`localStorage`, never synced) that allows editing with nobody logged in. While it is on, the header shows an amber **Editing unlocked** badge, and Settings → Admin Access offers **Turn off**. Developer Options themselves still need an admin login (until SEC-03). See the risks in `docs/ADMIN_ACCESS.md`.
 
@@ -18,8 +26,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **One sign-in place (FEAT-68)**: The separate Settings → Admin Access keypad is folded into Staff Login. The Admin Access panel shows who is signed in as admin, with Log Out, or an "Admin login" button that opens Staff Login. The Settings "I am…" picker is replaced by a **Staff Login** button (this also fixes its overflow at phone width).
 - **One permission helper (FEAT-68)**: `apps/web/src/lib/access.ts` `resolveAccess()` now decides every admin-gated action and screen (store guards, `usePermissions`, `PermissionGuard`, Developer Options). Admin sessions are tied to the identity that entered the passcode (`lfps_admin_session_v2`); sessions from before 34a are ignored, so admins sign in once more.
 - The lockout countdown is announced to screen readers (`role="status"`).
+- **Health reports the mode (JB35)**: `/api/v1/health` adds `mode` (`sheets` or `relay-only`) and, in sheets mode, `sheets` (`starting`, `ok` or `error`). It stays small and does no I/O.
+- **Settings → "Cloud Synchronization & Health" (JB35)**: real diagnostics: phase, mode, Sheets state, devices online, queued changes, last sync, and Reconnect.
+- `useLiveSync()` only reads the sync status now; one client per tab owns the socket.
+
+### Removed
+- **REST mutation routes (JB35)**: `POST /api/v1/absence/toggle`, `POST /api/v1/availability`, `POST /api/v1/substitutions/assign` and `DELETE /api/v1/substitutions`. Edits travel over the WebSocket only.
+
+### Fixed
+- **BUG-32 (JB35)**: Opening Settings no longer opens a second WebSocket per tab.
 
 ### Docs
+- **JB35**: new `docs/RENDER_SETUP.md` (Render fields, deploy gate, env vars, verify, rollback) and `docs/SHEETS_SETUP.md` (write rules and their tests, setup, tabs found, owner decisions). SAS §2.1, §6.3 (sync protocol), §7 and §9 updated.
 - **BUG-31 (ops)**: Saving responses was already off on the owner's cron-job.org job, so the fix is switching its request method to **HEAD** (job → Edit → Advanced → Request method).
 
 ### Planned
