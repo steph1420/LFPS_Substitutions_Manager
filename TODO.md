@@ -6,6 +6,131 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 > **Terminology Standard**: Do NOT use the informal term `offCT`. Always use **Officiating Class Teacher**, abbreviated as **Off. CT.**. Similarly, use **Officiating AC**, abbreviated as **Off. AC**.
 
 
+## 🔴 OPEN — User-Reported Items (logged 2026-10-23 on `refine/jb31`, Job Bundle not yet assigned)
+
+> [!NOTE]
+> These items were reported by the owner on 2026-10-23. **No Job Bundle number has been assigned yet.** The owner asked for the bundle plan to be proposed and approved first. Every item below is 🔴 Open. The defects are also registered in [`BUGS.md`](BUGS.md) (BUG-24 to BUG-30).
+
+### FEAT-62: Reload-Safe Persistence Across Website & Server (Local-First + Server Persistence & Live Broadcast)
+- **Status**: 🔴 Open
+- **Reported**: *"Changes should not be lost on reload. Fix that across website and server."*
+- **Current Behaviour (verified in code)**:
+  - Only preferences and the auto-resolve policy are written to `localStorage`.
+  - Absences, availabilities, substitutions, displaced slots, Off. AC/Off. CT appointments, routine edits and notifications live only in memory, so a reload resets them.
+  - The client never pushes mutations to the Go server, and it ignores incoming `STATE_MUTATION` payloads.
+  - The server discards inbound WS messages. See BUG-25.
+- **Target Solution**:
+  - [ ] **Local-First Browser Persistence**: Persist the operational slices of `useTimetableStore.ts` (versioned storage key with schema migration). Exclude transient UI state such as open modals and context menus.
+  - [ ] **Date Scoping**: Key operational state by calendar date (or week), not only by `DayOfWeek`. Otherwise last week's absences would reappear after a reload.
+  - [ ] **Server Model Parity**: Bring the Go `DailyState`/`SubstitutionAssignment` up to date with `@lfps/core` types (`ACCEPTED` status, `disputeRemark`, `acceptedAt`, `disputedAt`, displaced slots, routine edits).
+  - [ ] **Hydrate & Push**: On load, hydrate from `GET /api/v1/state`. Push every mutation to the server, using either REST or a revisioned full-state endpoint.
+  - [ ] **Apply Live Broadcasts**: Apply `STATE_MUTATION` from other devices, ignoring echoes of the device's own changes.
+  - [ ] **Offline Outbox**: Queue mutations while offline and replay them on reconnect.
+  - [ ] **Single WebSocket Connection**: Use one WebSocket per tab. Today `useLiveSync()` is mounted twice, in `Header.tsx` and `SettingsModal.tsx`.
+  - [ ] **Server Hardening**: Fix the related server defects BUG-25, BUG-26, BUG-27 and BUG-28.
+  - [ ] **Tests**: Add Vitest coverage for persistence, merge and migration, and Go tests for the store and handlers.
+
+### FEAT-63: Render Server Re-Provisioning With the New Build / Codebase
+- **Status**: 🔴 Open (depends on FEAT-62 and ARCH-02)
+- **Reported**: *"Help me set up the server again with new build/codebase."*
+- **Target Solution**:
+  - [ ] Write a step-by-step owner guide for the Render Web Service:
+    - Docker runtime with root directory `apps/server` (Dockerfile identical to the `Dockerfile.render` sidecar)
+    - health check `/api/v1/health`
+    - environment variable **names**: `PORT`, `DATA_DIR`, plus any new ones FEAT-62 introduces
+  - [ ] **Durable Storage Decision**: Render's free tier has an ephemeral filesystem, so state is lost on redeploy, restart and spin-down. Choose one: a paid instance with a persistent disk mounted at `DATA_DIR`, a managed or external database, or another option.
+  - [ ] Optionally codify the service as a `render.yaml` Blueprint, so the settings live in the repo.
+  - [ ] Verify after deploy: health check, WS connect, mutation round-trip between two devices, and state surviving a restart and redeploy.
+
+### ARCH-02: Deployment Model Decision & Adoption
+- **Status**: 🔴 Open (needs owner approval)
+- **Reported**: *"How should deployment be handled? Suggest the best method and adhere to it."*
+- **Current Behaviour**:
+  - Built assets are committed into the `next-gen` root, and GitHub Pages serves that root.
+  - The Render service auto-deploys from `next-gen`, per `CLOUD_CONNECTIONS_AND_ROLLBACK_GUIDE.md`.
+  - As a result, every push to `next-gen` is a production release of both the client and the server.
+  - The repo has no `.github/workflows/` and no `render.yaml`.
+- **Target Solution**:
+  - [ ] Write up a recommended model and get the owner's approval, recorded as a new ADR in `docs/DECISIONS/`. It must respect the owner's rules: never touch `main`, work on separate branches, always back up.
+  - [ ] Adopt the approved model: CI checks, Pages built by GitHub Actions without committed build output, Render deploy gating, and an optional staging preview.
+  - [ ] Update `docs/WORKFLOW.md` and the cloud guide to match.
+
+### ARCH-03: Resolve Documentation Inconsistencies
+- **Status**: 🔴 Open
+- **Reported**: *"Try to resolve docs inconsistencies."*
+- **Scope**: Every entry DI-01 to DI-22 in [`docs/DOC_ISSUES.md`](docs/DOC_ISSUES.md). These include the duplicate bundle numbers 28, 29 and 31, stale test counts, the CT colour, wrong paths, false "sync works" and "build passes" claims, the branch/push policy, and the CHANGELOG structure.
+- **Target Solution**:
+  - [ ] Owner decides the items marked "Owner decision needed" in DOC_ISSUES (bundle renumbering, branch model, repo hygiene).
+  - [ ] Correct `ARCHITECTURE.md`, `DESIGN_PHILOSOPHY.md`, `CATCH_UP_TO_ME.md`, `TODO.md` and the cloud guide. **`DEVELOPER_GUIDE.md` is changed only on the owner's explicit request.**
+  - [ ] Append CHANGELOG corrections as new entries, without rewriting released sections.
+  - [ ] Mark each DI entry resolved, with the commit hash.
+
+### ARCH-04: Codebase Bug & Quality Audit
+- **Status**: 🔴 Open
+- **Reported**: The owner believes earlier assistant sessions introduced many bugs and errors, and asked for an audit.
+- **Target Solution**:
+  - [ ] Systematically review `packages/core`, `apps/web` and `apps/server`:
+    - correctness: state, solver and RBAC
+    - concurrency in Go
+    - dead or unwired code (e.g. `pushAbsence`, `pushSubstitution`, `setOperatingRole`)
+    - leftover `any`
+    - accessibility and performance
+  - [ ] File every confirmed defect as a `BUG-xx` in `BUGS.md` and this tracker, with severity.
+  - [ ] Add `go test` and race-detector (`go test -race`) runs, and expand Vitest coverage beyond the single solver test file.
+  - [ ] Supersedes or absorbs Future Roadmap item "4. [CRITICAL CODE REVIEW] Technical Debt & Codebase Bloat Elimination".
+
+### UI-10: Detach Header Hide/Show From Browser Toolbar Hide/Show
+- **Status**: 🔴 Open
+- **Reported**: *"Detach the header hide/show from browser hide/show."*
+- **Investigation (code)**:
+  - `Header.tsx` switches between `FULL` and `PILL` from `window.scrollY` (FULL at `<= 50`, PILL at `> 50`).
+  - That is the same document scroll that makes mobile browsers collapse and expand their address bar. The header therefore toggles in step with the browser chrome.
+  - The layout also uses `min-h-[100dvh]` (`App.tsx`), which changes as the toolbar moves.
+  - The `visualViewport` resize listener (FEAT-57/PERF-02) only resets an unused ref. The "directional hysteresis" described in FEAT-57 is no longer in the code.
+- **Target Solution**:
+  - [ ] Owner picks the intended behaviour:
+    - (a) the app scrolls inside its own container, so the browser toolbar stays put and the header is driven by the container's scroll; or
+    - (b) the header is driven by its own thresholds or gestures and ignores toolbar-induced viewport changes.
+  - [ ] Implement it and test on iOS Safari and Android Chrome.
+
+### BUG-29: Header Hide/Show Is Jittery
+- **Status**: 🔴 Open (reported, not yet reproduced)
+- **Reported**: *"Header hide/show is jittery."*
+- **Suspected Causes (from code reading, to be confirmed)**:
+  - There is a single 50px threshold with no hysteresis. The 200ms lock does not guard the switch back to `FULL`.
+  - The docked day bar unmounts on `PILL`, which shrinks the in-flow sticky header. That shifts the layout and `scrollY`, which can flip the state back.
+  - The header is animated by a Framer spring on `y` and `opacity` over a `backdrop-blur-xl` surface.
+  - The scroll effect is re-subscribed on every state change.
+- **Target Solution**:
+  - [ ] Reproduce on device.
+  - [ ] Add enter and exit hysteresis.
+  - [ ] Keep the header height constant (no layout shift).
+  - [ ] Remove expensive blur during motion.
+  - [ ] Fix together with UI-10.
+
+### BUG-30: Routine Grid Teacher Name Column Hide/Show (Collapse) Is Jittery
+- **Status**: 🔴 Open (reported, not yet reproduced)
+- **Reported**: *"Routine grid teacher name hide/show is jittery."* This is the FEAT-53 horizontal-scroll collapse of the sticky teacher column.
+- **Suspected Causes (from code reading, to be confirmed)**:
+  - `RoutineGrid.tsx` `handleTableScroll` toggles `isColumnCollapsed` (collapse at `scrollLeft > 15`, expand at `<= 5`).
+  - Every sticky `<th>`/`<td>` animates `width`/`padding` through `transition-all` (layout-thrashing table reflow on each frame), while the content swaps instantly between the abbreviation and the 2-line split.
+  - The width change (about 130–155px down to 64px) changes `scrollWidth`/`scrollLeft`, which can re-fire the handler near the thresholds and at the right edge.
+- **Target Solution**:
+  - [ ] Reproduce on device.
+  - [ ] Animate with a transform or a fixed-width column instead of animating table-cell width.
+  - [ ] Widen the hysteresis and guard against scroll events caused by the resize itself.
+  - [ ] Remove `transition-all` from the sticky cells.
+
+### BUG-24 – BUG-28: Confirmed Defects Logged During Workspace Setup
+- **Status**: 🔴 Open. Full register rows are in [`BUGS.md`](BUGS.md); BUG-25 to BUG-28 are tracked for delivery under FEAT-62.
+  - [ ] **BUG-24**: Fresh-clone `build:web`/`npm run build` fails with `TS2307 Cannot find module '@lfps/ui'` because no root script builds `packages/ui`.
+  - [ ] **BUG-25**: Changes are lost on reload. The client never pushes mutations, `STATE_MUTATION` payloads are ignored, and the server discards inbound WS messages.
+  - [ ] **BUG-26**: The WebSocket hub (`internal/ws/hub.go`, broadcast branch) closes and deletes clients while holding only `RLock`.
+  - [ ] **BUG-27**: `GET /api/v1/backups` advertises `/api/v1/backups/download?file=…`, but that route is not registered (404).
+  - [ ] **BUG-28**: State save errors are silently ignored (`_ = s.persistLocked()` in `internal/storage/store.go`), as is the Excel backup `SaveAs`.
+
+---
+
 ## 🐛 Critical Bug & Performance Tracker
 
 ### BUG-12: Marking Teacher Present Does Not Reset Their Active Substitutions

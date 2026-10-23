@@ -35,27 +35,24 @@ Some cells say "Not recorded". That means neither source states the value, and n
 | BUG-21 | Missing Officiating CT Appointment Cards on Substitutions Page | Not recorded | 🟢 Resolved | Not recorded | JB31 (v2.0.0-alpha.1) | CHANGELOG JB31 describes it without the ID |
 | BUG-22 | Cluttered Multiple Appoint Cards & Designation Leak in Teacher Name Overlay | Not recorded | 🟢 Resolved | Not recorded | JB32 (v2.0.0-alpha.1) | CHANGELOG JB32 describes it without the ID |
 | BUG-23 | Appoint Card Pass-Thru Toggle Absence, Wide Pills to Squircle Redesign & AC Card Decluttering | Not recorded | 🟢 Resolved | Not recorded | JB33 (v2.0.0-alpha.1) | CHANGELOG JB33 describes it without the ID |
+| BUG-24 | Fresh-clone build fails: `@lfps/ui` is never built (`TS2307 Cannot find module '@lfps/ui'`) | S2 Major (proposed) | 🔴 Open | v2.0.0-alpha.1 (`19c1a1a`) | — | No root script builds `packages/ui`. Workaround: `npm run build --workspace=@lfps/ui` first. Breaks the cloud guide's Scenario A rollback on a clean machine (DI-15) |
+| BUG-25 | Changes lost on reload: sync not persisting, and the server discards client messages | S1 Critical (proposed) | 🔴 Open | v2.0.0-alpha.1 (`19c1a1a`) | — | The client never calls `pushAbsence`/`pushSubstitution`, ignores `STATE_MUTATION` payloads, and stores only preferences locally. The server's `readPump` discards inbound frames. Tracked under FEAT-62 (DI-14) |
+| BUG-26 | WebSocket hub deletes and closes clients while holding only a read lock | S3 Minor (proposed) | 🔴 Open | v2.0.0-alpha.1 (`19c1a1a`) | — | `apps/server/internal/ws/hub.go` broadcast branch (`RLock` + `delete`/`close`). Latent today, because only `Run()` touches the map, but it becomes a fatal concurrent map write as soon as another reader appears. Use `Lock`. Tracked under FEAT-62 |
+| BUG-27 | Backup download route is not registered (advertised links return 404) | S3 Minor (proposed) | 🔴 Open | v2.0.0-alpha.1 (`19c1a1a`) | — | `GET /api/v1/backups` returns `downloadUrl: /api/v1/backups/download?file=…`, but `cmd/api/main.go` registers no such route. Any fix must sanitise `file` (path traversal) |
+| BUG-28 | State save errors are silently ignored | S2 Major (proposed) | 🔴 Open | v2.0.0-alpha.1 (`19c1a1a`) | — | `_ = s.persistLocked()` in `internal/storage/store.go` (4 call sites); `_ = f.SaveAs(...)` in `internal/excel/generator.go`. A failed write still returns HTTP 200. Tracked under FEAT-62 |
+| BUG-29 | Header hide/show is jittery | S3 Minor (proposed) | 🔴 Open, reported, not yet reproduced | v2.0.0-alpha.1 (`19c1a1a`) | — | User report 2026-10-23. Suspected causes are in TODO BUG-29 (`Header.tsx` scroll handler). Related: UI-10 |
+| BUG-30 | Routine grid teacher name column hide/show (collapse) is jittery | S3 Minor (proposed) | 🔴 Open, reported, not yet reproduced | v2.0.0-alpha.1 (`19c1a1a`) | — | User report 2026-10-23. FEAT-53 collapse in `RoutineGrid.tsx` (`handleTableScroll`, `transition-all` on sticky cells). See TODO BUG-30 |
 
 ## Open items
 
-No `BUG-xx` is currently open in any source.
+- **BUG-24 to BUG-30** are open (table above). They were logged 2026-10-23 on `refine/jb31`. The narratives are in the `TODO.md` section "🔴 OPEN — User-Reported Items". Severities are **proposed** and need owner confirmation.
+- BUG-29 and BUG-30 are user reports that have **not yet been reproduced**.
+- The tracker also lists **PERF-01** ("Master Routine Initial Render Stutter & In-Memory Pre-Render / Keep-Warm Engine") as 🔴 Open. It is a performance item, not a numbered bug, and is kept in `TODO.md`.
 
-The tracker also lists **PERF-01** ("Master Routine Initial Render Stutter & In-Memory Pre-Render / Keep-Warm Engine") as 🔴 Open. It is a performance item, not a numbered bug, and is kept in `TODO.md`.
-
-### Observed during workspace setup (2026-10-23), not yet triaged
-
-These issues were found during the JB31 workspace setup. They have **not** been assigned BUG IDs, because the owner allocates IDs. They are listed here so they are not lost. Details are in [`docs/DOC_ISSUES.md`](docs/DOC_ISSUES.md).
-
-1. On a fresh clone, `npm run build:core && npm run build:web` (and `npm run build`) fails with `TS2307 Cannot find module '@lfps/ui'`, because no root script builds `packages/ui`.
-2. Live sync is not wired:
-   - the client never calls `pushAbsence`/`pushSubstitution`
-   - the client ignores the `STATE_MUTATION` payload
-   - the server discards inbound WS messages
-3. The server's `GET /api/v1/backups` returns `/api/v1/backups/download?file=…` links, but that route is not registered.
-4. The server ignores state-persist errors (`_ = s.persistLocked()`). The WS broadcast branch deletes clients while it holds only a read lock.
+The four setup findings previously listed here as "not yet triaged" are now BUG-24 to BUG-28. The hub-lock and save-error findings were split into BUG-26 and BUG-28.
 
 ## How to add a bug
 
-1. Take the next free ID (`BUG-24` onward) and add a `### BUG-xx:` entry to the TODO tracker.
+1. Take the next free ID (`BUG-31` onward) and add a `### BUG-xx:` entry to the TODO tracker.
 2. Add a row here. Fill **Severity** and **Found in** (the version from `package.json` at the time).
 3. When the bug is fixed, set the status, record the version or bundle in **Fixed in**, and cite the ID in the `CHANGELOG.md` entry.

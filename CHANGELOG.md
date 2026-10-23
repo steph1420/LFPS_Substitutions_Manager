@@ -17,6 +17,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - **Contributor & Workflow Guides**: Added `CONTRIBUTING.md` and `docs/WORKFLOW.md`, which describe the Job Bundle cycle, backups, the branch model and the verification baseline.
   - **Architecture Decision Records**: Added `docs/DECISIONS/` with a template and ADR-0001 to ADR-0004 (monorepo with a TS core and a Go server; Zustand per-tab undo stacks; root-mounted modals for BUG-14/15; GitHub Pages served from the `next-gen` root).
   - **Documentation Issues Audit**: Added `docs/DOC_ISSUES.md`, which lists contradictions between the existing docs and the code (DI-01 to DI-22). No existing document was rewritten.
+- **User-Reported Items Logged (`refine/jb31`, docs only, no code changed)**:
+  - **TODO.md**: Added a new section, "🔴 OPEN — User-Reported Items". No Job Bundle number is assigned yet; the plan awaits owner approval. It contains:
+    - FEAT-62: reload-safe persistence across web and server
+    - FEAT-63: Render server re-provisioning
+    - ARCH-02: deployment model
+    - ARCH-03: resolving the docs inconsistencies in `docs/DOC_ISSUES.md`
+    - ARCH-04: codebase bug and quality audit
+    - UI-10: detach the header from browser toolbar hide/show
+    - BUG-29: header jitter
+    - BUG-30: routine grid teacher name collapse jitter
+  - **BUGS.md**: Registered seven open defects. Severities are proposed and await owner confirmation.
+    - BUG-24: fresh-clone build fails because `@lfps/ui` is not built
+    - BUG-25: changes lost on reload; sync is not wired and the server discards messages
+    - BUG-26: WS hub mutates the client map under a read lock
+    - BUG-27: unregistered backup download route
+    - BUG-28: ignored state save errors
+    - BUG-29 and BUG-30: reported, not yet reproduced
 
 ### Planned
 - **Simple Mode**:
