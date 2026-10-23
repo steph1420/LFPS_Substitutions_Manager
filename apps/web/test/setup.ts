@@ -1,3 +1,4 @@
+import { setMaxListeners } from 'node:events';
 // Minimal browser shims for store/persistence tests (no DOM needed).
 class MemoryStorage {
   private map = new Map<string, string>();
@@ -23,6 +24,8 @@ class MemoryStorage {
 
 const win = new EventTarget() as EventTarget & Record<string, unknown>;
 const doc = new EventTarget() as EventTarget & { visibilityState: string };
+// Tests re-import the store many times; each import installs its page listeners.
+setMaxListeners(100, win, doc);
 doc.visibilityState = 'visible';
 win.localStorage = new MemoryStorage();
 win.sessionStorage = new MemoryStorage();
