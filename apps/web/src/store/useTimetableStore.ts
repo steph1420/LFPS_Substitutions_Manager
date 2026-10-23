@@ -16,6 +16,13 @@ import {
   UserRole,
   AppNotification,
 } from '@lfps/core';
+import {
+  getBrowserStorage,
+  installOperationalPersistence,
+  loadInitialOperationalState,
+  type PersistenceStatus,
+} from './persistence.js';
+import { APP_VERSION } from '../lib/buildInfo.js';
 
 export interface ContextMenuTarget {
   x: number;
@@ -186,7 +193,10 @@ interface TimetableState {
   directory: StaffDirectory;
   schedule: MasterSchedule;
 
-  // Operational State
+  // Operational State (persisted per calendar date — see store/persistence.ts, FEAT-62)
+  /** Monday (ISO date) of the school week the MON–SAT slots currently represent. */
+  activeWeekStart: string;
+  persistenceStatus: PersistenceStatus;
   absences: AbsenceRecord[];
   availabilities: Record<string, StaffAvailabilityRecord>;
   substitutions: SubstitutionAssignment[];
@@ -392,6 +402,8 @@ function loadStoredPolicy(): AutoResolvePolicyConfig {
 }
 
 const initialPrefs = loadStoredPreferences();
+const operationalStorage = getBrowserStorage();
+const initialOperational = loadInitialOperationalState(operationalStorage, DEFAULT_MASTER_SCHEDULE);
 const initialPolicy = loadStoredPolicy();
 
 // Apply initial theme to document DOM
@@ -406,7 +418,7 @@ const getInitialRosterMode = (saved?: RosterViewMode): RosterViewMode => {
 };
 
 export const useTimetableStore = create<TimetableState>((set, get) => ({
-  selectedDay: 'MON',
+  selectedDay: initialOperational.selectedDay,
   activeTab: 'routine',
   viewMode: 'teachers',
   isMinimalUI: initialPrefs.isMinimalUI ?? false,
@@ -433,23 +445,25 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   autoResolvePolicy: initialPolicy,
 
   directory: DEFAULT_STAFF_DIRECTORY,
-  schedule: DEFAULT_MASTER_SCHEDULE,
+  schedule: initialOperational.schedule,
 
-  absences: [],
-  availabilities: {},
-  substitutions: [],
-  displaced: { MON: [], TUE: [], WED: [], THU: [], FRI: [], SAT: [] },
+  activeWeekStart: initialOperational.activeWeekStart,
+  persistenceStatus: initialOperational.persistenceStatus,
+  absences: initialOperational.absences,
+  availabilities: initialOperational.availabilities,
+  substitutions: initialOperational.substitutions,
+  displaced: initialOperational.displaced,
 
   loggedInTeacher: null,
   operatingRole: 'ADMIN',
   isNotificationCenterOpen: false,
-  notifications: [],
-  officiatingAC: { MON: null, TUE: null, WED: null, THU: null, FRI: null, SAT: null },
-  officiatingCT: { MON: {}, TUE: {}, WED: {}, THU: {}, FRI: {}, SAT: {} },
+  notifications: initialOperational.notifications,
+  officiatingAC: initialOperational.officiatingAC,
+  officiatingCT: initialOperational.officiatingCT,
 
-  routineHistory: { past: [], future: [] },
-  substitutionsHistory: { past: [], future: [] },
-  rosterHistory: { past: [], future: [] },
+  routineHistory: initialOperational.routineHistory,
+  substitutionsHistory: initialOperational.substitutionsHistory,
+  rosterHistory: initialOperational.rosterHistory,
 
   activeContextMenu: null,
   activeResetPurgeMenu: null,
@@ -1437,3 +1451,14 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       rosterHistory: { past: [], future: [] },
     }),
 }));
+
+// FEAT-62: reload-safe local persistence of operational state (per calendar date).
+if (operationalStorage && typeof window !== 'undefined') {
+  installOperationalPersistence(useTimetableStore, {
+    storage: operationalStorage,
+    defaults: DEFAULT_MASTER_SCHEDULE,
+    appVersion: APP_VERSION,
+    target: window,
+    rolloverCheckMs: 60_000,
+  });
+}
