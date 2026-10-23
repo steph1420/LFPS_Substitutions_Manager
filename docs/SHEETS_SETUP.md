@@ -1,8 +1,9 @@
-# Google Sheets setup: the Sheets bridge (Bundle 35)
+# Google Sheets setup: the Sheets bridge (Bundles 35, 35a)
 
 Google Sheets is the **source of truth** (SAS §2.1, ADR-0005). The relay's Sheets bridge (`apps/server/internal/sheets`) does two things:
 
-- It **reads** the owner's tabs at startup and then every `SHEETS_PULL_INTERVAL`, and streams them to devices as `SHEETS_SNAPSHOT`. This is read-only.
+- It **reads** the owner's tabs at startup and then every `SHEETS_PULL_INTERVAL` (one `batchGet` request per pull), and streams them to devices as `SHEETS_SNAPSHOT`. Devices apply Staff Directory and the per-teacher routine tabs (35a, SAS §6.3). This is read-only.
+- At startup it **reads `Subs` back** and reloads the week's substitutions and deletions into the relay before devices are let in (35a).
 - It **writes only** the app-owned tabs `Subs`, `App_Meta` and (if `SHEETS_LOG=1`) `App_Log`. Writes are asynchronous, debounced (2 s quiet, at most 15 s), batched, and retried with backoff.
 
 Spreadsheet: `1ST9ThXZQ7PaRpl-n8ka3xulfN3X3u7awHkO6pErb6Ho`, the `/d/<id>/edit` part of the editor URL. A "Publish to web" `2PACX-…` link is **not** this ID and can't be written through.
@@ -16,7 +17,9 @@ Spreadsheet: `1ST9ThXZQ7PaRpl-n8ka3xulfN3X3u7awHkO6pErb6Ho`, the `/d/<id>/edit` 
 | Owner tabs are never written, unhidden, renamed, reordered or re-protected. The service never calls those Sheets API operations on them | `google.go` uses only values get/update/append and `AddSheet` (app tabs). `sheetcheck -protect` adds protections to app tabs only |
 | Hidden tabs are **not pulled**; only their count is sent | `Pull`, test `TestPullSkipsHiddenAndAppTabs` |
 | Legacy v1 tabs `Daily_Ledger`, `Baseline_Updates` are read-only (pulled like any owner tab, never written) | `sheets.LegacyTabs` |
-| Rows in `Subs` are upserted by key (column A) and **never deleted**; a removed substitution keeps its row with Status `REMOVED` | `Flush` |
+| Rows in `Subs` are upserted by their stable key (column A) and **never deleted**. Writing the same state twice changes nothing (idempotent). A removed substitution keeps its row as a **tombstone**: Status `REMOVED`, `Deleted At` set, with its version | `Flush`, tests in `bridge_test.go`, `fake_test.go` |
+| `Subs` is not written until it has been read back once after a start, so a restart can't overwrite rows it hasn't loaded | `Rehydrate` / `Flush`, `rehydrate_test.go` |
+| A reloaded tombstone beats an older copy from any device (last writer wins by Version TS/By) | relay `ApplyRehydrate`, `internal/relay/hydrate_test.go` |
 | The spreadsheet ID comes from the environment only | `cmd/api` `readSheetsEnv`, CI grep |
 | Credentials are a file (`GOOGLE_APPLICATION_CREDENTIALS`); nothing of the key is logged | `google.go` |
 
@@ -40,12 +43,17 @@ SHEETS_SPREADSHEET_ID=1ST9ThXZQ7PaRpl-n8ka3xulfN3X3u7awHkO6pErb6Ho \
 GOOGLE_APPLICATION_CREDENTIALS=/path/outside/repo/sa.json \
 go run ./cmd/sheetcheck            # read-only report
 go run ./cmd/sheetcheck -ensure    # + create Subs/App_Meta if missing, write App_Meta
+go run ./cmd/sheetcheck -selftest  # write, reload, delete, clean up test rows in Subs (35a)
+go run ./cmd/sheetcheck -clean     # remove leftover self-test rows from Subs
 go run ./cmd/sheetcheck -protect   # owner's choice only, see §5
 ```
 
 - **No flags** is read-only. It lists every tab (name, hidden, protected, row count) and the legacy tabs' header rows. It prints no cell data and only the domain of the service-account email.
 - **`-ensure`** goes through the same allowlisted bridge. It fingerprints every other tab before and after and fails if any changed.
+- **`-selftest`** (35a) touches only `Subs` and `App_Meta`. It writes 3 test rows (ids `zz-itest-…`), simulates a restart and checks all 3 reload with versions and payloads, deletes one and checks the tombstone row and that a repeat flush writes nothing, simulates another restart and checks the tombstone reloads and refuses a stale copy, then removes the test rows. Before and after it fingerprints every other tab (values in one `batchGet`, plus order, visibility and protection; hidden tabs by properties only) and fails if any changed.
 - The server also runs `EnsureTabs` at startup, so `-ensure` is optional.
+
+**Real-Sheet result (2026-10-24, 35a):** `-selftest` passed every step, twice. `Subs` was upgraded from schema 1 (0 data rows) to schema 2; after cleanup it holds only the header, and `App_Meta` has 8 rows. None of the 19 other tabs changed (values, order, visibility, protection).
 
 ## 4. Tabs found (integration check, 2026-10-24)
 
@@ -61,10 +69,14 @@ go run ./cmd/sheetcheck -protect   # owner's choice only, see §5
 
 Each visible owner tab has one protected range, and the service account is listed as an editor on those protections.
 
-### App-owned tab formats (schema `1`)
+### App-owned tab formats (schema `2`, Bundle 35a)
 
-- **`Subs`**: `Key, Date, Day, Period, Absent Teacher, Substitute, Class, Subject, Status, Note, Updated At, Updated By, App Version, Revision`. `Key` is the sync key `sub|<date>|<id>`. Times are in the school zone (Asia/Kolkata).
-- **`App_Meta`**: key/value rows `schema_version`, `app_version`, `last_updated`, `last_pull`, `writer`. It is rewritten at startup.
+- **`Subs`**: `Key, Date, Day, Period, Absent Teacher, Substitute, Class, Subject, Status, Note, Updated At, Updated By, App Version, Deleted At, Version TS, Version By, Payload`.
+  - `Key` is the sync key `sub|<date>|<id>`. Times are in the school zone (Asia/Kolkata).
+  - `Date` … `App Version` are for people. `Version TS` (Unix ms) and `Version By` (device id) are the last-writer-wins version; `Payload` is the substitution as JSON, so the relay can reload it exactly. Please don't edit these four by hand.
+  - A tombstone has Status `REMOVED`, `Deleted At` set and an empty `Payload`.
+  - A schema-1 tab (Bundle 35: `…, App Version, Revision`) is upgraded in place on start; its old rows have no version and are not reloaded.
+- **`App_Meta`**: key/value rows `schema_version`, `app_version`, `last_updated`, `last_pull`, `data_version` (hash of the pulled owner tabs; devices show it in Settings → Build Info), `subs_reloaded_at`, `writer`. Rewritten at startup and after writes.
 - **`App_Log`**: `Time, Event, Rows, App Version`, one row per flush.
 
 ## 5. Owner decisions (proposals; nothing applied)
@@ -79,8 +91,15 @@ Each visible owner tab has one protected range, and the service account is liste
 4. **Principal in the Staff Directory.** Add a row with Role `Principal` so Staff Login lists the Principal by name (34a).
 5. **Publish to web.** If the Sheet is still "published to web", anyone with that link can read it (it may include staff data). Consider unpublishing it, since the relay now reads through the API.
 
-## 6. Limits (Bundle 35)
+## 6. Limits (Bundles 35, 35a)
 
-- The **pull** is streamed to devices and reported in Settings, but the web app doesn't yet replace its built-in directory or routine with it. Mapping Sheet rows to the store is FEAT-62 part 3.
-- The relay doesn't **read `Subs` back** after a restart. After a restart, devices refill the relay from their local copies (SAS §6.3).
-- Write quota: the bridge does at most one batched write per debounce window (≈ 2–15 s), well under Sheets' 60 writes/min per user.
+- Devices map Staff Directory, the per-teacher routine tabs and Subjects List. **Not mapped** (reported in the developer console): OVERVIEW, the class tabs KG A, KG B, PREP A, PREP B, and the legacy tabs. A routine cell the mapper can't read safely keeps the app's built-in value.
+- Only the **active week** is reloaded from `Subs`, and only substitutions (SAS §6.3 Limits).
+- If `Subs` can't be read at start, devices are let in after `SHEETS_HYDRATE_TIMEOUT` (degraded); the reload keeps retrying and nothing is written to `Subs` until it succeeds.
+- **Quota:** Sheets allows 60 reads and 60 writes per minute per user. A start costs a few reads, each pull 1 (one `batchGet`), and the bridge does at most one batched write per debounce window (≈ 2–15 s).
+
+## 7. Local tests without Google (35a)
+
+`SHEETS_FAKE_FILE=/tmp/sheet.json` runs the relay in sheets mode against a JSON file instead of Google (`{"tabs":[{"title":…, "hidden":false, "rows":[[…]]}]}`). It is ignored when `SHEETS_SPREADSHEET_ID` is set, and logs a loud warning. Never set it on Render.
+
+`npm run e2e:sheets` uses it: two browsers and a fresh third against a local relay, with a restart mid-test (SAS §3.1). The web build for it comes from `npm run build:web:local`, which can only target a loopback relay (SAS §6.5).

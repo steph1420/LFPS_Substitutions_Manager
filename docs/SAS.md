@@ -40,7 +40,7 @@ Hosting: web → GitHub Pages (root of branch `next-gen`); relay → Render.com 
 Browser localStorage keeps each device's copy (reload-safe), see §6.2.
 ```
 
-### 2.1 Why a relay, and the target data flow (Bundle 35)
+### 2.1 Why a relay, and the target data flow (Bundles 35, 35a)
 
 **Why devices don't talk to Google Sheets directly** (owner, 2026-10-24):
 
@@ -60,7 +60,8 @@ devices ──WebSocket only──▶ Render relay (live state in memory) ──
 - The relay keeps the live state in memory and fans each change out to all devices at once.
 - **Writes:** the relay writes **only** to the tabs the app owns, which it creates itself. Writes are async, batched, debounced and retried, so a slow or failed Sheets call never blocks a device.
 - **Reads:** every other tab is read-only information. The relay pulls those tabs at startup and periodically, and streams them to devices. Devices never write to them.
-- A relay restart (deploy, spin-down) loses only what hasn't been flushed yet. Devices keep their local copy and re-send it on the next HYDRATE, and the relay re-pulls the read-only tabs. The relay does **not** read `Subs` back (§6.3 Limits).
+- A relay restart (deploy, spin-down) loses only what hasn't been flushed yet. In sheets mode the relay **reloads the week's substitutions, deletions included, from `Subs`** before it lets devices in (Bundle 35a, §6.3 "Restart"). Devices keep their local copy and re-send what the relay lacks, and the relay re-pulls the read-only tabs.
+- **Devices apply the read-only tabs** (Bundle 35a): Staff Directory and the per-teacher routine tabs replace the bundled directory and routine, under local date-scoped edits (§6.3 "Sheet reference data").
 
 **The owner's Sheet** (published copy, read 2026-10-24; title "subApp - CLASS AND TEACHER ROUTINES Build 4", 18 visible tabs. Through the API there are 19, including the hidden `_DB_Helper`, which the app does not read; see SHEETS_SETUP §4):
 
@@ -76,8 +77,8 @@ devices ──WebSocket only──▶ Render relay (live state in memory) ──
 
 App-owned tabs that Bundle 35 creates (created 2026-10-24 by `sheetcheck -ensure`):
 
-- **`Subs`**: one row per substitution, upserted by key and never deleted. Columns: Key, Date, Day, Period, Absent Teacher, Substitute, Class, Subject, Status, Note, Updated At (school time), Updated By, App Version, Revision.
-- **`App_Meta`**: `schema_version`, `app_version`, `last_updated`, `last_pull`, `writer`.
+- **`Subs`** (schema 2, Bundle 35a): one row per substitution, upserted by its stable key and never deleted. Columns: Key, Date, Day, Period, Absent Teacher, Substitute, Class, Subject, Status, Note, Updated At (school time), Updated By, App Version, **Deleted At, Version TS, Version By, Payload**. A deletion is a tombstone row (Status `REMOVED`, Deleted At set). A schema-1 tab is upgraded in place on start.
+- **`App_Meta`**: `schema_version` (`2`), `app_version`, `last_updated`, `last_pull`, `data_version` (hash of the pulled owner tabs, shown on devices), `subs_reloaded_at`, `writer`.
 - **`App_Log`** (optional, `SHEETS_LOG=1`).
 
 > **Access.** The `2PACX-…` ID in a "Publish to web" link is **not** the spreadsheet ID and gives read-only, cached access (Google refreshes it about every 5 minutes). Writing needs the Sheets API with the real ID (the `/d/<id>/edit` part of the editor URL) and a Google **service account** that the owner adds as an editor. Its key is a Render Secret File (`/etc/secrets/sa.json`). Owner setup is done (2026-10-24); see [`SHEETS_SETUP.md`](./SHEETS_SETUP.md) and [`RENDER_SETUP.md`](./RENDER_SETUP.md).
@@ -109,6 +110,8 @@ App-owned tabs that Bundle 35 creates (created 2026-10-24 by `sheetcheck -ensure
 | `test` | `version:check`, then `npm run test --workspaces --if-present` | `@lfps/core` (30) and `@lfps/web` (30, of which 1 runs only where the owner's passcode is configured) Vitest suites |
 | `test:core` / `test:web` | one workspace | |
 | `version:check` / `version:sync` | `node scripts/version.mjs` | One version across root, workspaces and the Go server |
+| `build:web:local` | `node scripts/build-web-local.mjs [--relay URL] [--out DIR]` | Web build for **local browser tests**: pins `VITE_WS_URL`/`VITE_API_URL` to a loopback relay, sets `VITE_RELAY_TARGET=local`, then asserts the bundle holds no production relay host (§6.5) |
+| `e2e:sheets` | `node apps/web/e2e/sheets-restart.mjs` | Two-browser Playwright test against a local relay in sheets mode with a fake Sheet and a restart mid-test (needs Go; Playwright via `PLAYWRIGHT_FROM`) |
 | `admin:hash` | `node scripts/hash-admin-passcode.mjs` | Asks for a 6-digit passcode twice (hidden) and prints the SHA-256 for `VITE_ADMIN_PASSCODE_SHA256`. Refuses easy codes unless `--allow-weak` (see [`ADMIN_ACCESS.md`](./ADMIN_ACCESS.md)) |
 
 > BUG-24 (fresh clone could not build `@lfps/ui`) is fixed by `build:libs`. Verified 2026-10-23 with `git clone` + `npm ci && npm test && npm run build` on a scratch copy.
@@ -151,7 +154,7 @@ The total is clamped at a minimum of 0. Absent or Away staff, staff who are "Fre
 
 ### 4.3 Tests
 
-`packages/core/test/solver.test.ts` contains **19 Vitest tests** in 6 suites, and `test/calendar.test.ts` adds **11** (30 total), including the IST rollover cases:
+`packages/core/test/solver.test.ts` contains **19 Vitest tests** in 6 suites, `test/calendar.test.ts` adds **11**, including the IST rollover cases, and `test/access.test.ts` **5** (35 total, Bundle 35a):
 
 | Suite | Tests |
 |---|---|
@@ -162,7 +165,7 @@ The total is clamped at a minimum of 0. Absent or Away staff, staff who are "Fre
 | Auto-resolve | 3 |
 | AC succession | 5 |
 
-The web app has its own Vitest suite (`apps/web/test`, jsdom): persistence 11, store reload 5 (incl. IST midnight whatever the device zone), admin access 19 (one checks the owner's configured passcode and is skipped where it isn't set). The Go server has 19 `go test` tests across schooltz, storage, handlers, router and the WS hub, run with `-race`. The web and core suites were also run under `TZ=UTC`, `America/Los_Angeles` and `Pacific/Kiritimati`.
+The web app has its own Vitest suite (`apps/web/test`, jsdom; **73** tests in 7 files at Bundle 35a): persistence 11, store reload 5 (incl. IST midnight whatever the device zone), admin access (one checks the owner's configured passcode and is skipped where it isn't set), sync 22 (entities, engine, client against a fake relay, Sheet snapshot rebase, hydrating retry), Sheet data 11 (mapper, precedence, version gate, tombstones vs outbox), relay guard 4 and the live singleton. The Go server has 46 top-level `go test` tests (schooltz, storage, handlers, router, WS hub, livesync, relay incl. hydrating, sheets incl. the fake Sheet and the `Subs` reload), run with `-race`, on the current Go and on Go 1.23.2. `npm run e2e:sheets` (22 checks) is the browser test. The web and core suites were also run under `TZ=UTC`, `America/Los_Angeles` and `Pacific/Kiritimati`.
 
 ## 5. Design Tokens — `@lfps/ui`
 
@@ -221,12 +224,13 @@ The store is a single `create<TimetableState>()` store of about 1,440 lines. It 
 |---|---|
 | `lfps_user_preferences_v2` | theme, view, sort and UI preferences (unchanged). The developer-mode flag is stored here but the console only opens with an admin session |
 | `lfps_autoresolve_policy_v2` | solver policy (unchanged) |
-| `lfps_operational_state` | schema v1 document: `days[YYYY-MM-DD]` (absences, availability, substitutions incl. Accepted/Disputed, displaced cells, Off. AC, Off. CT, routine-edit overrides vs `DEFAULT_MASTER_SCHEDULE`), `weeks[weekStart]` (availability), `history` (active week, last 10 per tab), `notifications` (14 days, max 100) |
+| `lfps_operational_state` | schema v1 document: `days[YYYY-MM-DD]` (absences, availability, substitutions incl. Accepted/Disputed, displaced cells, Off. AC, Off. CT, routine-edit overrides vs the **base routine**: the Sheet's when one has been applied, else `DEFAULT_MASTER_SCHEDULE`), `weeks[weekStart]` (availability), `history` (active week, last 10 per tab), `notifications` (14 days, max 100) |
+| `lfps_reference_v1` | the last applied Sheet reference data (Bundle 35a, §6.3): hash, fetchedAt, directory, routine, subjects, mapping report. Removed if corrupt |
 | `lfps_operational_state_backup_<ts>` | written once if the stored document is corrupt or from a newer schema, before it is replaced |
 
 - The store maps MON–SAT to the dates of the **active school week** (Sunday → the coming week) and opens on today's weekday.
 - Writes are debounced (250 ms) and flushed on `pagehide` / tab hidden. A focus check plus a 60 s timer handle midnight / week rollover. Other tabs on the same device apply changes through the `storage` event.
-- Days older than 42 days are pruned. In-app routine edits are **date-scoped substitutions**: they change that date only, sync to the `Subs` tab (Bundle 35) and **never** change the master timetable. The master routine comes read-only from Sheets; editing it is a separate future epic (TODO EPIC-01).
+- Days older than 42 days are pruned. In-app routine edits are **date-scoped substitutions**: they change that date only, sync to the other devices (Bundle 35; only substitutions are written to `Subs`) and **never** change the master timetable. The master routine comes read-only from Sheets; editing it is a separate future epic (TODO EPIC-01).
 - Transient UI (modals, menus, drag state) is not saved. The synced part of the day state is shared between devices through the relay (§6.3).
 - The legacy v1 app used `lfps_frontdesk_state`; it is not migrated.
 
@@ -241,7 +245,7 @@ The store is a single `create<TimetableState>()` store of about 1,440 lines. It 
 - Admin-only: routine edits (drag, swap, limbo restore, period task), solver policy, Reset Day, history purge, developer mode. Guarded in the store **and** hidden in the UI (`PermissionGuard`). Everyone can mark attendance, assign substitutes and appoint Off. AC / Off. CT.
 - This is **client-side only** (a determined user can bypass it). Server-side enforcement is SEC-02.
 
-### 6.3 Live sync — `src/sync/*` (Bundle 35)
+### 6.3 Live sync — `src/sync/*` (Bundles 35, 35a)
 
 **One socket per tab.**
 - `sync/live.ts` owns a ref-counted singleton. `<App>` starts it (`useEffect(() => startLiveSync(), [])`). A release waits 1 s before closing, so a React StrictMode remount reuses the socket.
@@ -292,7 +296,8 @@ Each entity travels as `{k, v, ts, by, rev?}`; `v: null` is a deletion (tombston
   - A pending local diff is flushed first.
   - Then newer versions are applied to the store. `known` is updated before `setState`, so there's no echo.
   - Older versions are ignored, and ours is queued again. Applying a remote change doesn't touch the undo history.
-- **HYDRATE** applies everything newer and **re-publishes** whatever the relay lacks or holds an older version of. This refills a relay that restarted empty.
+- **HYDRATE** applies everything newer and **re-publishes** whatever the relay lacks or holds an older version of. This refills a relay that restarted empty. HYDRATE includes the relay's **tombstones**: a newer deletion removes the local copy and drops it from the outbox, so a stale device can't bring it back; only an edit made after the deletion wins.
+- **`ERROR {reason: "hydrating"}`** (a batch that raced the relay's start): the batch stays in the outbox and is sent again after 2 s.
 - **Phases** (`sync/status.ts`, header pill `data-testid="sync-pill"`, Settings card `sync-card`):
   - **Connecting…** (amber, pulsing) from socket start until `HYDRATE`. This is FEAT-66: a sleeping Render relay takes about a minute, and the app stays fully usable from local data meanwhile.
   - **Live** (green) after HYDRATE.
@@ -300,14 +305,24 @@ Each entity travels as `{k, v, ts, by, rev?}`; `v: null` is a deletion (tombston
   - Backoff is 1 s·2ⁿ, capped at 30 s, ±20 % jitter. Reconnect happens at once on `online` and when the window regains focus. "Reconnect" in Settings forces it.
 - **Week rollover.** At Sunday 00:00 (school zone) the engine resets for the new week and sends HELLO again. The relay drops the old week the same way.
 
+**Sheet reference data (Bundle 35a, FEAT-62 part 3; `sync/sheetData.ts`, `sync/reference.ts`).**
+- **Mapping** (`mapSheetData`, pure): `Staff Directory` → the directory (known staff keep their id and derived fields; full name, role and primary class come from the Sheet; staff new in the Sheet get id `SHEET-<abbr>` and derived fields; bundled staff the Sheet doesn't list are kept and reported). Per-teacher tabs (named by abbreviation) → that teacher's routine: empty → `Free`, the BREAK column → `-`, `SUBJECT\nCLASS` → `SUBJECT CLASS`, the two-section form `1ST X\nA\n---\n2ND X\nB` → `X A + B`. A cell it can't read safely keeps the bundled value and is reported. `Subjects List` → subject names (`sheetSubjectName`). Not mapped, listed in the report: OVERVIEW, the class tabs (KG A, KG B, PREP A, PREP B) and the legacy tabs. A missing Principal row is fine (Staff Login offers the Principal by designation).
+- **Precedence:** local date-scoped edits > Sheet reference data > bundled seed. On a new snapshot the schedule is **rebased**: `overrides = diff(oldBase, schedule)`, `schedule = apply(newBase, overrides)`; routine undo history is rebased the same way. An in-progress edit is never overwritten.
+- **Version gate:** a snapshot is applied only if its `hash` (= App_Meta `data_version`) differs from the applied one and its `fetchedAt` isn't older. The cache is saved **before** the store changes, so persistence and sync diff against the new base and no spurious `sched` entities go out. Other tabs adopt the cache through the `storage` event.
+- **Shown:** Settings → Build Info, "Sheet data `<hash>` · `<fetched time>`" (or "Bundled data · No Sheet yet"); the developer console adds the mapping report (counts and "Teacher tab N" labels, no names).
+
+**Restart (Bundle 35a, sheets mode).** On start the relay is **hydrating**: it reads `Subs` back (`Bridge.Rehydrate`, one read) and loads the active week's substitutions and tombstones with their LWW versions. Meanwhile HELLOs are held (answered with HYDRATE once loaded) and STATE_MUTATIONs get `ERROR "hydrating"`. After `SHEETS_HYDRATE_TIMEOUT` (default 20 s) it opens anyway (**degraded**); the bridge keeps retrying the reload with backoff, writes nothing to `Subs` until it succeeds, then merges the reload by LWW and broadcasts it. `/health` reports `store: hydrating | ready`.
+
 **Relay side.**
 - `internal/livesync` is the LWW store. It validates kinds, dates in the active week, and sizes (key ≤ 512 B, value ≤ 64 KiB, ≤ 20 000 entities).
 - `internal/relay` handles messages. `internal/ws` is the hub (per-client send queue; slow clients are dropped).
 
 **Limits (documented, accepted for alpha):**
-- **Tombstones are memory-only.** If the relay restarts and a device that missed a deletion reconnects, the deleted item can come back (that device re-publishes it). Re-delete it once. They're short-lived because the week resets.
-- The relay keeps **no history**. Sheets `Subs` is the durable record, but the relay doesn't read it back on start (SHEETS_SETUP §6).
-- Pulled Sheet tabs reach devices (`SHEETS_SNAPSHOT`) and are summarised in Settings, but they don't yet replace the built-in directory or routine (FEAT-62 part 3).
+- **Only substitutions are durable.** In sheets mode, subs and their deletions survive a relay restart (reloaded from `Subs`). Other entities (absences, availability, Off. AC/CT, routine overrides, limbo) are refilled by devices; a deletion of one of those can come back if a device that missed it reconnects after a restart. In **relay-only** mode nothing is reloaded. Re-delete once.
+- Only the **active week** is reloaded; rows of other weeks stay in `Subs`, untouched.
+- Schema-1 `Subs` rows (Bundle 35, no version) are skipped on reload. A substitution whose payload exceeds 45 000 characters is written for people but without a payload, so it can't be reloaded.
+- Undo/redo history is not rewritten for remote changes. A local override that equals the new Sheet base becomes a `sched` deletion (harmless).
+- Sheet staff new to the app get derived department/pool and default availability. Subject names from the Sheet are available (`sheetSubjectName`) but not yet shown.
 - No auth on the socket (SEC-02). Origins are allowlisted.
 - Closing a tab drops its meta. The browser's local data stays, and the next tab re-publishes it under the first-run rule.
 
@@ -321,7 +336,9 @@ All calendar logic uses `SCHOOL_TIME_ZONE = 'Asia/Kolkata'` from `@lfps/core`, w
 
 ### 6.5 Configuration
 
-`apps/web/.env` is committed. It defines `VITE_API_URL` and `VITE_WS_URL`, both public endpoint URLs read by Vite at build time. `VITE_ADMIN_PASSCODE_SHA256` belongs in the git-ignored `apps/web/.env.local` (or a CI variable), never in the committed `.env`.
+`apps/web/.env.production` is committed (Bundle 35a; it was `.env`). It defines `VITE_API_URL` and `VITE_WS_URL`, the production relay's public URLs, and Vite loads it **only for `vite build` in mode `production`** (the root `npm run build`). The dev server, Vitest and test builds default to `localhost:8080`. `VITE_ADMIN_PASSCODE_SHA256` belongs in the git-ignored `apps/web/.env.local` (or a CI variable), never in a committed file.
+
+**Relay guard (Bundle 35a, `sync/relayGuard.ts`).** Dev servers and test builds must never reach the production relay. One pure check runs twice: in `vite.config.ts` (the dev server or build refuses to start) and in `sync/live.ts` (the app stays offline and logs why). A non-production build whose relay URL is a production host fails unless `VITE_ALLOW_PROD_RELAY=1`. `VITE_RELAY_TARGET=local` (set by `scripts/build-web-local.mjs`) demands loopback URLs, override or not. The local build script then asserts the bundle contains none of the hosts in `.env.production`, and the e2e test aborts any browser request that leaves loopback.
 
 **Build info:** `vite.config.ts` defines `__APP_VERSION__` (root `package.json`), `__GIT_COMMIT__` (short hash, `-dirty` if tracked files changed), `__GIT_BRANCH__` and `__BUILD_TIME__`; CI may override with `GIT_COMMIT` / `GIT_BRANCH`. `lib/buildInfo.ts` exposes them; the header shows the version and the footer shows `v<version> · <commit> · <branch>` above the tab bar.
 
@@ -329,12 +346,12 @@ All calendar logic uses `SCHOOL_TIME_ZONE = 'Asia/Kolkata'` from `@lfps/core`, w
 
 | Concern | Implementation |
 |---|---|
-| Entry | `cmd/api/main.go` (`newRouter`, `http.Server` with a 10 s header timeout). Env vars: `PORT` (default 8080), `ALLOWED_ORIGINS` (comma list, `*` = any), the optional zone overrides below, and the Sheets bridge's `SHEETS_SPREADSHEET_ID`, `GOOGLE_APPLICATION_CREDENTIALS`, `SHEETS_PULL_INTERVAL` (≥ 1m, default 5m), `SHEETS_LOG` (`1` = App_Log). `DATA_DIR` is ignored (logged). Missing Sheets config → **relay-only** mode, logged with the reason (`readSheetsEnv`) |
+| Entry | `cmd/api/main.go` (`newRouter`, `http.Server` with a 10 s header timeout). Env vars: `PORT` (default 8080), `ALLOWED_ORIGINS` (comma list, `*` = any), the optional zone overrides below, and the Sheets bridge's `SHEETS_SPREADSHEET_ID`, `GOOGLE_APPLICATION_CREDENTIALS`, `SHEETS_PULL_INTERVAL` (≥ 1m, default 5m), `SHEETS_LOG` (`1` = App_Log), `SHEETS_HYDRATE_TIMEOUT` (≤ 5m, default 20s) and, for local tests only, `SHEETS_FAKE_FILE` (a JSON file standing in for the spreadsheet; ignored when `SHEETS_SPREADSHEET_ID` is set). `DATA_DIR` is ignored (logged). Missing Sheets config → **relay-only** mode, logged with the reason (`readSheetsEnv`) |
 | Time zone | `internal/schooltz`: the school zone is **`Asia/Kolkata` by default, in code**. `APP_TZ`, then `TZ`, override it (a leading `:` is accepted). `Local`, empty or unknown names fall back to the default with a log warning. Zone data is **embedded** (`import _ "time/tzdata"`), so it works on any image. The store reads the clock in this zone, so "today" and the Sunday-midnight week switch match the web client. **No Render setting is needed** |
 | Routing | `internal/handlers` on Go 1.22+ `http.ServeMux` method patterns, wrapped in the `CORS` middleware (`cors.go`): allowlisted origins are echoed, preflights get 204, disallowed browser origins get 403, requests without `Origin` (curl, health checks) pass |
-| Live store | `internal/livesync`: `NewStore(loc)`, **in-memory only**. A last-writer-wins entity map for the active school week (§6.3), with a revision counter; it resets when the week changes. `DailyState()` derives the classic week view (for `/state` and Excel); `Substitutions()` feeds the Sheets bridge. A restart starts empty by design (devices refill it; Sheets is the durable record). `internal/storage` now holds only the shared `DailyState` types |
-| Relay | `internal/relay`: HELLO → HYDRATE, STATE_MUTATION → merge → MUTATION_ACK to the sender + broadcast of accepted changes to the others, PRESENCE, SHEETS_SNAPSHOT fan-out; notifies the bridge after each accepted batch. `Mode()` = `sheets` / `relay-only` |
-| Sheets bridge | `internal/sheets`: `guard` allowlist (only `Subs`, `App_Meta`, `App_Log` writable), `Pull` (visible non-app tabs, hidden skipped), `EnsureTabs`, `Flush` (upsert `Subs` by key; debounced 2 s, max 15 s; backoff to 5 min), `WriteMeta`. `google.go` is the only Google API code. `cmd/sheetcheck` verifies setup ([`SHEETS_SETUP.md`](./SHEETS_SETUP.md)). The spreadsheet ID is never in Go |
+| Live store | `internal/livesync`: `NewStore(loc)`, **in-memory only**. A last-writer-wins entity map for the active school week (§6.3), with a revision counter; it resets when the week changes. `DailyState()` derives the classic week view (for `/state` and Excel); `Substitutions()` feeds the Sheets bridge. In sheets mode a restart reloads the week's substitutions and tombstones from `Subs` (§6.3 "Restart"); everything else is refilled by devices. `internal/storage` now holds only the shared `DailyState` types |
+| Relay | `internal/relay`: HELLO → HYDRATE, STATE_MUTATION → merge → MUTATION_ACK to the sender + broadcast of accepted changes to the others, PRESENCE, SHEETS_SNAPSHOT fan-out; notifies the bridge after each accepted batch. `Mode()` = `sheets` / `relay-only`. In sheets mode it starts **hydrating** (HELLO held, mutations refused) until `ApplyRehydrate` or the timeout |
+| Sheets bridge | `internal/sheets`: `guard` allowlist (only `Subs`, `App_Meta`, `App_Log` writable), `Pull` (visible non-app tabs in **one** `batchGet` read; hidden skipped), `EnsureTabs` (creates the tabs, upgrades a schema-1 `Subs`), `Rehydrate` (reads `Subs` back; until it succeeds `Flush` refuses), `Flush` (idempotent upsert of `Subs` by key, tombstones kept; a row is rewritten only if it changed; debounced 2 s, max 15 s; backoff to 5 min), `WriteMeta`. `FileAPI` is the fake Sheet for local tests. Sheets allows 60 reads/min per user: a start costs a few reads, a pull 1. `google.go` is the only Google API code. `cmd/sheetcheck` verifies setup ([`SHEETS_SETUP.md`](./SHEETS_SETUP.md)). The spreadsheet ID is never in Go |
 | Realtime | `internal/ws/hub.go`: register/unregister/broadcast/send-to-one/send-to-all-but-one; slow clients are dropped (BUG-26). `CheckOrigin` uses the same allowlist. Inbound messages are decoded and passed to the relay handler (read limit 256 KiB per message, which is why clients cap a batch at 128 KiB; 60 s pong deadline; ping every 25 s) |
 | Excel | `internal/excel/generator.go` (Excelize v2.8.1): `GenerateSubstitutionWorkbook`, streamed by `/export/excel`; nothing is written to disk |
 | Limits | Request bodies ≤ 1 MiB (413) |
@@ -345,7 +362,7 @@ All calendar logic uses `SCHOOL_TIME_ZONE = 'Asia/Kolkata'` from `@lfps/core`, w
 
 | Method | Path | Behaviour |
 |---|---|---|
-| GET, HEAD | `/health` | Status, `version` (from `internal/version`), `timestamp` (school zone), `uptimeSec`, `timeZone`, **`mode`** (`sheets` / `relay-only`) and, in sheets mode, **`sheets`** (`starting` / `ok` / `error`). This is the target for Render's health check and the owner's uptime pinger, so it stays **cheap**: no store lock, no I/O, no Sheets call, and no `Origin` header needed |
+| GET, HEAD | `/health` | Status, `version` (from `internal/version`), `timestamp` (school zone), `uptimeSec`, `timeZone`, **`mode`** (`sheets` / `relay-only`), **`store`** (`hydrating` / `ready`, Bundle 35a) and, in sheets mode, **`sheets`** (`starting` / `hydrating` / `ok` / `error`). This is the target for Render's health check and the owner's uptime pinger, so it stays **cheap**: no store lock, no I/O, no Sheets call, and no `Origin` header needed |
 | GET | `/meta` | Static metadata: 9 staff, periods, days |
 | GET | `/state` | `DailyState` derived from the live entities (diagnostics) |
 | GET | `/export/excel` | `.xlsx` download |
@@ -375,11 +392,11 @@ The Go `DailyState`/`SubstitutionAssignment` structs are hand-maintained copies 
 
 | Attribute | Status |
 |---|---|
-| Correctness of domain logic | 30 core unit tests (solver + calendar incl. IST) |
-| UI/Server tests | Web: 55 Vitest tests (persistence, reload, access, sync entities/engine/client with a fake relay, one-socket singleton). Server: Go tests under `-race` (LWW store, relay, hub, Sheets allowlist and bridge with a fake API, env config). No browser E2E in the repo (Bundle 35 verified two-browser sync with a scratch Playwright run) |
-| Multi-user consistency | Live sync through the relay, per-entity last-writer-wins (§6.3). Tombstones are memory-only (a deletion can reappear after a relay restart) |
+| Correctness of domain logic | 35 core unit tests (solver, calendar incl. IST, access) |
+| UI/Server tests | Web: 55 Vitest tests (persistence, reload, access, sync entities/engine/client with a fake relay, one-socket singleton). Server: Go tests under `-race` (LWW store, relay, hub, Sheets allowlist and bridge with a fake API, env config). Browser E2E: `npm run e2e:sheets` (two browsers + a fresh third, local relay in sheets mode with a fake Sheet, restart mid-test; Bundle 35a) |
+| Multi-user consistency | Live sync through the relay, per-entity last-writer-wins (§6.3). In sheets mode substitution deletions survive a relay restart (tombstones in `Subs`); other entities' deletions are memory-only (§6.3 Limits) |
 | Security | Client-side admin passcode gate (SEC-01 interim). CORS / WS origin allowlist. No server auth (SEC-02) |
-| Durability | Per device: `localStorage` survives reloads and restarts. Shared live through the relay; substitutions are written to Sheets `Subs` (sheets mode). The relay is intentionally stateless and doesn't read `Subs` back |
+| Durability | Per device: `localStorage` survives reloads and restarts. Shared live through the relay; substitutions are written to Sheets `Subs` (sheets mode). The relay holds no disk state; in sheets mode it reloads the week's substitutions from `Subs` on start |
 | Performance | PERF-01 (client keep-warm pre-render of the routine grid) is open. The JS chunk is over 500 kB. Relay cold start (Render free tier, ~1 min): kept warm in school hours by the owner's external uptime pinger (PERF-03); the client shows "Connecting…" meanwhile (FEAT-66) |
 | Supply chain | `npm audit` reports 3 vulnerabilities (1 moderate, 2 critical) through Vitest 3.x. Fixing them needs Vitest 4 |
 

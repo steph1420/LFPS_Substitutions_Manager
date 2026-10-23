@@ -44,10 +44,13 @@ Some cells say "Not recorded". That means neither source states the value, and n
 | BUG-30 | Routine grid teacher name column hide/show (collapse) is jittery | S3 Minor (proposed) | 🔴 Open, reported, not yet reproduced | v2.0.0-alpha.1 (`19c1a1a`) | — | User report 2026-10-23. FEAT-53 collapse in `RoutineGrid.tsx` (`handleTableScroll`, `transition-all` on sticky cells). See TODO BUG-30 |
 | BUG-31 | Uptime pinger (cron-job.org) reported "Failed (output too large)" on `/api/v1/health` during the release deploy | Ops (not an app defect) | 🟡 Monitor | v2.0.0-alpha.2 (release window, 2026-10-24) | — | Likely Render served its own large HTML page while redeploying or cold-starting; cron-job.org fails runs over 64 KB. Health itself is 148-byte JSON. Saving responses was already off (owner, 2026-10-24), so the fix is the job's request method: cron-job.org → job → Edit → **Advanced → Request method → HEAD**. Reopen if it recurs outside a deploy. See TODO BUG-31 and SAS §8 |
 | BUG-32 | Two WebSockets per tab: `useLiveSync()` mounted in both `Header` and `SettingsModal`, so opening Settings doubled connections | S3 Minor (proposed) | 🟢 Resolved (unreleased) | v2.0.0-alpha.2 | JB35 (`bundle/35`) | Logged and fixed in JB35 (FEAT-62 part 2). Sync now runs in a ref-counted singleton (`sync/live.ts`, 1 s grace); `useLiveSync()` only reads status. Test `live-singleton.test.ts`; Playwright saw at most 1 concurrent socket per tab with Settings open |
+| BUG-33 | A substitution deleted before a relay restart could come back (tombstones were memory-only; the relay didn't read `Subs` back) | S2 Major (proposed) | 🟢 Resolved (unreleased) | JB35 (`bundle/35`, unreleased) | JB35a (`bundle/35a`) | Sheets mode only: `Subs` schema 2 keeps tombstones with versions; the relay reloads the week before letting devices in. Other entities' deletions are still memory-only (SAS §6.3 Limits). Proven by `npm run e2e:sheets` and `sheetcheck -selftest` |
+| BUG-34 | Local dev/test builds could target the production relay: `apps/web/.env` (production URLs) loads in every Vite mode | S2 Major (proposed) | 🟢 Resolved (unreleased) | v2.0.0-alpha.2 | JB35a (`bundle/35a`) | URLs moved to `.env.production`; relay guard in `vite.config.ts` and `sync/live.ts`; `build:web:local` asserts the bundle (SAS §6.5) |
 
 ## Open items
 
 - **BUG-24, BUG-26, BUG-27 and BUG-28** were resolved in Job Bundle 34 (v2.0.0-alpha.2, released 2026-10-24). **BUG-25** is resolved: same-device reload in JB34, cross-device sync in JB35 (`bundle/35`, unreleased). **BUG-32** (double socket) was found and fixed in JB35. **BUG-29 and BUG-30** remain open. All were logged 2026-10-23 on `refine/jb31`. The narratives are in the `TODO.md` section "🔴 OPEN — User-Reported Items". Severities are **proposed** and need owner confirmation.
+- **BUG-33 and BUG-34** are resolved in JB35a (`bundle/35a`, unreleased; ships with 34a and 35 as 2.0.0-alpha.3).
 - BUG-29 and BUG-30 are user reports that have **not yet been reproduced**.
 - **BUG-31** is an ops note (uptime pinger, deploy window). Status: monitor. Response saving was already off; the remaining owner step is switching the job to **HEAD** (Advanced → Request method). Reopen if it recurs outside a deploy or cold start.
 - The tracker also lists **PERF-01** ("Master Routine Initial Render Stutter & In-Memory Pre-Render / Keep-Warm Engine") as 🔴 Open. It is a performance item, not a numbered bug, and is kept in `TODO.md`.
@@ -56,6 +59,6 @@ The four setup findings previously listed here as "not yet triaged" are now BUG-
 
 ## How to add a bug
 
-1. Take the next free ID (`BUG-32` onward) and add a `### BUG-xx:` entry to the TODO tracker.
+1. Take the next free ID (`BUG-35` onward) and add a `### BUG-xx:` entry to the TODO tracker.
 2. Add a row here. Fill **Severity** and **Found in** (the version from `package.json` at the time).
 3. When the bug is fixed, set the status, record the version or bundle in **Fixed in**, and cite the ID in the `CHANGELOG.md` entry.

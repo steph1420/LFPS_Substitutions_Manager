@@ -1,4 +1,4 @@
-# Render setup: LFPS live relay (Bundle 35)
+# Render setup: LFPS live relay (Bundles 35, 35a)
 
 The Go server in `apps/server` is a **stateless live relay** (SAS §2.1). Devices sync through it over one WebSocket each. If it has Google credentials, it also runs the **Sheets bridge** ([SHEETS_SETUP.md](./SHEETS_SETUP.md)). Without them it runs **relay-only**: devices still sync live, and nothing touches Google Sheets.
 
@@ -43,6 +43,8 @@ Set these in Dashboard → service → **Environment** (left pane), not under Se
 | **Secret File** `sa.json` | the service-account JSON key | **Yes** |
 | `SHEETS_PULL_INTERVAL` | `5m` (minimum `1m`) | No |
 | `SHEETS_LOG` | `0` (set `1` to append a row to `App_Log` per write) | No |
+| `SHEETS_HYDRATE_TIMEOUT` | optional; default `20s` (max `5m`). How long devices are held at start while `Subs` is reloaded (35a) | No |
+| `SHEETS_FAKE_FILE` | **never set on Render.** Local tests only | — |
 | `ALLOWED_ORIGINS` | optional; default `https://steph1420.github.io` plus local Vite | No |
 | `APP_TZ` | optional; default `Asia/Kolkata` | No |
 | `PORT` | set by Render | — |
@@ -56,13 +58,14 @@ Set these in Dashboard → service → **Environment** (left pane), not under Se
 
 ```sh
 curl -s https://lfps-substitutions-manager.onrender.com/api/v1/health
-# {"status":"healthy","version":"2.0.0-alpha.N",...,"timeZone":"Asia/Kolkata","mode":"sheets","sheets":"ok"}
+# {"status":"healthy","version":"2.0.0-alpha.N",...,"timeZone":"Asia/Kolkata","mode":"sheets","store":"ready","sheets":"ok"}
 curl -sI https://lfps-substitutions-manager.onrender.com/api/v1/health   # HEAD, for the pinger
 ```
 
 | `mode` / `sheets` | Meaning |
 |---|---|
 | `relay-only` | No ID or no key file; see the log line `[Sheets] Relay-only mode: …` |
+| `store: hydrating` | Just started: reloading the week's substitutions from `Subs`. Devices show Connecting… for up to `SHEETS_HYDRATE_TIMEOUT` (35a) |
 | `sheets` / `starting` | Bridge is on; first pull not finished |
 | `sheets` / `ok` | Last pull or write succeeded |
 | `sheets` / `error` | Last call failed and is retried with backoff (≤ 5 min). Devices keep syncing. The usual cause is the Sheet not being shared with the service account (SHEETS_SETUP §2) |
@@ -71,10 +74,10 @@ In the app, the header pill reads **Live** (green). Settings → Cloud Synchroni
 
 ## 5. Rollback
 
-Dashboard → service → **Events/Deploys** → pick the last good deploy → **Rollback**. A rollback doesn't change the env vars. Devices keep their local copies, so nothing is lost. The previous relay (alpha.2) never answers HELLO, so Bundle 35 clients stay at **Connecting…** and keep working from local data, queuing their edits, until the relay is upgraded again.
+Dashboard → service → **Events/Deploys** → pick the last good deploy → **Rollback**. A rollback doesn't change the env vars. Devices keep their local copies, so nothing is lost. The previous relay (alpha.2) never answers HELLO, so alpha.3 clients stay at **Connecting…** and keep working from local data, queuing their edits, until the relay is upgraded again. Roll the web app back at the same time (the go-live runbook's rollback tag). The `Subs` tab keeps its schema-2 header; an alpha.2 relay doesn't use Sheets, and a later alpha.3 relay reads it as is.
 
 ## 6. Wire compatibility
 
 - Bundle 35 removed the REST mutation routes (`POST /absence/toggle`, `/availability`, `/substitutions/assign`, `DELETE /substitutions`). Edits go over the WebSocket (`STATE_MUTATION`).
 - The deployed alpha.2 web client never called those routes and ignores the new messages, so an old client against a new relay keeps working offline-first, without sync.
-- Deploy the relay first, then the web app.
+- **Client and relay go live together** (owner, 35a). The alpha.3 web client and relay speak the new protocol; an alpha.2 client against an alpha.3 relay doesn't sync, and an alpha.3 client against an alpha.2 relay stays Connecting…. Put the Secret File in place **before** the deploy. The order is in [`RELEASE_2.0.0-alpha.3.md`](./RELEASE_2.0.0-alpha.3.md).
