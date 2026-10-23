@@ -1,20 +1,27 @@
 # ADR-0005: Google Sheets is the source of truth; the Render server is a stateless live relay
 
-- **Status:** Accepted (owner direction, 2026-10-23; implemented in part by Job Bundle 34)
-- **Date:** 2026-10-23
+- **Status:** Accepted (owner direction, 2026-10-23; clarified 2026-10-24; implemented in part by Job Bundle 34)
+- **Date:** 2026-10-23 (amended 2026-10-24)
 - **Deciders:** Project owner (steph1420)
-- **Related:** ARCH-02, FEAT-62, FEAT-63, FEAT-65, BUG-25–28, [`../SAS.md`](../SAS.md) §6.2 and §7
+- **Related:** ARCH-02, FEAT-62, FEAT-63, FEAT-65, PERF-03, EPIC-01, BUG-25–28, [`../SAS.md`](../SAS.md) §2.1, §6.2 and §7
 
 ## Context
 
 Changes were lost on reload (BUG-25). The Go server wrote `current_state.json` to a local disk, but Render's free tier has an ephemeral filesystem, write errors were ignored (BUG-28), and the advertised backup downloads did not exist (BUG-27). Earlier planning (FEAT-62/63) considered a persistent disk or Postgres. The school already keeps its data in Google Sheets.
+
+Why not let every device read and write Sheets directly (owner, 2026-10-24)? Direct Sheets access from each device is **too slow** for the front desk. And the school's computers are **old and not on 24×7**, so none of them can host a hub. A small always-reachable relay solves both problems: devices get fast updates from memory, and Sheets latency stays off the critical path.
 
 ## Decision
 
 - **Google Sheets is the system of record** (the "external database"). Records carry last-updated time and version metadata (FEAT-65).
 - **The Render server is a stateless live relay** between devices. It keeps only the active school week in memory, resets when the week changes, and starts empty after a restart. It writes no files; there is no server disk or database.
 - **Each browser keeps a local copy** in `localStorage`, scoped by calendar date, so a reload or restart on that device loses nothing (Job Bundle 34).
-- Bundle 35 wires the sync: devices push changes to the relay, the relay fans them out and bridges them to Sheets, and devices re-hydrate from Sheets after a relay restart.
+- **Devices talk only to the relay**, over WebSocket. They never call Google APIs and hold no Google credentials.
+- **The relay holds the live state in memory** and fans every change out to all connected devices.
+- **Writes go only to app-owned tabs.** The relay creates and writes its own tabs, `Subs`, `App_Meta` (last-updated time, app version, schema version) and optionally `App_Log`. Writes are **asynchronous, batched, debounced and retried**, so a slow or failing Sheets call never blocks a device.
+- **Every other tab is read-only** for the app: Staff Directory, Subjects List, OVERVIEW, the per-teacher and per-class timetables, and the existing `Daily_Ledger` / `Baseline_Updates` unless the owner decides otherwise. The relay pulls them **at startup and periodically**, and streams them to devices.
+- **In-app timetable edits are substitutions.** They apply to one date, sync to `Subs`, and **never** write to the master timetable. Editing the master timetable is a separate future epic (EPIC-01, unscheduled).
+- Bundle 35 wires this up. After a relay restart, devices re-send their local copy and the relay re-reads the Sheet.
 
 ## Consequences
 
@@ -24,13 +31,24 @@ Changes were lost on reload (BUG-25). The Go server wrote `current_state.json` t
 - The server is simple to reason about and to test (`go test -race`).
 - Staff can still read and correct data directly in Sheets.
 
+**Hosting: Render free tier.** A free web service spins down after **15 minutes** without inbound HTTP or WebSocket traffic, and takes **about one minute** to wake on the next request. The owner **already runs an uptime ping bot during school hours**, so the relay stays warm while the front desk works and sleeps otherwise. That is also well inside the 750 free instance hours a month. The repo therefore adds **no keep-warm job** (PERF-03, handled externally). Two consequences for the code:
+
+- `GET /api/v1/health` must stay cheap: no lock, no I/O, no Sheets call.
+- The client must cope with a sleeping relay outside school hours. It shows a "Connecting…" state while it keeps working from local data, and sends its changes once connected (Bundle 35).
+
+Unflushed writes can be lost if the relay spins down or restarts. Debounce windows are kept short (seconds), and devices keep their local copy until the relay confirms the write.
+
 **Negative / trade-offs**
 
 - Until Bundle 35 ships, data is per device: two devices do not see each other's changes.
 - Sheets API quotas and latency apply; writes must be batched and conflict-aware (last writer wins by `revision`/`updatedAt`).
-- The Sheets bridge needs credentials on Render, and admin writes need server-side auth (SEC-02).
+- The Sheets bridge needs credentials on Render: a Google service account that the owner adds as an editor, and the real spreadsheet ID (the "Publish to web" `2PACX-…` ID is read-only and cached). Admin writes need server-side auth (SEC-02).
+- Read-only tabs reach devices only as fresh as the last pull (startup + periodic).
 
 ## Alternatives considered
 
 - **Render persistent disk** (paid): single instance, ties data to one host. Rejected by the owner.
 - **Managed Postgres**: extra service and cost, duplicates Sheets. Rejected by the owner.
+- **Devices read and write Sheets directly**: too slow, every device would need Google credentials, and there would be no live fan-out. Rejected (owner, 2026-10-24).
+- **A school computer as the hub**: the machines are old and not on 24×7. Rejected.
+- **A keep-warm cron in the repo** (GitHub Actions or similar): it duplicates the owner's existing pinger and would burn free hours outside school time. Not added.

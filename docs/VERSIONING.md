@@ -63,7 +63,18 @@ Every workspace package moves in lockstep. `@lfps/core`, `@lfps/ui`, `@lfps/web`
 | `BUG-xx` | Defect | [`../BUGS.md`](../BUGS.md) (register) and `TODO.md` (narrative) |
 | `FEAT-xx` | Feature | `TODO.md` |
 | `PERF-xx` | Performance | `TODO.md` |
-| `LOGIC-xx`, `UI-xx`, `SEC-xx` | Domain logic, UI polish, security | `TODO.md` |
+| `LOGIC-xx`, `UI-xx`, `SEC-xx`, `ARCH-xx` | Domain logic, UI polish, security, architecture | `TODO.md` |
+| `EPIC-xx` | Large future project, not yet scheduled into a bundle | `TODO.md` |
 | `Job Bundle N` | A delivered group of work items | `TODO.md`, `CHANGELOG.md`, commit subjects |
 
 Bundle numbers must be **unique**. Bundle numbers 28, 29 and 31 are currently reused for different scopes; see DOC_ISSUES. Use letter suffixes (`31A`, `31B`) for splits, as Bundle 26A already does.
+
+### 2.5 Worked example: Job Bundle 34 follow-ups stay at 2.0.0-alpha.2
+
+Job Bundle 34 set the version to `2.0.0-alpha.2` on `bundle/34`. On 2026-10-24 the owner asked for follow-ups: a 6-digit admin passcode, the school time zone, and plan clarifications. They **do not bump** the version, for three reasons:
+
+1. `2.0.0-alpha.2` has **not been released**: it is not on `next-gen`, not deployed to Pages or Render, and has no pushed tag. §2.1 bumps `-alpha.N` once per Job Bundle **shipped**, so later work in the same unshipped bundle joins the same version.
+2. The follow-ups belong to Job Bundle 34's own scope (SEC-01 interim, persistence rollover).
+3. Nothing outside the branch has seen `alpha.2`, so no released state format changes. The new `lfps_admin_lockout_v1` key is additive, and the persisted schema stays v1.
+
+The entries are recorded in the existing `[v2.0.0-alpha.2]` section. That section can still change because it is unreleased; once it ships it is frozen (§2.3). The next shipped bundle (35) becomes `2.0.0-alpha.3`.

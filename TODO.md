@@ -13,16 +13,22 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 > - **Google Sheets is the source of truth** (the "external database"). It needs last-updated time / version tracking.
 > - The **Render server is only a live relay** between devices. It is **not storage**: the disk / Postgres direction is dropped.
 > - **GitHub Pages builds from `next-gen`** (Settings → Pages). Going live means merging/pushing to `next-gen`, which is the owner's call.
+> - **(2026-10-24) In-app timetable edits are just substitutions.** They sync to an app-owned **Subs** tab in Sheets, never to the master timetable. **Editing the Master TimeTable** is a bigger, later project (EPIC-01, unscheduled).
+> - **(2026-10-24) Why a relay:** direct Sheets access from devices is too slow, and the school's old computers aren't on 24×7. Devices talk only to Render over WebSocket. The relay holds the live state in memory, writes the app-owned tabs to Sheets asynchronously (batched, debounced, retried), and pulls the read-only tabs at startup and periodically and streams them to devices. See ADR-0005.
+> - **(2026-10-24) Render free-tier sleep** (15 min idle, about 1 min to wake) is covered by the owner's **existing uptime ping bot during school hours**. No keep-warm job in the repo (PERF-03).
+> - **(2026-10-24) Previews: option A** (sub-paths under the Pages address), with Bundle 36 (FEAT-64).
 
 | Bundle | Scope | Items | Status |
 |---|---|---|---|
-| **34** | Date-scoped local persistence; stateless relay hardening; fresh-clone build order; Front Desk by default with a passcode-gated admin; footer version visible above the tab bar; single-source versioning (2.0.0-alpha.2) | FEAT-62 (part 1), BUG-24, BUG-25 (part 1), BUG-26, BUG-27, BUG-28, SEC-01 interim, ARCH-02 (relay decision) | 🟢 Done on `bundle/34` (not deployed) |
-| **35** | Real cross-device sync through the relay; Google Sheets bridge with update-time tracking; Render re-setup guide + `render.yaml` | FEAT-62 (part 2), BUG-25 (part 2), FEAT-65, FEAT-63, ARCH-06 | 🔵 Next |
-| **36** | GitHub Actions CI (test, build, `go vet`, `go test -race`); Pages built by Actions instead of committed root assets; Render deploys only after checks pass; preview / test-branch builds | ARCH-05, ARCH-02 (adoption), ARCH-06 (gating), FEAT-64 | ⚪ Planned |
+| **34** | Date-scoped local persistence; stateless relay hardening; fresh-clone build order; Front Desk by default with a **6-digit** passcode-gated admin (escalating lockout); footer version visible above the tab bar; single-source versioning (2.0.0-alpha.2); **school time zone Asia/Kolkata** on client and server | FEAT-62 (part 1), BUG-24, BUG-25 (part 1), BUG-26, BUG-27, BUG-28, SEC-01 interim, ARCH-02 (relay decision), ARCH-07 | 🟢 Done on `bundle/34` (not deployed) |
+| **35** | Cross-device sync through the relay (devices ⇄ relay over WebSocket only); Sheets bridge: app-owned `Subs` + `App_Meta` (+ optional log) written async/batched/debounced/retried, read-only tabs pulled at startup + periodically and streamed; client "Connecting…" state for relay cold starts; Render re-setup guide + `render.yaml`. **Owner setup first:** service account + real spreadsheet ID | FEAT-62 (part 2), BUG-25 (part 2), FEAT-65, FEAT-66, FEAT-63, ARCH-06 | 🔵 Next |
+| **36** | GitHub Actions CI (test, build, `go vet`, `go test -race`); Pages built by Actions instead of committed root assets (`next-gen` → root); Render deploys only after checks pass; branch previews at `/preview/<branch>/` with a footer branch badge (option A) | ARCH-05, ARCH-02 (adoption), ARCH-06 (gating), FEAT-64 | ⚪ Planned |
 | **37** | Header and grid motion: detach header from browser toolbar, header jitter, name-column collapse jitter | UI-10, BUG-29, BUG-30 | ⚪ Planned |
 | **38** | Server-side auth for admin writes; docs reconciliation; codebase audit | SEC-02, ARCH-03, ARCH-04 | ⚪ Planned |
 
-> Bundles 37/38 are ordered by priority and can swap if the owner prefers. SEC-02 must land before the relay writes to Google Sheets on behalf of admins (it can move into 35/36 if Sheets writes ship there).
+> Bundles 37/38 are ordered by priority and can swap if the owner prefers. SEC-02 must land before the relay writes to Google Sheets on behalf of admins (it can move into 35/36 if Sheets writes ship there). Bundle 35 writes only substitutions (which every role may make) to app-owned tabs, so it does not depend on SEC-02.
+>
+> **Not scheduled:** EPIC-01 (Master TimeTable editing), PERF-03 (relay keep-warm, handled outside the repo).
 
 ## 🔴 OPEN — User-Reported Items (logged 2026-10-23 on `refine/jb31`)
 
@@ -42,12 +48,13 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] **Local-First Browser Persistence** (JB34, `apps/web/src/store/persistence.ts`, key `lfps_operational_state`, schema v1): Persist the operational slices of `useTimetableStore.ts` (versioned storage key with schema migration). Exclude transient UI state such as open modals and context menus.
   - [x] **Date Scoping** (JB34, `@lfps/core` `calendar`): Key operational state by calendar date (or week), not only by `DayOfWeek`. Otherwise last week's absences would reappear after a reload.
   - [x] **Server Model Parity** (JB34): `ACCEPTED`, `disputeRemark`, `acceptedAt`, `disputedAt`, optional `substituteTeacher`, validation → 400. Displaced slots and routine edits are relayed in Bundle 35.
-  - [ ] **Hydrate & Push** (Bundle 35): On load, hydrate from Google Sheets / the relay. Push every mutation to the server, using either REST or a revisioned full-state endpoint.
+  - [ ] **Hydrate & Push** (Bundle 35): On connect, the relay sends the current state and the read-only Sheet data (staff, subjects, master routine). Devices push every mutation over the **same WebSocket** (no direct Sheets or REST calls from devices for sync).
+  - [ ] **Substitutions only to Sheets** (Bundle 35, owner 2026-10-24): date-scoped routine edits and substitutions sync to the `Subs` tab. Nothing the app does writes to the master timetable (see EPIC-01).
   - [ ] **Apply Live Broadcasts** (Bundle 35): Apply `STATE_MUTATION` from other devices, ignoring echoes of the device's own changes.
   - [ ] **Offline Outbox** (Bundle 35): Queue mutations while offline and replay them on reconnect.
   - [ ] **Single WebSocket Connection** (Bundle 35): Use one WebSocket per tab. Today `useLiveSync()` is mounted twice, in `Header.tsx` and `SettingsModal.tsx`.
   - [x] **Server Hardening** (JB34, `88e640a`): BUG-26, BUG-27, BUG-28 fixed; stateless week-scoped relay, deep copies, CORS/WS origin allowlist, size limits. BUG-25 sync part remains (Bundle 35).
-  - [x] **Tests** (JB34): web Vitest (persistence, reload, access: 24 tests), core calendar tests, Go tests for store, handlers, hub and router (`go test -race`).
+  - [x] **Tests** (JB34): web Vitest (persistence, reload, access: 30 tests), core calendar tests (incl. IST), Go tests for schooltz, store, handlers, hub and router (`go test -race`).
 
 ### FEAT-63: Render Server Re-Provisioning With the New Build / Codebase
 - **Status**: 🔴 Open → Bundle 35 (ARCH-02 relay decision made in JB34)
@@ -56,7 +63,9 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] Write a step-by-step owner guide for the Render Web Service:
     - Docker runtime with root directory `apps/server` (Dockerfile identical to the `Dockerfile.render` sidecar)
     - health check `/api/v1/health`
-    - environment variable **names**: `PORT`, `TZ` (school time zone, e.g. `Asia/Kolkata`), `ALLOWED_ORIGINS` (optional; defaults to the Pages origin + localhost), plus the Sheets bridge credentials Bundle 35 introduces. `DATA_DIR` is no longer used (ignored with a log line).
+    - environment variable **names**: `PORT` (Render sets it), `ALLOWED_ORIGINS` (optional; defaults to the Pages origin + localhost), `APP_TZ` (optional; the school zone is Asia/Kolkata in code since JB34, so **no TZ setting is needed**), plus the Sheets bridge credentials Bundle 35 introduces. `DATA_DIR` is no longer used (ignored with a log line).
+    - where to set them: Render Dashboard → the service → **Environment** in the left pane (not **Settings**) → Environment Variables → **+ Add Environment Variable** → Save, then choose "Save and deploy" ([Render docs](https://render.com/docs/configure-environment-variables)). Secret files (e.g. the service-account key) go in the same page under **Secret Files**, mounted at `/etc/secrets/<name>`.
+    - health check path `/api/v1/health` (also what the owner's uptime pinger should call; it is cheap and needs no `Origin`).
   - [x] **Durable Storage Decision** (owner, 2026-10-23): **none on Render.** Google Sheets is the source of truth; the relay is stateless and an empty restart is expected. No disk, no Postgres.
   - [ ] Codify the service as a `render.yaml` Blueprint (see ARCH-06).
   - [ ] Verify after deploy: health check (reports `version`), WS connect from the Pages origin, mutation round-trip between two devices, and devices re-hydrating from Sheets after a relay restart.
@@ -143,8 +152,9 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 ### SEC-01 (interim): Front Desk by Default, Passcode-Gated Admin
 - **Status**: 🟢 Done (Job Bundle 34, `76c7fa0`). See [`docs/ADMIN_ACCESS.md`](docs/ADMIN_ACCESS.md).
 - **Reported**: the app opened as admin with no password, and logging out left admin powers available.
-- **Delivered**: opens as Front Desk (Guest); admin needs a passcode whose SHA-256 is baked in at build time (`VITE_ADMIN_PASSCODE_SHA256`, generate with `npm run admin:hash`); tab-scoped session; 5 failures → 30 s cooldown; schedule editing, solver policy, Reset Day, history purge and developer mode are admin-only in both the UI and the store.
-- **Limit**: client-side only. It stops accidental edits, not a determined user. Real enforcement is SEC-02.
+- **Delivered**: opens as Front Desk (Guest); admin needs a passcode whose SHA-256 is baked in at build time (`VITE_ADMIN_PASSCODE_SHA256`, generate with `npm run admin:hash`); tab-scoped session; schedule editing, solver policy, Reset Day, history purge and developer mode are admin-only in both the UI and the store.
+- **6-digit follow-up (JB34, owner 2026-10-24)**: the passcode is exactly **6 digits**, entered on a numeric keypad (six dots, auto-submit). Lockout is per device and survives reloads: 4 free misses, then 30 s, 1 min, 5 min, 15 min, then 1 h. `admin:hash` refuses easy codes unless `--allow-weak`. The owner's code is configured in the build box's git-ignored `apps/web/.env.local` and verified by a local-only test. **CI/Actions builds still need the hash as a variable** (ARCH-05).
+- **Limit**: client-side only, and **a 6-digit hash in the public bundle can be brute-forced offline in under a second**. It stops accidents, not a determined user. Real enforcement is SEC-02.
 
 ### SEC-02: Server-Side Authentication for Admin Writes
 - **Status**: 🔴 Open → Bundle 38 (earlier if Sheets writes need it)
@@ -155,21 +165,69 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] Keep the passcode/secret only in Render environment variables, never in the repo.
 
 ### FEAT-64: Preview / Test-Branch Builds ("switch to a test branch")
-- **Status**: 🔴 Open → Bundle 36 (owner to pick an option)
+- **Status**: 🔵 Scheduled → **Bundle 36**, with ARCH-05. **Owner chose option A** (2026-10-24: "Test-branch previews: Yes please").
 - **Reported**: *"Add a way to switch to test branches."*
-- **Options**:
-  - [ ] **(A) Pages sub-path per branch (recommended)**: an Actions workflow builds each `bundle/*` or `preview/*` branch and publishes it to `https://steph1420.github.io/LFPS_Substitutions_Manager/preview/<branch>/` (Vite `base` is already `./`). Production stays at the root. Free, same origin as production. Note: a same-origin preview shares `localStorage` with production unless the persistence key is namespaced by build channel (add that with this item).
-  - [ ] **(B) Hosted previews** (Cloudflare Pages / Netlify / Vercel): automatic per-branch URLs and PR comments. Needs a third-party account; different origin, so it needs an `ALLOWED_ORIGINS` entry on the relay.
-  - [ ] **(C) Local only**: `npm run build && npm run preview --workspace=@lfps/web` on any branch checkout. No infrastructure, but only on one machine.
+- **Decision**: previews live under the existing Pages address. Options B (hosted previews on a third party) and C (local only) were not chosen.
+- **Design sketch** (to confirm in an ADR when built; supersedes ADR-0004's "Pages serves the committed `next-gen` root"):
+  - **One Actions workflow** (`.github/workflows/pages.yml`), triggered on push to `next-gen`, `bundle/*` and `preview/*`, plus manual dispatch. Pages source switches from "Deploy from a branch" to **GitHub Actions** (owner action in Settings → Pages).
+  - **Builds**: `next-gen` → site root `https://steph1420.github.io/LFPS_Substitutions_Manager/`. `bundle/34` → `…/preview/bundle-34/` (the `/` in a branch name becomes `-`). Vite `base: './'` already makes the build path-independent.
+  - **Assembling the site**: Pages deploys one artifact per site, so each run rebuilds the whole tree. Build the root from `next-gen`, and each live `bundle/*` / `preview/*` branch into `preview/<slug>/`. Keep a small `preview/index.html` that lists the previews with commit and build time. Deleted branches drop out on the next run. Alternative: keep a `gh-pages` branch and update only one folder per run (the `peaceiris/actions-gh-pages` pattern), which is cheaper but adds a branch.
+  - **Checks first**: the job runs `npm ci`, `npm test`, `npm run build:web` (ARCH-05) before publishing; a failing branch keeps its previous preview.
+  - **Footer branch badge**: the build sets `GIT_BRANCH`/`GIT_COMMIT` (already read by `vite.config.ts`) and a new `VITE_BUILD_CHANNEL=production|preview`. On previews the footer shows a tinted **"Preview · bundle/34"** badge next to `v<version> · <commit>`, and the header version gets a matching dot. The badge links to `preview/` (fade/scale spring only, per DESIGN_PHILOSOPHY).
+  - **Data isolation (required)**: previews share the origin, and therefore `localStorage`, with production. Namespace every storage key by channel and slug (e.g. `lfps_operational_state` → `lfps_preview_bundle-34_operational_state`), and the admin session and lockout keys too. A preview must **not** write to the production Sheets tabs. Either point it at no relay (local-only) or at a preview relay or tab prefix (decide with Bundle 35's bridge).
+  - **Admin hash**: injected from an Actions secret/variable (`VITE_ADMIN_PASSCODE_SHA256`) for both channels.
   - [ ] Optional in-app "Build channel" row in Settings → Build Info that links between production and the preview list (admin only).
 
-### FEAT-65: Google Sheets Last-Updated Time & Version Tracking
-- **Status**: 🔴 Open → Bundle 35
-- **Reported**: Google Sheets is the external database and needs update-time tracking.
+### FEAT-65: Google Sheets Bridge, Last-Updated Time & Version Tracking
+- **Status**: 🔴 Open → Bundle 35 (needs owner setup first)
+- **Reported**: Google Sheets is the external database and needs update-time tracking. Clarified 2026-10-24: the app creates its **own** purpose-specific tabs and writes **only** to those. Every other tab is read-only information that the **server** pulls and streams to all devices.
+- **The owner's Sheet** ("subApp - CLASS AND TEACHER ROUTINES Build 4", published copy read 2026-10-24): Staff Directory, Daily_Ledger, Baseline_Updates, Subjects List, 9 per-teacher routine tabs, OVERVIEW (master timetable + subject allocations), KG A, KG B, PREP A, PREP B. Full table in [`docs/SAS.md`](docs/SAS.md) §2.1.
+- **Owner setup (blocking)**:
+  - [ ] Create a Google Cloud project, enable the **Google Sheets API**, create a **service account** and a JSON key.
+  - [ ] **Share the spreadsheet with the service account's e-mail as Editor.**
+  - [ ] Provide the **real spreadsheet ID**: the `<id>` in `https://docs.google.com/spreadsheets/d/<id>/edit`. The `2PACX-…` ID in the "Publish to web" link is read-only and cached, and cannot be used for writes.
+  - [ ] Store both on Render: service → **Environment** → `SHEETS_SPREADSHEET_ID` as a variable, and the key under **Secret Files** (e.g. `sheets-sa.json` → `/etc/secrets/sheets-sa.json`, referenced by `GOOGLE_APPLICATION_CREDENTIALS`). Never in the repo.
+  - [ ] Decide on the existing `Daily_Ledger` (earlier app's substitution log): reuse it as the Subs table, or leave it read-only and start a new `Subs` tab. Decide whether `Baseline_Updates` (earlier master-routine edits) stays as a read-only history.
 - **Target Solution**:
-  - [ ] Every row the bridge writes carries `updatedAt` (ISO, school TZ), `updatedBy` (device / role / teacher if known), `appVersion` and a monotonic `revision`.
-  - [ ] A metadata tab (e.g. `_meta`) records the sheet schema version, last write time and last writer app version.
+  - [ ] App-owned tabs, created by the relay if missing: **`Subs`** (date, day, period, absent teacher, substitute, status, note, assigned by, `updatedAt` ISO in school time, `updatedBy` device/role/teacher, `appVersion`, monotonic `revision`, stable row `id`), **`App_Meta`** (schema version, last write time, last writer app version), optional **`App_Log`**.
+  - [ ] Writes: async, **batched** (`spreadsheets.values.batchUpdate`), **debounced** (a few seconds), **retried** with backoff on 429/5xx, idempotent by row `id`. A write failure never blocks devices; the relay reports a "Sheets: last saved …" status.
+  - [ ] Reads: pull the read-only tabs **at startup and periodically** (e.g. every 5–10 min during school hours, and on admin request), parse them into the core model (OVERVIEW → master routine, Staff Directory → staff, Subjects List → subjects), and **stream** them to devices over WebSocket. Never write to those tabs.
   - [ ] Conflict rule: last-writer-wins per record by `revision`/`updatedAt`; clients show "Last synced …" in Settings next to the existing "Saved on this device" row.
+  - [ ] Quotas: stay well under the Sheets API per-minute limits by batching. One relay talks to Google; devices never do.
+
+### FEAT-66: Client Cold-Start "Connecting…" State
+- **Status**: 🔴 Open → Bundle 35
+- **Why**: outside school hours the owner's pinger stops, Render puts the relay to sleep, and the first connection takes about a minute (PERF-03).
+- **Target Solution**:
+  - [ ] Replace the binary "Cloud Live / Offline" pill with three states: **Live**, **Connecting…** (first attempt or waking; a calm pulse in opacity only) and **Offline** (no network, or still failing after the wake window).
+  - [ ] The app stays fully usable from local data throughout. Changes queue in the outbox (FEAT-62) and flush once connected.
+  - [ ] Reconnect with backoff and jitter (1 s → 30 s) instead of a fixed 3 s. Treat a non-JSON/HTML health response as "waking" (Render serves a loading page to browsers while spinning up).
+  - [ ] Optional: a cheap `fetch('/api/v1/health')` on app open to start the wake-up early.
+
+### PERF-03: Relay Keep-Warm (Render Free-Tier Spin-Down)
+- **Status**: 🟢 Handled externally (owner, 2026-10-24). No work in this repo.
+- **Context**: Render's free tier spins a web service down after 15 minutes without inbound traffic and needs about a minute to wake ([Render docs](https://render.com/docs/free)).
+- **Resolution**: the owner already runs an **uptime ping bot during school hours**, so the relay stays warm while the front desk is in use and sleeps otherwise (which also saves free instance hours). The keep-warm cron that was briefly proposed for Bundle 35 is **dropped**.
+- **Contract for the repo**: keep `GET /api/v1/health` (also `HEAD`) **cheap**: no store lock, no I/O, no Sheets call, no `Origin` needed. The pinger should call `https://lfps-substitutions-manager.onrender.com/api/v1/health`. Client-side cold-start handling is FEAT-66.
+- *Not the same as PERF-01* (client pre-render of the routine grid, below).
+
+### ARCH-07: School Time Zone (Asia/Kolkata) on Client and Server
+- **Status**: 🟢 Done (Job Bundle 34 follow-up)
+- **Reported**: *"Render time zone: I tried editing in the server settings but there's no way to change."* Render has no time-zone field. Environment variables live on the service's **Environment** page (left pane), not on **Settings**.
+- **Delivered**:
+  - [x] Server: `internal/schooltz` defaults to `Asia/Kolkata` in code, overridable by `APP_TZ` then `TZ`; zone data embedded (`time/tzdata`); unknown values fall back with a warning; `/api/v1/health` reports `timeZone`. **No Render setting needed.**
+  - [x] Web: `SCHOOL_TIME_ZONE` / `schoolDateFor()` in `@lfps/core`; date keys, the Sunday 00:00 week switch, the midnight rollover, pruning, the Excel file name and displayed times follow IST on every device.
+  - [x] Tests: Go resolve order, default zone and IST week rollover; core IST rollover; web IST midnight test; suites also run under `TZ=UTC`, `America/Los_Angeles` and `Pacific/Kiritimati`.
+
+### EPIC-01: Master TimeTable Editing (future, unscheduled)
+- **Status**: ⚪ Not scheduled (owner, 2026-10-24: *"Editing Master TimeTable is a bigger part of the project that we will address later."*)
+- **Scope (to be designed)**: let admins change the master timetable (permanent routine), with the result written to the master tabs in Sheets (OVERVIEW / per-teacher / per-class), or to a new app-owned staging tab that a person approves.
+- **Conflict to resolve first**: today's in-app routine edits are **date-scoped overrides** (`lfps_operational_state.days[date].scheduleOverrides`, a diff against `DEFAULT_MASTER_SCHEDULE`, synced as substitutions in Bundle 35). If the master changes underneath, an existing override may no longer match its base cell. The epic must define:
+  - whether a master change clears, keeps or re-bases overrides for future dates
+  - how a device shows "the master changed since you edited this day"
+  - which tab is authoritative when OVERVIEW and the per-teacher tabs disagree (they are maintained separately in the Sheet today)
+  - that it needs SEC-02 (real server-side admin auth) before the app may write master data
+- Until then, the app never writes to master tabs. The earlier app's `Baseline_Updates` log is read-only.
 
 ### ARCH-05: GitHub Actions CI
 - **Status**: 🔴 Open → Bundle 36 (owner said "sure" to automatic checks)
@@ -182,7 +240,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - **Status**: 🔴 Open → Blueprint in Bundle 35, gating in Bundle 36 (owner said "sure")
 - **Reported**: Render should redeploy only after checks pass; earlier sessions never explained the Render setup.
 - **Target Solution**:
-  - [ ] `render.yaml` Blueprint: Docker runtime, `rootDir: apps/server`, health check `/api/v1/health`, env var names (`TZ`, `ALLOWED_ORIGINS`, Sheets bridge credentials as `sync: false`), branch `next-gen`.
+  - [ ] `render.yaml` Blueprint: Docker runtime, `rootDir: apps/server`, health check `/api/v1/health`, env var names (`ALLOWED_ORIGINS`, optional `APP_TZ`, `SHEETS_SPREADSHEET_ID` and the service-account secret file as `sync: false`), branch `next-gen`. No keep-warm cron (PERF-03).
   - [ ] Gate deploys: Render "Auto-Deploy: After CI checks pass" (Render waits for GitHub checks), or `autoDeploy: false` plus a deploy-hook call from the CI workflow after it passes. Document whichever the owner chooses.
   - [ ] Step-by-step owner guide (with screenshots/field names) folded into FEAT-63.
 
@@ -307,6 +365,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 
 ### PERF-01: Master Routine Initial Render Stutter & In-Memory Pre-Render ("Keep-Warm" Engine)
 - **Status**: 🔴 Open
+- **Scope note (2026-10-24)**: this is the **client** routine-grid pre-render. Server keep-warm for Render is PERF-03 (handled externally).
 - **Reported**: The Master Routine table draws noticeably slow / stutters when the page is first loaded and scrolled down into view.
 - **Target Solution**:
   - [ ] **Instant Offscreen Pre-rendering on Load**: Instead of waiting for first scroll or deferred triggers, immediately construct and render the full Master Routine table DOM tree into memory during initial app boot (or via `requestIdleCallback`) before user scrolls.

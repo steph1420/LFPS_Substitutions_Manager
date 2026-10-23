@@ -18,14 +18,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [v2.0.0-alpha.2] - 2026-10-23
 
 > Job Bundle 34, branch `bundle/34` (off `refine/jb31`). **Not yet deployed**: GitHub Pages serves `next-gen`, and going live is the owner's call.
+> The 2026-10-24 follow-ups (6-digit passcode, school time zone, owner clarifications) are part of Job Bundle 34 and **keep the version at 2.0.0-alpha.2**: nothing has shipped, and VERSIONING §2.1 bumps `-alpha.N` once per bundle shipped to Pages (see VERSIONING §2.5).
 > Owner direction recorded here: **Google Sheets is the source of truth; the Render server is a stateless live relay, not storage.**
 
 ### Added
 - **Reload-Safe Local Persistence (FEAT-62 part 1, BUG-25 part 1, Job Bundle 34)**: Operational state now survives a reload on the same device. It is saved to `localStorage` (`lfps_operational_state`, schema v1) 250 ms after each change and flushed when the tab is hidden or closed. Saved: absences, availability/deputations, substitutions (including Accepted/Disputed), displaced slots, Off. AC / Off. CT appointments, routine edits, the active week's undo history (last 10) and notifications (14 days, max 100). Open tabs on the same device stay in step through the `storage` event.
 - **Calendar-Date Scoping (Job Bundle 34)**: `@lfps/core` `calendar` maps MON–SAT to the active school week's dates (Sunday rolls to the coming week). Last week's absences no longer reappear; data older than 42 days is pruned. The app now opens on **today's** weekday and rolls over at midnight. Routine edits are stored as per-date overrides; permanent routine changes will come from Google Sheets (Bundle 35).
-- **Passcode-Gated Admin (SEC-01 interim, Job Bundle 34)**: The app opens as **Front Desk**. Admin (schedule editing, solver policy, Reset Day, history purge, developer mode) requires a passcode whose SHA-256 is set at build time (`VITE_ADMIN_PASSCODE_SHA256`, `npm run admin:hash`). Session is per tab; 5 wrong attempts → 30 s cooldown; Lock in Settings. Staff Login is now identity only. Client-side protection only; see `docs/ADMIN_ACCESS.md` and SEC-02.
+- **Passcode-Gated Admin (SEC-01 interim, Job Bundle 34)**: The app opens as **Front Desk**. Admin (schedule editing, solver policy, Reset Day, history purge, developer mode) requires a passcode whose SHA-256 is set at build time (`VITE_ADMIN_PASSCODE_SHA256`, `npm run admin:hash`). Session is per tab; Lock in Settings. (The passcode format and lockout were revised the next day; see the 6-digit entry below.) Staff Login is now identity only. Client-side protection only; see `docs/ADMIN_ACCESS.md` and SEC-02.
+- **6-Digit Admin Passcode (SEC-01 interim, Job Bundle 34 follow-up, owner 2026-10-24)**: The admin passcode is exactly six digits, entered as six dots over a numeric keypad. It submits on the sixth digit, and a wrong code shakes the row (transform only; respects Reduce Motion). The lockout now persists per device (`lfps_admin_lockout_v1`) and escalates: 4 free misses, then 30 s, 1 min, 5 min, 15 min, then 1 h per further miss. It resets on success or after 24 h. `npm run admin:hash` accepts only six digits and refuses easy codes unless `--allow-weak`.
+- **School Time Zone (ARCH-07, Job Bundle 34 follow-up)**: The calendar follows **Asia/Kolkata** on every device, whatever the device's zone: date keys, the Sunday 00:00 week switch, the midnight rollover, pruning, the Excel file name and displayed times (`@lfps/core` `SCHOOL_TIME_ZONE`, `schoolDateFor`). The server defaults to Asia/Kolkata in code (`internal/schooltz`; `APP_TZ`, then `TZ`, override it), embeds zone data (`time/tzdata`) and reports `timeZone` in `/api/v1/health`. No Render setting is needed.
 - **Build Info (Job Bundle 34)**: Header shows `v2.0.0-alpha.2`; the footer and Settings show `v<version> · <commit> · <branch>` (build time on hover). Settings shows "Saved on this device · <time>".
-- **Tests (Job Bundle 34)**: `@lfps/web` gets a Vitest suite (persistence 11, reload 4, access 9). `@lfps/core` gains 7 calendar tests (26 total). Go gets tests for the store, handlers, router and hub, all run under `go test -race`.
+- **Tests (Job Bundle 34)**: `@lfps/web` gets a Vitest suite (persistence 11, reload 5, access 14 = 30; one access test runs only where the owner's passcode is configured). `@lfps/core` gains 11 calendar tests (30 total), including IST rollover. Go adds `schooltz` tests and an IST week-rollover test. Go gets tests for the store, handlers, router and hub, all run under `go test -race`.
 - **Version tooling (Job Bundle 34)**: `scripts/version.mjs` (`npm run version:check` / `version:sync`) keeps the root, the three workspaces and `apps/server/internal/version` on one version; `npm test` fails on a mismatch.
 - **Standard Documentation Suite (Job Bundle 31 workspace, `refine/jb31`)**:
   - **Docs Index**: Added `docs/README.md`, which indexes every project document and records that `DEVELOPER_GUIDE.md` is owner-controlled and only updated on explicit request.
@@ -54,7 +57,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     - BUG-29 and BUG-30: reported, not yet reproduced
 
 ### Changed
-- **Stateless Live Relay (ARCH-02 decision, Job Bundle 34)**: The Go server keeps state in memory only, scoped to the active school week, with "today" computed per request (honours `TZ`). `DATA_DIR`/`current_state.json` are no longer used. Server model matches `@lfps/core` (`ACCEPTED`, `disputeRemark`, `acceptedAt`, `disputedAt`); invalid input → 400. Broadcasts and responses are deep copies.
+- **Stateless Live Relay (ARCH-02 decision, Job Bundle 34)**: The Go server keeps state in memory only, scoped to the active school week, with "today" computed per request in the school time zone. `DATA_DIR`/`current_state.json` are no longer used. Server model matches `@lfps/core` (`ACCEPTED`, `disputeRemark`, `acceptedAt`, `disputedAt`); invalid input → 400. Broadcasts and responses are deep copies.
 - **CORS and WebSocket origins (Job Bundle 34)**: One allowlist (`ALLOWED_ORIGINS`, default: the GitHub Pages origin and localhost 5173/4173) governs both REST and `/api/v1/ws`. Disallowed browser origins get 403.
 - **Limits (Job Bundle 34)**: WebSocket messages up to 256 KiB (was 512 bytes); request bodies capped at 1 MiB (413).
 - **Build order (Job Bundle 34)**: Root `build` runs `build:libs` (`@lfps/ui` → `@lfps/core`) before `build:web`; `npm test` runs every workspace.
@@ -66,12 +69,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **BUG-28 (Job Bundle 34)**: No more silently ignored save errors; encode and Excel errors are logged or returned.
 - **Footer hidden behind the tab bar (Job Bundle 34)**: The footer reserves the floating tab bar's height plus the iOS safe area on all breakpoints; the tab bar respects the safe area. Verified at 1280×800, 820×1180 and iPhone 13.
 
+- **Plan and docs (owner clarifications, 2026-10-24)**:
+  - In-app timetable edits are substitutions. They sync to an app-owned `Subs` tab, never to the master timetable.
+  - Master TimeTable editing becomes EPIC-01 (unscheduled), with the conflict against per-date overrides noted.
+  - Bundle 35's scope now covers: devices ⇄ relay over WebSocket only; app-owned `Subs` / `App_Meta` (+ log) written asynchronously, batched, debounced and retried; read-only tabs pulled at startup and periodically, then streamed; a client "Connecting…" state (FEAT-66); and owner setup of a service account and the real spreadsheet ID.
+  - Relay keep-warm (PERF-03) is handled by the owner's uptime pinger during school hours, so no cron.
+  - Previews: option A (`/preview/<branch>/`, footer branch badge) is scheduled with Bundle 36 (FEAT-64).
+  - Updated: ADR-0005, SAS §2.1, ADMIN_ACCESS.
+
 ### Removed
 - **BUG-27 (Job Bundle 34)**: `GET /api/v1/backups` and the server-side dated Excel copy. Under the relay model the server writes no files; `GET /api/v1/export/excel` still streams the workbook.
 
 ### Security
 - Admin actions are guarded in the store as well as the UI; the developer console requires an admin session (Job Bundle 34).
 - The relay no longer answers `Access-Control-Allow-Origin: *` (Job Bundle 34).
+- The admin passcode hash ships in the public bundle, and a 6-digit code can be recovered from it offline in under a second. The gate prevents accidents only, so a real fix needs SEC-02. The new lockout only slows guessing through the app's own screen (Job Bundle 34).
 
 ## [v2.0.0-alpha.1] - 2026-10-18
 
