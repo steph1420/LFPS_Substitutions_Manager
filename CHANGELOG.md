@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Planned
+- **Deferred by the owner (2026-10-24, "we'll add later")**:
+  - FEAT-67: Developer Options controls for the admin lockout penalty (free misses, wait steps).
+  - SEC-03: a separate Developer Options passcode, distinct from the admin passcode.
 - **Simple Mode**:
   - Streamlined view option presenting strictly basic manual substitution logic.
 - **Codebase Technical Debt & Bloat Elimination**:

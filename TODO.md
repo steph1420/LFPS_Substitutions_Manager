@@ -28,7 +28,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 
 > Bundles 37/38 are ordered by priority and can swap if the owner prefers. SEC-02 must land before the relay writes to Google Sheets on behalf of admins (it can move into 35/36 if Sheets writes ship there). Bundle 35 writes only substitutions (which every role may make) to app-owned tabs, so it does not depend on SEC-02.
 >
-> **Not scheduled:** EPIC-01 (Master TimeTable editing), PERF-03 (relay keep-warm, handled outside the repo).
+> **Not scheduled:** EPIC-01 (Master TimeTable editing), PERF-03 (relay keep-warm, handled outside the repo), FEAT-67 (lockout settings in Developer Options) and SEC-03 (separate Developer Options passcode), both deferred by the owner 2026-10-24.
 
 ## 🔴 OPEN — User-Reported Items (logged 2026-10-23 on `refine/jb31`)
 
@@ -163,6 +163,26 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] Relay verifies admin actions (e.g. passcode → short-lived signed token, or Google sign-in restricted to school accounts) before relaying them or writing to Sheets.
   - [ ] Teacher identity for self-service actions (accept/dispute) once identity matters.
   - [ ] Keep the passcode/secret only in Render environment variables, never in the repo.
+
+### FEAT-67: Admin Lockout Penalty Settings in Developer Options
+- **Status**: ⚪ Deferred (owner 2026-10-24: "we'll add later"). Not scheduled.
+- **Ask**: let the owner set the admin-passcode lockout penalty from Developer Options instead of a code change.
+- **Target Solution**:
+  - [ ] Settings → Developer Options: number of free misses (today 4), the wait steps (today 30 s → 1 min → 5 min → 15 min → 1 h), and the 24 h reset window.
+  - [ ] Validate the values (whole numbers, sensible minimum and maximum, steps never decreasing), and offer "Reset to defaults".
+  - [ ] Store the values per device next to `lfps_admin_lockout_v1`, falling back to the built-in defaults in `adminGate.ts`. Unit tests cover custom schedules.
+  - [ ] Changing the policy must not unlock a device that is currently locked out. It applies from the next miss.
+- **Depends on**: SEC-03, because a Front Desk user who can reach Developer Options could otherwise switch the lockout off. Like the rest of the gate, this is client-side only until SEC-02.
+
+### SEC-03: Separate Developer Options Passcode
+- **Status**: ⚪ Deferred (owner 2026-10-24: "we'll add later"). Not scheduled.
+- **Ask**: Developer Options gets its own passcode, separate from the admin passcode.
+- **Target Solution**:
+  - [ ] A second build-time hash (e.g. `VITE_DEV_PASSCODE_SHA256`) produced by `npm run admin:hash -- --dev` (or a sibling script). The build refuses a dev code that matches the admin code.
+  - [ ] Unlocking Developer Options asks for the dev passcode on the same keypad (`PasscodeField`), with its own session (`lfps_dev_session_v1`) and its own lockout counter.
+  - [ ] Decide with the owner whether admin is also required first (admin + dev) or the dev code works alone.
+  - [ ] Docs: ADMIN_ACCESS gains a Developer passcode section; CI/Actions needs the second hash (ARCH-05, FEAT-64 previews).
+- **Limit**: same as SEC-01. The hash ships in the public bundle and can be brute-forced offline; real enforcement is SEC-02.
 
 ### FEAT-64: Preview / Test-Branch Builds ("switch to a test branch")
 - **Status**: 🔵 Scheduled → **Bundle 36**, with ARCH-05. **Owner chose option A** (2026-10-24: "Test-branch previews: Yes please").
