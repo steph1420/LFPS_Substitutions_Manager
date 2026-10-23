@@ -23,6 +23,8 @@
 //
 // Nothing is written to disk. The cache holds the active school week only and resets when
 // the week changes; devices re-publish what they know on reconnect (relay model, Bundle 34).
+// In sheets mode the relay also reloads the week's substitutions, tombstones included, from
+// the Subs tab at startup (Bundle 35a), through the same Merge, so LWW decides as usual.
 package livesync
 
 import (
@@ -161,6 +163,19 @@ func (s *Store) inWeekLocked(kind, date string) bool {
 	d, _ := time.Parse("2006-01-02", date)
 	days := int(d.Sub(start).Hours() / 24)
 	return days >= 0 && days <= 5 // MON..SAT
+}
+
+// Accepts reports whether a change to key would be in the active week now (used to pick
+// the rows worth reloading from Sheets).
+func (s *Store) Accepts(key string) bool {
+	kind, date, ok := ParseKey(key)
+	if !ok {
+		return false
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.prepareLocked()
+	return s.inWeekLocked(kind, date)
 }
 
 // ErrInvalid marks a malformed change.
@@ -331,6 +346,7 @@ type SubRecord struct {
 	Date    string
 	Deleted bool
 	Sub     storage.SubstitutionAssignment
+	Value   json.RawMessage // the synced value as sent by the device (null for a tombstone)
 	TS      int64
 	By      string
 	Rev     int64
@@ -345,7 +361,7 @@ func (s *Store) Substitutions() []SubRecord {
 		if kind != "sub" {
 			continue
 		}
-		r := SubRecord{Key: e.Key, Date: date, Deleted: e.Deleted(), TS: e.TS, By: e.By, Rev: e.Rev}
+		r := SubRecord{Key: e.Key, Date: date, Deleted: e.Deleted(), Value: e.Value, TS: e.TS, By: e.By, Rev: e.Rev}
 		if !r.Deleted {
 			_ = json.Unmarshal(e.Value, &r.Sub)
 		}

@@ -101,3 +101,31 @@ func (g *googleAPI) Append(ctx context.Context, tab string, rows [][]string) err
 		ValueInputOption("RAW").InsertDataOption("INSERT_ROWS").Context(ctx).Do()
 	return err
 }
+
+func (g *googleAPI) UpdateRows(ctx context.Context, tab string, rows map[int][]string) error {
+	if len(rows) == 0 {
+		return nil
+	}
+	ctx, cancel := withTimeout(ctx)
+	defer cancel()
+	req := &sheetsv4.BatchUpdateValuesRequest{ValueInputOption: "RAW"}
+	for _, n := range sortedRowNumbers(rows) {
+		req.Data = append(req.Data, &sheetsv4.ValueRange{
+			Range:  A1Range(tab, fmt.Sprintf("A%d", n)),
+			Values: toValues([][]string{rows[n]}),
+		})
+	}
+	_, err := g.svc.Spreadsheets.Values.BatchUpdate(g.id, req).Context(ctx).Do()
+	return err
+}
+
+func (g *googleAPI) ClearRows(ctx context.Context, tab string, fromRow int) error {
+	if fromRow < 1 {
+		return fmt.Errorf("sheets: ClearRows from row %d", fromRow)
+	}
+	ctx, cancel := withTimeout(ctx)
+	defer cancel()
+	_, err := g.svc.Spreadsheets.Values.Clear(g.id, A1Range(tab, fmt.Sprintf("A%d:ZZ", fromRow)), &sheetsv4.ClearValuesRequest{}).
+		Context(ctx).Do()
+	return err
+}

@@ -121,6 +121,9 @@ func TestEnsureTabsAndFlush(t *testing.T) {
 	if err := b.EnsureTabs(ctx); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := b.Rehydrate(ctx); err != nil {
+		t.Fatal(err)
+	}
 	if f.data["Subs"][0][0] != "Key" || f.data["App_Meta"][0][0] != "Key" || f.data["App_Log"][0][0] != "Time" {
 		t.Fatalf("headers: %v", f.data)
 	}
@@ -148,14 +151,17 @@ func TestEnsureTabsAndFlush(t *testing.T) {
 		t.Fatal(err)
 	}
 	subs = f.data["Subs"]
-	if len(subs) != 3 || subs[2][8] != "REMOVED" || subs[2][5] != "" || subs[1][8] != "ACCEPTED" {
+	// The tombstone keeps the people columns of the row it replaces, and drops the payload.
+	if len(subs) != 3 || subs[2][8] != "REMOVED" || subs[2][5] != "Mr. B" || subs[2][colDeletedAt] == "" ||
+		subs[2][colTS] != "2000" || len(subs[2]) > colPayload && subs[2][colPayload] != "" || subs[1][8] != "ACCEPTED" {
 		t.Fatalf("upsert: %v", subs)
 	}
 	meta := map[string]string{}
 	for _, r := range f.data["App_Meta"][1:] {
 		meta[r[0]] = r[1]
 	}
-	if meta["app_version"] != "2.0.0-test" || meta["schema_version"] != SchemaVersion || meta["last_updated"] == "" {
+	if meta["app_version"] != "2.0.0-test" || meta["schema_version"] != SchemaVersion || meta["last_updated"] == "" ||
+		meta["subs_reloaded_at"] == "" {
 		t.Fatalf("meta: %v", meta)
 	}
 	if len(f.data["App_Log"]) != 3 {
@@ -177,8 +183,11 @@ func TestRefusesForeignTabWithAppName(t *testing.T) {
 	if err := b.EnsureTabs(context.Background()); !errors.Is(err, ErrNotAppOwned) {
 		t.Fatalf("want ErrNotAppOwned, got %v", err)
 	}
-	if err := b.Flush(context.Background()); !errors.Is(err, ErrNotAppOwned) {
-		t.Fatalf("flush: %v", err)
+	if _, err := b.Rehydrate(context.Background()); !errors.Is(err, ErrNotAppOwned) {
+		t.Fatalf("rehydrate: %v", err)
+	}
+	if err := b.Flush(context.Background()); err == nil {
+		t.Fatal("flush into a foreign tab")
 	}
 	if f.data["Subs"][1][0] != "keep me" {
 		t.Fatal("foreign Subs tab was overwritten")
@@ -190,6 +199,9 @@ func TestWriteLoopDebouncesAndRetries(t *testing.T) {
 	live := newLive()
 	b := New(f, live, Config{Debounce: 20 * time.Millisecond, MaxDelay: 200 * time.Millisecond, MaxBackoff: 40 * time.Millisecond})
 	if err := b.EnsureTabs(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := b.Rehydrate(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	f.mu.Lock()
@@ -206,7 +218,8 @@ func TestWriteLoopDebouncesAndRetries(t *testing.T) {
 		time.Sleep(5 * time.Millisecond)
 	}
 	deadline := time.Now().Add(3 * time.Second)
-	for b.Status().State != "ok" && time.Now().Before(deadline) {
+	rows := func() int { f.mu.Lock(); defer f.mu.Unlock(); return len(f.data["Subs"]) }
+	for (b.Status().State != "ok" || rows() != 2) && time.Now().Before(deadline) {
 		time.Sleep(10 * time.Millisecond)
 	}
 	cancel()
@@ -216,7 +229,7 @@ func TestWriteLoopDebouncesAndRetries(t *testing.T) {
 	}
 	subsWrites := 0
 	for _, w := range f.touched() {
-		if w == "write:Subs" {
+		if w == "update:Subs" {
 			subsWrites++
 		}
 	}

@@ -114,3 +114,31 @@ func (f *fakeAPI) touched() []string {
 	defer f.mu.Unlock()
 	return append([]string(nil), f.writes...)
 }
+
+func (f *fakeAPI) UpdateRows(_ context.Context, tab string, rows map[int][]string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.writes = append(f.writes, "update:"+tab)
+	if err := f.failing(); err != nil {
+		return err
+	}
+	cur := f.data[tab]
+	for _, n := range sortedRowNumbers(rows) {
+		for len(cur) < n {
+			cur = append(cur, nil)
+		}
+		cur[n-1] = append([]string(nil), rows[n]...)
+	}
+	f.data[tab] = cur
+	return nil
+}
+
+func (f *fakeAPI) ClearRows(_ context.Context, tab string, fromRow int) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.writes = append(f.writes, "clear:"+tab)
+	if cur := f.data[tab]; len(cur) >= fromRow {
+		f.data[tab] = cur[:fromRow-1]
+	}
+	return nil
+}

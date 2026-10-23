@@ -15,6 +15,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -55,6 +56,12 @@ type API interface {
 	Write(ctx context.Context, tab string, rows [][]string) error
 	// Append adds rows after the last row.
 	Append(ctx context.Context, tab string, rows [][]string) error
+	// UpdateRows overwrites whole rows by 1-based row number in one batch (RAW input).
+	// Rows not named are left alone.
+	UpdateRows(ctx context.Context, tab string, rows map[int][]string) error
+	// ClearRows clears the values of every row from fromRow (1-based) down. Only the
+	// test-row cleanup (cmd/sheetcheck -selftest) uses it.
+	ClearRows(ctx context.Context, tab string, fromRow int) error
 }
 
 // guard is the bridge's only handle on the API: reads pass, writes outside the allowlist fail.
@@ -88,6 +95,31 @@ func (g guard) Append(ctx context.Context, tab string, rows [][]string) error {
 		return err
 	}
 	return g.api.Append(ctx, tab, rows)
+}
+
+func (g guard) UpdateRows(ctx context.Context, tab string, rows map[int][]string) error {
+	if err := g.check(tab); err != nil {
+		return err
+	}
+	return g.api.UpdateRows(ctx, tab, rows)
+}
+func (g guard) ClearRows(ctx context.Context, tab string, fromRow int) error {
+	if err := g.check(tab); err != nil {
+		return err
+	}
+	return g.api.ClearRows(ctx, tab, fromRow)
+}
+
+// Guarded wraps api with the write allowlist, for tools outside this package.
+func Guarded(api API) API { return guard{api} }
+
+func sortedRowNumbers(rows map[int][]string) []int {
+	out := make([]int, 0, len(rows))
+	for n := range rows {
+		out = append(out, n)
+	}
+	sort.Ints(out)
+	return out
 }
 
 // A1Range quotes a tab name for an A1 range ('It”s'!A1).
