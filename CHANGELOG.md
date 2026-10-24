@@ -18,6 +18,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+- **Bundle 42 (docs)**: Foundational redesign document — [`docs/redesign/LOGIC_SHEET_AND_MOCKUPS_GUIDE.md`](docs/redesign/LOGIC_SHEET_AND_MOCKUPS_GUIDE.md). Full product/domain logic sheet (LOG-*) + screen inventory + mockups guide for a clean-slate redesign. No runtime/UI feature changes. Image mockups are a later phase after owner review.
+
 ### Changed
 - **Bundle 41a (phone feel)**: Portrait faculty/name column **narrow by default** with expand toggle (persisted); calm 0.38s width ease (UI-14). Header hide/show responds **during active scroll** — scroll-up expands mid-page, no post-scroll debounce (BUG-35). Absent cards/chips use soft rose tint + rail, not solid magenta fill (UI-15). Themes still parked. `e2e:phone` checks portrait name-col default + toggle.
 - **Bundle 40 (phone polish)**: Routine matrix keeps period column min-widths and horizontal scroll on narrow viewports (no more squeezed headers). Light-theme absent sticky names + Free / Need Sub contrast. Substitutions phone densify (group by absent teacher; compact Assign). Header mobile two-row layout for guest + logged-in; BUG-29 hysteresis widened (direction-aware, viewport freeze). Design note `docs/HEADER_MOBILE_40.md`. `npm run e2e:phone` portrait+landscape screenshots.

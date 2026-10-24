@@ -10,6 +10,7 @@ When documents disagree, the **source code is the ground truth**. Known contradi
 
 | Document | Purpose |
 |---|---|
+| [`redesign/LOGIC_SHEET_AND_MOCKUPS_GUIDE.md`](./redesign/LOGIC_SHEET_AND_MOCKUPS_GUIDE.md) | **Bundle 42:** full product logic sheet + mockups guide for fresh redesign |
 | [`SAS.md`](./SAS.md) | Software Architecture Specification, verified against the code |
 | [`VERSIONING.md`](./VERSIONING.md) | Version locations, SemVer policy, bump procedure, ID prefixes |
 | [`ADMIN_ACCESS.md`](./ADMIN_ACCESS.md) | Front Desk vs admin roles, passcode setup for the owner, lockout recovery (SEC-01 interim) |

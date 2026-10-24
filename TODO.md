@@ -30,9 +30,18 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 | **39** | Day-theme contrast rewrite; a11y; Front Desk copy; sync pill honesty | UI-12, FIND-02/05/14/15, FIND-13/22 | 🟢 Merged to `next-gen` (2026-10-24) |
 | **40** | Phone polish: matrix horizontal scroll, light absent contrast, Substitutions densify, header guest+logged-in, e2e:phone | UI-13, BUG-29 residual, UI-12 phone, FEAT-71 | 🟢 Merged to `next-gen` (2026-10-24) |
 | **41a** | Phone feel: portrait name-col narrow+toggle+calm ease; header scroll-active; soft absent rose (themes parked) | UI-14, BUG-35, UI-15 | 🟢 Merged to `next-gen` (2026-10-24) |
+| **42** | Documentation only: full logic sheet + mockups guide for fresh redesign (no UI/feature code) | docs/redesign | 🟢 This branch → `next-gen` |
 
 > Split after post–Bundle 37 assessment (`docs/ASSESSMENT_2026-10-24.md`): **38a** UI/motion, **38b** security/docs, **39** themes/a11y/copy, **36** CI/Pages anytime. SEC-02 (38b) before privileged admin Sheets writes. Bundle 35 substitutions do not depend on SEC-02.
 >
+
+### Bundle 42 — Logic Sheet & Mockups Guide (docs only)
+- **Status**: 🟢 Started/shipped on `bundle/42-logic-sheet`
+- **Deliverable**: [`docs/redesign/LOGIC_SHEET_AND_MOCKUPS_GUIDE.md`](docs/redesign/LOGIC_SHEET_AND_MOCKUPS_GUIDE.md)
+- **Scope**: Inventory of literally all product logic + screen inventory + how to build fresh mockups later. **No** runtime behaviour, CSS, or theme work.
+- **Next (owner)**: Review the sheet → generate mockups from a clean mind → redesign app from mockups.
+- **Out of scope here**: Image mockups; light theme redesign (parked); SEC-02; EPIC-01.
+
 > **Not scheduled:** EPIC-01 (Master TimeTable editing), PERF-03 (relay keep-warm, outside the repo), FEAT-67 (after SEC-03), per-admin passcodes (design in 38b).
 
 ## 🔴 OPEN — User-Reported Items (logged 2026-10-23 on `refine/jb31`)
