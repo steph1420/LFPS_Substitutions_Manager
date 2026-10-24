@@ -17,6 +17,7 @@ When documents disagree, the **source code is the ground truth**. Known contradi
 | [`DECISIONS/`](./DECISIONS/) | Architecture Decision Records ([template](./DECISIONS/0000-template.md)) |
 | [`DOC_ISSUES.md`](./DOC_ISSUES.md) | Audit of contradictions between the docs and the code |
 | [`../AGENTS.md`](../AGENTS.md) | Working rules for AI coding agents (backup, plan, test, Sheets, docs, handover, communication, secrets); auto-read by agent CLIs |
+| [`../CHEATSHEET.md`](../CHEATSHEET.md) | Stretching Grok Build / AFK Pilot quota without lowering quality (documented commands only) |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Ground rules, setup, change process, commit conventions |
 | [`../BUGS.md`](../BUGS.md) | Bug register (BUG-01 to BUG-23) |
 | [`../CHANGELOG.md`](../CHANGELOG.md) | Release history (Keep a Changelog) |
