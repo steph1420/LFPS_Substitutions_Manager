@@ -160,6 +160,8 @@ flowchart TD
   - Manages concurrent WebSocket client connections via thread-safe registration and unregistration channels.
   - Broadcasts `STATE_MUTATION` frames to all active coordinator tablets and phones within sub-millisecond latencies.
   - Built-in ping/pong keepalives ensure dead client connections are reaped cleanly.
+> **Superseded (Job Bundles 34–35):** the server no longer persists to disk. It is a stateless live relay (`internal/livesync`, `internal/relay`) with a Google Sheets bridge (`internal/sheets`); see [`docs/SAS.md`](docs/SAS.md) §6.3 and §7. The items below describe the v1.x design.
+
 - **Persistence (`internal/storage/store.go`)**:
   - RWMutex-synchronized disk persistence writing daily state snapshots to `data/state.json`.
   - Recovers active absences, substitutions, and officiating assignments across server reboots.

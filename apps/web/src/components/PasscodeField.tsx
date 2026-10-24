@@ -8,6 +8,8 @@ interface PasscodeFieldProps {
   onComplete: (code: string) => Promise<boolean>;
   disabled?: boolean;
   label: string;
+  /** Focus the field on mount (it is the only action on the screen). */
+  autoFocus?: boolean;
 }
 
 /**
@@ -18,7 +20,7 @@ interface PasscodeFieldProps {
  * The input sits over the dots at opacity 0, so taps, paste, keyboard, autofill and screen
  * readers all work on a standard control.
  */
-export const PasscodeField: React.FC<PasscodeFieldProps> = ({ length, onComplete, disabled = false, label }) => {
+export const PasscodeField: React.FC<PasscodeFieldProps> = ({ length, onComplete, disabled = false, label, autoFocus = false }) => {
   const [value, setValue] = React.useState('');
   const [busy, setBusy] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -76,6 +78,7 @@ export const PasscodeField: React.FC<PasscodeFieldProps> = ({ length, onComplete
         enterKeyHint="go"
         value={value}
         onChange={onChange}
+        autoFocus={autoFocus}
         disabled={inactive}
         aria-label={`${label}, ${length} digits, ${value.length} entered`}
         className="absolute inset-0 w-full h-full opacity-0 cursor-text disabled:cursor-not-allowed"

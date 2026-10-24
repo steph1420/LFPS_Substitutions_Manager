@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
 import { DayOfWeek } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
+import { usePermissions } from './PermissionGuard.js';
 import {
   User,
   LogOut,
@@ -14,6 +15,7 @@ import {
   Bell,
 } from 'lucide-react';
 import { useLiveSync } from '../hooks/useLiveSync.js';
+import { phaseLabel } from '../sync/status.js';
 import { ResetDayButton } from './ResetDayButton.js';
 import { APP_VERSION, BUILD_LABEL } from '../lib/buildInfo.js';
 import { AddToHomeScreenModal } from './AddToHomeScreenModal.js';
@@ -41,9 +43,8 @@ export const Header: React.FC = () => {
     notifications,
     substitutions,
     openNotificationCenter,
-    operatingRole,
   } = useTimetableStore();
-  const isAdmin = operatingRole === 'ADMIN';
+  const { isAdmin, editingUnlocked } = usePermissions();
 
   const unreadNotifCount = notifications.filter((n) => !n.isRead).length;
   const disputedSubCount = substitutions.filter(
@@ -197,9 +198,11 @@ export const Header: React.FC = () => {
         >
           <span
             className={`w-2 h-2 rounded-full ${
-              sync.status.isConnected
+              sync.status.phase === 'live'
                 ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
-                : 'bg-slate-500'
+                : sync.status.phase === 'connecting'
+                  ? 'bg-amber-400 animate-pulse'
+                  : 'bg-slate-500'
             }`}
           />
           <span className="font-bold tracking-wider">{selectedDay}</span>
@@ -316,9 +319,18 @@ export const Header: React.FC = () => {
                   {isAdmin && (
                     <span
                       className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                      title="Admin access unlocked in this tab (lock it in Settings)"
+                      title="Signed in as admin in this tab (Log Out ends it)"
                     >
                       Admin
+                    </span>
+                  )}
+                  {editingUnlocked && (
+                    <span
+                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 whitespace-nowrap"
+                      title="Dev Options: editing allowed on this device without login (turn off in Settings)"
+                      data-testid="editing-unlocked-badge"
+                    >
+                      Editing unlocked
                     </span>
                   )}
                 </h1>
@@ -393,25 +405,39 @@ export const Header: React.FC = () => {
 
           {/* Right: Desktop Controls, Cloud Sync, Excel, Settings & Login */}
           <div className="hidden md:flex items-center gap-2.5">
-            {/* Cloud WebSocket Status Pill */}
+            {/* Live sync status pill (Bundle 35): Live / Connecting… / Offline */}
             <div
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-                sync.status.isConnected
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                  : 'bg-slate-800/60 border-slate-700/40 text-slate-400'
+              data-testid="sync-pill"
+              data-phase={sync.status.phase}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors duration-200 ${
+                sync.status.phase === 'live'
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-[var(--accent-green)]'
+                  : sync.status.phase === 'connecting'
+                    ? 'bg-amber-500/10 border-amber-500/30 text-[var(--accent-amber)]'
+                    : 'bg-slate-800/60 border-slate-700/40 text-slate-400'
               }`}
               title={
-                sync.status.isConnected
-                  ? `Connected (${sync.status.activeClients} peers)`
-                  : 'Disconnected / Reconnecting'
+                sync.status.phase === 'live'
+                  ? `Live · ${sync.status.activeClients} device${sync.status.activeClients === 1 ? '' : 's'}${
+                      sync.status.pending ? ` · ${sync.status.pending} pending` : ''
+                    }`
+                  : sync.status.phase === 'connecting'
+                    ? sync.status.pending
+                      ? `Reconnecting — ${sync.status.pending} change${sync.status.pending === 1 ? '' : 's'} queued`
+                      : 'Waking the server — local data stays usable'
+                    : `Offline — ${sync.status.pending} change${sync.status.pending === 1 ? '' : 's'} queued`
               }
             >
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  sync.status.isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'
+                  sync.status.phase === 'live'
+                    ? 'bg-emerald-400 animate-pulse'
+                    : sync.status.phase === 'connecting'
+                      ? 'bg-amber-400 animate-pulse'
+                      : 'bg-slate-500'
                 }`}
               />
-              <span>{sync.status.isConnected ? 'Cloud Live' : 'Offline'}</span>
+              <span>{phaseLabel(sync.status.phase)}</span>
             </div>
 
             {/* Reset Day Button (FEAT-41) */}

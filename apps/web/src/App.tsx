@@ -18,9 +18,13 @@ import { AssignSubstituteModal } from './components/AssignSubstituteModal.js';
 import { DisputeModal } from './components/DisputeModal.js';
 import { NotificationCenterDrawer } from './components/NotificationCenterDrawer.js';
 import { AwayOfficialModal } from './components/AwayOfficialModal.js';
+import { startLiveSync } from './sync/live.js';
 
 export const App: React.FC = () => {
   const { activeTab, isFitGrid, undo, redo } = useTimetableStore();
+
+  // Bundle 35: the one live sync socket for this tab (ref-counted, StrictMode-safe).
+  React.useEffect(() => startLiveSync(), []);
 
   // Global Undo / Redo Keyboard Listener scoped to active tab (FEAT-40)
   React.useEffect(() => {

@@ -56,7 +56,6 @@ If a catastrophic deployment, data corruption, or breaking code change occurs, t
 | **System Health Check Path** | `https://lfps-substitutions-manager.onrender.com/api/v1/health` |
 | **System Metadata & Uptime** | `https://lfps-substitutions-manager.onrender.com/api/v1/meta` |
 | **Excel Report Exporter** | `https://lfps-substitutions-manager.onrender.com/api/v1/export/excel` |
-| **Disk Backups Directory List** | `https://lfps-substitutions-manager.onrender.com/api/v1/backups` |
 | **Server Status Root** | `https://lfps-substitutions-manager.onrender.com/` |
 
 ---
@@ -84,7 +83,9 @@ Configured in the **Render Dashboard $\to$ Environment Variables**:
 | Variable | Recommended Value | Purpose |
 | :--- | :--- | :--- |
 | `PORT` | `8080` | Internal HTTP listening port for Go standard library `http.ListenAndServe`. |
-| `DATA_DIR` | `/app/data` | Path to persistent disk storage for JSON state snapshots and Excel exports. |
+| `SHEETS_SPREADSHEET_ID`, `GOOGLE_APPLICATION_CREDENTIALS`, `SHEETS_PULL_INTERVAL`, `SHEETS_LOG`, optional `ALLOWED_ORIGINS`, `APP_TZ` | see [`docs/RENDER_SETUP.md`](docs/RENDER_SETUP.md) | Google Sheets bridge and relay settings (Bundle 35). The service-account key is a **Secret File**. |
+
+> `DATA_DIR` is no longer used (since Job Bundle 34 the relay is stateless; Google Sheets is the source of truth). Remove it and any persistent disk. **The current, authoritative Render setup is [`docs/RENDER_SETUP.md`](docs/RENDER_SETUP.md) and the `render.yaml` Blueprint.** §4 below is kept for history.
 
 ---
 
@@ -100,10 +101,8 @@ The backend runs as a multi-stage Alpine Docker container yielding a minimal **~
 * **Branch**: `next-gen`
 * **Root Directory**: `apps/server` (or root with Dockerfile path set to `apps/server/Dockerfile`)
 * **Health Check Path**: `/api/v1/health`
-* **Auto-Deploy**: `Yes` (Triggered upon push to `next-gen`)
-* **Persistent Disk (Optional but Recommended)**:
-  * Mount Path: `/app/data`
-  * Size: `1 GB` (Retains `state.json` and generated daily Excel workbooks across container redeploys).
+* **Auto-Deploy**: **After CI checks pass** (Bundle 35, `autoDeployTrigger: checksPass` in `render.yaml`). Before that it was `Yes` on every push to `next-gen`.
+* **Persistent Disk**: **none** (owner decision 2026-10-23: the relay is stateless and an empty restart is expected).
 
 ---
 

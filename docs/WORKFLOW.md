@@ -3,7 +3,7 @@
 This file covers how work moves from an idea to production. It complements [`../CONTRIBUTING.md`](../CONTRIBUTING.md).
 
 > **Precedence:** if this file conflicts with an explicit instruction from the owner, the owner wins.
-> The branch model in §3 **differs** from the older "work directly on `next-gen` and push" instruction in `DEVELOPER_GUIDE.md` §7.4/§11.4 and `CATCH_UP_TO_ME.md` §2.2. The owner must confirm which model applies (see `DOC_ISSUES.md` DI-07). Until then, nobody pushes without the owner's explicit approval.
+> The branch model in §3 is the one `DEVELOPER_GUIDE.md` §7.4/§11.4 now describes (updated 2026-10-24 at the owner's request; DI-07 closed for DG). `CATCH_UP_TO_ME.md` §2.2 still has the older "work on `next-gen` and push" text. Nobody pushes without the owner's explicit approval.
 
 ## 1. The Job Bundle cycle
 

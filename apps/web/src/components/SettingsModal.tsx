@@ -4,6 +4,7 @@ import { SCHOOL_TIME_ZONE } from '@lfps/core';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
 import { useTimetableStore, ThemeId } from '../store/useTimetableStore.js';
 import { useLiveSync } from '../hooks/useLiveSync.js';
+import { phaseLabel } from '../sync/status.js';
 import {
   X,
   LogOut,
@@ -25,12 +26,16 @@ import {
   Terminal,
   Activity,
   Lock,
+  LockOpen,
+  LogIn,
   RefreshCw,
   Sparkles,
 } from 'lucide-react';
 import { AddToHomeScreenModal } from './AddToHomeScreenModal.js';
 import { AdminAccessPanel } from './AdminAccessPanel.js';
+import { usePermissions } from './PermissionGuard.js';
 import { BUILD_LABEL, BUILD_TIME } from '../lib/buildInfo.js';
+import { useReferenceInfo } from '../sync/reference.js';
 
 interface ThemeOption {
   id: ThemeId;
@@ -136,12 +141,15 @@ const THEME_OPTIONS: ThemeOption[] = [
 
 export const SettingsModal: React.FC = () => {
   const sync = useLiveSync();
+  const reference = useReferenceInfo();
+  const referenceTime = reference.fetchedAt
+    ? new Date(reference.fetchedAt).toLocaleString(undefined, { timeZone: SCHOOL_TIME_ZONE, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+    : null;
   const {
     isSettingsOpen,
     closeSettings,
     selectedDay,
     loggedInTeacher,
-    login,
     logout,
     directory,
     isMinimalUI,
@@ -174,10 +182,13 @@ export const SettingsModal: React.FC = () => {
     undoIconStyle,
     setUndoIconStyle,
     autoResolvePolicy,
-    operatingRole,
     persistenceStatus,
+    editingOverride,
+    setEditingOverride,
+    openStaffLogin,
   } = useTimetableStore();
-  const isAdmin = operatingRole === 'ADMIN';
+  // Admin-gated sections follow the central helper (admin session or dev override).
+  const { canEdit } = usePermissions();
 
   const [toastMessage, setToastMessage] = React.useState<string | null>(null);
   const [isPwaModalOpen, setIsPwaModalOpen] = React.useState(false);
@@ -192,9 +203,9 @@ export const SettingsModal: React.FC = () => {
       const next = tapCount + 1;
       setTapCount(next);
       if (next >= 5) {
-        if (!isAdmin && !isDeveloperMode) {
+        if (!canEdit && !isDeveloperMode) {
           setTapCount(0);
-          showToast('Developer Options need Admin Access (see Operating Identity)');
+          showToast('Admin login required');
           lastTapTimeRef.current = now;
           return;
         }
@@ -320,7 +331,9 @@ export const SettingsModal: React.FC = () => {
                       <div className="text-[11px] text-slate-400">
                         {currentTeacher
                           ? `${currentTeacher.role} · can accept / dispute own duties`
-                          : 'Front Desk: absences, availability, substitutions, Off. AC / Off. CT'}
+                          : loggedInTeacher
+                            ? 'Signed in by designation'
+                            : 'Front Desk: absences, availability, substitutions, Off. AC / Off. CT'}
                       </div>
                     </div>
                   </div>
@@ -329,7 +342,7 @@ export const SettingsModal: React.FC = () => {
                     <button
                       onClick={() => {
                         logout();
-                        showToast('Signed out to Front Desk (admin locked)');
+                        showToast('Signed out');
                       }}
                       className="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-semibold text-xs flex items-center gap-1.5 transition-colors active:scale-95"
                     >
@@ -337,25 +350,17 @@ export const SettingsModal: React.FC = () => {
                       Log Out
                     </button>
                   ) : (
-                    <select
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          login(e.target.value);
-                          showToast(`Logged in as ${e.target.value}`);
-                        }
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeSettings();
+                        openStaffLogin();
                       }}
-                      value=""
-                      className="bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                      className="px-3 py-1.5 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-200 font-semibold text-xs flex items-center gap-1.5 transition-colors active:scale-95 flex-shrink-0"
                     >
-                      <option value="" disabled>
-                        I am… (optional)
-                      </option>
-                      {Object.values(directory).map((t) => (
-                        <option key={t.id} value={t.abbr}>
-                          {t.abbr} — {t.role}
-                        </option>
-                      ))}
-                    </select>
+                      <LogIn className="w-3.5 h-3.5" />
+                      Staff Login
+                    </button>
                   )}
                 </div>
               </div>
@@ -620,28 +625,45 @@ export const SettingsModal: React.FC = () => {
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Cloud Synchronization & Health
                 </span>
-                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between">
+                <div
+                  data-testid="sync-card"
+                  data-phase={sync.status.phase}
+                  className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between"
+                >
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        sync.status.isConnected ? 'bg-emerald-500/15 text-emerald-400' : 'bg-slate-800 text-slate-500'
+                        sync.status.phase === 'live'
+                          ? 'bg-emerald-500/15 text-emerald-400'
+                          : sync.status.phase === 'connecting'
+                            ? 'bg-amber-500/15 text-amber-300'
+                            : 'bg-slate-800 text-slate-500'
                       }`}
                     >
                       <Cloud className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="font-semibold text-slate-200 flex items-center gap-1.5">
-                        {sync.status.isConnected ? 'Connected to Cloud Hub' : 'Offline / Standalone Mode'}
+                        {phaseLabel(sync.status.phase)}
                         <span
                           className={`w-2 h-2 rounded-full ${
-                            sync.status.isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'
+                            sync.status.phase === 'live'
+                              ? 'bg-emerald-400 animate-pulse'
+                              : sync.status.phase === 'connecting'
+                                ? 'bg-amber-400 animate-pulse'
+                                : 'bg-slate-500'
                           }`}
                         />
                       </div>
                       <div className="text-[11px] text-slate-400">
-                        {sync.status.isConnected
-                          ? `Live broadcast active (${sync.status.activeClients} peers connected)`
-                          : 'Local optimistic updates enabled'}
+                        {sync.status.phase === 'live'
+                          ? `${sync.status.activeClients} device${sync.status.activeClients === 1 ? '' : 's'} · ${
+                              sync.status.mode === 'sheets' ? 'Sheets linked' : 'Relay only'
+                            }`
+                          : sync.status.phase === 'connecting'
+                            ? 'Waking server · local data ready'
+                            : 'Saved on device'}
+                        {sync.status.pending > 0 && ` · ${sync.status.pending} pending`}
                       </div>
                     </div>
                   </div>
@@ -649,11 +671,11 @@ export const SettingsModal: React.FC = () => {
                   <button
                     onClick={() => {
                       sync.connect();
-                      showToast('Reconnected to Cloud WebSocket Hub');
+                      showToast(sync.status.phase === 'live' ? 'Already live' : 'Reconnecting…');
                     }}
                     className="px-2.5 py-1.5 rounded-xl glass-pill border-slate-700 hover:border-slate-600 text-slate-300 text-xs font-semibold"
                   >
-                    Ping Hub
+                    Reconnect
                   </button>
                 </div>
               </div>
@@ -680,7 +702,7 @@ export const SettingsModal: React.FC = () => {
                   </button>
 
                   {/* Reset Day Button (FEAT-41) — admin only */}
-                  {isAdmin && (
+                  {canEdit && (
                   <button
                     onClick={() => {
                       if (window.confirm(`Reset timetable and substitutions for ${selectedDay} to master baseline? This action can be undone via Undo.`)) {
@@ -699,7 +721,7 @@ export const SettingsModal: React.FC = () => {
                   )}
 
                   {/* Purge All Undo/Redo History (FEAT-41) — admin only */}
-                  {isAdmin && (
+                  {canEdit && (
                   <button
                     onClick={() => {
                       if (window.confirm('Purge all action history buffers across all 3 tabs? This will permanently wipe all undo/redo history.')) {
@@ -727,7 +749,7 @@ export const SettingsModal: React.FC = () => {
               </div>
 
               {/* Section 5.5: Developer & Diagnostics Console (FEAT-47, Unlocked via 5-tap) */}
-              {isAdmin && isDeveloperMode && (
+              {canEdit && isDeveloperMode && (
                 <div className="space-y-2 border-2 border-dashed border-emerald-500/40 rounded-2xl p-3.5 bg-emerald-950/10">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -747,33 +769,89 @@ export const SettingsModal: React.FC = () => {
                   </div>
 
                   <div className="space-y-3 pt-1">
-                    {/* Diagnostic Latency & Cloud Hub */}
+                    {/* Live sync diagnostics (Bundle 35): real values only */}
                     <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between">
                       <div>
                         <div className="font-semibold text-slate-200 flex items-center gap-1.5">
                           <Activity className="w-3.5 h-3.5 text-emerald-400" />
-                          Live Cloud Hub Latency
+                          Live sync
                         </div>
                         <div className="text-[10px] text-slate-400">
-                          Active Full-Duplex WebSocket ping roundtrip
+                          {sync.status.mode === 'sheets'
+                            ? `Sheets bridge: ${sync.status.sheetsState ?? 'starting'}`
+                            : sync.status.mode
+                              ? 'Relay only (no Sheets)'
+                              : 'Mode unknown'}
+                          {sync.status.lastSyncTime
+                            ? ` · synced ${new Date(sync.status.lastSyncTime).toLocaleTimeString()}`
+                            : ''}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-emerald-400 font-bold bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded text-[11px]">
-                          {sync.status.isConnected ? '24ms (Healthy)' : 'Offline (Simulated)'}
+                          {phaseLabel(sync.status.phase)} · {sync.status.pending} pending
                         </span>
                         <button
                           type="button"
                           onClick={() => {
                             sync.connect();
-                            showToast('Reconnected to Cloud Hub');
+                            showToast('Reconnecting…');
                           }}
                           className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
-                          title="Force Reconnect"
+                          title="Reconnect now"
                         >
                           <RefreshCw className="w-3.5 h-3.5" />
                         </button>
                       </div>
+                    </div>
+
+                    {/* FEAT-62 part 3: what the Sheet mapping used and skipped (no personal data) */}
+                    <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-[10px] text-slate-400">
+                      <div className="font-semibold text-slate-200 text-xs">Sheet mapping</div>
+                      {reference.source === 'sheet' ? (
+                        <>
+                          <div>
+                            {reference.staff} staff · {reference.routineTeachers} routines · {reference.unmappedTabs.length} tabs unused
+                          </div>
+                          {reference.issues.map((i) => (
+                            <div key={i} className="text-amber-400/90">{i}</div>
+                          ))}
+                        </>
+                      ) : (
+                        <div>Bundled seed in use</div>
+                      )}
+                    </div>
+
+                    {/* Bundle 34a: device-local editing override (lib/access.ts). Never synced. */}
+                    <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-900/90 border border-amber-500/30">
+                      <div>
+                        <div className="font-semibold text-slate-200 flex items-center gap-1.5">
+                          <LockOpen className="w-3.5 h-3.5 text-amber-400" />
+                          Edit without login
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          This device only. Anyone here can edit the routine and reset days.
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={editingOverride}
+                        aria-label="Edit without login"
+                        onClick={() => {
+                          setEditingOverride(!editingOverride);
+                          showToast(editingOverride ? 'Editing locked' : 'Editing unlocked');
+                        }}
+                        className={`w-11 h-6 rounded-full relative cursor-pointer flex-shrink-0 ${
+                          editingOverride ? 'bg-amber-600' : 'bg-slate-800'
+                        }`}
+                      >
+                        <span
+                          className={`block w-4 h-4 rounded-full bg-white transition-transform ${
+                            editingOverride ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
                     </div>
 
                     {/* Cross-Period Substitution Lock */}
@@ -968,12 +1046,22 @@ export const SettingsModal: React.FC = () => {
                     {5 - tapCount} more taps
                   </span>
                 )}
-                {isAdmin && isDeveloperMode && (
+                {canEdit && isDeveloperMode && (
                   <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-bold uppercase tracking-wider">
                     Dev Mode Active
                   </span>
                 )}
               </button>
+              {/* FEAT-62 part 3: which reference data this device uses (App_Meta data_version) */}
+              <div
+                className="px-3 -mt-1 flex items-center justify-between text-[10px] text-slate-500"
+                data-testid="sheet-data-version"
+              >
+                <span>{reference.source === 'sheet' ? 'Sheet data' : 'Bundled data'}</span>
+                <span className="font-mono" title={reference.hash ?? undefined}>
+                  {reference.source === 'sheet' ? `${(reference.hash ?? '').slice(0, 7)} · ${referenceTime}` : 'No Sheet yet'}
+                </span>
+              </div>
             </div>
           </motion.div>
         </div>

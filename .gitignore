@@ -5,6 +5,7 @@ node_modules/
 
 # Production Builds
 dist/
+dist-local/
 build/
 
 # Go Binaries & Data

@@ -16,6 +16,8 @@ When documents disagree, the **source code is the ground truth**. Known contradi
 | [`WORKFLOW.md`](./WORKFLOW.md) | Job Bundle cycle, backups, branches, verification baseline, release |
 | [`DECISIONS/`](./DECISIONS/) | Architecture Decision Records ([template](./DECISIONS/0000-template.md)) |
 | [`DOC_ISSUES.md`](./DOC_ISSUES.md) | Audit of contradictions between the docs and the code |
+| [`../AGENTS.md`](../AGENTS.md) | Working rules for AI coding agents (backup, plan, test, Sheets, docs, handover, communication, secrets); auto-read by agent CLIs |
+| [`../CHEATSHEET.md`](../CHEATSHEET.md) | Stretching Grok Build / AFK Pilot quota without lowering quality (documented commands only) |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Ground rules, setup, change process, commit conventions |
 | [`../BUGS.md`](../BUGS.md) | Bug register (BUG-01 to BUG-23) |
 | [`../CHANGELOG.md`](../CHANGELOG.md) | Release history (Keep a Changelog) |
@@ -34,7 +36,7 @@ When documents disagree, the **source code is the ground truth**. Known contradi
 
 | Document | Purpose | Notes |
 |---|---|---|
-| [`../DEVELOPER_GUIDE.md`](../DEVELOPER_GUIDE.md) | Main developer handbook | **Owner-controlled. Edit only on explicit request.** Several stale facts are listed in DOC_ISSUES |
+| [`../DEVELOPER_GUIDE.md`](../DEVELOPER_GUIDE.md) | Main developer handbook | **Owner-controlled. Edit only on explicit request.** Updated at the owner's request on 2026-10-24 to match JB35a (DOC_ISSUES §E) |
 | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) | Earlier architecture overview | Some paths and claims are stale (DI-09 to DI-14). Prefer `SAS.md` |
 | [`../DESIGN_PHILOSOPHY.md`](../DESIGN_PHILOSOPHY.md) | Visual and interaction design principles | CT colour is stale (DI-09) |
 | [`../THEMES.md`](../THEMES.md) | Theme engine reference | — |

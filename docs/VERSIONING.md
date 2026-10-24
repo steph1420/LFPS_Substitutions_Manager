@@ -77,4 +77,12 @@ Job Bundle 34 set the version to `2.0.0-alpha.2` on `bundle/34`. On 2026-10-24 t
 2. The follow-ups belong to Job Bundle 34's own scope (SEC-01 interim, persistence rollover).
 3. Nothing outside the branch has seen `alpha.2`, so no released state format changes. The new `lfps_admin_lockout_v1` key is additive, and the persisted schema stays v1.
 
-The entries are recorded in the existing `[v2.0.0-alpha.2]` section. That section can still change because it is unreleased; once it ships it is frozen (§2.3). The next shipped bundle (35) becomes `2.0.0-alpha.3`.
+The entries are recorded in the existing `[v2.0.0-alpha.2]` section. That section can still change because it is unreleased; once it ships it is frozen (§2.3). The next shipped bundle becomes `2.0.0-alpha.3`.
+
+### 2.6 Worked example: Job Bundle 34a (and 35) before release
+
+`2.0.0-alpha.2` is released, so its CHANGELOG section is frozen. Job Bundle 34a (`bundle/34a`, the owner's "34.1": admin hierarchy and the editing override) is a split of 34 and is named with a letter suffix (§2.4); "34.1" would read as a version. While it is unshipped:
+
+- `package.json` and the other version files **stay at `2.0.0-alpha.2`**, so the branch never claims a version that isn't live. Entries go under `[Unreleased]`.
+- When the owner approves going live, the release commit (`chore(release): v2.0.0-alpha.3`) runs `npm run version:sync` after setting the root version, moves the `[Unreleased]` entries into `[v2.0.0-alpha.3]` and tags it (§2.2).
+- If 34a and 35 ship **together** (35 is cut from 34a), both are `2.0.0-alpha.3`. If 34a ships alone, it is `alpha.3` and 35 becomes `alpha.4`. Changes to the persisted state or the wire protocol don't change this; they are documented in SAS. Bundle 35's WebSocket protocol (SAS §6.3) is **not** compatible with the alpha.2 relay, so the Pages build and the Render relay must go live together. That is a release step (`docs/RENDER_SETUP.md`), not a version rule: pre-releases may break compatibility, and the next bump is still `-alpha.N`.

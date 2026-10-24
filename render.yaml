@@ -1,0 +1,43 @@
+# Render Blueprint for the LFPS live relay (Bundle 35). See RENDER_SETUP.md.
+#
+# Deploy gate: autoDeployTrigger: checksPass. Render deploys a commit on the linked branch
+# only after every GitHub check on it passes (.github/workflows/ci.yml: go vet, go test -race,
+# npm test, web build). No checks or any failed check means no deploy. Manual deploys from
+# the Dashboard still work.
+#
+# Values here are NOT secret. The service-account key is a Render Secret File (sa.json),
+# added in the Dashboard and never committed. Its path is the only thing named here.
+services:
+  - type: web
+    name: lfps-substitutions-manager
+    runtime: docker
+    plan: free
+    branch: next-gen
+    dockerfilePath: ./apps/server/Dockerfile
+    dockerContext: ./apps/server
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths:
+        - apps/server/**
+        - render.yaml
+    envVars:
+      # Google Sheet the bridge reads and writes (app-owned tabs only). This is config,
+      # not compiled into Go. If it's unset, the relay runs in relay-only mode.
+      - key: SHEETS_SPREADSHEET_ID
+        value: 1ST9ThXZQ7PaRpl-n8ka3xulfN3X3u7awHkO6pErb6Ho
+      # Render mounts Secret Files at /etc/secrets/<name>. Add "sa.json" in the Dashboard.
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/secrets/sa.json
+      # Read-only pull cadence (Go duration, minimum 1m).
+      - key: SHEETS_PULL_INTERVAL
+        value: 5m
+      # "1" also appends to the optional App_Log tab. Off by default.
+      - key: SHEETS_LOG
+        value: "0"
+      # Optional. Unset = built-in defaults (GitHub Pages + local Vite).
+      # - key: ALLOWED_ORIGINS
+      #   value: https://steph1420.github.io
+      # Optional. Unset = Asia/Kolkata (compiled default).
+      # - key: APP_TZ
+      #   value: Asia/Kolkata

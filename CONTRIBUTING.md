@@ -70,7 +70,7 @@ The history uses Conventional-Commit style. Observed counts: `feat` 47, `docs` 4
 
 ## 6. Code style
 
-- TypeScript is strict. Avoid `any`: `DEVELOPER_GUIDE.md` requires "Zero `any`", but 5 occurrences remain today.
+- TypeScript is strict. Do not add new `any` (`DEVELOPER_GUIDE.md` §7.2); a few legacy occurrences remain (DI-19).
 - Use Tailwind v4 utility classes and the `@lfps/ui` tokens. Animate with Framer Motion springs taken from `SPRING_TRANSITIONS`.
 - Mount modals and popovers at the `App.tsx` root (ADR-0003).
 - State changes go through `useTimetableStore` actions that push undo snapshots (ADR-0002).

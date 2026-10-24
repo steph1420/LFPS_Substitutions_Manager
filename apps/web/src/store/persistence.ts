@@ -473,7 +473,8 @@ interface StoreApiLike<S> {
 
 export interface PersistenceOptions {
   storage: KeyValueStorage;
-  defaults: MasterSchedule;
+  /** The base routine overrides are diffed against; a getter follows Sheet updates (FEAT-62). */
+  defaults: MasterSchedule | (() => MasterSchedule);
   appVersion: string;
   now?: () => Date;
   debounceMs?: number;
@@ -513,7 +514,9 @@ export function installOperationalPersistence<S extends PersistableState>(
   store: StoreApiLike<S>,
   options: PersistenceOptions
 ): { flush: () => void; checkRollover: () => boolean; dispose: () => void } {
-  const { storage, defaults, appVersion, target } = options;
+  const { storage, appVersion, target } = options;
+  const defaults = options.defaults;
+  const base = (): MasterSchedule => (typeof defaults === 'function' ? defaults() : defaults);
   const now = options.now ?? (() => new Date());
   const debounceMs = options.debounceMs ?? 250;
   let timer: ReturnType<typeof setTimeout> | null = null;
@@ -530,7 +533,7 @@ export function installOperationalPersistence<S extends PersistableState>(
     const state = store.getState();
     const current = now();
     const previous = loadOperationalDoc(storage, current).doc;
-    const doc = dehydrateWeek(state, state.activeWeekStart, previous, defaults, current, appVersion);
+    const doc = dehydrateWeek(state, state.activeWeekStart, previous, base(), current, appVersion);
     const outcome = saveOperationalDoc(storage, doc);
     applyingExternal = true;
     try {
@@ -561,7 +564,7 @@ export function installOperationalPersistence<S extends PersistableState>(
     applyingExternal = true;
     try {
       store.setState({
-        ...hydrateWeek(doc, weekStart, defaults, current),
+        ...hydrateWeek(doc, weekStart, base(), current),
         activeWeekStart: weekStart,
         ...(selectToday ? { selectedDay: schoolDayForDate(current) ?? 'MON' } : {}),
       } as Partial<S>);

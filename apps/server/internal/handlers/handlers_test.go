@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"lfps/server/internal/livesync"
 	"lfps/server/internal/storage"
 	"lfps/server/internal/version"
-	"lfps/server/internal/ws"
 )
 
 func TestOriginPolicy(t *testing.T) {
@@ -61,57 +61,66 @@ func TestCORSMiddleware(t *testing.T) {
 	}
 }
 
-func newAPI(t *testing.T) (*APIHandler, *ws.Hub) {
+func newAPI(t *testing.T) (*APIHandler, *livesync.Store) {
 	t.Helper()
-	hub := ws.NewHub(nil)
-	go hub.Run()
-	return NewAPIHandler(storage.NewStore(time.UTC), hub), hub
+	store := livesync.NewStore(time.UTC)
+	return NewAPIHandler(store), store
 }
 
-func TestAssignValidationAndParityFields(t *testing.T) {
-	api, _ := newAPI(t)
-
+// GET /state is derived from the live entities, with dates mapped to school days.
+func TestGetStateDerivedFromEntities(t *testing.T) {
+	api, store := newAPI(t)
+	ws := store.Snapshot().WeekStart
+	now := time.Now().UnixMilli()
+	res := store.Merge([]livesync.Entity{
+		{Key: "sub|" + ws + "|s1", Value: json.RawMessage(`{"id":"s1","period":"1st","originalTeacher":"AB","status":"DISPUTED","disputeRemark":"clash","disputedAt":42}`), TS: now, By: "d1"},
+		{Key: "abs|" + ws + "|AB", Value: json.RawMessage(`{"teacherName":"AB","type":"FULL_DAY"}`), TS: now, By: "d1"},
+		{Key: "oac|" + ws, Value: json.RawMessage(`"Mrs. X"`), TS: now, By: "d1"},
+	})
+	if len(res.Rejected) != 0 {
+		t.Fatalf("rejected: %+v", res.Rejected)
+	}
 	rec := httptest.NewRecorder()
-	api.AssignSubstitution(rec, httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"day":"MON","period":"1st","originalTeacher":"AB","status":"NOPE"}`)))
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("bad status should be 400, got %d", rec.Code)
-	}
-
-	body := `{"day":"MON","period":"1st","originalTeacher":"AB","status":"DISPUTED","disputeRemark":"clash","disputedAt":42}`
-	rec = httptest.NewRecorder()
-	api.AssignSubstitution(rec, httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body)))
-	if rec.Code != http.StatusOK {
-		t.Fatalf("assign: %d %s", rec.Code, rec.Body)
-	}
+	api.GetState(rec, httptest.NewRequest(http.MethodGet, "/", nil))
 	var st storage.DailyState
 	if err := json.Unmarshal(rec.Body.Bytes(), &st); err != nil {
 		t.Fatal(err)
 	}
-	if len(st.Substitutions) != 1 || st.Substitutions[0].DisputeRemark != "clash" || st.Substitutions[0].DisputedAt != 42 {
-		t.Fatalf("dispute fields lost: %+v", st.Substitutions)
+	if len(st.Substitutions) != 1 || st.Substitutions[0].Day != "MON" || st.Substitutions[0].DisputeRemark != "clash" || st.Substitutions[0].DisputedAt != 42 {
+		t.Fatalf("substitution: %+v", st.Substitutions)
+	}
+	if len(st.Absences) != 1 || st.Absences[0].Day != "MON" || st.Absences[0].Date != ws {
+		t.Fatalf("absence: %+v", st.Absences)
+	}
+	if st.OfficiatingAC["MON"] != "Mrs. X" {
+		t.Fatalf("oac: %+v", st.OfficiatingAC)
 	}
 	if strings.Contains(rec.Body.String(), `"substituteTeacher"`) {
 		t.Fatalf("empty substituteTeacher should be omitted (matches optional core field)")
 	}
 }
 
-func TestPayloadLimit(t *testing.T) {
-	api, _ := newAPI(t)
-	big := `{"teacherName":"` + strings.Repeat("x", MaxRequestBytes+10) + `","day":"MON"}`
+func TestHealthVersionModeAndHead(t *testing.T) {
 	rec := httptest.NewRecorder()
-	api.ToggleAbsence(rec, httptest.NewRequest(http.MethodPost, "/", strings.NewReader(big)))
-	if rec.Code != http.StatusRequestEntityTooLarge {
-		t.Fatalf("want 413, got %d", rec.Code)
-	}
-}
-
-func TestHealthVersion(t *testing.T) {
-	rec := httptest.NewRecorder()
-	HealthHandler(time.UTC)(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+	HealthHandler(time.UTC, nil)(rec, httptest.NewRequest(http.MethodGet, "/", nil))
 	var h HealthResponse
 	_ = json.Unmarshal(rec.Body.Bytes(), &h)
-	if h.Version != version.Version {
-		t.Fatalf("health version %q != %q", h.Version, version.Version)
+	if h.Version != version.Version || h.Mode != "relay-only" || h.Sheets != "" {
+		t.Fatalf("health: %+v", h)
+	}
+	rec = httptest.NewRecorder()
+	HealthHandler(time.UTC, func() (string, string) { return "sheets", "ok" })(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+	_ = json.Unmarshal(rec.Body.Bytes(), &h)
+	if h.Mode != "sheets" || h.Sheets != "ok" {
+		t.Fatalf("sheets mode: %+v", h)
+	}
+	if rec.Body.Len() > 512 {
+		t.Fatalf("health should stay small, got %d bytes", rec.Body.Len())
+	}
+	rec = httptest.NewRecorder()
+	HealthHandler(time.UTC, nil)(rec, httptest.NewRequest(http.MethodHead, "/", nil))
+	if rec.Code != http.StatusOK || rec.Body.Len() != 0 {
+		t.Fatalf("HEAD: %d body=%d", rec.Code, rec.Body.Len())
 	}
 }
 

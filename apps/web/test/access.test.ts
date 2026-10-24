@@ -100,7 +100,202 @@ describe('configured owner passcode (local only)', () => {
   });
 });
 
-describe('roles in the store (SEC-01 interim)', () => {
+describe('roles in the store (SEC-01 interim, Bundle 34a hierarchy)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+    vi.setSystemTime(new Date(2026, 9, 21, 9, 0)); // Wednesday
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllEnvs();
+  });
+
+  const AC = 'Mrs. R. Pahwa';
+  const AAC = 'Mrs. S. Lakra';
+  const CT = 'Mrs. M. Midha';
+
+  it('defaults to Front Desk (GUEST), never ADMIN, and the front desk can run the day', async () => {
+    const store = await loadStore();
+    expect(store.getState().access.role).toBe('GUEST');
+    expect(store.getState().access.canEdit).toBe(false);
+    const teacher = Object.values(store.getState().directory)[0].abbr;
+    store.getState().toggleAbsence(teacher);
+    expect(store.getState().absences).toHaveLength(1);
+  });
+
+  it('a non-admin login is identification only (no passcode); logout returns to GUEST', async () => {
+    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', HASH);
+    const store = await loadStore();
+    expect(store.getState().login(CT)).toEqual({ ok: true });
+    expect(store.getState().access.role).toBe('TEACHER');
+    expect(store.getState().access.canEdit).toBe(false);
+    expect((await store.getState().loginWithPasscode(CT, PASSCODE)).ok).toBe(false); // not an admin office
+    store.getState().logout();
+    expect(store.getState().access.role).toBe('GUEST');
+    expect(store.getState().loggedInTeacher).toBeNull();
+  });
+
+  it('Principal, AC and AAC need the passcode at login and then get editing', async () => {
+    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', HASH);
+    const store = await loadStore();
+    for (const [identity, office] of [
+      ['Principal', 'PRINCIPAL'],
+      [AC, 'AC'],
+      [AAC, 'AAC'],
+    ] as const) {
+      expect(store.getState().login(identity)).toEqual({ ok: false, needsPasscode: true });
+      expect(store.getState().loggedInTeacher).toBeNull();
+      expect((await store.getState().loginWithPasscode(identity, '000001')).ok).toBe(false);
+      expect(store.getState().access.isAdmin).toBe(false);
+      expect((await store.getState().loginWithPasscode(identity, PASSCODE)).ok).toBe(true);
+      expect(store.getState().loggedInTeacher).toBe(identity);
+      expect(store.getState().access).toMatchObject({ role: 'ADMIN', isAdmin: true, office, canEdit: true });
+      store.getState().logout();
+      expect(store.getState().access.canEdit).toBe(false);
+    }
+  });
+
+  it('blocks admin-only actions for the front desk and a plain teacher', async () => {
+    const store = await loadStore();
+    const before = store.getState().schedule;
+    const { period, teacher } = busySlot(before as never);
+    for (const who of [null, CT]) {
+      if (who) store.getState().login(who);
+      store.getState().updatePeriodTask('WED', period as never, teacher, 'Free');
+      store.getState().resetDay('WED');
+      store.getState().setDeveloperMode(true);
+      store.getState().setEditingOverride(true);
+      expect(store.getState().schedule).toBe(before);
+      expect(store.getState().isDeveloperMode).toBe(false);
+      expect(store.getState().editingOverride).toBe(false);
+    }
+  });
+
+  it("today's appointed Off. AC is an admin with the passcode, for that day only", async () => {
+    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', HASH);
+    const store = await loadStore();
+    expect(store.getState().login(CT).ok).toBe(true); // not Off. AC yet
+    store.getState().logout();
+    store.getState().toggleAbsence(AC);
+    store.getState().toggleAbsence(AAC);
+    store.getState().assignOfficiatingAC('WED', CT);
+    expect(store.getState().login(CT)).toEqual({ ok: false, needsPasscode: true });
+    expect((await store.getState().loginWithPasscode(CT, PASSCODE)).ok).toBe(true);
+    expect(store.getState().access).toMatchObject({ isAdmin: true, office: 'OFF_AC' });
+
+    const { period, teacher } = busySlot(store.getState().schedule as never);
+    store.getState().updatePeriodTask('WED', period as never, teacher, 'Free');
+    expect(store.getState().schedule.WED[period as never][teacher]).toBe('Free');
+
+    // Thursday: the Wednesday appointment no longer makes her an admin.
+    vi.setSystemTime(new Date(2026, 9, 22, 9, 0));
+    const { resolveAccess } = await import('../src/lib/access.js');
+    expect(resolveAccess(store.getState()).isAdmin).toBe(false);
+    const before = store.getState().schedule;
+    store.getState().updatePeriodTask('WED', period as never, teacher, 'Changed');
+    expect(store.getState().schedule).toBe(before);
+    expect(store.getState().access.isAdmin).toBe(false); // derived access caught up on the next change
+  });
+
+  it('the AC coming back ends an Off. AC admin session immediately', async () => {
+    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', HASH);
+    const store = await loadStore();
+    store.getState().toggleAbsence(AC);
+    store.getState().assignOfficiatingAC('WED', CT);
+    expect((await store.getState().loginWithPasscode(CT, PASSCODE)).ok).toBe(true);
+    expect(store.getState().access.office).toBe('OFF_AC');
+    store.getState().toggleAbsence(AC); // AC present again
+    expect(store.getState().access.isAdmin).toBe(false);
+  });
+
+  it('switching identity drops the previous admin session', async () => {
+    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', HASH);
+    const store = await loadStore();
+    await store.getState().loginWithPasscode(AC, PASSCODE);
+    expect(store.getState().access.isAdmin).toBe(true);
+    store.getState().login(CT);
+    expect(store.getState().access).toMatchObject({ role: 'TEACHER', isAdmin: false });
+    expect(sessionStorage.getItem('lfps_admin_session_v2')).toBeNull();
+  });
+
+  it('reports "not configured" when no hash is set', async () => {
+    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', '');
+    const store = await loadStore();
+    const res = await store.getState().loginWithPasscode(AC, PASSCODE);
+    expect(res.ok).toBe(false);
+    expect(res.reason).toMatch(/not configured/);
+    expect(store.getState().access.role).toBe('GUEST');
+  });
+
+  it('admin login survives reload in the same tab (with its identity), and logout ends it', async () => {
+    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', HASH);
+    let store = await loadStore();
+    expect((await store.getState().loginWithPasscode(AC, PASSCODE)).ok).toBe(true);
+
+    const { period, teacher } = busySlot(store.getState().schedule as never);
+    store.getState().updatePeriodTask('WED', period as never, teacher, 'Free');
+    flush();
+
+    store = await loadStore(); // reload: same tab session
+    expect(store.getState().loggedInTeacher).toBe(AC);
+    expect(store.getState().access.isAdmin).toBe(true);
+    expect(store.getState().schedule.WED[period as never][teacher]).toBe('Free');
+
+    store.getState().logout();
+    expect(store.getState().access.role).toBe('GUEST');
+    store = await loadStore();
+    expect(store.getState().access.role).toBe('GUEST');
+  });
+
+  it('ignores a pre-34a session (no identity) and a rotated passcode hash', async () => {
+    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', HASH);
+    sessionStorage.setItem('lfps_admin_session_v1', HASH);
+    let store = await loadStore();
+    expect(store.getState().access.isAdmin).toBe(false);
+    await store.getState().loginWithPasscode(AC, PASSCODE);
+    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', createHash('sha256').update('592038').digest('hex'));
+    store = await loadStore();
+    expect(store.getState().access.isAdmin).toBe(false);
+  });
+
+  it('does not count malformed input as an attempt', async () => {
+    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', HASH);
+    const store = await loadStore();
+    for (let i = 0; i < 10; i++) {
+      expect((await store.getState().loginWithPasscode(AC, '12ab')).reason).toMatch(/6-digit/);
+    }
+    expect(store.getState().adminFailedAttempts).toBe(0);
+    expect((await store.getState().loginWithPasscode(AC, PASSCODE)).ok).toBe(true);
+  });
+
+  it('cools down after 5 wrong attempts, escalates, survives a reload, and resets on success', async () => {
+    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', HASH);
+    let store = await loadStore();
+    const attempt = (code: string) => store.getState().loginWithPasscode(AAC, code);
+    for (let i = 0; i < 4; i++) expect((await attempt('111112')).reason).toBe('Incorrect passcode.');
+    const fifth = await attempt('111112');
+    expect(fifth.reason).toMatch(/Try again in 30 s/);
+
+    // Reloading the page does not reset the count or the wait.
+    store = await loadStore();
+    expect(store.getState().adminFailedAttempts).toBe(5);
+    expect((await attempt(PASSCODE)).reason).toMatch(/Too many attempts/);
+
+    vi.advanceTimersByTime(31_000);
+    const sixth = await attempt('111112');
+    expect(sixth.reason).toMatch(/Try again in 1 min/);
+    vi.advanceTimersByTime(30_000);
+    expect((await attempt(PASSCODE)).ok).toBe(false); // still waiting
+    vi.advanceTimersByTime(31_000);
+    expect((await attempt(PASSCODE)).ok).toBe(true);
+    expect(store.getState().adminFailedAttempts).toBe(0);
+    expect(localStorage.getItem('lfps_admin_lockout_v1')).toBeNull();
+  });
+});
+
+describe('dev override: Edit without login (Bundle 34a)', () => {
   beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
@@ -112,105 +307,35 @@ describe('roles in the store (SEC-01 interim)', () => {
     vi.unstubAllEnvs();
   });
 
-  it('defaults to Front Desk (GUEST), never ADMIN, and the front desk can run the day', async () => {
-    const store = await loadStore();
-    expect(store.getState().operatingRole).toBe('GUEST');
-    const teacher = Object.values(store.getState().directory)[0].abbr;
-    store.getState().toggleAbsence(teacher);
-    expect(store.getState().absences).toHaveLength(1);
-  });
-
-  it('choosing a teacher name gives TEACHER, not ADMIN; logout returns to GUEST', async () => {
-    const store = await loadStore();
-    store.getState().login('Mrs. R. Pahwa');
-    expect(store.getState().operatingRole).toBe('TEACHER');
-    store.getState().logout();
-    expect(store.getState().operatingRole).toBe('GUEST');
-    expect(store.getState().loggedInTeacher).toBeNull();
-  });
-
-  it('blocks admin-only actions for the front desk', async () => {
-    const store = await loadStore();
-    const before = store.getState().schedule;
-    const { period, teacher } = busySlot(before as never);
-    store.getState().updatePeriodTask('WED', period as never, teacher, 'Free');
-    store.getState().resetDay('WED');
-    store.getState().setDeveloperMode(true);
-    expect(store.getState().schedule).toBe(before);
-    expect(store.getState().isDeveloperMode).toBe(false);
-  });
-
-  it('reports "not configured" when no hash is set', async () => {
-    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', '');
-    const store = await loadStore();
-    const res = await store.getState().unlockAdmin(PASSCODE);
-    expect(res.ok).toBe(false);
-    expect(res.reason).toMatch(/not configured/);
-    expect(store.getState().operatingRole).toBe('GUEST');
-  });
-
-  it('unlocks with the right passcode, survives reload in the same tab, and lock/logout end it', async () => {
+  it('an admin turns it on; then editing works with nobody logged in, on this device only', async () => {
     vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', HASH);
     let store = await loadStore();
-    expect((await store.getState().unlockAdmin('000001')).ok).toBe(false);
-    expect((await store.getState().unlockAdmin(PASSCODE)).ok).toBe(true);
-    expect(store.getState().operatingRole).toBe('ADMIN');
+    await store.getState().loginWithPasscode('Principal', PASSCODE);
+    store.getState().setEditingOverride(true);
+    store.getState().logout();
+    expect(store.getState().access).toMatchObject({ role: 'GUEST', isAdmin: false, canEdit: true, editingUnlocked: true });
 
-    // Admin routine edit is applied and persisted per date.
     const { period, teacher } = busySlot(store.getState().schedule as never);
     store.getState().updatePeriodTask('WED', period as never, teacher, 'Free');
     expect(store.getState().schedule.WED[period as never][teacher]).toBe('Free');
+
+    // Device-local: survives reload via localStorage, and is not part of the synced/persisted day state.
+    expect(localStorage.getItem('lfps_dev_editing_unlocked_v1')).toBe('1');
     flush();
-
-    store = await loadStore(); // reload: same tab session
-    expect(store.getState().operatingRole).toBe('ADMIN');
-    expect(store.getState().schedule.WED[period as never][teacher]).toBe('Free');
-
-    store.getState().lockAdmin();
-    expect(store.getState().operatingRole).toBe('GUEST');
+    const persisted = Object.keys(localStorage)
+      .filter((k) => k !== 'lfps_dev_editing_unlocked_v1')
+      .map((k) => localStorage.getItem(k) ?? '')
+      .join('\n');
+    expect(persisted).not.toMatch(/editingOverride|lfps_dev_editing_unlocked/);
     store = await loadStore();
-    expect(store.getState().operatingRole).toBe('GUEST');
-  });
+    expect(store.getState().access.canEdit).toBe(true);
 
-  it('a rotated passcode hash invalidates existing admin sessions', async () => {
-    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', HASH);
-    let store = await loadStore();
-    await store.getState().unlockAdmin(PASSCODE);
-    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', createHash('sha256').update('592038').digest('hex'));
-    store = await loadStore();
-    expect(store.getState().operatingRole).toBe('GUEST');
-  });
-
-  it('does not count malformed input as an attempt', async () => {
-    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', HASH);
-    const store = await loadStore();
-    for (let i = 0; i < 10; i++) {
-      expect((await store.getState().unlockAdmin('12ab')).reason).toMatch(/6-digit/);
-    }
-    expect(store.getState().adminFailedAttempts).toBe(0);
-    expect((await store.getState().unlockAdmin(PASSCODE)).ok).toBe(true);
-  });
-
-  it('cools down after 5 wrong attempts, escalates, survives a reload, and resets on success', async () => {
-    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', HASH);
-    let store = await loadStore();
-    for (let i = 0; i < 4; i++) expect((await store.getState().unlockAdmin('111112')).reason).toBe('Incorrect passcode.');
-    const fifth = await store.getState().unlockAdmin('111112');
-    expect(fifth.reason).toMatch(/Try again in 30 s/);
-
-    // Reloading the page does not reset the count or the wait.
-    store = await loadStore();
-    expect(store.getState().adminFailedAttempts).toBe(5);
-    expect((await store.getState().unlockAdmin(PASSCODE)).reason).toMatch(/Too many attempts/);
-
-    vi.advanceTimersByTime(31_000);
-    const sixth = await store.getState().unlockAdmin('111112');
-    expect(sixth.reason).toMatch(/Try again in 1 min/);
-    vi.advanceTimersByTime(30_000);
-    expect((await store.getState().unlockAdmin(PASSCODE)).ok).toBe(false); // still waiting
-    vi.advanceTimersByTime(31_000);
-    expect((await store.getState().unlockAdmin(PASSCODE)).ok).toBe(true);
-    expect(store.getState().adminFailedAttempts).toBe(0);
-    expect(localStorage.getItem('lfps_admin_lockout_v1')).toBeNull();
+    // Anyone can switch it off (no login needed); editing then stops and Dev Options close.
+    store.getState().setDeveloperMode(true);
+    expect(store.getState().isDeveloperMode).toBe(true);
+    store.getState().setEditingOverride(false);
+    expect(store.getState().access.canEdit).toBe(false);
+    expect(store.getState().isDeveloperMode).toBe(false);
+    expect(localStorage.getItem('lfps_dev_editing_unlocked_v1')).toBeNull();
   });
 });
