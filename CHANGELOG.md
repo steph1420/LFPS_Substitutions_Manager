@@ -8,11 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-> Job Bundle 34a (branch `bundle/34a`, the owner's "34.1"): not shipped. It ships as `2.0.0-alpha.3` with the next approved release (VERSIONING §2.6).
->
-> Job Bundle 35 (branch `bundle/35`, cut from `bundle/34a`): not shipped either. It ships in the same `2.0.0-alpha.3` as 34a. The wire protocol changed: an alpha.2 client and an alpha.3 relay don't sync with each other (SAS §6.3; rollback notes in `docs/RENDER_SETUP.md`). Going live needs the owner's approval and the Render steps in `docs/RENDER_SETUP.md`.
+### Planned
+- **Deferred by the owner (2026-10-24, "we'll add later")**:
+  - FEAT-67: Developer Options controls for the admin lockout penalty (free misses, wait steps).
+  - SEC-03: a separate Developer Options passcode, distinct from the admin passcode.
+- **Simple Mode**:
+  - Streamlined view option presenting strictly basic manual substitution logic.
+- **Codebase Technical Debt & Bloat Elimination**:
 
-> Job Bundle 35a (branch `bundle/35a`, cut from `bundle/35`): not shipped. It closes the two sync gaps and ships with 34a and 35 as `2.0.0-alpha.3`; the steps are in [`docs/RELEASE_2.0.0-alpha.3.md`](docs/RELEASE_2.0.0-alpha.3.md) (owner approval needed).
+---
+
+## [v2.0.0-alpha.3] - 2026-10-24
+
+> Job Bundles **34a** + **35** + **35a** (via `handover/2026-10-24`, which includes `bundle/35a`). **Prepared for release** on the owner's approval; go-live is a push to `next-gen` after explicit "go" (Pages + Render together). Rollback point: tag `rollback/pre-v2.0.0-alpha.3` → `362d887` (`v2.0.0-alpha.2`). Runbook: [`docs/RELEASE_2.0.0-alpha.3.md`](docs/RELEASE_2.0.0-alpha.3.md).
+> Wire protocol changed vs alpha.2: client and relay must ship together for sync (SAS §6.3).
 
 ### Added
 - **Live sync across devices (FEAT-62 part 2, BUG-25, Job Bundle 35)**: Absences, availabilities, substitutions, displaced slots, Off. AC / Off. CT appointments and dated routine edits now sync through the relay over one WebSocket. On connect a device sends `HELLO` and gets `HYDRATE` (the relay's current week). Edits go out as small per-entity changes (`STATE_MUTATION`, acknowledged, broadcast to the other devices). Conflicts resolve per entity, last writer wins. Edits made while offline queue in the tab and go out on reconnect. A relay that restarted empty is refilled by the devices.
@@ -56,14 +65,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **AGENTS.md "Reading: read what the task touches" (2026-10-24, branch `handover/2026-10-24`, Steve's request)**: new short section that cuts bookkeeping rereads, not understanding (read HANDOVER/AGENTS and the touched area fully; grep BUGS.md, ADRs and TODO.md and read every hit; write-only CHANGELOG/ID edits open just the top or grep the last ID; when in doubt, read it). Matching CHEATSHEET.md tip; HANDOVER A1 now says the zip also includes `CHEATSHEET.md`.
 - **`CHEATSHEET.md` and HANDOVER zip note (2026-10-24, branch `handover/2026-10-24`, Steve's request)**: new root cheat sheet of quality-neutral quota savers for Grok Build / AFK Pilot (`/compact` at a natural break, `/context`, plan mode, one session, short fresh prompts, `AGENTS.md`/`HANDOVER.md`/`@file`, targeted asks, closing sessions), each checked against docs.x.ai/build; explicitly excludes lower effort, cheaper models and skipped tests or backups. Indexed in `docs/README.md`. HANDOVER A1 now says the zip includes `AGENTS.md`.
 - **BUG-31 (ops)**: Saving responses was already off on the owner's cron-job.org job, so the fix is switching its request method to **HEAD** (job → Edit → Advanced → Request method).
-
-### Planned
-- **Deferred by the owner (2026-10-24, "we'll add later")**:
-  - FEAT-67: Developer Options controls for the admin lockout penalty (free misses, wait steps).
-  - SEC-03: a separate Developer Options passcode, distinct from the admin passcode.
-- **Simple Mode**:
-  - Streamlined view option presenting strictly basic manual substitution logic.
-- **Codebase Technical Debt & Bloat Elimination**:
 
 ---
 

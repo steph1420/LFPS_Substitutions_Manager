@@ -5,4 +5,4 @@
 // from the repo root. `npm test` fails (`npm run version:check`) on drift.
 package version
 
-const Version = "2.0.0-alpha.2"
+const Version = "2.0.0-alpha.3"
