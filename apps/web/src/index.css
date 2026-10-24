@@ -140,7 +140,10 @@
 /* UI-11: stable routine matrix geometry */
 .routine-matrix-table {
   table-layout: fixed;
-  width: 100%;
+  /* Bundle 40: do NOT squeeze columns into the viewport on phone.
+     max-content + min-width:100% → horizontal scroll when narrow, fill when wide. */
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
 }
 .routine-matrix-table tbody tr {
@@ -151,8 +154,34 @@
 .routine-matrix-table th {
   vertical-align: middle;
 }
+/* Bundle 40: period columns keep a readable min width; faculty stays sticky. */
+.routine-matrix-table th.period-col,
+.routine-matrix-table td.period-col {
+  min-width: 92px;
+  width: 92px;
+  max-width: none;
+  white-space: nowrap;
+}
+.routine-matrix-table th.period-col-break,
+.routine-matrix-table td.period-col-break {
+  min-width: 72px;
+  width: 72px;
+}
+@media (min-width: 640px) {
+  .routine-matrix-table th.period-col,
+  .routine-matrix-table td.period-col {
+    min-width: 105px;
+    width: 105px;
+  }
+  .routine-matrix-table th.period-col-break,
+  .routine-matrix-table td.period-col-break {
+    min-width: 88px;
+    width: 88px;
+  }
+}
 .routine-matrix-shell {
   min-height: 22rem; /* SAT shouldn't collapse the card shell */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* FIND-04: matrix sticky absent cell — rail, no outer bloom (parity with UI-06 cards) */
@@ -162,6 +191,75 @@
   border-left: 3px solid var(--accent-red) !important;
   color: #fecdd3 !important;
   box-shadow: none !important;
+}
+
+/* Bundle 40: light / system-light — absent names must be readable (not pale pink) */
+[data-theme="light"] .matrix-absent-sticky,
+[data-theme="warm-sepia"] .matrix-absent-sticky,
+[data-theme="utopian-glass"] .matrix-absent-sticky,
+[data-theme="aero-frost"] .matrix-absent-sticky,
+[data-theme="high-contrast"] .matrix-absent-sticky {
+  background: color-mix(in srgb, var(--accent-red) 14%, var(--surface-opaque)) !important;
+  color: var(--danger-soft-fg) !important;
+  border-right-color: color-mix(in srgb, var(--accent-red) 55%, transparent) !important;
+}
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] .matrix-absent-sticky {
+    background: color-mix(in srgb, var(--accent-red) 14%, var(--surface-opaque)) !important;
+    color: var(--danger-soft-fg) !important;
+    border-right-color: color-mix(in srgb, var(--accent-red) 55%, transparent) !important;
+  }
+}
+[data-theme="light"] .matrix-absent-sticky .text-rose-100,
+[data-theme="light"] .matrix-absent-sticky .text-rose-200,
+[data-theme="light"] .matrix-absent-sticky .text-rose-300,
+[data-theme="warm-sepia"] .matrix-absent-sticky .text-rose-100,
+[data-theme="warm-sepia"] .matrix-absent-sticky .text-rose-200,
+[data-theme="utopian-glass"] .matrix-absent-sticky .text-rose-100,
+[data-theme="utopian-glass"] .matrix-absent-sticky .text-rose-200,
+[data-theme="aero-frost"] .matrix-absent-sticky .text-rose-100,
+[data-theme="aero-frost"] .matrix-absent-sticky .text-rose-200,
+[data-theme="high-contrast"] .matrix-absent-sticky .text-rose-100,
+[data-theme="high-contrast"] .matrix-absent-sticky .text-rose-200 {
+  color: var(--danger-soft-fg) !important;
+}
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] .matrix-absent-sticky .text-rose-100,
+  [data-theme="system"] .matrix-absent-sticky .text-rose-200,
+  [data-theme="system"] .matrix-absent-sticky .text-rose-300 {
+    color: var(--danger-soft-fg) !important;
+  }
+}
+
+/* Bundle 40: Free / muted cell + Need Sub contrast on day themes */
+[data-theme="light"] .cell-free-label,
+[data-theme="warm-sepia"] .cell-free-label,
+[data-theme="utopian-glass"] .cell-free-label,
+[data-theme="aero-frost"] .cell-free-label,
+[data-theme="high-contrast"] .cell-free-label {
+  color: #475569 !important; /* slate-600 solid — readable on white/pink tint */
+}
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] .cell-free-label {
+    color: #475569 !important;
+  }
+}
+[data-theme="light"] .cell-missing-quiet,
+[data-theme="warm-sepia"] .cell-missing-quiet,
+[data-theme="utopian-glass"] .cell-missing-quiet,
+[data-theme="aero-frost"] .cell-missing-quiet,
+[data-theme="high-contrast"] .cell-missing-quiet {
+  color: var(--danger-soft-fg) !important;
+}
+[data-theme="light"] .cell-missing-quiet .text-rose-300,
+[data-theme="light"] .cell-missing-quiet .text-rose-400,
+[data-theme="warm-sepia"] .cell-missing-quiet .text-rose-300,
+[data-theme="warm-sepia"] .cell-missing-quiet .text-rose-400,
+[data-theme="utopian-glass"] .cell-missing-quiet .text-rose-300,
+[data-theme="utopian-glass"] .cell-missing-quiet .text-rose-400,
+[data-theme="aero-frost"] .cell-missing-quiet .text-rose-300,
+[data-theme="aero-frost"] .cell-missing-quiet .text-rose-400 {
+  color: var(--danger-soft-fg) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

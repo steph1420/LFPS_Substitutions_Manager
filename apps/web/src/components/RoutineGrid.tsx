@@ -227,12 +227,14 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
           {DEFAULT_PERIODS.map((period) => (
             <th
               key={period.id}
-              className={`sticky top-0 z-30 bg-slate-900 px-1 sm:px-2 py-1.5 sm:py-2 min-w-[78px] sm:min-w-[105px] text-center border-l border-slate-800/80 ${
-                period.id === 'BREAK' ? 'bg-slate-950/90 text-slate-500' : ''
+              className={`sticky top-0 z-30 bg-slate-900 px-1 sm:px-2 py-1.5 sm:py-2 text-center border-l border-slate-800/80 ${
+                period.id === 'BREAK'
+                  ? 'period-col-break bg-slate-950/90 text-slate-500'
+                  : 'period-col'
               }`}
             >
-              <div className="text-[10px] sm:text-[11px] font-bold">{period.name}</div>
-              <div className="text-[8px] sm:text-[9px] font-normal text-slate-400">{period.timing}</div>
+              <div className="text-[10px] sm:text-[11px] font-bold whitespace-nowrap">{period.name}</div>
+              <div className="text-[8px] sm:text-[9px] font-normal text-slate-400 whitespace-nowrap">{period.timing}</div>
             </th>
           ))}
         </tr>
@@ -357,7 +359,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                     return (
                       <td
                         key={period.id}
-                        className="px-1 py-1 sm:px-2 sm:py-1.5 text-center text-slate-600 bg-slate-950/50 border-l border-slate-800/60"
+                        className="period-col-break px-1 py-1 sm:px-2 sm:py-1.5 text-center text-slate-600 bg-slate-950/50 border-l border-slate-800/60"
                       >
                         —
                       </td>
@@ -505,7 +507,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                           toggleAwayPeriod(period.id);
                         }
                       }}
-                      className={`text-center border-l border-slate-800/60 transition-all select-none relative ${
+                      className={`period-col text-center border-l border-slate-800/60 transition-all select-none relative ${
                         isDisplacedFlash ? 'cell-displaced-flash' : ''
                       } ${
                         isPeriodAwaySelected
@@ -596,7 +598,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                           )}
                         </div>
                       ) : (
-                        <span className="text-slate-600 text-[10px] sm:text-[11px]">Free</span>
+                        <span className="cell-free-label text-slate-500 text-[10px] sm:text-[11px]">Free</span>
                       )}
                     </td>
                   );
@@ -623,7 +625,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                   return (
                     <td
                       key={period.id}
-                      className="px-1 py-1 sm:px-2 sm:py-1.5 text-center text-slate-600 bg-slate-950/50 border-l border-slate-800/60"
+                      className="period-col-break px-1 py-1 sm:px-2 sm:py-1.5 text-center text-slate-600 bg-slate-950/50 border-l border-slate-800/60"
                     >
                       —
                     </td>
@@ -661,7 +663,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                         handleContextMenu(e, assignedTeacher, period.id);
                       }
                     }}
-                    className={`text-center border-l border-slate-800/60 ${
+                    className={`period-col text-center border-l border-slate-800/60 ${
                       isMinimalUI ? 'px-0.5 py-0.5' : 'px-1 py-1 sm:px-1.5 sm:py-1.5'
                     }`}
                   >
@@ -676,7 +678,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                         <div className="text-[8px] sm:text-[9px] text-slate-400 truncate">{parsed?.subject || taskString}</div>
                       </div>
                     ) : (
-                      <span className="text-slate-600 text-[10px] sm:text-[11px]">Free</span>
+                      <span className="cell-free-label text-slate-500 text-[10px] sm:text-[11px]">Free</span>
                     )}
                   </td>
                 );

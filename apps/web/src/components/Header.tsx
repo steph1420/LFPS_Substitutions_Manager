@@ -160,11 +160,18 @@ export const Header: React.FC = () => {
   }, []);
 
   // BUG-29 / UI-10: scroll observer with hysteresis; container vs thresholds mode (FEAT-69)
+  // Bundle 40: wider hysteresis, direction-aware flips, ignore toolbar jumps in BOTH modes.
   React.useEffect(() => {
     let rafId: number | null = null;
-    // Enter PILL above ENTER_PILL; return FULL only below EXIT_FULL (hysteresis).
-    const ENTER_PILL = 72;
-    const EXIT_FULL = 28;
+    let viewportFreezeUntil = 0;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    // Enter PILL above ENTER_PILL; return FULL only below EXIT_FULL (wide hysteresis).
+    const ENTER_PILL = 108;
+    const EXIT_FULL = 12;
+    const IGNORE_DELTA = 16; // mobile chrome show/hide noise
+    const TRANSITION_LOCK_MS = 360;
+    const VIEWPORT_FREEZE_MS = 420;
+    const DEBOUNCE_MS = 48;
 
     const readScrollY = (): number => {
       if (headerScrollMode === 'container') {
@@ -185,42 +192,54 @@ export const Header: React.FC = () => {
       isTransitioningRef.current = true;
       window.setTimeout(() => {
         isTransitioningRef.current = false;
-      }, 220);
+      }, TRANSITION_LOCK_MS);
+    };
+
+    const evaluate = () => {
+      if (isDayChangingRef.current) {
+        lastScrollYRef.current = readScrollY();
+        return;
+      }
+      if (isTransitioningRef.current) return;
+      if (Date.now() < viewportFreezeUntil) {
+        lastScrollYRef.current = readScrollY();
+        return;
+      }
+
+      const currentScrollY = readScrollY();
+      const prev = lastScrollYRef.current;
+      const delta = currentScrollY - prev;
+      lastScrollYRef.current = currentScrollY;
+
+      // Both UI-10 modes: ignore tiny jumps (iOS/Android toolbar).
+      if (Math.abs(delta) > 0 && Math.abs(delta) < IGNORE_DELTA && currentScrollY > EXIT_FULL) {
+        return;
+      }
+
+      const state = headerStateRef.current;
+      // Direction-aware: only collapse on scroll-down, only expand on scroll-up near top.
+      if (state === 'FULL' && delta > 0 && currentScrollY > ENTER_PILL) {
+        applyState('PILL');
+      } else if (state === 'PILL' && delta < 0 && currentScrollY < EXIT_FULL) {
+        applyState('FULL');
+      } else if (state === 'PILL' && currentScrollY <= 2) {
+        // Hard snap at absolute top (e.g. programmatic scroll / rubber-band).
+        applyState('FULL');
+      }
     };
 
     const handleScroll = () => {
       if (rafId !== null) return;
       rafId = requestAnimationFrame(() => {
         rafId = null;
-        if (isDayChangingRef.current) {
-          lastScrollYRef.current = readScrollY();
-          return;
-        }
-        if (isTransitioningRef.current) return;
-
-        const currentScrollY = readScrollY();
-        const prev = lastScrollYRef.current;
-        lastScrollYRef.current = currentScrollY;
-
-        // Thresholds mode: ignore tiny jumps typical of mobile toolbar show/hide.
-        if (headerScrollMode === 'thresholds') {
-          const delta = Math.abs(currentScrollY - prev);
-          if (delta > 0 && delta < 8 && currentScrollY > EXIT_FULL) {
-            return;
-          }
-        }
-
-        const state = headerStateRef.current;
-        if (state === 'FULL' && currentScrollY > ENTER_PILL) {
-          applyState('PILL');
-        } else if (state === 'PILL' && currentScrollY < EXIT_FULL) {
-          applyState('FULL');
-        }
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(evaluate, DEBOUNCE_MS);
       });
     };
 
-    // visualViewport resize (toolbar) — resync baseline; do not flip state from the jump alone
-    const handleViewportResize = () => {
+    // visualViewport resize/scroll (toolbar) — freeze flips; resync baseline only.
+    const handleViewportNoise = () => {
+      viewportFreezeUntil = Date.now() + VIEWPORT_FREEZE_MS;
       lastScrollYRef.current = readScrollY();
     };
 
@@ -230,14 +249,17 @@ export const Header: React.FC = () => {
         : window;
 
     scrollTarget.addEventListener('scroll', handleScroll, { passive: true });
-    window.visualViewport?.addEventListener('resize', handleViewportResize);
+    window.visualViewport?.addEventListener('resize', handleViewportNoise);
+    window.visualViewport?.addEventListener('scroll', handleViewportNoise, { passive: true });
     // Initial sync
     lastScrollYRef.current = readScrollY();
 
     return () => {
       scrollTarget.removeEventListener('scroll', handleScroll as EventListener);
-      window.visualViewport?.removeEventListener('resize', handleViewportResize);
+      window.visualViewport?.removeEventListener('resize', handleViewportNoise);
+      window.visualViewport?.removeEventListener('scroll', handleViewportNoise);
       if (rafId !== null) cancelAnimationFrame(rafId);
+      if (debounceTimer) clearTimeout(debounceTimer);
       if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
     };
   }, [headerScrollMode]);
@@ -369,28 +391,30 @@ export const Header: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* STATE 1 & 4: FULL ELEVATED HEADER CONSOLE (At top of page scrollY <= 50) */}
+      {/* STATE 1 & 4: FULL ELEVATED HEADER — Bundle 40 phone: row1 brand+actions, row2 days */}
       <motion.header
+        data-testid="app-header-full"
+        data-auth={loggedInTeacher ? (isAdmin ? 'admin' : 'teacher') : 'guest'}
         animate={{
-          y: headerState === 'FULL' ? 0 : -140,
+          y: headerState === 'FULL' ? 0 : -220,
           opacity: headerState === 'FULL' ? 1 : 0,
         }}
         transition={SPRING_TRANSITIONS.smooth}
-        className="sticky top-0 z-40 w-full header-elevated px-4 py-3 sm:px-6 pointer-events-auto will-change-transform border-b border-slate-800/80 select-none min-h-[4.5rem]"
+        className="sticky top-0 z-40 w-full header-elevated px-3 py-2.5 sm:px-6 sm:py-3 pointer-events-auto will-change-transform border-b border-slate-800/80 select-none"
       >
-        {/* Uncluttered Multi-Row/Column Architecture: Day bar has dedicated breathing room and NEVER pushes icons off-screen */}
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
-          {/* Brand & Identity */}
-          <div className="flex items-center justify-between w-full md:w-auto">
-            <div className="flex items-center gap-2.5">
+        <div className="max-w-7xl mx-auto flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-3">
+          {/* Row 1 (mobile) / Brand column (desktop): logo + status + actions */}
+          <div className="flex items-center justify-between gap-2 w-full md:w-auto min-w-0">
+            <div className="flex items-center gap-2 min-w-0 flex-shrink">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20 flex-shrink-0">
                 L
               </div>
-              <div>
-                <h1 className="text-sm font-semibold tracking-tight text-white flex items-center gap-1.5">
-                  LFPS Manager
+              <div className="min-w-0">
+                <h1 className="text-sm font-semibold tracking-tight text-white flex items-center gap-1.5 flex-wrap">
+                  <span className="hidden sm:inline truncate">LFPS Manager</span>
+                  <span className="sm:hidden sr-only">LFPS Manager</span>
                   <span
-                    className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                    className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 flex-shrink-0"
                     title={BUILD_LABEL}
                   >
                     v{APP_VERSION}
@@ -405,7 +429,7 @@ export const Header: React.FC = () => {
                   )}
                   {isAdmin && (
                     <span
-                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex-shrink-0"
                       title="Signed in as admin in this tab (Log Out ends it)"
                     >
                       Admin
@@ -413,26 +437,70 @@ export const Header: React.FC = () => {
                   )}
                   {editingUnlocked && (
                     <span
-                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 whitespace-nowrap"
+                      className="hidden sm:inline-flex text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 whitespace-nowrap"
                       title="Dev Options: editing allowed on this device without login (turn off in Settings)"
                       data-testid="editing-unlocked-badge"
                     >
                       Editing unlocked
                     </span>
                   )}
+                  {editingUnlocked && (
+                    <span
+                      className="sm:hidden inline-flex h-2 w-2 rounded-full bg-amber-400 flex-shrink-0"
+                      title="Editing unlocked on this device"
+                      data-testid="editing-unlocked-badge"
+                      aria-label="Editing unlocked"
+                    />
+                  )}
                 </h1>
-                <p className="text-[11px] text-slate-400 hidden xs:block">
+                <p className="text-[11px] text-slate-400 hidden lg:block">
                   Preparatory Timetable & Substitutions
                 </p>
               </div>
             </div>
 
-            {/* Mobile Actions: Reset Button, Notifications, Settings & Profile Pill */}
-            <div className="md:hidden flex items-center gap-1.5">
-              <ResetDayButton compact />
+            {/* Mobile action cluster — icons only; account separate from logout */}
+            <div className="md:hidden flex items-center gap-1 flex-shrink-0" data-testid="header-mobile-actions">
+              <button
+                type="button"
+                data-testid="sync-pill-mobile"
+                data-phase={sync.status.phase}
+                data-tone={syncPill.tone}
+                onClick={openSettings}
+                className={`flex items-center gap-1 px-1.5 py-1 rounded-full text-[10px] font-medium border ${
+                  syncPill.tone === 'live'
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-[var(--accent-green)]'
+                    : syncPill.tone === 'error'
+                      ? 'bg-rose-500/10 border-rose-500/40 text-[var(--accent-red)]'
+                      : syncPill.tone === 'warn'
+                        ? 'bg-amber-500/10 border-amber-500/30 text-[var(--accent-amber)]'
+                        : 'bg-slate-800/60 border-slate-700/40 text-slate-400'
+                }`}
+                title={syncPill.title}
+                aria-label={`${syncPill.label}. Open Cloud settings.`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                    syncPill.tone === 'live'
+                      ? 'status-dot-live'
+                      : syncPill.tone === 'offline'
+                        ? 'status-dot-offline'
+                        : 'status-dot-connecting'
+                  }`}
+                />
+                <span className="max-w-[2.75rem] truncate">
+                  {syncPill.tone === 'live'
+                    ? 'Live'
+                    : syncPill.tone === 'error'
+                      ? 'Err'
+                      : syncPill.tone === 'offline'
+                        ? 'Off'
+                        : '…'}
+                </span>
+              </button>
               <button
                 onClick={openNotificationCenter}
-                className="relative p-2.5 min-w-10 min-h-10 rounded-full glass-pill border-slate-800 text-slate-300 hover:text-ink transition-colors active:scale-95 cursor-pointer inline-flex items-center justify-center"
+                className="relative p-1.5 min-w-8 min-h-8 rounded-full glass-pill border-slate-800 text-slate-300 hover:text-ink transition-colors active:scale-95 cursor-pointer inline-flex items-center justify-center"
                 title="Notifications"
                 aria-label="Notifications"
               >
@@ -445,79 +513,98 @@ export const Header: React.FC = () => {
               </button>
               <button
                 onClick={openSettings}
-                className="p-2.5 min-w-10 min-h-10 rounded-full glass-pill border-slate-800 text-slate-300 hover:text-ink transition-colors active:scale-95 inline-flex items-center justify-center"
+                className="p-1.5 min-w-8 min-h-8 rounded-full glass-pill border-slate-800 text-slate-300 hover:text-ink transition-colors active:scale-95 inline-flex items-center justify-center"
                 title="Console & Settings"
                 aria-label="Console & Settings"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5 text-blue-400" />
               </button>
-              <button
-                onClick={() => (loggedInTeacher ? logout() : openStaffLogin())}
-                className="glass-pill px-2.5 py-1 rounded-full text-xs flex items-center gap-1.5 text-slate-200 active:scale-95 transition-transform"
-              >
-                <User className="w-3.5 h-3.5 text-blue-400" />
-                <span className="truncate max-w-[80px]">{loggedInTeacher || 'Login'}</span>
-              </button>
+              {loggedInTeacher ? (
+                <div className="flex items-center gap-0.5 glass-pill pl-1.5 pr-0.5 py-0.5 rounded-full border border-slate-700/80 max-w-[5.75rem]">
+                  <span className="text-[10px] font-medium text-slate-200 truncate" title={loggedInTeacher}>
+                    {loggedInTeacher}
+                  </span>
+                  <button
+                    onClick={logout}
+                    className="p-1.5 rounded-full text-slate-400 hover:text-rose-400 transition-colors flex-shrink-0"
+                    title="Log Out"
+                    aria-label="Log Out"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={openStaffLogin}
+                  className="glass-pill px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 text-slate-200 active:scale-95 transition-transform"
+                  aria-label="Staff Login"
+                >
+                  <User className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Login</span>
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Center: Docked Day Bar — always mounted at fixed height (BUG-29: no layout shift) */}
+          {/* Row 2 (mobile) / Center (desktop): Day bar — dedicated full width on phone */}
           <div
-            className={`flex items-center bg-slate-900/90 p-1 rounded-full border border-slate-800 shadow-inner min-h-[34px] ${
+            className={`w-full md:w-auto flex justify-center overflow-x-auto scrollbar-thin ${
               headerState === 'FULL' ? 'opacity-100' : 'opacity-0 pointer-events-none'
             }`}
             aria-hidden={headerState !== 'FULL'}
           >
-            {headerState === 'FULL' ? (
-              <motion.div
-                layoutId="dynamic-island-day-bar"
-                transition={ISLAND_SPRING}
-                className="flex items-center will-change-transform"
-              >
-                {DAYS.map((day) => {
-                  const isActive = selectedDay === day;
-                  const isToday = todaySchoolDay === day;
-                  const dateIso = activeWeekStart ? dateForSchoolDay(activeWeekStart, day) : '';
-                  const dateShort = dateIso ? dateIso.slice(8) : '';
-                  return (
-                    <button
-                      key={day}
-                      onClick={() => handleSelectDay(day)}
-                      title={isToday ? `Today · ${dateIso}` : dateIso || day}
-                      className={`relative px-3.5 py-1 text-xs font-semibold rounded-full transition-colors z-10 select-none ${
-                        isActive ? 'text-white' : 'text-slate-400 hover:text-slate-200'
-                      } ${isToday && !isActive ? 'ring-1 ring-emerald-400/60' : ''}`}
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="activeDockedDayHighlight"
-                          transition={SPRING_TRANSITIONS.snappy}
-                          className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-600/30 -z-10"
-                        />
-                      )}
-                      <span className="inline-flex flex-col items-center leading-none gap-0.5 relative">
-                        <span className="inline-flex items-center gap-1">
-                          {day}
-                          {isToday && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-label="Today" />
+            <div className="flex items-center bg-slate-900/90 p-1 rounded-full border border-slate-800 shadow-inner min-h-[34px] flex-shrink-0">
+              {headerState === 'FULL' ? (
+                <motion.div
+                  layoutId="dynamic-island-day-bar"
+                  transition={ISLAND_SPRING}
+                  className="flex items-center will-change-transform"
+                >
+                  {DAYS.map((day) => {
+                    const isActive = selectedDay === day;
+                    const isToday = todaySchoolDay === day;
+                    const dateIso = activeWeekStart ? dateForSchoolDay(activeWeekStart, day) : '';
+                    const dateShort = dateIso ? dateIso.slice(8) : '';
+                    return (
+                      <button
+                        key={day}
+                        onClick={() => handleSelectDay(day)}
+                        title={isToday ? `Today · ${dateIso}` : dateIso || day}
+                        className={`relative px-2.5 sm:px-3.5 py-1 text-[11px] sm:text-xs font-semibold rounded-full transition-colors z-10 select-none ${
+                          isActive ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+                        } ${isToday && !isActive ? 'ring-1 ring-emerald-400/60' : ''}`}
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeDockedDayHighlight"
+                            transition={SPRING_TRANSITIONS.snappy}
+                            className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-600/30 -z-10"
+                          />
+                        )}
+                        <span className="inline-flex flex-col items-center leading-none gap-0.5 relative">
+                          <span className="inline-flex items-center gap-1">
+                            {day}
+                            {isToday && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-label="Today" />
+                            )}
+                          </span>
+                          {devUiPrefs.dayLoadMode === 'free' && dateShort && (
+                            <span className={`text-[8px] font-semibold ${isActive ? 'text-blue-100/90' : 'text-slate-500'}`}>
+                              {dateShort}
+                            </span>
                           )}
                         </span>
-                        {devUiPrefs.dayLoadMode === 'free' && dateShort && (
-                          <span className={`text-[8px] font-semibold ${isActive ? 'text-blue-100/90' : 'text-slate-500'}`}>
-                            {dateShort}
-                          </span>
-                        )}
-                      </span>
-                    </button>
-                  );
-                })}
-              </motion.div>
-            ) : (
-              <div className="h-[26px] w-[220px]" />
-            )}
+                      </button>
+                    );
+                  })}
+                </motion.div>
+              ) : (
+                <div className="h-[26px] w-[220px]" />
+              )}
+            </div>
           </div>
 
-          {/* Right: Desktop Controls, Cloud Sync, Excel, Settings & Login */}
+          {/* Desktop controls */}
           <div className="hidden md:flex items-center gap-2.5">
             {/* Live sync status pill (Bundle 35 + FIND-05 honesty) */}
             <button
