@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { EDITING_OVERRIDE_KEY } from '../src/lib/access.js';
 
 // Test-only code; the real passcode is never in the repo.
 const PASSCODE = '402917';
@@ -355,10 +356,10 @@ describe('dev override: Edit without login (Bundle 34a)', () => {
     expect(store.getState().schedule.WED[period as never][teacher]).toBe('Free');
 
     // Device-local: survives reload via localStorage, and is not part of the synced/persisted day state.
-    expect(localStorage.getItem('lfps_dev_editing_unlocked_v1')).toBe('1');
+    expect(localStorage.getItem(EDITING_OVERRIDE_KEY)).toBe('1');
     flush();
     const persisted = Object.keys(localStorage)
-      .filter((k) => k !== 'lfps_dev_editing_unlocked_v1')
+      .filter((k) => k !== EDITING_OVERRIDE_KEY)
       .map((k) => localStorage.getItem(k) ?? '')
       .join('\n');
     expect(persisted).not.toMatch(/editingOverride|lfps_dev_editing_unlocked/);
@@ -370,7 +371,7 @@ describe('dev override: Edit without login (Bundle 34a)', () => {
     expect(store.getState().isDeveloperMode).toBe(false);
     store.getState().setEditingOverride(false);
     expect(store.getState().access.canEdit).toBe(false);
-    expect(localStorage.getItem('lfps_dev_editing_unlocked_v1')).toBeNull();
+    expect(localStorage.getItem(EDITING_OVERRIDE_KEY)).toBeNull();
   });
 
   it('unlocks Developer Options with the Dev passcode alone (no admin session)', async () => {

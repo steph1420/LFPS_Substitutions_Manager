@@ -10,7 +10,7 @@ One preview: `https://steph1420.github.io/LFPS_Substitutions_Manager/preview/<sl
 | Piece | Role |
 |---|---|
 | `.github/workflows/ci.yml` | Tests on `next-gen`, `bundle/**`, `preview/**`. **Render** (`autoDeployTrigger: checksPass`) waits for these checks on `next-gen` only. |
-| `.github/workflows/pages.yml` | Builds the static site in Actions (`scripts/build-pages-site.mjs`) and, when enabled, deploys with `actions/deploy-pages`. |
+| `.github/workflows/pages.yml` | Builds the static site in Actions (`scripts/build-pages-site.mjs`) on `next-gen` / `bundle/**` / `preview/**`. **Deploy** (`actions/deploy-pages`) runs only on `next-gen` or `workflow_dispatch` when `PAGES_ACTIONS_DEPLOY=true` — feature branches build/validate but do not deploy (environment protection would fail them). |
 | Committed root `index.html` + `assets/` | **Still present.** They keep the live site working while Pages source is “Deploy from a branch”. Do **not** delete them until the cutover below is done. |
 
 Preview builds set `VITE_BUILD_CHANNEL=preview`, show a footer **Preview · &lt;branch&gt;** badge, namespace `localStorage` keys, and point the relay at loopback so they never touch production Sheets.
@@ -59,6 +59,8 @@ Either:
 
 - Push to `next-gen`, or  
 - **Actions** → **pages** → **Run workflow** → branch `next-gen` → **Run workflow**
+
+Pushes to `bundle/**` or `preview/**` still **build** (preview trees under `/preview/<slug>/` when the next `next-gen` deploy runs) but **skip the deploy job**. That avoids a red X from github-pages environment protection, which only allows `next-gen`.
 
 When it finishes, open the production URL and a preview URL. Footer on previews shows **Preview · bundle/…**.
 
