@@ -19,6 +19,11 @@ import { phaseLabel } from '../sync/status.js';
 import { ResetDayButton } from './ResetDayButton.js';
 import { APP_VERSION, BUILD_LABEL } from '../lib/buildInfo.js';
 import { AddToHomeScreenModal } from './AddToHomeScreenModal.js';
+import {
+  APP_SCROLL_ID,
+  readDevUiPrefs,
+  type HeaderScrollMode,
+} from '../lib/devUiPrefs.js';
 
 // Perfectly symmetrical Apple-grade spring physics (timed equally for expand and collapse)
 const ISLAND_SPRING = {
@@ -61,6 +66,26 @@ export const Header: React.FC = () => {
   const isTransitioningRef = React.useRef(false);
   const isDayChangingRef = React.useRef(false);
   const autoCollapseTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const headerStateRef = React.useRef<HeaderState>('FULL');
+  const [headerScrollMode, setHeaderScrollMode] = React.useState<HeaderScrollMode>(
+    () => readDevUiPrefs().headerScrollMode
+  );
+
+  React.useEffect(() => {
+    headerStateRef.current = headerState;
+  }, [headerState]);
+
+  // Re-read Dev Options header mode when storage changes (same tab via custom event, other tabs via storage)
+  React.useEffect(() => {
+    const sync = () => setHeaderScrollMode(readDevUiPrefs().headerScrollMode);
+    const onCustom = () => sync();
+    window.addEventListener('storage', sync);
+    window.addEventListener('lfps-dev-ui-prefs', onCustom);
+    return () => {
+      window.removeEventListener('storage', sync);
+      window.removeEventListener('lfps-dev-ui-prefs', onCustom);
+    };
+  }, []);
 
   // Auto-collapse timer for floating day bar
   const resetAutoCollapseTimer = React.useCallback(() => {
@@ -96,7 +121,9 @@ export const Header: React.FC = () => {
 
     setTimeout(() => {
       isDayChangingRef.current = false;
-      lastScrollYRef.current = window.scrollY;
+      const el =
+        headerScrollMode === 'container' ? document.getElementById(APP_SCROLL_ID) : null;
+      lastScrollYRef.current = el ? el.scrollTop : window.scrollY;
     }, 450);
   };
 
@@ -111,73 +138,88 @@ export const Header: React.FC = () => {
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
   }, []);
 
-  // Mobile Browser URL Bar Sync with visualViewport (FEAT-57 & PERF-02)
-  React.useEffect(() => {
-    if (typeof window === 'undefined' || !window.visualViewport) return;
-
-    const handleViewportResize = () => {
-      lastScrollYRef.current = window.scrollY;
-    };
-
-    window.visualViewport.addEventListener('resize', handleViewportResize);
-    return () => {
-      window.visualViewport?.removeEventListener('resize', handleViewportResize);
-    };
-  }, []);
-
-  // 120fps Scroll Observer: Clean binary transition between FULL and PILL (no thin strip)
+  // BUG-29 / UI-10: scroll observer with hysteresis; container vs thresholds mode (FEAT-69)
   React.useEffect(() => {
     let rafId: number | null = null;
+    // Enter PILL above ENTER_PILL; return FULL only below EXIT_FULL (hysteresis).
+    const ENTER_PILL = 72;
+    const EXIT_FULL = 28;
+
+    const readScrollY = (): number => {
+      if (headerScrollMode === 'container') {
+        const el = document.getElementById(APP_SCROLL_ID);
+        return el ? el.scrollTop : 0;
+      }
+      return window.scrollY || document.documentElement.scrollTop || 0;
+    };
+
+    const applyState = (next: HeaderState) => {
+      if (headerStateRef.current === next) return;
+      headerStateRef.current = next;
+      setHeaderState(next);
+      if (next === 'FULL') {
+        setIsIslandExpanded(false);
+        if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
+      }
+      isTransitioningRef.current = true;
+      window.setTimeout(() => {
+        isTransitioningRef.current = false;
+      }, 220);
+    };
 
     const handleScroll = () => {
       if (rafId !== null) return;
-
       rafId = requestAnimationFrame(() => {
         rafId = null;
-
         if (isDayChangingRef.current) {
-          lastScrollYRef.current = window.scrollY;
+          lastScrollYRef.current = readScrollY();
           return;
         }
-
-        const currentScrollY = window.scrollY;
-        lastScrollYRef.current = currentScrollY;
-
-        // State 1: TOP OF PAGE (scrollY <= 50) -> Full Header Console
-        if (currentScrollY <= 50) {
-          if (headerState !== 'FULL') {
-            setHeaderState('FULL');
-            setIsIslandExpanded(false);
-            if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
-            isTransitioningRef.current = true;
-            setTimeout(() => {
-              isTransitioningRef.current = false;
-            }, 200);
-          }
-          return;
-        }
-
-        // Lock state changes momentarily while actively animating between modes
         if (isTransitioningRef.current) return;
 
-        // State 2: SCROLLED DOWN (scrollY > 50) -> Floating Day Pill only
-        if (headerState !== 'PILL' && currentScrollY > 50) {
-          setHeaderState('PILL');
-          isTransitioningRef.current = true;
-          setTimeout(() => {
-            isTransitioningRef.current = false;
-          }, 200);
+        const currentScrollY = readScrollY();
+        const prev = lastScrollYRef.current;
+        lastScrollYRef.current = currentScrollY;
+
+        // Thresholds mode: ignore tiny jumps typical of mobile toolbar show/hide.
+        if (headerScrollMode === 'thresholds') {
+          const delta = Math.abs(currentScrollY - prev);
+          if (delta > 0 && delta < 8 && currentScrollY > EXIT_FULL) {
+            return;
+          }
+        }
+
+        const state = headerStateRef.current;
+        if (state === 'FULL' && currentScrollY > ENTER_PILL) {
+          applyState('PILL');
+        } else if (state === 'PILL' && currentScrollY < EXIT_FULL) {
+          applyState('FULL');
         }
       });
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    // visualViewport resize (toolbar) — resync baseline; do not flip state from the jump alone
+    const handleViewportResize = () => {
+      lastScrollYRef.current = readScrollY();
+    };
+
+    const scrollTarget: HTMLElement | Window =
+      headerScrollMode === 'container'
+        ? document.getElementById(APP_SCROLL_ID) ?? window
+        : window;
+
+    scrollTarget.addEventListener('scroll', handleScroll, { passive: true });
+    window.visualViewport?.addEventListener('resize', handleViewportResize);
+    // Initial sync
+    lastScrollYRef.current = readScrollY();
+
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      scrollTarget.removeEventListener('scroll', handleScroll as EventListener);
+      window.visualViewport?.removeEventListener('resize', handleViewportResize);
       if (rafId !== null) cancelAnimationFrame(rafId);
       if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
     };
-  }, [headerState]);
+  }, [headerScrollMode]);
 
   // Shared Floating Island Capsule / Expanded Day Selector Component
   const renderIslandContent = () => (
@@ -297,7 +339,7 @@ export const Header: React.FC = () => {
           opacity: headerState === 'FULL' ? 1 : 0,
         }}
         transition={SPRING_TRANSITIONS.smooth}
-        className="sticky top-0 z-40 w-full header-elevated px-4 py-3 sm:px-6 pointer-events-auto will-change-transform border-b border-slate-800/80 backdrop-blur-xl select-none"
+        className="sticky top-0 z-40 w-full header-elevated px-4 py-3 sm:px-6 pointer-events-auto will-change-transform border-b border-slate-800/80 select-none min-h-[4.5rem]"
       >
         {/* Uncluttered Multi-Row/Column Architecture: Day bar has dedicated breathing room and NEVER pushes icons off-screen */}
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
@@ -372,36 +414,45 @@ export const Header: React.FC = () => {
             </div>
           </div>
 
-          {/* Center: Full Docked Day Bar inside Header (Joined back inside header ONLY when at top) */}
-          {headerState === 'FULL' && (
-            <motion.div
-              layoutId="dynamic-island-day-bar"
-              transition={ISLAND_SPRING}
-              className="flex items-center bg-slate-900/90 p-1 rounded-full border border-slate-800 shadow-inner will-change-transform"
-            >
-              {DAYS.map((day) => {
-                const isActive = selectedDay === day;
-                return (
-                  <button
-                    key={day}
-                    onClick={() => handleSelectDay(day)}
-                    className={`relative px-3.5 py-1 text-xs font-semibold rounded-full transition-colors z-10 select-none ${
-                      isActive ? 'text-white' : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    {isActive && (
-                      <motion.div
-                        layoutId="activeDockedDayHighlight"
-                        transition={SPRING_TRANSITIONS.snappy}
-                        className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-600/30 -z-10"
-                      />
-                    )}
-                    {day}
-                  </button>
-                );
-              })}
-            </motion.div>
-          )}
+          {/* Center: Docked Day Bar — always mounted at fixed height (BUG-29: no layout shift) */}
+          <div
+            className={`flex items-center bg-slate-900/90 p-1 rounded-full border border-slate-800 shadow-inner min-h-[34px] ${
+              headerState === 'FULL' ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+            aria-hidden={headerState !== 'FULL'}
+          >
+            {headerState === 'FULL' ? (
+              <motion.div
+                layoutId="dynamic-island-day-bar"
+                transition={ISLAND_SPRING}
+                className="flex items-center will-change-transform"
+              >
+                {DAYS.map((day) => {
+                  const isActive = selectedDay === day;
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => handleSelectDay(day)}
+                      className={`relative px-3.5 py-1 text-xs font-semibold rounded-full transition-colors z-10 select-none ${
+                        isActive ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeDockedDayHighlight"
+                          transition={SPRING_TRANSITIONS.snappy}
+                          className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-600/30 -z-10"
+                        />
+                      )}
+                      {day}
+                    </button>
+                  );
+                })}
+              </motion.div>
+            ) : (
+              <div className="h-[26px] w-[220px]" />
+            )}
+          </div>
 
           {/* Right: Desktop Controls, Cloud Sync, Excel, Settings & Login */}
           <div className="hidden md:flex items-center gap-2.5">

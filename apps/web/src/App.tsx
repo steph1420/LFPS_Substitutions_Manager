@@ -19,9 +19,23 @@ import { DisputeModal } from './components/DisputeModal.js';
 import { NotificationCenterDrawer } from './components/NotificationCenterDrawer.js';
 import { AwayOfficialModal } from './components/AwayOfficialModal.js';
 import { startLiveSync } from './sync/live.js';
+import { APP_SCROLL_ID, readDevUiPrefs, type HeaderScrollMode } from './lib/devUiPrefs.js';
 
 export const App: React.FC = () => {
   const { activeTab, isFitGrid, undo, redo } = useTimetableStore();
+  const [headerScrollMode, setHeaderScrollMode] = React.useState<HeaderScrollMode>(
+    () => readDevUiPrefs().headerScrollMode
+  );
+
+  React.useEffect(() => {
+    const sync = () => setHeaderScrollMode(readDevUiPrefs().headerScrollMode);
+    window.addEventListener('storage', sync);
+    window.addEventListener('lfps-dev-ui-prefs', sync);
+    return () => {
+      window.removeEventListener('storage', sync);
+      window.removeEventListener('lfps-dev-ui-prefs', sync);
+    };
+  }, []);
 
   // Bundle 35: the one live sync socket for this tab (ref-counted, StrictMode-safe).
   React.useEffect(() => startLiveSync(), []);
@@ -71,29 +85,49 @@ export const App: React.FC = () => {
     );
   }
 
+  const useContainerScroll = headerScrollMode === 'container';
+
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-[var(--bg-color)] text-[var(--text-primary)] flex flex-col font-sans selection:bg-blue-600 selection:text-white relative transition-colors duration-200">
-      {/* Apple HIG Sticky Header with Dynamic Island */}
-      <Header />
+    <div
+      className={`${
+        useContainerScroll
+          ? 'h-[100dvh] max-h-[100dvh] overflow-hidden'
+          : 'min-h-screen min-h-[100dvh]'
+      } bg-[var(--bg-color)] text-[var(--text-primary)] flex flex-col font-sans selection:bg-blue-600 selection:text-white relative transition-colors duration-200`}
+    >
+      {/* UI-10(a): scroll lives inside #lfps-app-scroll so the browser toolbar stays put.
+          UI-10(b): document scrolls as before; Header uses thresholds + hysteresis. */}
+      <div
+        id={APP_SCROLL_ID}
+        className={`flex flex-col flex-1 min-h-0 ${
+          useContainerScroll ? 'overflow-y-auto overscroll-y-contain' : ''
+        }`}
+      >
+        <Header />
 
-      {/* Main Content Viewport with slim mobile margins to maximize table space */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-1.5 sm:px-6 py-3 sm:py-6">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.16 }}
-          >
-            {activeTab === 'routine' && <RoutineGrid />}
-            {activeTab === 'substitutions' && <SubstitutionsRegister />}
-            {activeTab === 'roster' && <AbsenceRoster />}
-          </motion.div>
-        </AnimatePresence>
-      </main>
+        <main className="flex-1 max-w-7xl w-full mx-auto px-1.5 sm:px-6 py-3 sm:py-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.16 }}
+            >
+              {activeTab === 'routine' && <RoutineGrid />}
+              {activeTab === 'substitutions' && <SubstitutionsRegister />}
+              {activeTab === 'roster' && <AbsenceRoster />}
+            </motion.div>
+          </AnimatePresence>
+        </main>
 
-      {/* Floating Apple-Grade Navigation Dock */}
+        {/* Footer Status Bar — inside scroll so it does not steal height from the shell */}
+        <footer className="w-full glass-panel border-t border-slate-800/80 px-6 pt-3 pb-[calc(6rem+env(safe-area-inset-bottom))] text-center text-xs text-slate-500">
+          <span title={`Built ${BUILD_TIME}`}>LFPS Substitutions Manager · {BUILD_LABEL}</span>
+        </footer>
+      </div>
+
+      {/* Floating Apple-Grade Navigation Dock (outside scroll) */}
       <TabBar />
 
       {/* Interactive Modals & Micro Context Menus */}
@@ -108,13 +142,6 @@ export const App: React.FC = () => {
       <DisputeModal />
       <NotificationCenterDrawer />
       <AwayOfficialModal />
-
-      {/* Footer Status Bar */}
-      {/* Bottom padding clears the floating TabBar (bottom offset + height + gap) and the
-          home-indicator safe area on every breakpoint, so the build label is never covered. */}
-      <footer className="w-full glass-panel border-t border-slate-800/80 px-6 pt-3 pb-[calc(6rem+env(safe-area-inset-bottom))] text-center text-xs text-slate-500">
-        <span title={`Built ${BUILD_TIME}`}>LFPS Substitutions Manager · {BUILD_LABEL}</span>
-      </footer>
     </div>
   );
 };
