@@ -60,7 +60,7 @@ export const RosterCompactListRow: React.FC<RosterCompactListRowProps> = ({
         <span
           className={`w-2 h-2 rounded-full flex-shrink-0 ${
             isAbsent
-              ? 'bg-rose-500 shadow-sm shadow-rose-500/70 ring-2 ring-rose-500/30'
+              ? 'status-dot-absent'
               : 'bg-emerald-400 shadow-sm shadow-emerald-400/50'
           }`}
         />
@@ -123,7 +123,7 @@ export const RosterCompactListRow: React.FC<RosterCompactListRowProps> = ({
           }}
           className={`px-3 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition-all text-xs ${
             isAbsent
-              ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-sm'
+              ? 'status-btn-absent'
               : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30'
           }`}
         >

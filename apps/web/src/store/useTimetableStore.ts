@@ -223,6 +223,8 @@ interface TimetableState {
   substitutionsSortBy: 'name' | 'role' | 'period';
   rosterSortBy: 'role' | 'name';
   routineSortBy: 'role' | 'name';
+  /** Portrait faculty/name column expanded (UI-14). Default false = narrow. */
+  routineNameColExpandedPortrait: boolean;
 
   // Master Data
   directory: StaffDirectory;
@@ -300,6 +302,8 @@ interface TimetableState {
   setSubstitutionsSortBy: (sort: 'name' | 'role' | 'period') => void;
   setRosterSortBy: (sort: 'role' | 'name') => void;
   setRoutineSortBy: (sort: 'role' | 'name') => void;
+  setRoutineNameColExpandedPortrait: (expanded: boolean) => void;
+  toggleRoutineNameColExpandedPortrait: () => void;
   savePreferences: () => void;
   resetPreferences: () => void;
 
@@ -400,6 +404,8 @@ interface StoredPreferences {
   substitutionsSortBy?: 'name' | 'role' | 'period';
   rosterSortBy?: 'role' | 'name';
   routineSortBy?: 'role' | 'name';
+  /** Portrait: when true, faculty name column is expanded; default false = narrow (UI-14). */
+  routineNameColExpandedPortrait?: boolean;
   isMinimalUI?: boolean;
   currentTheme?: ThemeId;
   isDeveloperMode?: boolean;
@@ -510,6 +516,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   substitutionsSortBy: initialPrefs.substitutionsSortBy ?? 'period',
   rosterSortBy: initialPrefs.rosterSortBy ?? 'role',
   routineSortBy: initialPrefs.routineSortBy ?? 'role',
+  routineNameColExpandedPortrait: initialPrefs.routineNameColExpandedPortrait ?? false,
   autoResolvePolicy: initialPolicy,
 
   directory: getBaseDirectory(),
@@ -598,6 +605,16 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     autoPersistPreferences({ routineSortBy: sort });
     set({ routineSortBy: sort });
   },
+  setRoutineNameColExpandedPortrait: (expanded) => {
+    autoPersistPreferences({ routineNameColExpandedPortrait: expanded });
+    set({ routineNameColExpandedPortrait: expanded });
+  },
+  toggleRoutineNameColExpandedPortrait: () =>
+    set((state) => {
+      const next = !state.routineNameColExpandedPortrait;
+      autoPersistPreferences({ routineNameColExpandedPortrait: next });
+      return { routineNameColExpandedPortrait: next };
+    }),
   savePreferences: () => {
     const state = get();
     autoPersistPreferences({
@@ -608,6 +625,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       substitutionsSortBy: state.substitutionsSortBy,
       rosterSortBy: state.rosterSortBy,
       routineSortBy: state.routineSortBy,
+      routineNameColExpandedPortrait: state.routineNameColExpandedPortrait,
       isMinimalUI: state.isMinimalUI,
     });
   },
@@ -627,6 +645,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       substitutionsSortBy: 'period',
       rosterSortBy: 'role',
       routineSortBy: 'role',
+      routineNameColExpandedPortrait: false,
       isMinimalUI: false,
     });
   },

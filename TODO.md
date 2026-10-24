@@ -29,6 +29,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 | **38b** | Server-side admin auth (design+stub); Dev Options own passcode; per-admin design spike; docs reconciliation; BUG-31 HEAD reminder | SEC-02, SEC-03, ARCH-03, ARCH-04 | 🟡 On `bundle/38b` |
 | **39** | Day-theme contrast rewrite; a11y; Front Desk copy; sync pill honesty | UI-12, FIND-02/05/14/15, FIND-13/22 | 🟢 Merged to `next-gen` (2026-10-24) |
 | **40** | Phone polish: matrix horizontal scroll, light absent contrast, Substitutions densify, header guest+logged-in, e2e:phone | UI-13, BUG-29 residual, UI-12 phone, FEAT-71 | 🟢 Merged to `next-gen` (2026-10-24) |
+| **41a** | Phone feel: portrait name-col narrow+toggle+calm ease; header scroll-active; soft absent rose (themes parked) | UI-14, BUG-35, UI-15 | 🟢 Merged to `next-gen` (2026-10-24) |
 
 > Split after post–Bundle 37 assessment (`docs/ASSESSMENT_2026-10-24.md`): **38a** UI/motion, **38b** security/docs, **39** themes/a11y/copy, **36** CI/Pages anytime. SEC-02 (38b) before privileged admin Sheets writes. Bundle 35 substitutions do not depend on SEC-02.
 >
@@ -141,6 +142,36 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [x] Fixed-width sticky column classes (no `transition-all` width animation).
   - [x] Wider hysteresis (collapse `> 40`, expand `<= 8`) plus a short ignore window after a toggle so resize-caused scroll events cannot thrash.
   - [x] Content still swaps abbreviation ↔ 2-line split; layout width no longer animates.
+
+### UI-14: Portrait Faculty/Name Column Narrow by Default + Toggle (Bundle 41a)
+- **Status**: 🟢 Done on `bundle/41a`
+- **Reported**: Portrait Fac(R) column too wide; width animation blinding-fast / jittery.
+- **Delivered**:
+  - [x] Portrait (`orientation: portrait` + max-width 767): name column **narrow (64px) by default**.
+  - [x] Toolbar **Names** toggle expands/shrinks; preference `routineNameColExpandedPortrait` persisted.
+  - [x] Calm **0.38s** cubic-bezier width/padding transition (honors `prefers-reduced-motion`).
+  - [x] Landscape / desktop keep readable widths; Bundle 40 period min-widths + horizontal scroll unchanged.
+  - [x] Scroll no longer drives name-col width (toggle owns it — avoids BUG-30-style thrash).
+
+### BUG-35: Header Hide/Show Only On Scroll Release / Near Top (Bundle 41a)
+- **Status**: 🟢 Fixed on `bundle/41a`
+- **Reported**: Header hides/shows only upon releasing scroll; should be actively doing it while scrolling.
+- **Delivered**:
+  - [x] Evaluate on every scroll **rAF** (removed 48ms post-scroll debounce).
+  - [x] Scroll-down → PILL; **scroll-up → FULL mid-page** (classic), not only below EXIT_FULL.
+  - [x] Keep IGNORE_DELTA + visualViewport freeze so mobile chrome show/hide does not flap.
+  - [x] Both UI-10 modes (container + thresholds).
+
+### UI-15: Soft Beautiful Absent Rose (Bundle 41a)
+- **Status**: 🟢 Done on `bundle/41a`
+- **Reported**: Absent teacher card / chip blunt hot magenta (`bg-rose-600`).
+- **Delivered**:
+  - [x] Soft rose tinted surfaces + gentle rail for card / compact / list variants.
+  - [x] `.status-btn-absent` / `.status-chip-absent` replace solid rose-600 fills.
+  - [x] Matrix sticky absent + ABS chip softened to match.
+  - [x] Absent vs Present vs Away Official remain distinct.
+  - [ ] Full light-theme redesign — **parked** (owner: themes later).
+
 
 ### FEAT-69: Bundle 37 Dev Options + Absent Affordance
 - **Status**: 🟢 Done on `bundle/37`
