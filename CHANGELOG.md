@@ -8,10 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Fixed
+- **BUG-29 / UI-10 (Bundle 37)**: Header FULL↔PILL jitter — enter/exit hysteresis, constant header height (day bar slot reserved), scroll listener no longer re-subscribes on every state change, dropped blur during motion. **Fix-only** (no new shake/jitter animation). Dev Options A/B: **(a) Container scroll** (default) vs **(b) Thresholds**.
+- **BUG-30 (Bundle 37)**: Routine grid teacher-name column collapse jitter — fixed-width sticky cells, wider hysteresis, ignore self-caused scroll, removed `transition-all`. **Fix-only**.
+- **UI-06 (Bundle 37)**: Absent card/row outer rose bloom replaced with left accent rail + crisp border + light tint (light + Midnight). Softened competing Off. CT Appoint halo; routine "Need Sub!" cells no longer harsh-pulse.
+- Attention pulses are one-shot (3 beats) / first-view amber look-at-me only (no infinite loops). Soft thin scrollbars in dark modals. Targeted light-theme muted label/border contrast (not a full day-theme rewrite).
+
+### Added
+- **FEAT-69 (Bundle 37)**: Device-local Dev Options (`lfps_dev_ui_prefs_v1`, never synced): Header scroll mode A/B, Auto-filter Absent, Needs attention strip on Roster.
+
 ### Planned
 - **Deferred by the owner (2026-10-24, "we'll add later")**:
   - FEAT-67: Developer Options controls for the admin lockout penalty (free misses, wait steps).
-  - SEC-03: a separate Developer Options passcode, distinct from the admin passcode.
+  - SEC-03: a separate Developer Options passcode, distinct from the admin passcode (owner reconfirmed 2026-10-24 during Bundle 37).
+- **Logged for later (owner 2026-10-24, Bundle 37 briefing — not this bundle)**:
+  - Per-admin passcodes; privileges from **role**, not shared passcode.
+  - Full **day-theme contrast rewrite** (night strong / day washed out) → suggest Bundle 39.
 - **Simple Mode**:
   - Streamlined view option presenting strictly basic manual substitution logic.
 - **Codebase Technical Debt & Bloat Elimination**:

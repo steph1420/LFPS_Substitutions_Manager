@@ -24,7 +24,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 | **35** | Cross-device sync through the relay (devices ⇄ relay over WebSocket only); Sheets bridge: app-owned `Subs` + `App_Meta` (+ optional log) written async/batched/debounced/retried, read-only tabs pulled at startup + periodically and streamed; client "Connecting…" state for relay cold starts; Render re-setup guide + `render.yaml`. **Owner setup first:** service account + real spreadsheet ID | FEAT-62 (part 2), BUG-25 (part 2), BUG-32, FEAT-65, FEAT-66, FEAT-63, ARCH-06 | 🟢 Shipped in v2.0.0-alpha.3 (pending push; Render env prepared 2026-10-24) |
 | **35a** | Close the two sync gaps (FEAT-62 part 3): devices apply the Sheet's read-only tabs (precedence: local edits > Sheet > bundled; version-gated; shown in Settings → Build Info); the relay reloads substitutions and their deletions from `Subs` after a restart (schema 2: tombstones, versions, idempotent upsert; hydrating gate). Relay guard so dev/test builds can't reach the production relay. Fake-Sheet tests, two-browser e2e with a restart, real-Sheet self-test. Go-live runbook for alpha.3 | FEAT-62 (part 3), FEAT-65 (reads), BUG-33, BUG-34 | 🟢 Shipped in v2.0.0-alpha.3 (pending push; runbook docs/RELEASE_2.0.0-alpha.3.md) |
 | **36** | GitHub Actions CI (test, build, `go vet`, `go test -race`); Pages built by Actions instead of committed root assets (`next-gen` → root); Render deploys only after checks pass; branch previews at `/preview/<branch>/` with a footer branch badge (option A) | ARCH-05 (rest), ARCH-02 (adoption), FEAT-64 | ⚪ Planned. The `checksPass` gate and a `next-gen` CI workflow already landed in 35 |
-| **37** | Header and grid motion: detach header from browser toolbar, header jitter, name-column collapse jitter | UI-10, BUG-29, BUG-30 | ⚪ Planned |
+| **37** | Header/grid motion fix (no new shake); absent red-glow rewrite; Dev Options A/B (UI-10, auto-filter, needs-attention); pulse one-shot | UI-10, BUG-29, BUG-30, UI-06, FEAT-69 | 🟡 In progress on `bundle/37` |
 | **38** | Server-side auth for admin writes; docs reconciliation; codebase audit | SEC-02, ARCH-03, ARCH-04 | ⚪ Planned |
 
 > Bundles 37/38 are ordered by priority and can swap if the owner prefers. SEC-02 must land before the relay writes to Google Sheets on behalf of admins (it can move into 35/36 if Sheets writes ship there). Bundle 35 writes only substitutions (which every role may make) to app-owned tabs, so it does not depend on SEC-02.
@@ -114,46 +114,38 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] Supersedes or absorbs Future Roadmap item "4. [CRITICAL CODE REVIEW] Technical Debt & Codebase Bloat Elimination".
 
 ### UI-10: Detach Header Hide/Show From Browser Toolbar Hide/Show
-- **Status**: 🔴 Open
+- **Status**: 🟢 Done on `bundle/37` (FEAT-69 Dev Options A/B; default **(a) Container**)
 - **Reported**: *"Detach the header hide/show from browser hide/show."*
-- **Investigation (code)**:
-  - `Header.tsx` switches between `FULL` and `PILL` from `window.scrollY` (FULL at `<= 50`, PILL at `> 50`).
-  - That is the same document scroll that makes mobile browsers collapse and expand their address bar. The header therefore toggles in step with the browser chrome.
-  - The layout also uses `min-h-[100dvh]` (`App.tsx`), which changes as the toolbar moves.
-  - The `visualViewport` resize listener (FEAT-57/PERF-02) only resets an unused ref. The "directional hysteresis" described in FEAT-57 is no longer in the code.
-- **Target Solution**:
-  - [ ] Owner picks the intended behaviour:
-    - (a) the app scrolls inside its own container, so the browser toolbar stays put and the header is driven by the container's scroll; or
-    - (b) the header is driven by its own thresholds or gestures and ignores toolbar-induced viewport changes.
-  - [ ] Implement it and test on iOS Safari and Android Chrome.
+- **Delivered (2026-10-24, Bundle 37)**:
+  - [x] Owner chose **both** as Dev Options (device-local): **(a) Container scroll** (default) — `#lfps-app-scroll` inside a `100dvh` shell so the browser toolbar stays put; **(b) Thresholds** — window scroll with hysteresis, ignoring tiny viewport jumps.
+  - [x] Toggle: Settings → Developer Options → Header scroll mode.
+  - [ ] Still worth a quick check on iOS Safari / Android Chrome after merge.
 
 ### BUG-29: Header Hide/Show Is Jittery
-- **Status**: 🔴 Open (reported, not yet reproduced)
+- **Status**: 🟢 Fixed on `bundle/37` (fix-only — no new shake/jitter animation)
 - **Reported**: *"Header hide/show is jittery."*
-- **Suspected Causes (from code reading, to be confirmed)**:
-  - There is a single 50px threshold with no hysteresis. The 200ms lock does not guard the switch back to `FULL`.
-  - The docked day bar unmounts on `PILL`, which shrinks the in-flow sticky header. That shifts the layout and `scrollY`, which can flip the state back.
-  - The header is animated by a Framer spring on `y` and `opacity` over a `backdrop-blur-xl` surface.
-  - The scroll effect is re-subscribed on every state change.
-- **Target Solution**:
-  - [ ] Reproduce on device.
-  - [ ] Add enter and exit hysteresis.
-  - [ ] Keep the header height constant (no layout shift).
-  - [ ] Remove expensive blur during motion.
-  - [ ] Fix together with UI-10.
+- **Fix (2026-10-24)**:
+  - [x] Enter/exit hysteresis (`ENTER_PILL` 72 / `EXIT_FULL` 28).
+  - [x] Constant header height (day-bar slot always reserved; no unmount layout shift).
+  - [x] Scroll listener does not re-subscribe on every FULL↔PILL change (ref-driven).
+  - [x] Dropped `backdrop-blur-xl` on the elevated header during motion.
+  - [x] Fixed together with UI-10 (container vs thresholds Dev Option).
 
 ### BUG-30: Routine Grid Teacher Name Column Hide/Show (Collapse) Is Jittery
-- **Status**: 🔴 Open (reported, not yet reproduced)
+- **Status**: 🟢 Fixed on `bundle/37` (fix-only — no new shake/jitter animation)
 - **Reported**: *"Routine grid teacher name hide/show is jittery."* This is the FEAT-53 horizontal-scroll collapse of the sticky teacher column.
-- **Suspected Causes (from code reading, to be confirmed)**:
-  - `RoutineGrid.tsx` `handleTableScroll` toggles `isColumnCollapsed` (collapse at `scrollLeft > 15`, expand at `<= 5`).
-  - Every sticky `<th>`/`<td>` animates `width`/`padding` through `transition-all` (layout-thrashing table reflow on each frame), while the content swaps instantly between the abbreviation and the 2-line split.
-  - The width change (about 130–155px down to 64px) changes `scrollWidth`/`scrollLeft`, which can re-fire the handler near the thresholds and at the right edge.
-- **Target Solution**:
-  - [ ] Reproduce on device.
-  - [ ] Animate with a transform or a fixed-width column instead of animating table-cell width.
-  - [ ] Widen the hysteresis and guard against scroll events caused by the resize itself.
-  - [ ] Remove `transition-all` from the sticky cells.
+- **Fix (2026-10-24)**:
+  - [x] Fixed-width sticky column classes (no `transition-all` width animation).
+  - [x] Wider hysteresis (collapse `> 40`, expand `<= 8`) plus a short ignore window after a toggle so resize-caused scroll events cannot thrash.
+  - [x] Content still swaps abbreviation ↔ 2-line split; layout width no longer animates.
+
+### FEAT-69: Bundle 37 Dev Options + Absent Affordance
+- **Status**: 🟢 Done on `bundle/37`
+- **Delivered**:
+  - Device-local prefs (`lfps_dev_ui_prefs_v1`, never synced): header scroll mode A/B, auto-filter Absent, Needs attention strip.
+  - UI-06 rewrite: absent cards/rows use left accent rail + crisp border + tint — **no** large outer rose bloom; Absent button stays the strong signal.
+  - Attention pulses are one-shot (3 beats) / first-view amber look-at-me only — **no** new shake/jitter animation.
+  - Soft thin scrollbars in dark modals; quieter Off. CT Appoint halo so Absent stays primary.
 
 ### SEC-01 (interim): Front Desk by Default, Passcode-Gated Admin
 - **Status**: 🟢 Done (Job Bundle 34, `76c7fa0`). See [`docs/ADMIN_ACCESS.md`](docs/ADMIN_ACCESS.md).
