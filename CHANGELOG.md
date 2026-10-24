@@ -28,6 +28,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Per-admin / role privileges design spike: `docs/PER_ADMIN_ACCESS.md`.
 
 ### Fixed
+- **Pages workflow (Bundle 40 follow-up)**: `pages.yml` deploy job runs only on `next-gen` or `workflow_dispatch` (still gated by `PAGES_ACTIONS_DEPLOY`). Feature-branch pushes keep building preview trees but no longer attempt `deploy-pages`, so github-pages environment protection does not paint a red X on `bundle/**` / `preview/**`. Docs: `docs/PAGES_SETUP.md`.
+- **Pages preview tests (Bundle 40 follow-up)**: `storage-scope` and `access` tests tolerate `VITE_BUILD_CHANNEL=preview` (scoped localStorage keys) so Actions preview builds stop failing vitest and marking `preview/<slug>` as “build failed — kept previous”.
 - **UI-12 (Bundle 39)**: Day-theme contrast — semantic `text-ink` / `bg-surface-*` / soft chip tokens; bare `text-white` remapped to ink on light families; `*-950` chips softened; Settings / Staff Login / Midnight modal surfaces tokenized.
 - **FIND-05 (Bundle 39)**: Sync pill shows **Sheets error** / **Loading sheet…** when the bridge exposes it; tap opens Settings → Cloud.
 - Front Desk copy: Off. CT tooltips, Brain Studio → Auto-Resolve, KPI “ALERT 0” honesty, friendlier empty states; remaining ticket IDs scrubbed from titles.

@@ -110,7 +110,10 @@ jobs:
     runs-on: ubuntu-latest
     # Skip until owner switches Pages source to Actions and sets this variable.
     # Skipping (not failing) keeps Render checksPass green while branch deploy still serves root assets.
-    if: vars.PAGES_ACTIONS_DEPLOY == 'true'
+    # Only next-gen (and manual workflow_dispatch) may deploy: github-pages environment
+    # protection rejects other branches (red X on bundle/** / preview/**). Build still
+    # runs on those branches so preview trees validate without attempting deploy.
+    if: vars.PAGES_ACTIONS_DEPLOY == 'true' && (github.ref_name == 'next-gen' || github.event_name == 'workflow_dispatch')
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
