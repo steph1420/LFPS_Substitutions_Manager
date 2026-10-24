@@ -28,7 +28,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 | **38a** | Bundle 37 follow-through + fixed routine geometry + day-load Dev Option + FIND motion/absent consistency | UI-11, FEAT-70, FIND-01/03/04/09/10/11/12 | 🟢 Merged to `next-gen` (2026-10-24) |
 | **38b** | Server-side admin auth (design+stub); Dev Options own passcode; per-admin design spike; docs reconciliation; BUG-31 HEAD reminder | SEC-02, SEC-03, ARCH-03, ARCH-04 | 🟡 On `bundle/38b` |
 | **39** | Day-theme contrast rewrite; a11y; Front Desk copy; sync pill honesty | UI-12, FIND-02/05/14/15, FIND-13/22 | 🟢 Merged to `next-gen` (2026-10-24) |
-| **40** | Phone polish: matrix horizontal scroll, light absent contrast, Substitutions densify, header guest+logged-in, e2e:phone | UI-13, BUG-29 residual, UI-12 phone, FEAT-71 | 🟡 On `bundle/40` |
+| **40** | Phone polish: matrix horizontal scroll, light absent contrast, Substitutions densify, header guest+logged-in, e2e:phone | UI-13, BUG-29 residual, UI-12 phone, FEAT-71 | 🟢 Merged to `next-gen` (2026-10-24) |
 
 > Split after post–Bundle 37 assessment (`docs/ASSESSMENT_2026-10-24.md`): **38a** UI/motion, **38b** security/docs, **39** themes/a11y/copy, **36** CI/Pages anytime. SEC-02 (38b) before privileged admin Sheets writes. Bundle 35 substitutions do not depend on SEC-02.
 >
