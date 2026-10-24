@@ -36,6 +36,12 @@ import { AdminAccessPanel } from './AdminAccessPanel.js';
 import { usePermissions } from './PermissionGuard.js';
 import { BUILD_LABEL, BUILD_TIME } from '../lib/buildInfo.js';
 import { useReferenceInfo } from '../sync/reference.js';
+import {
+  readDevUiPrefs,
+  writeDevUiPrefs,
+  type DevUiPrefs,
+  type HeaderScrollMode,
+} from '../lib/devUiPrefs.js';
 
 interface ThemeOption {
   id: ThemeId;
@@ -194,6 +200,12 @@ export const SettingsModal: React.FC = () => {
   const [isPwaModalOpen, setIsPwaModalOpen] = React.useState(false);
   const [tapCount, setTapCount] = React.useState(0);
   const lastTapTimeRef = React.useRef(0);
+  const [devUiPrefs, setDevUiPrefs] = React.useState<DevUiPrefs>(() => readDevUiPrefs());
+
+  const patchDevUiPrefs = (patch: Partial<DevUiPrefs>) => {
+    const next = writeDevUiPrefs(patch);
+    setDevUiPrefs(next);
+  };
 
   const handleBuildInfoTap = () => {
     const now = Date.now();
@@ -849,6 +861,96 @@ export const SettingsModal: React.FC = () => {
                         <span
                           className={`block w-4 h-4 rounded-full bg-white transition-transform ${
                             editingOverride ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Bundle 37 / FEAT-69: device-local UI experiments */}
+                    <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2.5">
+                      <div className="font-semibold text-slate-200 text-xs">Header scroll mode (UI-10)</div>
+                      <div className="text-[10px] text-slate-400 -mt-1">
+                        This device only. (A) keeps the browser toolbar still; (B) uses window scroll with hysteresis.
+                      </div>
+                      <div className="flex gap-1.5">
+                        {(
+                          [
+                            ['container', 'A · Container'],
+                            ['thresholds', 'B · Thresholds'],
+                          ] as [HeaderScrollMode, string][]
+                        ).map(([mode, label]) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => {
+                              patchDevUiPrefs({ headerScrollMode: mode });
+                              showToast(mode === 'container' ? 'Header: container scroll' : 'Header: thresholds');
+                            }}
+                            className={`flex-1 px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer ${
+                              devUiPrefs.headerScrollMode === mode
+                                ? 'bg-emerald-600/30 border-emerald-500/50 text-emerald-200'
+                                : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-200'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
+                      <div>
+                        <div className="font-semibold text-slate-200">Auto-filter Absent</div>
+                        <div className="text-[10px] text-slate-400">
+                          When you mark someone Absent, switch the Roster filter to Absent.
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={devUiPrefs.autoFilterAbsent}
+                        aria-label="Auto-filter Absent"
+                        onClick={() => {
+                          const next = !devUiPrefs.autoFilterAbsent;
+                          patchDevUiPrefs({ autoFilterAbsent: next });
+                          showToast(next ? 'Auto-filter Absent on' : 'Auto-filter Absent off');
+                        }}
+                        className={`w-11 h-6 rounded-full relative cursor-pointer flex-shrink-0 ${
+                          devUiPrefs.autoFilterAbsent ? 'bg-emerald-600' : 'bg-slate-800'
+                        }`}
+                      >
+                        <span
+                          className={`block w-4 h-4 rounded-full bg-white transition-transform ${
+                            devUiPrefs.autoFilterAbsent ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
+                      <div>
+                        <div className="font-semibold text-slate-200">Needs attention strip</div>
+                        <div className="text-[10px] text-slate-400">
+                          Show absent / uncovered counts at the top of Roster (instead of relying on glow).
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={devUiPrefs.needsAttentionStrip}
+                        aria-label="Needs attention strip"
+                        onClick={() => {
+                          const next = !devUiPrefs.needsAttentionStrip;
+                          patchDevUiPrefs({ needsAttentionStrip: next });
+                          showToast(next ? 'Needs attention strip on' : 'Needs attention strip off');
+                        }}
+                        className={`w-11 h-6 rounded-full relative cursor-pointer flex-shrink-0 ${
+                          devUiPrefs.needsAttentionStrip ? 'bg-emerald-600' : 'bg-slate-800'
+                        }`}
+                      >
+                        <span
+                          className={`block w-4 h-4 rounded-full bg-white transition-transform ${
+                            devUiPrefs.needsAttentionStrip ? 'translate-x-6' : 'translate-x-1'
                           }`}
                         />
                       </button>

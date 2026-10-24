@@ -23,6 +23,7 @@ import { RosterNormalCard } from './roster/RosterNormalCard.js';
 import { RosterCompactCard } from './roster/RosterCompactCard.js';
 import { RosterNormalListRow } from './roster/RosterNormalListRow.js';
 import { RosterCompactListRow } from './roster/RosterCompactListRow.js';
+import { readDevUiPrefs, type DevUiPrefs } from '../lib/devUiPrefs.js';
 
 export const AbsenceRoster: React.FC = () => {
   const {
@@ -42,11 +43,24 @@ export const AbsenceRoster: React.FC = () => {
     setRosterSortBy,
     hideOverviewsByDefault,
     isMinimalUI,
+    substitutions,
+    schedule,
   } = useTimetableStore();
 
   const [searchQuery, setSearchQuery] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'present' | 'absent' | 'free_from_sub'>('all');
   const [isOverviewCollapsed, setIsOverviewCollapsed] = React.useState(hideOverviewsByDefault);
+  const [devUiPrefs, setDevUiPrefs] = React.useState<DevUiPrefs>(() => readDevUiPrefs());
+
+  React.useEffect(() => {
+    const sync = () => setDevUiPrefs(readDevUiPrefs());
+    window.addEventListener('storage', sync);
+    window.addEventListener('lfps-dev-ui-prefs', sync);
+    return () => {
+      window.removeEventListener('storage', sync);
+      window.removeEventListener('lfps-dev-ui-prefs', sync);
+    };
+  }, []);
 
   // Hierarchy vs Name Sorting (FEAT-36)
   const allTeachers = React.useMemo(() => {
@@ -89,6 +103,44 @@ export const AbsenceRoster: React.FC = () => {
     return isFreeExplicit || isAway;
   }).length;
 
+  // Uncovered teaching slots for the Needs attention strip (FEAT-69) — same rules as Substitutions tab
+  const uncoveredCount = React.useMemo(() => {
+    const daySchedule = schedule[selectedDay] || {};
+    const periods = ['G/PD', '1st', '2nd', '3rd', '4th', '5th', '6th'] as const;
+    let n = 0;
+    for (const abs of activeAbsences) {
+      for (const p of periods) {
+        if (abs.periods && !abs.periods.includes(p)) continue;
+        const task = daySchedule[p]?.[abs.teacherName];
+        if (!task || task === 'Free' || task === '-') continue;
+        const existing = substitutions.find(
+          (s) => s.day === selectedDay && s.period === p && s.originalTeacher === abs.teacherName
+        );
+        if (!existing) n += 1;
+      }
+    }
+    return n;
+  }, [activeAbsences, schedule, selectedDay, substitutions]);
+
+  const pendingAppointCount =
+    (offACResult.needsAppointment ? 1 : 0) +
+    allTeachers.filter((t) => {
+      const absence = activeAbsences.find((a) => a.teacherName === t.abbr);
+      const isAbsent = !!absence && absence.type !== 'AWAY_OFFICIAL';
+      if (!isAbsent || !t.primaryClass || !t.role.includes('Class Teacher')) return false;
+      return !officiatingCT[selectedDay]?.[t.primaryClass];
+    }).length;
+
+  const handleToggleAbsence = (abbr: string, options?: Parameters<typeof toggleAbsence>[1]) => {
+    const alreadyAbsent = activeAbsences.some(
+      (a) => a.teacherName === abbr && a.type !== 'AWAY_OFFICIAL'
+    );
+    toggleAbsence(abbr, options);
+    if (devUiPrefs.autoFilterAbsent && !alreadyAbsent) {
+      setStatusFilter('absent');
+    }
+  };
+
   // Filter staff by search and status tab
   const filteredTeachers = allTeachers.filter((teacher) => {
     const absence = activeAbsences.find((a) => a.teacherName === teacher.abbr);
@@ -127,6 +179,36 @@ export const AbsenceRoster: React.FC = () => {
 
   return (
     <div className={`w-full animate-in fade-in duration-200 ${isMinimalUI ? 'space-y-3' : 'space-y-5'}`}>
+      {/* FEAT-69: Needs attention strip (Dev Options) */}
+      {devUiPrefs.needsAttentionStrip && (absentCount > 0 || uncoveredCount > 0 || pendingAppointCount > 0) && (
+        <div
+          className="w-full rounded-xl border border-rose-500/35 bg-rose-500/10 px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs"
+          role="status"
+        >
+          <div className="font-semibold text-rose-200 flex items-center gap-2">
+            <UserX className="w-3.5 h-3.5 text-rose-400" />
+            Needs attention
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-rose-100/90">
+            <button
+              type="button"
+              onClick={() => setStatusFilter('absent')}
+              className="px-2 py-0.5 rounded-lg bg-rose-500/20 border border-rose-500/40 font-bold cursor-pointer hover:bg-rose-500/30"
+            >
+              {absentCount} absent
+            </button>
+            <span className="px-2 py-0.5 rounded-lg bg-slate-900/40 border border-slate-700/60 font-semibold text-slate-200">
+              {uncoveredCount} uncovered
+            </span>
+            {pendingAppointCount > 0 && (
+              <span className="px-2 py-0.5 rounded-lg bg-amber-500/15 border border-amber-500/35 font-semibold text-amber-200">
+                {pendingAppointCount} appoint
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Top Header & KPI Summary Bar (UI-01) */}
       <section
         className={`w-full glass-panel rounded-2xl border border-slate-800 shadow-xl ${
@@ -408,7 +490,7 @@ export const AbsenceRoster: React.FC = () => {
                 offACResult={offACResult}
                 isFreeFromSub={isFreeFromSub}
                 wasAbsentOnMount={initialAbsentTeachersRef.current.has(teacher.abbr)}
-                onToggleAbsence={toggleAbsence}
+                onToggleAbsence={handleToggleAbsence}
                 onOpenAvailability={openAvailabilityModal}
                 onOpenOfficiatingCT={(section) => openOfficiatingModal({ type: 'CT', section })}
                 onOpenOfficiatingAC={() => openOfficiatingModal({ type: 'AC' })}
@@ -436,7 +518,7 @@ export const AbsenceRoster: React.FC = () => {
                 isCT={isCT}
                 isAC={isAC}
                 isAAC={isAAC}
-                onToggleAbsence={toggleAbsence}
+                onToggleAbsence={handleToggleAbsence}
                 onOpenAvailability={openAvailabilityModal}
               />
             );
@@ -469,7 +551,7 @@ export const AbsenceRoster: React.FC = () => {
                 isAC={isAC}
                 isAAC={isAAC}
                 isFreeFromSub={isFreeFromSub}
-                onToggleAbsence={toggleAbsence}
+                onToggleAbsence={handleToggleAbsence}
                 onOpenAvailability={openAvailabilityModal}
               />
             );
@@ -506,7 +588,7 @@ export const AbsenceRoster: React.FC = () => {
                 offACResult={offACResult}
                 isFreeFromSub={isFreeFromSub}
                 wasAbsentOnMount={initialAbsentTeachersRef.current.has(teacher.abbr)}
-                onToggleAbsence={toggleAbsence}
+                onToggleAbsence={handleToggleAbsence}
                 onOpenAvailability={openAvailabilityModal}
                 onOpenOfficiatingCT={(section) => openOfficiatingModal({ type: 'CT', section })}
                 onOpenOfficiatingAC={() => openOfficiatingModal({ type: 'AC' })}
