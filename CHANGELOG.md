@@ -9,30 +9,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Fixed
-- **BUG-29 / UI-10 (Bundle 37)**: Header FULL↔PILL jitter — enter/exit hysteresis, constant header height (day bar slot reserved), scroll listener no longer re-subscribes on every state change, dropped blur during motion. **Fix-only** (no new shake/jitter animation). Dev Options A/B: **(a) Container scroll** (default) vs **(b) Thresholds**.
-- **BUG-30 (Bundle 37)**: Routine grid teacher-name column collapse jitter — fixed-width sticky cells, wider hysteresis, ignore self-caused scroll, removed `transition-all`. **Fix-only**.
-- **UI-06 (Bundle 37)**: Absent card/row outer rose bloom replaced with left accent rail + crisp border + light tint (light + Midnight). Softened competing Off. CT Appoint halo; routine "Need Sub!" cells no longer harsh-pulse.
-- Attention pulses are one-shot (3 beats) / first-view amber look-at-me only (no infinite loops). Soft thin scrollbars in dark modals. Targeted light-theme muted label/border contrast (not a full day-theme rewrite).
+- **UI-11 (Bundle 38a)**: Routine matrix uses `table-layout: fixed`, reserved row height, and a directory-based min shell height so SAT / Hide Absent no longer collapses the card frame.
+- **FIND-01 (Bundle 38a)**: Replaced infinite Tailwind `animate-pulse` on Live/Connecting dots and badges with static status-dot classes; honor `prefers-reduced-motion` for attention / look-at-me animations.
+- **FIND-03 (Bundle 38a)**: Removed dead Target Cell Halo Pulse Developer Option (and color palette) — toggle had no runtime effect.
+- **FIND-04 (Bundle 38a)**: Routine sticky absent name cell uses the same left-rail / no-bloom treatment as roster cards (UI-06 parity).
+- **FIND-09 (Bundle 38a)**: Substitutions Overview / Off. CT appoint affordances quieted (no infinite pulse; quieter appoint chrome).
+- **FIND-10 (Bundle 38a)**: Amber first-view look-at-me on compact roster card and list variants.
+- **FIND-11 (Bundle 38a)**: Auto-filter Absent resets on Mark Present / Mark All Present, shows **Show all**, and uncovered chip opens Substitutions.
+- Settings preference labels: removed FEAT-/BUG- ticket IDs from user-visible strings. Footer padding/theme so the dock does not cover the version line.
+- **BUG-29 / UI-10 (Bundle 37)**: Header FULL↔PILL jitter — fix-only; Dev Options A/B container vs thresholds.
+- **BUG-30 (Bundle 37)**: Routine name-column collapse jitter — fix-only.
+- **UI-06 (Bundle 37)**: Absent card/row rail rewrite; quieter Off. CT Appoint; one-shot CSS attention pulses.
 
 ### Added
-- **FEAT-69 (Bundle 37)**: Device-local Dev Options (`lfps_dev_ui_prefs_v1`, never synced): Header scroll mode A/B, Auto-filter Absent, Needs attention strip on Roster.
+- **FEAT-70 (Bundle 38a)**: Dev Options day load mode — **(A) Follow school day** (default; snaps on load + tab visibility) vs **(B) Free pick** (remembers last MON–SAT on device). Today marker on day chips; date subtitle in free mode.
+- **FEAT-69 (Bundle 37)**: Device-local Dev Options (`lfps_dev_ui_prefs_v1`): Header scroll mode, Auto-filter Absent, Needs attention strip.
+- Assessment: [`docs/ASSESSMENT_2026-10-24.md`](docs/ASSESSMENT_2026-10-24.md).
 
 ### Planned
-- **Deferred by the owner (2026-10-24, "we'll add later")**:
-  - FEAT-67: Developer Options controls for the admin lockout penalty (free misses, wait steps).
-  - SEC-03: a separate Developer Options passcode, distinct from the admin passcode (owner reconfirmed 2026-10-24 during Bundle 37).
-- **Logged for later (owner 2026-10-24, Bundle 37 briefing — not this bundle)**:
-  - Per-admin passcodes; privileges from **role**, not shared passcode.
-  - Full **day-theme contrast rewrite** (night strong / day washed out) → suggest Bundle 39.
-- **Simple Mode**:
-  - Streamlined view option presenting strictly basic manual substitution logic.
-- **Codebase Technical Debt & Bloat Elimination**:
+- **Bundle 38b**: SEC-02, SEC-03, per-admin design spike, ARCH-03 docs, BUG-31 HEAD reminder.
+- **Bundle 39**: UI-12 day themes, a11y, Front Desk copy, FIND-05 sync pill honesty.
+- **Bundle 36**: CI builds Pages; stop committing root assets (FEAT-64).
+- **Deferred**: FEAT-67 lockout settings; per-admin passcodes / role privileges (after 38b); full day-theme rewrite → 39.
 
----
 
 ## [v2.0.0-alpha.3] - 2026-10-24
 
-> Job Bundles **34a** + **35** + **35a** (via `handover/2026-10-24`, which includes `bundle/35a`). **Prepared for release** on the owner's approval; go-live is a push to `next-gen` after explicit "go" (Pages + Render together). Rollback point: tag `rollback/pre-v2.0.0-alpha.3` → `362d887` (`v2.0.0-alpha.2`). Runbook: [`docs/RELEASE_2.0.0-alpha.3.md`](docs/RELEASE_2.0.0-alpha.3.md).
+> Job Bundles **34a** + **35** + **35a** (via `handover/2026-10-24`, which includes `bundle/35a`). **Live on `next-gen` / GitHub Pages + Render** (go-live 2026-10-24) (Pages + Render together). Rollback point: tag `rollback/pre-v2.0.0-alpha.3` → `362d887` (`v2.0.0-alpha.2`). Runbook: [`docs/RELEASE_2.0.0-alpha.3.md`](docs/RELEASE_2.0.0-alpha.3.md).
 > Wire protocol changed vs alpha.2: client and relay must ship together for sync (SAS §6.3).
 
 ### Added

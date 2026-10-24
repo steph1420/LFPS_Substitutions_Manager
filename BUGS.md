@@ -47,6 +47,12 @@ Some cells say "Not recorded". That means neither source states the value, and n
 | BUG-33 | A substitution deleted before a relay restart could come back (tombstones were memory-only; the relay didn't read `Subs` back) | S2 Major (proposed) | 🟢 Resolved (ships in v2.0.0-alpha.3) | JB35 (`bundle/35`, unreleased) | JB35a (`bundle/35a`) | Sheets mode only: `Subs` schema 2 keeps tombstones with versions; the relay reloads the week before letting devices in. Other entities' deletions are still memory-only (SAS §6.3 Limits). Proven by `npm run e2e:sheets` and `sheetcheck -selftest` |
 | BUG-34 | Local dev/test builds could target the production relay: `apps/web/.env` (production URLs) loads in every Vite mode | S2 Major (proposed) | 🟢 Resolved (ships in v2.0.0-alpha.3) | v2.0.0-alpha.2 | JB35a (`bundle/35a`) | URLs moved to `.env.production`; relay guard in `vite.config.ts` and `sync/live.ts`; `build:web:local` asserts the bundle (SAS §6.5) |
 
+
+## Bundle 38a tracker notes (2026-10-24)
+- **UI-11 / FEAT-70 / FIND-01…12**: product/UX items from `docs/ASSESSMENT_2026-10-24.md` — implemented on `bundle/38a` (not numbered BUG-xx).
+- **BUG-29 / BUG-30**: fixed on Bundle 37 (in 38a branch); device smoke still recommended.
+- **BUG-31**: still ops — cron-job.org → HEAD.
+
 ## Open items
 
 - **BUG-24, BUG-26, BUG-27 and BUG-28** were resolved in Job Bundle 34 (v2.0.0-alpha.2, released 2026-10-24). **BUG-25** is resolved: same-device reload in JB34, cross-device sync in JB35 (ships in v2.0.0-alpha.3). **BUG-32** (double socket) was found and fixed in JB35. **BUG-29 and BUG-30** are fixed on `bundle/37` (fix-only motion; no new shake). All were logged 2026-10-23 on `refine/jb31`. Severities are **proposed** and need owner confirmation.

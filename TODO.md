@@ -21,15 +21,17 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 | Bundle | Scope | Items | Status |
 |---|---|---|---|
 | **34** | Date-scoped local persistence; stateless relay hardening; fresh-clone build order; Front Desk by default with a **6-digit** passcode-gated admin (escalating lockout); footer version visible above the tab bar; single-source versioning (2.0.0-alpha.2); **school time zone Asia/Kolkata** on client and server | FEAT-62 (part 1), BUG-24, BUG-25 (part 1), BUG-26, BUG-27, BUG-28, SEC-01 interim, ARCH-02 (relay decision), ARCH-07 | 🟢 Live: v2.0.0-alpha.2, released 2026-10-24 |
-| **35** | Cross-device sync through the relay (devices ⇄ relay over WebSocket only); Sheets bridge: app-owned `Subs` + `App_Meta` (+ optional log) written async/batched/debounced/retried, read-only tabs pulled at startup + periodically and streamed; client "Connecting…" state for relay cold starts; Render re-setup guide + `render.yaml`. **Owner setup first:** service account + real spreadsheet ID | FEAT-62 (part 2), BUG-25 (part 2), BUG-32, FEAT-65, FEAT-66, FEAT-63, ARCH-06 | 🟢 Shipped in v2.0.0-alpha.3 (pending push; Render env prepared 2026-10-24) |
-| **35a** | Close the two sync gaps (FEAT-62 part 3): devices apply the Sheet's read-only tabs (precedence: local edits > Sheet > bundled; version-gated; shown in Settings → Build Info); the relay reloads substitutions and their deletions from `Subs` after a restart (schema 2: tombstones, versions, idempotent upsert; hydrating gate). Relay guard so dev/test builds can't reach the production relay. Fake-Sheet tests, two-browser e2e with a restart, real-Sheet self-test. Go-live runbook for alpha.3 | FEAT-62 (part 3), FEAT-65 (reads), BUG-33, BUG-34 | 🟢 Shipped in v2.0.0-alpha.3 (pending push; runbook docs/RELEASE_2.0.0-alpha.3.md) |
-| **36** | GitHub Actions CI (test, build, `go vet`, `go test -race`); Pages built by Actions instead of committed root assets (`next-gen` → root); Render deploys only after checks pass; branch previews at `/preview/<branch>/` with a footer branch badge (option A) | ARCH-05 (rest), ARCH-02 (adoption), FEAT-64 | ⚪ Planned. The `checksPass` gate and a `next-gen` CI workflow already landed in 35 |
-| **37** | Header/grid motion fix (no new shake); absent red-glow rewrite; Dev Options A/B (UI-10, auto-filter, needs-attention); pulse one-shot | UI-10, BUG-29, BUG-30, UI-06, FEAT-69 | 🟡 In progress on `bundle/37` |
-| **38** | Server-side auth for admin writes; docs reconciliation; codebase audit | SEC-02, ARCH-03, ARCH-04 | ⚪ Planned |
+| **35** | Cross-device sync through the relay (devices ⇄ relay over WebSocket only); Sheets bridge: app-owned `Subs` + `App_Meta` (+ optional log) written async/batched/debounced/retried, read-only tabs pulled at startup + periodically and streamed; client "Connecting…" state for relay cold starts; Render re-setup guide + `render.yaml`. **Owner setup first:** service account + real spreadsheet ID | FEAT-62 (part 2), BUG-25 (part 2), BUG-32, FEAT-65, FEAT-66, FEAT-63, ARCH-06 | 🟢 Live in v2.0.0-alpha.3 (2026-10-24) |
+| **35a** | Close the two sync gaps (FEAT-62 part 3): devices apply the Sheet's read-only tabs (precedence: local edits > Sheet > bundled; version-gated; shown in Settings → Build Info); the relay reloads substitutions and their deletions from `Subs` after a restart (schema 2: tombstones, versions, idempotent upsert; hydrating gate). Relay guard so dev/test builds can't reach the production relay. Fake-Sheet tests, two-browser e2e with a restart, real-Sheet self-test. Go-live runbook for alpha.3 | FEAT-62 (part 3), FEAT-65 (reads), BUG-33, BUG-34 | 🟢 Live in v2.0.0-alpha.3 (2026-10-24; runbook docs/RELEASE_2.0.0-alpha.3.md) |
+| **36** | GitHub Actions CI (test, build, `go vet`, `go test -race`); Pages built by Actions instead of committed root assets (`next-gen` → root); Render deploys only after checks pass; branch previews at `/preview/<branch>/` with a footer branch badge (option A) | ARCH-05 (rest), ARCH-02 (adoption), FEAT-64 | ⚪ Planned (parallel / whenever; infra) |
+| **37** | Header/grid motion fix (no new shake); absent red-glow rewrite; Dev Options A/B (UI-10, auto-filter, needs-attention); pulse one-shot | UI-10, BUG-29, BUG-30, UI-06, FEAT-69 | 🟢 Done on `bundle/37` (merged into `bundle/38a`) |
+| **38a** | Bundle 37 follow-through + fixed routine geometry + day-load Dev Option + FIND motion/absent consistency | UI-11, FEAT-70, FIND-01/03/04/09/10/11/12 | 🟡 In progress on `bundle/38a` |
+| **38b** | Server-side admin auth; Dev Options own passcode; per-admin design spike; docs reconciliation; BUG-31 HEAD reminder | SEC-02, SEC-03, ARCH-03, ARCH-04 | ⚪ Planned |
+| **39** | Day-theme contrast rewrite; a11y; Front Desk copy; sync pill honesty | UI-12, FIND-02/05/14/15, FIND-13/22 | ⚪ Planned |
 
-> Bundles 37/38 are ordered by priority and can swap if the owner prefers. SEC-02 must land before the relay writes to Google Sheets on behalf of admins (it can move into 35/36 if Sheets writes ship there). Bundle 35 writes only substitutions (which every role may make) to app-owned tabs, so it does not depend on SEC-02.
+> Split after post–Bundle 37 assessment (`docs/ASSESSMENT_2026-10-24.md`): **38a** UI/motion, **38b** security/docs, **39** themes/a11y/copy, **36** CI/Pages anytime. SEC-02 (38b) before privileged admin Sheets writes. Bundle 35 substitutions do not depend on SEC-02.
 >
-> **Not scheduled:** EPIC-01 (Master TimeTable editing), PERF-03 (relay keep-warm, handled outside the repo), FEAT-67 (lockout settings in Developer Options) and SEC-03 (separate Developer Options passcode), both deferred by the owner 2026-10-24.
+> **Not scheduled:** EPIC-01 (Master TimeTable editing), PERF-03 (relay keep-warm, outside the repo), FEAT-67 (after SEC-03), per-admin passcodes (design in 38b).
 
 ## 🔴 OPEN — User-Reported Items (logged 2026-10-23 on `refine/jb31`)
 
@@ -153,6 +155,35 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - **Delivered**: opens as Front Desk (Guest); admin needs a passcode whose SHA-256 is baked in at build time (`VITE_ADMIN_PASSCODE_SHA256`, generate with `npm run admin:hash`); tab-scoped session; schedule editing, solver policy, Reset Day, history purge and developer mode are admin-only in both the UI and the store.
 - **6-digit follow-up (JB34, owner 2026-10-24)**: the passcode is exactly **6 digits**, entered on a numeric keypad (six dots, auto-submit). Lockout is per device and survives reloads: 4 free misses, then 30 s, 1 min, 5 min, 15 min, then 1 h. `admin:hash` refuses easy codes unless `--allow-weak`. The owner's code is configured in the build box's git-ignored `apps/web/.env.local` and verified by a local-only test. **CI/Actions builds still need the hash as a variable** (ARCH-05).
 - **Limit**: client-side only, and **a 6-digit hash in the public bundle can be brute-forced offline in under a second**. It stops accidents, not a determined user. Real enforcement is SEC-02.
+
+
+### UI-11: Fixed Routine Table Size
+- **Status**: 🟢 Done on `bundle/38a`
+- **Reported**: Owner — routine table size changes by day (SAT collapses).
+- **Delivered**: `table-layout: fixed`, min row height, directory-based `min-height` on matrix shell; Hide Absent still filters rows but outer frame stays stable.
+
+### FEAT-70: Day Load Dev Option (Follow School Day vs Free Pick)
+- **Status**: 🟢 Done on `bundle/38a`
+- **Delivered**: Dev Options A/B in `devUiPrefs.dayLoadMode`; follow snaps on load + visibility; free pick persists `lastFreeDay`; Today marker on Header/Routine day chips; date subtitle in free mode.
+
+### UI-12: Day Theme Contrast Rewrite
+- **Status**: ⚪ Planned → **Bundle 39**
+- **Reported**: Owner — night themes strong; day themes washed out.
+- **Direction**: Semantic tokens; retire hardcoded `text-white` / `*-950` chips (see assessment FIND-02 / FIND-14).
+
+### Bundle 38a FIND follow-through
+- **Status**: 🟢 Done on `bundle/38a` — FIND-01 pulse, FIND-03 remove halo, FIND-04 matrix rail, FIND-09/10/11/12 (with FEAT-70).
+
+### Bundle 38b (planned)
+- SEC-02 server-side admin auth for privileged mutations.
+- SEC-03 separate Dev Options passcode.
+- Design spike: per-admin passcodes; privileges from **role**.
+- ARCH-03 docs reconciliation; mark tracker accurately.
+- BUG-31: owner switches cron-job.org → **HEAD**.
+
+### Bundle 39 (planned)
+- UI-12 day themes; a11y (focus rings, hit targets, reduced motion); Front Desk copy; FIND-05 sync pill honesty.
+
 
 ### SEC-02: Server-Side Authentication for Admin Writes
 - **Status**: 🔴 Open → Bundle 38 (earlier if Sheets writes need it)
