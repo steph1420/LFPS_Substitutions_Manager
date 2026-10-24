@@ -46,6 +46,7 @@ Some cells say "Not recorded". That means neither source states the value, and n
 | BUG-32 | Two WebSockets per tab: `useLiveSync()` mounted in both `Header` and `SettingsModal`, so opening Settings doubled connections | S3 Minor (proposed) | 🟢 Resolved (ships in v2.0.0-alpha.3) | v2.0.0-alpha.2 | JB35 (`bundle/35`) | Logged and fixed in JB35 (FEAT-62 part 2). Sync now runs in a ref-counted singleton (`sync/live.ts`, 1 s grace); `useLiveSync()` only reads status. Test `live-singleton.test.ts`; Playwright saw at most 1 concurrent socket per tab with Settings open |
 | BUG-33 | A substitution deleted before a relay restart could come back (tombstones were memory-only; the relay didn't read `Subs` back) | S2 Major (proposed) | 🟢 Resolved (ships in v2.0.0-alpha.3) | JB35 (`bundle/35`, unreleased) | JB35a (`bundle/35a`) | Sheets mode only: `Subs` schema 2 keeps tombstones with versions; the relay reloads the week before letting devices in. Other entities' deletions are still memory-only (SAS §6.3 Limits). Proven by `npm run e2e:sheets` and `sheetcheck -selftest` |
 | BUG-34 | Local dev/test builds could target the production relay: `apps/web/.env` (production URLs) loads in every Vite mode | S2 Major (proposed) | 🟢 Resolved (ships in v2.0.0-alpha.3) | v2.0.0-alpha.2 | JB35a (`bundle/35a`) | URLs moved to `.env.production`; relay guard in `vite.config.ts` and `sync/live.ts`; `build:web:local` asserts the bundle (SAS §6.5) |
+| BUG-35 | Header hide/show only after releasing scroll / only near top — should respond during active scroll | S3 Minor (proposed) | 🟢 Fixed on `bundle/41a` | v2.0.0-alpha.3 | JB41a (`bundle/41a`) | Removed post-scroll debounce; scroll-up → FULL mid-page; keep IGNORE_DELTA + viewport freeze so chrome noise does not flap |
 
 
 ## Bundle 38a tracker notes (2026-10-24)
@@ -65,6 +66,6 @@ The four setup findings previously listed here as "not yet triaged" are now BUG-
 
 ## How to add a bug
 
-1. Take the next free ID (`BUG-35` onward) and add a `### BUG-xx:` entry to the TODO tracker.
+1. Take the next free ID (`BUG-36` onward) and add a `### BUG-xx:` entry to the TODO tracker.
 2. Add a row here. Fill **Severity** and **Found in** (the version from `package.json` at the time).
 3. When the bug is fixed, set the status, record the version or bundle in **Fixed in**, and cite the ID in the `CHANGELOG.md` entry.

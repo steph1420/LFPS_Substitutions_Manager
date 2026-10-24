@@ -73,26 +73,85 @@
   background-color: rgba(69, 26, 3, 0.28);
 }
 
-/* Absent card: left accent rail + crisp border + tint (UI-06 rewrite, Bundle 37).
-   No large outer bloom — works in light and Midnight. */
+/* Absent card: soft rose tint + gentle rail (UI-06 + UI-15 Bundle 41a).
+   Beautiful, not blunt magenta fill — works in light and Midnight. */
 .card-absent-illuminated {
-  background: color-mix(in srgb, var(--accent-red) 10%, var(--surface-opaque)) !important;
-  border-color: color-mix(in srgb, var(--accent-red) 55%, transparent) !important;
-  border-left: 4px solid var(--accent-red) !important;
+  background: color-mix(in srgb, var(--accent-red) 8%, var(--surface-opaque)) !important;
+  border-color: color-mix(in srgb, var(--accent-red) 36%, transparent) !important;
+  border-left: 3px solid color-mix(in srgb, var(--accent-red) 72%, transparent) !important;
   box-shadow: none !important;
 }
 
 .card-compact-absent-illuminated {
-  background: color-mix(in srgb, var(--accent-red) 9%, var(--surface-opaque)) !important;
-  border-color: color-mix(in srgb, var(--accent-red) 50%, transparent) !important;
-  border-left: 3px solid var(--accent-red) !important;
+  background: color-mix(in srgb, var(--accent-red) 7%, var(--surface-opaque)) !important;
+  border-color: color-mix(in srgb, var(--accent-red) 32%, transparent) !important;
+  border-left: 3px solid color-mix(in srgb, var(--accent-red) 68%, transparent) !important;
   box-shadow: none !important;
 }
 
 .row-absent-illuminated {
-  background: color-mix(in srgb, var(--accent-red) 8%, var(--surface-opaque)) !important;
-  border-left: 4px solid var(--accent-red) !important;
+  background: color-mix(in srgb, var(--accent-red) 7%, var(--surface-opaque)) !important;
+  border-left: 3px solid color-mix(in srgb, var(--accent-red) 68%, transparent) !important;
   box-shadow: none !important;
+}
+
+/* Soft Absent status chip / button — tinted surface, not solid rose-600 (UI-15) */
+.status-btn-absent {
+  background: color-mix(in srgb, var(--accent-red) 15%, var(--surface-opaque)) !important;
+  border: 1px solid color-mix(in srgb, var(--accent-red) 40%, transparent) !important;
+  color: #fecdd3 !important; /* rose-200 */
+  box-shadow: none !important;
+}
+.status-btn-absent:hover {
+  background: color-mix(in srgb, var(--accent-red) 22%, var(--surface-opaque)) !important;
+}
+.status-btn-absent svg {
+  color: #fda4af !important; /* rose-300 */
+}
+.status-chip-absent {
+  background: color-mix(in srgb, var(--accent-red) 14%, var(--surface-opaque)) !important;
+  border: 1px solid color-mix(in srgb, var(--accent-red) 38%, transparent) !important;
+  color: #fecdd3 !important;
+  box-shadow: none !important;
+}
+.status-dot-absent {
+  background-color: color-mix(in srgb, var(--accent-red) 70%, #fda4af) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-red) 22%, transparent);
+}
+.status-badge-absent {
+  background: color-mix(in srgb, var(--accent-red) 55%, transparent) !important;
+  border: 1.5px solid color-mix(in srgb, var(--accent-red) 45%, var(--surface-opaque)) !important;
+  color: #fff !important;
+}
+
+/* UI-15: soft absent chips stay readable on light / day themes */
+[data-theme="light"] .status-btn-absent,
+[data-theme="warm-sepia"] .status-btn-absent,
+[data-theme="utopian-glass"] .status-btn-absent,
+[data-theme="aero-frost"] .status-btn-absent,
+[data-theme="high-contrast"] .status-btn-absent,
+[data-theme="light"] .status-chip-absent,
+[data-theme="warm-sepia"] .status-chip-absent,
+[data-theme="utopian-glass"] .status-chip-absent,
+[data-theme="aero-frost"] .status-chip-absent,
+[data-theme="high-contrast"] .status-chip-absent {
+  color: var(--danger-soft-fg, #9f1239) !important;
+}
+[data-theme="light"] .status-btn-absent svg,
+[data-theme="warm-sepia"] .status-btn-absent svg,
+[data-theme="utopian-glass"] .status-btn-absent svg,
+[data-theme="aero-frost"] .status-btn-absent svg,
+[data-theme="high-contrast"] .status-btn-absent svg {
+  color: var(--danger-soft-fg, #9f1239) !important;
+}
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] .status-btn-absent,
+  [data-theme="system"] .status-chip-absent {
+    color: var(--danger-soft-fg, #9f1239) !important;
+  }
+  [data-theme="system"] .status-btn-absent svg {
+    color: var(--danger-soft-fg, #9f1239) !important;
+  }
 }
 
 /* Routine "Need Sub!" / missing cell — crisp, no harsh outer glow */
@@ -184,11 +243,27 @@
   -webkit-overflow-scrolling: touch;
 }
 
-/* FIND-04: matrix sticky absent cell — rail, no outer bloom (parity with UI-06 cards) */
+/* UI-14: calm faculty/name column width ease (not snappy / jittery) */
+.routine-matrix-table th.faculty-col,
+.routine-matrix-table td.faculty-col {
+  transition:
+    width 0.38s cubic-bezier(0.22, 0.61, 0.36, 1),
+    min-width 0.38s cubic-bezier(0.22, 0.61, 0.36, 1),
+    max-width 0.38s cubic-bezier(0.22, 0.61, 0.36, 1),
+    padding 0.38s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .routine-matrix-table th.faculty-col,
+  .routine-matrix-table td.faculty-col {
+    transition: none;
+  }
+}
+
+/* FIND-04 / UI-15: matrix sticky absent cell — soft rail, no outer bloom */
 .matrix-absent-sticky {
-  background: color-mix(in srgb, var(--accent-red) 18%, #0f172a) !important;
-  border-right: 2px solid color-mix(in srgb, var(--accent-red) 70%, transparent) !important;
-  border-left: 3px solid var(--accent-red) !important;
+  background: color-mix(in srgb, var(--accent-red) 14%, #0f172a) !important;
+  border-right: 2px solid color-mix(in srgb, var(--accent-red) 55%, transparent) !important;
+  border-left: 3px solid color-mix(in srgb, var(--accent-red) 72%, transparent) !important;
   color: #fecdd3 !important;
   box-shadow: none !important;
 }

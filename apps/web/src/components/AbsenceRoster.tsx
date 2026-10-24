@@ -398,7 +398,7 @@ export const AbsenceRoster: React.FC = () => {
               <button
                 onClick={() => setStatusFilter('absent')}
                 className={`px-2.5 py-1 rounded-lg transition-colors ${
-                  statusFilter === 'absent' ? 'bg-rose-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                  statusFilter === 'absent' ? 'status-chip-absent shadow-sm font-semibold' : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 Absent ({absentCount})

@@ -126,8 +126,8 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
           >
             {teacher.initials}
             {isAbsent && (
-              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-rose-600 border-2 border-slate-950 flex items-center justify-center">
-                <UserX className="w-2 h-2 text-white" />
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full status-badge-absent flex items-center justify-center">
+                <UserX className="w-2 h-2" />
               </span>
             )}
           </div>
@@ -199,7 +199,7 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
           }}
           className={`h-[54px] min-w-[76px] sm:min-w-[82px] px-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 border transition-all cursor-pointer select-none active:scale-95 shadow-sm ${
             isAbsent
-              ? 'bg-rose-600 hover:bg-rose-500 text-white border-rose-500 shadow-rose-900/40'
+              ? 'status-btn-absent'
               : isAwayOfficial
               ? 'bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-200 border-indigo-500/50'
               : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/40'
@@ -207,7 +207,7 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
           title={isAbsent ? 'Currently Absent — Tap to Mark Present' : 'Currently Present — Tap to Mark Absent'}
         >
           {isAbsent ? (
-            <UserX className="w-4 h-4 text-white" />
+            <UserX className="w-4 h-4" />
           ) : isAwayOfficial ? (
             <MapPin className="w-4 h-4 text-indigo-300" />
           ) : (

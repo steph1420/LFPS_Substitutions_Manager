@@ -77,7 +77,7 @@ export const RosterNormalListRow: React.FC<RosterNormalListRowProps> = ({
         <div
           className={`w-9 h-9 rounded-xl font-bold flex items-center justify-center text-xs flex-shrink-0 ${
             isAbsent
-              ? 'bg-rose-500/25 text-rose-200 border border-rose-500/50'
+              ? 'status-chip-absent'
               : isAC || isAAC
               ? 'bg-purple-500/20 text-purple-300'
               : isCT
@@ -163,7 +163,7 @@ export const RosterNormalListRow: React.FC<RosterNormalListRowProps> = ({
           }}
           className={`px-3 py-1.5 rounded-xl font-semibold flex items-center gap-1.5 transition-all text-xs cursor-pointer ${
             isAbsent
-              ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-sm'
+              ? 'status-btn-absent'
               : isAwayOfficial
               ? 'bg-indigo-600/30 text-indigo-200 border border-indigo-500/50'
               : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25'

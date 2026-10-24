@@ -10,7 +10,7 @@ import {
   schoolDayForDate,
 } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
-import { Maximize2, Minimize2, Users, School, Eye, EyeOff, Check, Building2 } from 'lucide-react';
+import { Maximize2, Minimize2, Users, School, Eye, EyeOff, Check, Building2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { UndoRedoControls } from './UndoRedoControls.js';
 import { LimboTray } from './LimboTray.js';
 import { usePermissions } from './PermissionGuard.js';
@@ -48,6 +48,8 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
     isMinimalUI,
     routineSortBy,
     setRoutineSortBy,
+    routineNameColExpandedPortrait,
+    toggleRoutineNameColExpandedPortrait,
     moveRoutineSlot,
     awaySelectionState,
     toggleAwayPeriod,
@@ -60,7 +62,10 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
 
   const [dragOverTarget, setDragOverTarget] = React.useState<{ teacher: string; period: PeriodId } | null>(null);
   const [dragSource, setDragSource] = React.useState<{ teacher: string; period: PeriodId; task: string } | null>(null);
-  const [isColumnCollapsed, setIsColumnCollapsed] = React.useState(false);
+  const [isPortrait, setIsPortrait] = React.useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(orientation: portrait) and (max-width: 767px)').matches;
+  });
   const [isMarqueeDragging, setIsMarqueeDragging] = React.useState(false);
   const [lastDisplacedDrop, setLastDisplacedDrop] = React.useState<{ teacher: string; period: PeriodId; oldTask: string } | null>(null);
   const tableWrapperRef = React.useRef<HTMLDivElement>(null);
@@ -69,6 +74,21 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
     const handleGlobalMouseUp = () => setIsMarqueeDragging(false);
     window.addEventListener('mouseup', handleGlobalMouseUp);
     return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, []);
+
+  // UI-14: portrait phone — name column narrow by default; landscape/desktop stay readable.
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(orientation: portrait) and (max-width: 767px)');
+    const sync = () => setIsPortrait(mq.matches);
+    sync();
+    mq.addEventListener?.('change', sync);
+    // Safari < 14
+    mq.addListener?.(sync);
+    return () => {
+      mq.removeEventListener?.('change', sync);
+      mq.removeListener?.(sync);
+    };
   }, []);
 
   const isExpanded = isFitGrid || isFullscreen;
@@ -95,34 +115,22 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
   // List of distinct classes for Class View (LOGIC-07: Nursery removed)
   const classSections = ['KG A', 'KG B', 'PREP A', 'PREP B'];
 
-  // FEAT-53 / BUG-30: name-column collapse — hysteresis + ignore self-caused scroll
-  const isColumnCollapsedRef = React.useRef(false);
+  // UI-14: portrait defaults to narrow (collapsed) unless user toggled expand (persisted).
+  // Landscape / desktop: never collapsed. Scroll no longer drives width (avoids jitter).
+  const isColumnCollapsed = isPortrait && !routineNameColExpandedPortrait;
   const ignoreScrollUntilRef = React.useRef(0);
   React.useEffect(() => {
-    isColumnCollapsedRef.current = isColumnCollapsed;
+    // Width change can nudge scrollLeft; ignore briefly so shell stays calm.
+    ignoreScrollUntilRef.current = Date.now() + 420;
   }, [isColumnCollapsed]);
 
-  const handleTableScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (Date.now() < ignoreScrollUntilRef.current) return;
-    const scrollLeft = e.currentTarget.scrollLeft;
-    const isNarrowScreen = typeof window !== 'undefined' && window.innerWidth < 768;
-    const collapsed = isColumnCollapsedRef.current;
-    if (isNarrowScreen) {
-      // Wider hysteresis (collapse > 40, expand <= 8) avoids thrash near the edge.
-      if (scrollLeft > 40 && !collapsed) {
-        ignoreScrollUntilRef.current = Date.now() + 180;
-        isColumnCollapsedRef.current = true;
-        setIsColumnCollapsed(true);
-      } else if (scrollLeft <= 8 && collapsed) {
-        ignoreScrollUntilRef.current = Date.now() + 180;
-        isColumnCollapsedRef.current = false;
-        setIsColumnCollapsed(false);
-      }
-    } else if (collapsed) {
-      isColumnCollapsedRef.current = false;
-      setIsColumnCollapsed(false);
-    }
+  const handleTableScroll = (_e: React.UIEvent<HTMLDivElement>) => {
+    // Intentionally empty: name-column width is toggle-driven on portrait (UI-14).
   };
+
+  const facultyColClass = isColumnCollapsed
+    ? 'faculty-col w-[64px] min-w-[64px] max-w-[64px] px-1'
+    : 'faculty-col w-[130px] min-w-[130px] max-w-[130px] sm:w-[155px] sm:min-w-[155px] sm:max-w-[155px] px-2 sm:px-3';
 
   // Handle Escape key when Grid is expanded to Fullscreen (FEAT-09)
   React.useEffect(() => {
@@ -158,11 +166,9 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
         <tr className="border-b border-slate-800 text-slate-300 font-semibold text-xs">
           {/* Sticky Corner Header with solid masking flange (BUG-05, BUG-08, FEAT-53) */}
           <th
-            className={`sticky top-0 left-0 z-40 bg-slate-900 py-1.5 sm:py-2 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)] overflow-hidden ${
-              isColumnCollapsed
-                ? 'w-[64px] min-w-[64px] max-w-[64px] px-1 text-center'
-                : 'w-[130px] min-w-[130px] max-w-[130px] sm:w-[155px] sm:min-w-[155px] sm:max-w-[155px] px-2 sm:px-3'
-            }`}
+            className={`sticky top-0 left-0 z-40 bg-slate-900 py-1.5 sm:py-2 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)] overflow-hidden text-center sm:text-left ${facultyColClass}`}
+            data-testid="faculty-col-header"
+            data-collapsed={isColumnCollapsed ? '1' : '0'}
           >
             {isColumnCollapsed ? (
               <button
@@ -278,10 +284,8 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                 {/* Sticky Teacher Header Cell (FEAT-53 2-line collapse & FEAT-54 crimson highlight) */}
                 <td
                   onContextMenu={(e) => handleContextMenu(e, teacher.abbr)}
-                  className={`sticky left-0 z-20 overflow-hidden cursor-context-menu select-none ${
-                    isColumnCollapsed
-                      ? 'w-[64px] min-w-[64px] max-w-[64px] px-1 py-1 text-center'
-                      : 'w-[130px] min-w-[130px] max-w-[130px] sm:w-[155px] sm:min-w-[155px] sm:max-w-[155px] px-2 sm:px-3.5 py-1.5 sm:py-2'
+                  className={`sticky left-0 z-20 overflow-hidden cursor-context-menu select-none py-1 sm:py-1.5 ${facultyColClass} ${
+                    isColumnCollapsed ? 'text-center' : ''
                   } ${
                     isAbsent
                       ? 'matrix-absent-sticky font-bold'
@@ -317,7 +321,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                         {teacher.abbr}
                       </span>
                       {isAbsent && (
-                        <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-rose-500/30 text-rose-200 border border-rose-400/40">
+                        <span className="text-[8px] font-bold px-1 py-0.2 rounded status-chip-absent">
                           ABS
                         </span>
                       )}
@@ -611,10 +615,8 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
           classSections.map((sec) => (
             <tr key={sec} className="hover:bg-slate-900/40 transition-colors">
               <td
-                className={`sticky left-0 z-20 bg-slate-900/98 font-bold text-blue-400 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)] truncate overflow-hidden ${
-                  isColumnCollapsed
-                    ? 'w-[64px] min-w-[64px] max-w-[64px] px-1 py-1 text-center text-xs'
-                    : 'w-[130px] min-w-[130px] max-w-[130px] sm:w-[155px] sm:min-w-[155px] sm:max-w-[155px] px-2 sm:px-3.5 py-1.5 sm:py-2'
+                className={`sticky left-0 z-20 bg-slate-900/98 font-bold text-blue-400 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)] truncate overflow-hidden text-xs sm:text-sm py-1 sm:py-1.5 ${facultyColClass} ${
+                  isColumnCollapsed ? 'text-center' : ''
                 }`}
               >
                 {sec}
@@ -778,6 +780,33 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
           >
             {hideAbsentStaff ? <EyeOff className="w-3.5 h-3.5 text-rose-400" /> : <Eye className="w-3.5 h-3.5" />}
             <span className="hidden sm:inline">{hideAbsentStaff ? 'Absent Hidden' : 'Hide Absent'}</span>
+          </button>
+        )}
+
+        {/* UI-14: portrait name column expand/collapse (persisted) */}
+        {isPortrait && (
+          <button
+            type="button"
+            data-testid="faculty-col-toggle"
+            onClick={toggleRoutineNameColExpandedPortrait}
+            className={`px-2.5 py-1 rounded-xl border transition-colors flex items-center gap-1.5 text-xs font-semibold active:scale-95 ${
+              routineNameColExpandedPortrait
+                ? 'bg-blue-500/20 border-blue-500/40 text-blue-200'
+                : 'glass-pill border-slate-700/60 text-slate-400 hover:text-slate-200'
+            }`}
+            title={
+              routineNameColExpandedPortrait
+                ? 'Shrink faculty name column'
+                : 'Expand faculty name column'
+            }
+            aria-pressed={routineNameColExpandedPortrait}
+          >
+            {routineNameColExpandedPortrait ? (
+              <PanelLeftClose className="w-3.5 h-3.5" />
+            ) : (
+              <PanelLeftOpen className="w-3.5 h-3.5" />
+            )}
+            <span>{routineNameColExpandedPortrait ? 'Names' : 'Names'}</span>
           </button>
         )}
 

@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Changed
+- **Bundle 41a (phone feel)**: Portrait faculty/name column **narrow by default** with expand toggle (persisted); calm 0.38s width ease (UI-14). Header hide/show responds **during active scroll** — scroll-up expands mid-page, no post-scroll debounce (BUG-35). Absent cards/chips use soft rose tint + rail, not solid magenta fill (UI-15). Themes still parked. `e2e:phone` checks portrait name-col default + toggle.
 - **Bundle 40 (phone polish)**: Routine matrix keeps period column min-widths and horizontal scroll on narrow viewports (no more squeezed headers). Light-theme absent sticky names + Free / Need Sub contrast. Substitutions phone densify (group by absent teacher; compact Assign). Header mobile two-row layout for guest + logged-in; BUG-29 hysteresis widened (direction-aware, viewport freeze). Design note `docs/HEADER_MOBILE_40.md`. `npm run e2e:phone` portrait+landscape screenshots.
 
 
@@ -28,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Per-admin / role privileges design spike: `docs/PER_ADMIN_ACCESS.md`.
 
 ### Fixed
+- **BUG-35 (Bundle 41a)**: Header FULL↔PILL now flips while scrolling (direction-aware mid-page expand), not only after finger release / near top.
 - **Pages workflow (Bundle 40 follow-up)**: `pages.yml` deploy job runs only on `next-gen` or `workflow_dispatch` (still gated by `PAGES_ACTIONS_DEPLOY`). Feature-branch pushes keep building preview trees but no longer attempt `deploy-pages`, so github-pages environment protection does not paint a red X on `bundle/**` / `preview/**`. Docs: `docs/PAGES_SETUP.md`.
 - **Pages preview tests (Bundle 40 follow-up)**: `storage-scope` and `access` tests tolerate `VITE_BUILD_CHANNEL=preview` (scoped localStorage keys) so Actions preview builds stop failing vitest and marking `preview/<slug>` as “build failed — kept previous”.
 - **UI-12 (Bundle 39)**: Day-theme contrast — semantic `text-ink` / `bg-surface-*` / soft chip tokens; bare `text-white` remapped to ink on light families; `*-950` chips softened; Settings / Staff Login / Midnight modal surfaces tokenized.

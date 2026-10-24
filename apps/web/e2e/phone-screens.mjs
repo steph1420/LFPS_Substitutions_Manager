@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Bundle 40 — phone portrait + landscape screenshots (soft overflow checks).
+ * Bundle 40/41a — phone portrait + landscape screenshots (soft overflow checks).
  *
  *   npm run e2e:phone
  *
@@ -120,6 +120,8 @@ async function softOverflow(page, label) {
     const periodTh = matrix
       ? [...matrix.querySelectorAll('th.period-col')].map((th) => th.getBoundingClientRect().width)
       : [];
+    const faculty = document.querySelector('[data-testid="faculty-col-header"]');
+    const isPortrait = window.matchMedia('(orientation: portrait) and (max-width: 767px)').matches;
     return {
       scrollW: doc.scrollWidth,
       clientW: doc.clientWidth,
@@ -129,6 +131,9 @@ async function softOverflow(page, label) {
       periodWidths: periodTh,
       shellScrollW: shell ? shell.scrollWidth : 0,
       shellClientW: shell ? shell.clientWidth : 0,
+      facultyCollapsed: faculty ? faculty.getAttribute('data-collapsed') : null,
+      facultyW: faculty ? faculty.getBoundingClientRect().width : null,
+      expectPortraitNarrow: isPortrait,
     };
   });
   const cramped =
@@ -152,6 +157,13 @@ async function softOverflow(page, label) {
     !metrics.headerOverflow,
     `h=${metrics.headerH.toFixed(0)}`,
   );
+  if (metrics.facultyCollapsed != null) {
+    check(
+      `${label}: portrait faculty col narrow by default`,
+      metrics.expectPortraitNarrow ? metrics.facultyCollapsed === '1' && metrics.facultyW <= 72 : true,
+      `collapsed=${metrics.facultyCollapsed} w=${metrics.facultyW?.toFixed?.(0) ?? 'n/a'}`,
+    );
+  }
   return metrics;
 }
 
@@ -170,6 +182,22 @@ try {
     // Guest header + matrix (default tab)
     await shot(page, `${vp.name}-guest-matrix`);
     await softOverflow(page, `${vp.name} guest matrix`);
+
+    // UI-14: portrait name-col toggle expands (then restore narrow default for later shots)
+    if (vp.name === 'portrait') {
+      const toggle = page.locator('[data-testid="faculty-col-toggle"]');
+      if (await toggle.count()) {
+        await toggle.click();
+        await settle(page);
+        const expanded = await page.locator('[data-testid="faculty-col-header"]').getAttribute('data-collapsed');
+        check('portrait: faculty toggle expands', expanded === '0', `collapsed=${expanded}`);
+        await shot(page, 'portrait-faculty-expanded');
+        await toggle.click();
+        await settle(page);
+      } else {
+        check('portrait: faculty toggle present', false, 'toggle missing');
+      }
+    }
 
     // Substitutions tab
     const subsTab = page.getByRole('button', { name: /Substitutions/i }).first();

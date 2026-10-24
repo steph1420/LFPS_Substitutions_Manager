@@ -159,19 +159,18 @@ export const Header: React.FC = () => {
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
   }, []);
 
-  // BUG-29 / UI-10: scroll observer with hysteresis; container vs thresholds mode (FEAT-69)
-  // Bundle 40: wider hysteresis, direction-aware flips, ignore toolbar jumps in BOTH modes.
+  // BUG-29 / UI-10 / BUG-35: scroll-active hide/show (not only after finger release / at top).
+  // Bundle 41a: evaluate every rAF while scrolling; scroll-up → FULL anywhere; keep IGNORE_DELTA.
   React.useEffect(() => {
     let rafId: number | null = null;
     let viewportFreezeUntil = 0;
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-    // Enter PILL above ENTER_PILL; return FULL only below EXIT_FULL (wide hysteresis).
-    const ENTER_PILL = 108;
-    const EXIT_FULL = 12;
-    const IGNORE_DELTA = 16; // mobile chrome show/hide noise
-    const TRANSITION_LOCK_MS = 360;
-    const VIEWPORT_FREEZE_MS = 420;
-    const DEBOUNCE_MS = 48;
+    // Enter PILL past ENTER_PILL on scroll-down; scroll-up expands FULL mid-page (classic).
+    const ENTER_PILL = 72;
+    const EXIT_FULL = 16;
+    const IGNORE_DELTA = 14; // mobile chrome show/hide noise
+    const ACTIVATE_DELTA = 6; // intentional direction (active scroll)
+    const TRANSITION_LOCK_MS = 260;
+    const VIEWPORT_FREEZE_MS = 380;
 
     const readScrollY = (): number => {
       if (headerScrollMode === 'container') {
@@ -211,29 +210,32 @@ export const Header: React.FC = () => {
       const delta = currentScrollY - prev;
       lastScrollYRef.current = currentScrollY;
 
+      const absDelta = Math.abs(delta);
       // Both UI-10 modes: ignore tiny jumps (iOS/Android toolbar).
-      if (Math.abs(delta) > 0 && Math.abs(delta) < IGNORE_DELTA && currentScrollY > EXIT_FULL) {
+      if (absDelta > 0 && absDelta < IGNORE_DELTA && currentScrollY > EXIT_FULL) {
         return;
       }
 
-      const state = headerStateRef.current;
-      // Direction-aware: only collapse on scroll-down, only expand on scroll-up near top.
-      if (state === 'FULL' && delta > 0 && currentScrollY > ENTER_PILL) {
-        applyState('PILL');
-      } else if (state === 'PILL' && delta < 0 && currentScrollY < EXIT_FULL) {
+      // Near top → always FULL (rubber-band / programmatic).
+      if (currentScrollY <= EXIT_FULL) {
         applyState('FULL');
-      } else if (state === 'PILL' && currentScrollY <= 2) {
-        // Hard snap at absolute top (e.g. programmatic scroll / rubber-band).
+        return;
+      }
+
+      // Active scroll-down → PILL; active scroll-up → FULL (not only at top).
+      if (delta > ACTIVATE_DELTA && currentScrollY > ENTER_PILL) {
+        applyState('PILL');
+      } else if (delta < -ACTIVATE_DELTA) {
         applyState('FULL');
       }
     };
 
     const handleScroll = () => {
+      // Evaluate on the next frame while scrolling — no post-scroll debounce lag (BUG-35).
       if (rafId !== null) return;
       rafId = requestAnimationFrame(() => {
         rafId = null;
-        if (debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(evaluate, DEBOUNCE_MS);
+        evaluate();
       });
     };
 
@@ -259,7 +261,6 @@ export const Header: React.FC = () => {
       window.visualViewport?.removeEventListener('resize', handleViewportNoise);
       window.visualViewport?.removeEventListener('scroll', handleViewportNoise);
       if (rafId !== null) cancelAnimationFrame(rafId);
-      if (debounceTimer) clearTimeout(debounceTimer);
       if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
     };
   }, [headerScrollMode]);

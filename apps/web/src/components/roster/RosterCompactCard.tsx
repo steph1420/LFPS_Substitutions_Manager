@@ -56,7 +56,7 @@ export const RosterCompactCard: React.FC<RosterCompactCardProps> = ({
         <div
           className={`w-8 h-8 rounded-lg font-bold flex items-center justify-center text-xs flex-shrink-0 ${
             isAbsent
-              ? 'bg-rose-500/30 text-rose-200 border border-rose-500/50'
+              ? 'status-chip-absent'
               : isAC || isAAC
               ? 'bg-purple-500/20 text-purple-300'
               : isCT
@@ -95,7 +95,7 @@ export const RosterCompactCard: React.FC<RosterCompactCardProps> = ({
         }}
         className={`w-full py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-all ${
           isAbsent
-            ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-sm'
+            ? 'status-btn-absent'
             : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30'
         }`}
       >
