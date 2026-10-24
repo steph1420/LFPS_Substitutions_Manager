@@ -18,6 +18,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+- **SEC-03 (Bundle 38b)**: Developer Options has its own 6-digit passcode (`VITE_DEV_PASSCODE_SHA256`, `npm run admin:hash -- --dev`). 5-tap Build Info asks for the Dev code (not admin). Tab session + separate lockout. Edit-without-login can be enabled from a Dev session.
+- **SEC-02 (Bundle 38b)**: Design in `docs/SEC_02_SERVER_AUTH.md`; thin relay stub — optional `adminToken` on HELLO; `LFPS_REQUIRE_ADMIN_TOKEN=1` rejects `sched`/`limbo` without a token (default **off** so Front Desk sync is unchanged).
+- Per-admin / role privileges design spike: `docs/PER_ADMIN_ACCESS.md`.
+
 ### Fixed
 - **UI-12 (Bundle 39)**: Day-theme contrast — semantic `text-ink` / `bg-surface-*` / soft chip tokens; bare `text-white` remapped to ink on light families; `*-950` chips softened; Settings / Staff Login / Midnight modal surfaces tokenized.
 - **FIND-05 (Bundle 39)**: Sync pill shows **Sheets error** / **Loading sheet…** when the bridge exposes it; tap opens Settings → Cloud.
@@ -41,9 +46,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Assessment: [`docs/ASSESSMENT_2026-10-24.md`](docs/ASSESSMENT_2026-10-24.md).
 
 ### Planned
-- **Bundle 38b**: SEC-02, SEC-03, per-admin design spike, ARCH-03 docs, BUG-31 HEAD reminder.
+- **Ops reminder**: BUG-31 — cron-job.org → **HEAD** (still parked).
+- **Deferred**: FEAT-67 lockout settings (unblocked after SEC-03); full SEC-02 token mint; per-admin server accounts.
 - **Bundle 36**: CI builds Pages; stop committing root assets (FEAT-64).
-- **Deferred**: FEAT-67 lockout settings; per-admin passcodes / role privileges (after 38b).
 
 
 ## [v2.0.0-alpha.3] - 2026-10-24

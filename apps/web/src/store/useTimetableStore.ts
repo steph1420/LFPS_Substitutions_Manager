@@ -23,15 +23,23 @@ import {
 import { APP_VERSION } from '../lib/buildInfo.js';
 import {
   clearAdminLockout,
+  clearDevLockout,
   endAdminSession,
+  endDevSession,
   formatWait,
+  getConfiguredDevHash,
+  hasDevSession,
   isWellFormedPasscode,
   readAdminLockout,
+  readDevLockout,
   recordFailedAdminAttempt,
+  recordFailedDevAttempt,
   getConfiguredAdminHash,
   readAdminSession,
   startAdminSession,
+  startDevSession,
   verifyAdminPasscode,
+  verifyDevPasscode,
 } from '../lib/adminGate.js';
 import { scopedStorageKey } from '../lib/storageScope.js';
 import {
@@ -162,9 +170,16 @@ interface TimetableState {
   currentTheme: ThemeId;
   setTheme: (theme: ThemeId) => void;
 
-  // Developer & Diagnostics Options (FEAT-47)
+  // Developer & Diagnostics Options (FEAT-47 / SEC-03)
   isDeveloperMode: boolean;
+  /** Hide console (always). Enabling goes through unlockDeveloperMode (Dev passcode). */
   setDeveloperMode: (enabled: boolean) => void;
+  /** SEC-03: verify Dev Options passcode → tab session + open console. */
+  unlockDeveloperMode: (passcode: string) => Promise<AdminLoginResult>;
+  /** Consecutive wrong Dev passcode attempts. */
+  devFailedAttempts: number;
+  /** Epoch ms until which Dev unlock attempts are refused. */
+  devLockedUntil: number | null;
   samePeriodLock: boolean;
   setSamePeriodLock: (locked: boolean) => void;
   subHaloIndicator: boolean;
@@ -480,7 +495,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   isStaffLoginOpen: false,
 
   currentTheme: initialPrefs.currentTheme ?? 'dark',
-  isDeveloperMode: initialPrefs.isDeveloperMode ?? false,
+  isDeveloperMode: (initialPrefs.isDeveloperMode ?? false) && hasDevSession(),
   samePeriodLock: initialPrefs.samePeriodLock ?? true,
   subHaloIndicator: initialPrefs.subHaloIndicator ?? true,
   subHaloColor: initialPrefs.subHaloColor ?? 'emerald',
@@ -515,6 +530,8 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   access: { role: 'GUEST', isAdmin: false, office: null, canEdit: false, editingUnlocked: false },
   adminFailedAttempts: readAdminLockout().failures,
   adminLockedUntil: readAdminLockout().lockedUntil,
+  devFailedAttempts: readDevLockout().failures,
+  devLockedUntil: readDevLockout().lockedUntil,
   isNotificationCenterOpen: false,
   notifications: initialOperational.notifications,
   officiatingAC: initialOperational.officiatingAC,
@@ -620,9 +637,49 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     set({ currentTheme: theme });
   },
   setDeveloperMode: (enabled) => {
-    if (enabled && !isAdmin(get())) return;
-    autoPersistPreferences({ isDeveloperMode: enabled });
-    set({ isDeveloperMode: enabled });
+    // SEC-03: enabling requires an active Dev session (unlockDeveloperMode). Closing is always allowed.
+    if (enabled) {
+      if (!hasDevSession()) return;
+      autoPersistPreferences({ isDeveloperMode: true });
+      set({ isDeveloperMode: true });
+      return;
+    }
+    endDevSession();
+    autoPersistPreferences({ isDeveloperMode: false });
+    set({ isDeveloperMode: false });
+  },
+  unlockDeveloperMode: async (passcode) => {
+    const hash = getConfiguredDevHash();
+    if (!hash) {
+      return { ok: false, reason: 'Developer Options passcode is not configured for this build. See docs/ADMIN_ACCESS.md.' };
+    }
+    if (!isWellFormedPasscode(passcode)) {
+      return { ok: false, reason: 'Enter the 6-digit passcode.' };
+    }
+    const now = Date.now();
+    const stored = readDevLockout(now);
+    const state = get();
+    const lockedUntil = Math.max(stored.lockedUntil ?? 0, state.devLockedUntil ?? 0);
+    if (lockedUntil > now) {
+      return { ok: false, reason: `Too many attempts. Try again in ${formatWait(lockedUntil - now)}.` };
+    }
+    const ok = await verifyDevPasscode(passcode, hash);
+    if (!ok) {
+      const next = recordFailedDevAttempt(
+        { failures: Math.max(stored.failures, state.devFailedAttempts), lockedUntil: stored.lockedUntil, lastFailureAt: stored.lastFailureAt },
+        now
+      );
+      set({ devFailedAttempts: next.failures, devLockedUntil: next.lockedUntil });
+      if (next.lockedUntil && next.lockedUntil > now) {
+        return { ok: false, reason: `Too many attempts. Try again in ${formatWait(next.lockedUntil - now)}.` };
+      }
+      return { ok: false, reason: 'Incorrect passcode.' };
+    }
+    clearDevLockout();
+    startDevSession(hash);
+    autoPersistPreferences({ isDeveloperMode: true });
+    set({ isDeveloperMode: true, devFailedAttempts: 0, devLockedUntil: null });
+    return { ok: true };
   },
   setSamePeriodLock: (locked) => {
     autoPersistPreferences({ samePeriodLock: locked });
@@ -1217,7 +1274,8 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     set({ loggedInTeacher: null, adminIdentity: null });
   },
   setEditingOverride: (on) => {
-    if (on && !isAdmin(get())) return;
+    // Enabling: admin session/override path, or an unlocked Dev Options session (SEC-03).
+    if (on && !isAdmin(get()) && !hasDevSession()) return;
     writeEditingOverride(on);
     set({ editingOverride: on });
   },
@@ -1582,7 +1640,10 @@ const refreshAccess = (state: TimetableState) => {
   const next = resolveAccess(state);
   const patch: Partial<TimetableState> = {};
   if (!sameAccess(next, state.access)) patch.access = next;
-  if (!next.canEdit && state.isDeveloperMode) patch.isDeveloperMode = false;
+  // SEC-03: Dev Options follows its own session, not admin canEdit.
+  if (state.isDeveloperMode && !hasDevSession()) {
+    patch.isDeveloperMode = false;
+  }
   if (Object.keys(patch).length) useTimetableStore.setState(patch);
 };
 refreshAccess(useTimetableStore.getState());

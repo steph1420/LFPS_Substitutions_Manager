@@ -38,8 +38,10 @@ type Client struct {
 	conn *websocket.Conn
 	send chan Event
 	// DeviceID is set by the handler after HELLO (diagnostics only).
-	mu       sync.Mutex
-	deviceID string
+	// adminToken is optional (SEC-02 stub): set from HELLO; verified later when mint exists.
+	mu         sync.Mutex
+	deviceID   string
+	adminToken string
 }
 
 // SetDeviceID records the peer's device id (from HELLO).
@@ -47,6 +49,12 @@ func (c *Client) SetDeviceID(id string) { c.mu.Lock(); c.deviceID = id; c.mu.Unl
 
 // DeviceID is the peer's device id, "" before HELLO.
 func (c *Client) DeviceID() string { c.mu.Lock(); defer c.mu.Unlock(); return c.deviceID }
+
+// SetAdminToken records an optional admin token from HELLO (SEC-02 stub; unused unless enforcement is on).
+func (c *Client) SetAdminToken(token string) { c.mu.Lock(); c.adminToken = token; c.mu.Unlock() }
+
+// AdminToken is the optional token from HELLO, "" if none.
+func (c *Client) AdminToken() string { c.mu.Lock(); defer c.mu.Unlock(); return c.adminToken }
 
 // Send queues an event for this client only. Safe from any goroutine.
 func (c *Client) Send(eventType string, payload interface{}) {

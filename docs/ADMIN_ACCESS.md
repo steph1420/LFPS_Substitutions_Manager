@@ -44,7 +44,7 @@ asks for the admin passcode and turns on editing; everyone else is identified on
 |---|---|---|
 | **Front Desk** (`GUEST`) | Default. No login, ever. | Mark absences, availability, assign/remove substitutes, run Auto-Resolve, appoint Off. AC / Off. CT, release co-teachers, export Excel, all view/preferences. |
 | **Teacher** (`TEACHER`) | Header → Staff Login → pick a name without an admin office (identity only, no password). | Everything Front Desk can do, plus accept/dispute **their own** duties. |
-| **Admin** (`ADMIN`) | Staff Login → pick the Principal, AC, AAC or today's Off. AC (tagged "Admin" / "Off. AC today") → passcode. | Adds: routine (master timetable) edits by drag-and-drop, Limbo restore/clear, Reset Day, Purge History, Auto-Resolve Brain Studio policy changes, Developer Options (5-tap on the build info). |
+| **Admin** (`ADMIN`) | Staff Login → pick the Principal, AC, AAC or today's Off. AC (tagged "Admin" / "Off. AC today") → passcode. | Adds: routine (master timetable) edits by drag-and-drop, Limbo restore/clear, Reset Day, Purge History, Auto-Resolve policy changes. Developer Options uses a **separate** passcode (SEC-03). |
 
 - **One place to sign in.** The keypad now appears inside Staff Login, after you pick an admin
   office. The separate Settings → Admin Access keypad from Bundle 34 is gone; that panel shows
@@ -72,10 +72,43 @@ asks for the admin passcode and turns on editing; everyone else is identified on
 - If no passcode is configured, admin login is unavailable. Staff Login and the Settings panel
   show the setup steps. **All front-desk work keeps working.**
 
-## Dev Options → "Edit without login" (Bundle 34a)
+## Developer Options passcode (SEC-03, Bundle 38b)
 
-A switch in the Developer & Diagnostics Console (Settings → 5-tap the build info; needs admin
-until SEC-03) that allows every admin-gated action **on this device** with nobody logged in.
+Developer Options is **not** tied to admin login. It has its own 6-digit passcode and its own
+build-time hash (`VITE_DEV_PASSCODE_SHA256`). The same interim caveats apply: the hash ships in
+the public bundle and can be recovered offline; this only slows accidental opens on a shared
+device.
+
+1. Settings → tap Build Info **5 times** (discovery only).
+2. Enter the **Developer Options** passcode on the keypad (not the admin code).
+3. Wrong attempts use the same escalating lockout schedule as admin, stored separately in
+   `localStorage` under `lfps_dev_lockout_v1`.
+4. A correct code starts a **tab-scoped** session (`sessionStorage` `lfps_dev_session_v1`) and
+   opens the console. Closing the tab ends the session. Hiding the console also ends it.
+5. Within the same tab, 5-tap again reopens without re-entry while the session lasts.
+
+The Dev passcode **must differ** from the admin passcode. `npm run admin:hash -- --dev` refuses
+a match against `VITE_ADMIN_PASSCODE_SHA256` (env or `apps/web/.env.local`), and the client
+disables Dev unlock if both hashes are equal.
+
+Front Desk day work (absences, subs, Auto-Resolve, exports) never needs this code.
+
+### Owner setup (Dev Options)
+
+```bash
+npm run admin:hash -- --dev
+# → put VITE_DEV_PASSCODE_SHA256=<hex> in apps/web/.env.local
+# → also add repository Actions secret VITE_DEV_PASSCODE_SHA256 (Pages builds)
+```
+
+Rebuild the web app after changing the hash (same as admin).
+
+## Dev Options → "Edit without login" (Bundle 34a / SEC-03)
+
+A switch in the Developer & Diagnostics Console (Settings → 5-tap Build Info → Dev passcode)
+that allows every admin-gated action **on this device** with nobody logged in. Turning the
+switch **on** requires an unlocked Dev Options session (or an admin session). Turning it **off**
+never needs a login.
 
 - **Device-local:** stored in `localStorage` (`lfps_dev_editing_unlocked_v1` = `1`). It is
   never part of the saved day state or anything synced to other devices or the relay.
@@ -119,8 +152,9 @@ No passcode ships with the app, and none was invented for you.
 4. Rebuild and redeploy the web app. The hash is baked in at **build** time:
    - Pages (deploy-from-branch, current setup): `npm run build`, then commit the regenerated
      root assets on the deploy branch (see `docs/WORKFLOW.md`).
-   - CI build (planned, ARCH-05): store the hash as a repository **Actions variable/secret**
-     named `VITE_ADMIN_PASSCODE_SHA256` and expose it to the build step.
+   - CI / Pages (ARCH-05 / Bundle 36): store `VITE_ADMIN_PASSCODE_SHA256` (and for SEC-03,
+     `VITE_DEV_PASSCODE_SHA256`) as repository **Actions secrets** and expose them to the
+     pages build. See `docs/PAGES_SETUP.md`.
 5. Open the site, open Staff Login, pick an admin office (e.g. Principal) and type the six
    digits. It signs in by itself, and an "Admin" badge appears in the header.
 
@@ -150,10 +184,11 @@ No passcode ships with the app, and none was invented for you.
 
 ## Roadmap
 
-- **SEC-02 (server-side auth):** the relay (Render) should verify admin actions with a
-  server-held secret or real accounts, so that a static bundle can't grant admin rights.
-  This is needed once the relay writes to Google Sheets (Bundle 35+).
-- **SEC-03 (deferred by the owner):** a separate Developer Options passcode. Until then,
-  Developer Options (and so "Edit without login") need an admin login.
-- **FEAT-67 (deferred by the owner):** Developer Options controls for the lockout penalty.
+- **SEC-02 (design in Bundle 38b):** server-side admin auth for privileged mutations. See
+  [`SEC_02_SERVER_AUTH.md`](./SEC_02_SERVER_AUTH.md). Front Desk substitution sync stays open.
+- **SEC-03 (Bundle 38b):** separate Developer Options passcode — shipped above.
+- **Per-admin passcodes (design spike):** privileges from **role**; later not all admins share
+  one code. See [`PER_ADMIN_ACCESS.md`](./PER_ADMIN_ACCESS.md).
+- **FEAT-67 (unlocked after SEC-03):** Developer Options controls for the lockout penalty
+  (still deferred; can be scheduled now that Dev has its own gate).
 - **FEAT-68 (Bundle 34a):** the admin hierarchy and the editing override described above.

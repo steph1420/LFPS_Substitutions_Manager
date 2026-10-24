@@ -26,8 +26,8 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 | **36** | GitHub Actions CI (test, build, `go vet`, `go test -race`); Pages built by Actions instead of committed root assets (`next-gen` → root); Render deploys only after checks pass; branch previews at `/preview/<branch>/` with a footer branch badge (option A) | ARCH-05 (rest), ARCH-02 (adoption), FEAT-64 | 🟡 Workflows + docs on `bundle/36` / `next-gen`; **owner cutover** still required (`docs/PAGES_SETUP.md`) |
 | **37** | Header/grid motion fix (no new shake); absent red-glow rewrite; Dev Options A/B (UI-10, auto-filter, needs-attention); pulse one-shot | UI-10, BUG-29, BUG-30, UI-06, FEAT-69 | 🟢 Done on `bundle/37` (merged into `bundle/38a`) |
 | **38a** | Bundle 37 follow-through + fixed routine geometry + day-load Dev Option + FIND motion/absent consistency | UI-11, FEAT-70, FIND-01/03/04/09/10/11/12 | 🟢 Merged to `next-gen` (2026-10-24) |
-| **38b** | Server-side admin auth; Dev Options own passcode; per-admin design spike; docs reconciliation; BUG-31 HEAD reminder | SEC-02, SEC-03, ARCH-03, ARCH-04 | ⚪ Planned |
-| **39** | Day-theme contrast rewrite; a11y; Front Desk copy; sync pill honesty | UI-12, FIND-02/05/14/15, FIND-13/22 | 🟢 Done on `bundle/39` (pushing to next-gen) |
+| **38b** | Server-side admin auth (design+stub); Dev Options own passcode; per-admin design spike; docs reconciliation; BUG-31 HEAD reminder | SEC-02, SEC-03, ARCH-03, ARCH-04 | 🟡 On `bundle/38b` |
+| **39** | Day-theme contrast rewrite; a11y; Front Desk copy; sync pill honesty | UI-12, FIND-02/05/14/15, FIND-13/22 | 🟢 Merged to `next-gen` (2026-10-24) |
 
 > Split after post–Bundle 37 assessment (`docs/ASSESSMENT_2026-10-24.md`): **38a** UI/motion, **38b** security/docs, **39** themes/a11y/copy, **36** CI/Pages anytime. SEC-02 (38b) before privileged admin Sheets writes. Bundle 35 substitutions do not depend on SEC-02.
 >
@@ -174,12 +174,12 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 ### Bundle 38a FIND follow-through
 - **Status**: 🟢 Done on `bundle/38a` — FIND-01 pulse, FIND-03 remove halo, FIND-04 matrix rail, FIND-09/10/11/12 (with FEAT-70).
 
-### Bundle 38b (planned)
-- SEC-02 server-side admin auth for privileged mutations.
-- SEC-03 separate Dev Options passcode.
-- Design spike: per-admin passcodes; privileges from **role**.
-- ARCH-03 docs reconciliation; mark tracker accurately.
-- BUG-31: owner switches cron-job.org → **HEAD**.
+### Bundle 38b (this branch)
+- [x] SEC-03 separate Dev Options passcode (`VITE_DEV_PASSCODE_SHA256`, 5-tap → keypad).
+- [x] SEC-02 design + thin stub (`docs/SEC_02_SERVER_AUTH.md`; `LFPS_REQUIRE_ADMIN_TOKEN` default off).
+- [x] Per-admin design spike (`docs/PER_ADMIN_ACCESS.md`).
+- [x] ARCH-03 docs reconciliation (bundle table / SEC statuses).
+- [ ] **Ops:** BUG-31 — owner switches cron-job.org → **HEAD** (still parked).
 
 ### Bundle 39 (done on `bundle/39`)
 - [x] UI-12 day themes — semantic tokens + light-family contrast remap
@@ -190,7 +190,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 
 
 ### SEC-02: Server-Side Authentication for Admin Writes
-- **Status**: 🔴 Open → Bundle 38 (earlier if Sheets writes need it)
+- **Status**: 🟡 Design + stub on Bundle 38b (`docs/SEC_02_SERVER_AUTH.md`). Enforcement off by default.
 - **Why**: the relay accepts writes from any allowed origin, and the admin gate is client-side.
 - **Target Solution**:
   - [ ] Relay verifies admin actions (e.g. passcode → short-lived signed token, or Google sign-in restricted to school accounts) before relaying them or writing to Sheets.
@@ -210,7 +210,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - **Related**: Developer Options (and so this override) stay admin-gated until **SEC-03** (separate dev passcode, deferred). **FEAT-67** (lockout settings) is still deferred. Real enforcement is SEC-02.
 
 ### FEAT-67: Admin Lockout Penalty Settings in Developer Options
-- **Status**: ⚪ Deferred (owner 2026-10-24: "we'll add later"). Not scheduled.
+- **Status**: ⚪ Deferred (unblocked after SEC-03; still not scheduled).
 - **Ask**: let the owner set the admin-passcode lockout penalty from Developer Options instead of a code change.
 - **Target Solution**:
   - [ ] Settings → Developer Options: number of free misses (today 4), the wait steps (today 30 s → 1 min → 5 min → 15 min → 1 h), and the 24 h reset window.
@@ -220,14 +220,15 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - **Depends on**: SEC-03, because a Front Desk user who can reach Developer Options could otherwise switch the lockout off. Like the rest of the gate, this is client-side only until SEC-02.
 
 ### SEC-03: Separate Developer Options Passcode
-- **Status**: ⚪ Deferred (owner 2026-10-24: "we'll add later"). Not scheduled.
-- **Ask**: Developer Options gets its own passcode, separate from the admin passcode.
-- **Target Solution**:
-  - [ ] A second build-time hash (e.g. `VITE_DEV_PASSCODE_SHA256`) produced by `npm run admin:hash -- --dev` (or a sibling script). The build refuses a dev code that matches the admin code.
-  - [ ] Unlocking Developer Options asks for the dev passcode on the same keypad (`PasscodeField`), with its own session (`lfps_dev_session_v1`) and its own lockout counter.
-  - [ ] Decide with the owner whether admin is also required first (admin + dev) or the dev code works alone.
-  - [ ] Docs: ADMIN_ACCESS gains a Developer passcode section; CI/Actions needs the second hash (ARCH-05, FEAT-64 previews).
-- **Limit**: same as SEC-01. The hash ships in the public bundle and can be brute-forced offline; real enforcement is SEC-02.
+- **Status**: 🟢 Done on Bundle 38b (owner: Dev Options not tied to admin).
+- **Delivered**:
+  - [x] `VITE_DEV_PASSCODE_SHA256` via `npm run admin:hash -- --dev` (refuses match with admin hash).
+  - [x] 5-tap discovery → Dev passcode keypad; tab session `lfps_dev_session_v1`; lockout `lfps_dev_lockout_v1`.
+  - [x] Dev code works alone (no admin session required). Edit-without-login enable needs Dev session or admin.
+  - [x] Docs: `ADMIN_ACCESS.md`, `PAGES_SETUP.md`; Actions secret documented.
+- **Limit**: same as SEC-01. The hash ships in the public bundle; real enforcement is SEC-02.
+- **Follow-up**: FEAT-67 lockout settings UI is now unblocked to schedule.
+
 
 ### FEAT-64: Preview / Test-Branch Builds ("switch to a test branch")
 - **Status**: 🟡 Implemented on Bundle 36 (`pages.yml`, preview badge, scoped storage); **live previews after owner cutover** in [`docs/PAGES_SETUP.md`](docs/PAGES_SETUP.md). **Owner chose option A** (2026-10-24).
