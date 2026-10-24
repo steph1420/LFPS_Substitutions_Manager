@@ -37,7 +37,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 
 ### Bundle 42 — Logic Sheet & Mockups Guide (docs only)
 - **Status**: 🟢 Started/shipped on `bundle/42-logic-sheet`
-- **Deliverable**: [`docs/redesign/LOGIC_SHEET_AND_MOCKUPS_GUIDE.md`](docs/redesign/LOGIC_SHEET_AND_MOCKUPS_GUIDE.md)
+- **Deliverable**: [`docs/redesign/LOGIC_SHEET.md`](docs/redesign/LOGIC_SHEET.md) + [`docs/redesign/MOCKUPS_GUIDE.md`](docs/redesign/MOCKUPS_GUIDE.md)
 - **Scope**: Inventory of literally all product logic + screen inventory + how to build fresh mockups later. **No** runtime behaviour, CSS, or theme work.
 - **Next (owner)**: Review the sheet → generate mockups from a clean mind → redesign app from mockups.
 - **Out of scope here**: Image mockups; light theme redesign (parked); SEC-02; EPIC-01.

@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- **Docs:** Split Bundle 42 redesign doc into [`docs/redesign/LOGIC_SHEET.md`](docs/redesign/LOGIC_SHEET.md) + [`docs/redesign/MOCKUPS_GUIDE.md`](docs/redesign/MOCKUPS_GUIDE.md); combined path kept as stub.
 ### Added
 - **Bundle 42 (docs)**: Foundational redesign document — [`docs/redesign/LOGIC_SHEET_AND_MOCKUPS_GUIDE.md`](docs/redesign/LOGIC_SHEET_AND_MOCKUPS_GUIDE.md). Full product/domain logic sheet (LOG-*) + screen inventory + mockups guide for a clean-slate redesign. No runtime/UI feature changes. Image mockups are a later phase after owner review.
 
