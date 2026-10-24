@@ -92,17 +92,31 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
   // List of distinct classes for Class View (LOGIC-07: Nursery removed)
   const classSections = ['KG A', 'KG B', 'PREP A', 'PREP B'];
 
-  // Handle Horizontal Scroll for Sticky Column Collapse on Narrow Screens (FEAT-53)
+  // FEAT-53 / BUG-30: name-column collapse — hysteresis + ignore self-caused scroll
+  const isColumnCollapsedRef = React.useRef(false);
+  const ignoreScrollUntilRef = React.useRef(0);
+  React.useEffect(() => {
+    isColumnCollapsedRef.current = isColumnCollapsed;
+  }, [isColumnCollapsed]);
+
   const handleTableScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (Date.now() < ignoreScrollUntilRef.current) return;
     const scrollLeft = e.currentTarget.scrollLeft;
     const isNarrowScreen = typeof window !== 'undefined' && window.innerWidth < 768;
+    const collapsed = isColumnCollapsedRef.current;
     if (isNarrowScreen) {
-      if (scrollLeft > 15 && !isColumnCollapsed) {
+      // Wider hysteresis (collapse > 40, expand <= 8) avoids thrash near the edge.
+      if (scrollLeft > 40 && !collapsed) {
+        ignoreScrollUntilRef.current = Date.now() + 180;
+        isColumnCollapsedRef.current = true;
         setIsColumnCollapsed(true);
-      } else if (scrollLeft <= 5 && isColumnCollapsed) {
+      } else if (scrollLeft <= 8 && collapsed) {
+        ignoreScrollUntilRef.current = Date.now() + 180;
+        isColumnCollapsedRef.current = false;
         setIsColumnCollapsed(false);
       }
-    } else if (isColumnCollapsed) {
+    } else if (collapsed) {
+      isColumnCollapsedRef.current = false;
       setIsColumnCollapsed(false);
     }
   };
@@ -141,10 +155,10 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
         <tr className="border-b border-slate-800 text-slate-300 font-semibold text-xs">
           {/* Sticky Corner Header with solid masking flange (BUG-05, BUG-08, FEAT-53) */}
           <th
-            className={`sticky top-0 left-0 z-40 bg-slate-900 py-1.5 sm:py-2 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)] transition-all ${
+            className={`sticky top-0 left-0 z-40 bg-slate-900 py-1.5 sm:py-2 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)] overflow-hidden ${
               isColumnCollapsed
                 ? 'w-[64px] min-w-[64px] max-w-[64px] px-1 text-center'
-                : 'px-2 sm:px-3 min-w-[130px] sm:min-w-[155px]'
+                : 'w-[130px] min-w-[130px] max-w-[130px] sm:w-[155px] sm:min-w-[155px] sm:max-w-[155px] px-2 sm:px-3'
             }`}
           >
             {isColumnCollapsed ? (
@@ -259,10 +273,10 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                 {/* Sticky Teacher Header Cell (FEAT-53 2-line collapse & FEAT-54 crimson highlight) */}
                 <td
                   onContextMenu={(e) => handleContextMenu(e, teacher.abbr)}
-                  className={`sticky left-0 z-20 transition-all cursor-context-menu select-none ${
+                  className={`sticky left-0 z-20 overflow-hidden cursor-context-menu select-none ${
                     isColumnCollapsed
                       ? 'w-[64px] min-w-[64px] max-w-[64px] px-1 py-1 text-center'
-                      : 'px-2 sm:px-3.5 py-1.5 sm:py-2'
+                      : 'w-[130px] min-w-[130px] max-w-[130px] sm:w-[155px] sm:min-w-[155px] sm:max-w-[155px] px-2 sm:px-3.5 py-1.5 sm:py-2'
                   } ${
                     isAbsent
                       ? 'bg-rose-950/90 border-r-2 border-r-rose-500 text-rose-200 font-bold shadow-[3px_0_12px_rgba(244,63,94,0.35)]'
@@ -542,7 +556,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                           </div>
                         </div>
                       ) : isAbsent && isBusy ? (
-                        <div className="rounded-lg bg-rose-500/15 border border-rose-500/30 p-1 text-[11px] font-semibold text-rose-300 shadow-sm animate-pulse">
+                        <div className="rounded-lg cell-missing-quiet p-1 text-[11px] font-semibold text-rose-300">
                           <div className="truncate font-bold text-[10px] sm:text-xs">
                             {parsed.className || originalTask}
                           </div>
@@ -592,10 +606,10 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
           classSections.map((sec) => (
             <tr key={sec} className="hover:bg-slate-900/40 transition-colors">
               <td
-                className={`sticky left-0 z-20 bg-slate-900/98 font-bold text-blue-400 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)] truncate ${
+                className={`sticky left-0 z-20 bg-slate-900/98 font-bold text-blue-400 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)] truncate overflow-hidden ${
                   isColumnCollapsed
                     ? 'w-[64px] min-w-[64px] max-w-[64px] px-1 py-1 text-center text-xs'
-                    : 'px-2 sm:px-3.5 py-1.5 sm:py-2'
+                    : 'w-[130px] min-w-[130px] max-w-[130px] sm:w-[155px] sm:min-w-[155px] sm:max-w-[155px] px-2 sm:px-3.5 py-1.5 sm:py-2'
                 }`}
               >
                 {sec}
