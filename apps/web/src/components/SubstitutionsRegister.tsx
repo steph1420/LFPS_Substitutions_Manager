@@ -481,7 +481,7 @@ export const SubstitutionsRegister: React.FC = () => {
                   onClick={() => setFilterMode('uncovered')}
                   className={`p-3 sm:p-4 rounded-xl border transition-all cursor-pointer ${
                     filterMode === 'uncovered'
-                      ? 'bg-rose-500/20 border-rose-500/60 shadow-md shadow-rose-500/10'
+                      ? 'bg-rose-500/20 border-rose-500/60 '
                       : 'bg-slate-900/60 border-rose-500/60 hover:border-rose-500/80'
                   }`}
                 >

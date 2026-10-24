@@ -229,7 +229,7 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
             className={`h-[54px] min-w-[80px] flex-1 max-w-[125px] px-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 border transition-all cursor-pointer select-none active:scale-95 shadow-sm text-center ${
               offCTSection
                 ? 'bg-emerald-950/20 border-emerald-500/40 hover:bg-emerald-900/30 text-emerald-200'
-                : 'bg-amber-950/40 border-amber-500/60 hover:bg-amber-900/50 text-amber-300 attention-pulse'
+                : 'bg-amber-950/30 border-amber-500/45 hover:bg-amber-900/40 text-amber-300 off-ct-appoint-quiet'
             }`}
             title={
               offCTSection

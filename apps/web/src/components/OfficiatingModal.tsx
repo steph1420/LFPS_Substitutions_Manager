@@ -79,7 +79,7 @@ export const OfficiatingModal: React.FC = () => {
           </div>
 
           {/* Candidate Pool */}
-          <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
+          <div className="max-h-72 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
             {teachers.map((teacher) => {
               const isAbsent = absences.some(
                 (a) => a.teacherName === teacher.abbr && a.day === selectedDay
