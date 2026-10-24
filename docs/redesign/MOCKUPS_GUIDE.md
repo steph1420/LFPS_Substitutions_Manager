@@ -181,8 +181,6 @@ School week MON–SAT; IST today; Free vs Need Sub vs Covered; Away ≠ Absent f
 
 ---
 
----
-
 ## 4. Parked items (design impact)
 
 | ID | Item | Design impact when unparked |
@@ -199,8 +197,6 @@ School week MON–SAT; IST today; Free vs Need Sub vs Covered; Away ≠ Absent f
 
 ---
 
----
-
 ## 5. Non-goals for mockups
 
 Mockups **should not** invent UI for:
@@ -213,8 +209,6 @@ Mockups **should not** invent UI for:
 - Brute-force-resistant client hashing theatre
 
 Mockups **may** show: sync status, Sheet data version string, preview badge, passcode keypad, Dev Options as a clearly "advanced" surface.
-
----
 
 ---
 
