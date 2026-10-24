@@ -158,6 +158,25 @@ export const SubstitutionsRegister: React.FC = () => {
     });
   }, [sortedUncoveredSlots, searchQuery]);
 
+  // Bundle 40: group uncovered duties by absent teacher (phone densify)
+  const uncoveredByTeacher = React.useMemo(() => {
+    const groups: Array<{
+      teacher: string;
+      slots: typeof uncoveredSlots;
+    }> = [];
+    const index = new Map<string, number>();
+    for (const slot of uncoveredSlots) {
+      const i = index.get(slot.originalTeacher);
+      if (i === undefined) {
+        index.set(slot.originalTeacher, groups.length);
+        groups.push({ teacher: slot.originalTeacher, slots: [slot] });
+      } else {
+        groups[i].slots.push(slot);
+      }
+    }
+    return groups;
+  }, [uncoveredSlots]);
+
   // Check if a teacher is a Class Teacher (LOGIC-05, FEAT-56)
   const isClassTeacher = (teacherName: string): boolean => {
     const teacher = directory[teacherName];
@@ -457,11 +476,11 @@ export const SubstitutionsRegister: React.FC = () => {
               transition={SPRING_TRANSITIONS.snappy}
               className="overflow-hidden will-change-[height,opacity]"
             >
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1 pb-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 text-xs pt-1 pb-1">
                 {/* 1st Card: Covered Substitutions */}
                 <div
                   onClick={() => setFilterMode('covered')}
-                  className={`p-3 sm:p-4 rounded-xl border transition-all cursor-pointer ${
+                  className={`p-2.5 sm:p-4 rounded-xl border transition-all cursor-pointer ${
                     filterMode === 'covered'
                       ? 'bg-emerald-500/20 border-emerald-500/50 shadow-md shadow-emerald-500/10'
                       : 'bg-surface-elev border-emerald-500/50 hover:border-emerald-500/70'
@@ -473,14 +492,14 @@ export const SubstitutionsRegister: React.FC = () => {
                       ACTIVE
                     </span>
                   </div>
-                  <div className="text-2xl sm:text-3xl font-bold text-ink">{daySubstitutions.length}</div>
+                  <div className="text-xl sm:text-3xl font-bold text-ink">{daySubstitutions.length}</div>
                   <div className="text-[11px] text-emerald-400 mt-1">Assignments resolved</div>
                 </div>
 
                 {/* 2nd Card: Uncovered Needs */}
                 <div
                   onClick={() => setFilterMode('uncovered')}
-                  className={`p-3 sm:p-4 rounded-xl border transition-all cursor-pointer ${
+                  className={`p-2.5 sm:p-4 rounded-xl border transition-all cursor-pointer ${
                     filterMode === 'uncovered'
                       ? 'bg-rose-500/20 border-rose-500/60 '
                       : 'bg-surface-elev border-rose-500/60 hover:border-rose-500/80'
@@ -492,7 +511,7 @@ export const SubstitutionsRegister: React.FC = () => {
                       {uncoveredSlots.length > 0 ? 'Needs cover' : 'All clear'}
                     </span>
                   </div>
-                  <div className="text-2xl sm:text-3xl font-bold text-ink">{uncoveredSlots.length}</div>
+                  <div className="text-xl sm:text-3xl font-bold text-ink">{uncoveredSlots.length}</div>
                   <div className="text-[11px] text-rose-400 mt-1">Pending substitution coverage</div>
                 </div>
 
@@ -504,7 +523,7 @@ export const SubstitutionsRegister: React.FC = () => {
 
                   return (
                     <div
-                      className={`p-3 sm:p-4 rounded-xl transition-all ${
+                      className={`p-2.5 sm:p-4 rounded-xl transition-all ${
                         hasPending
                           ? 'chip-amber border ring-1 ring-amber-500/30'
                           : 'bg-surface-elev border border-purple-500/40'
@@ -683,7 +702,7 @@ export const SubstitutionsRegister: React.FC = () => {
 
       {/* Uncovered Needs Section */}
       {(filterMode === 'all' || filterMode === 'uncovered') && uncoveredSlots.length > 0 && (
-        <section className="space-y-3">
+        <section className="space-y-2 sm:space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-rose-300 uppercase tracking-wider flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-rose-400" />
@@ -692,7 +711,112 @@ export const SubstitutionsRegister: React.FC = () => {
           </div>
 
           {substitutionsViewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            <>
+              {/* Bundle 40 phone: group by teacher, compact rows */}
+              <div className="sm:hidden space-y-3">
+                {uncoveredByTeacher.map((group) => {
+                  const absenceRecord = absences.find(
+                    (a) => a.day === selectedDay && a.teacherName === group.teacher
+                  );
+                  const isAwayDuty = absenceRecord?.type === 'AWAY_OFFICIAL';
+                  return (
+                    <div
+                      key={group.teacher}
+                      className={`glass-panel border rounded-xl overflow-hidden ${
+                        isAwayDuty
+                          ? 'border-indigo-500/30 bg-indigo-950/15'
+                          : 'border-rose-500/30 bg-rose-950/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-800/60">
+                        <div className="min-w-0">
+                          <div className={`text-[10px] font-medium ${isAwayDuty ? 'text-indigo-400' : 'text-slate-400'}`}>
+                            {isAwayDuty
+                              ? absenceRecord?.venue
+                                ? `Duty · ${absenceRecord.venue}`
+                                : 'On official duty'
+                              : 'Absent'}
+                          </div>
+                          <div className="text-sm font-bold text-ink truncate">{group.teacher}</div>
+                        </div>
+                        <span
+                          className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
+                            isAwayDuty
+                              ? 'bg-indigo-500/25 text-indigo-200 border-indigo-500/40'
+                              : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                          }`}
+                        >
+                          {group.slots.length} need{group.slots.length === 1 ? 's' : ''} sub
+                        </span>
+                      </div>
+                      <ul className="divide-y divide-slate-800/50">
+                        {group.slots.map((slot, idx) => {
+                          const parsed = parseCellSlot(slot.task);
+                          return (
+                            <li
+                              key={`${slot.period}-${slot.originalTeacher}-${idx}`}
+                              className="flex items-center gap-2 px-3 py-2"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  openAssignSubModal({
+                                    day: selectedDay,
+                                    period: slot.period,
+                                    originalTeacher: slot.originalTeacher,
+                                    className: parsed.className || 'KG',
+                                    subject: parsed.subject || slot.task,
+                                    task: slot.task,
+                                  });
+                                }}
+                                className="flex-1 min-w-0 text-left flex items-center gap-2"
+                              >
+                                <span
+                                  className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                    isAwayDuty
+                                      ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
+                                      : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                                  }`}
+                                >
+                                  {slot.period}
+                                </span>
+                                <span className="text-xs font-semibold text-ink truncate">
+                                  {parsed.className || 'KG'}
+                                  <span className="text-muted font-medium">
+                                    {' '}
+                                    · {parsed.subject || slot.task}
+                                  </span>
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  openAssignSubModal({
+                                    day: selectedDay,
+                                    period: slot.period,
+                                    originalTeacher: slot.originalTeacher,
+                                    className: parsed.className || 'KG',
+                                    subject: parsed.subject || slot.task,
+                                    task: slot.task,
+                                  });
+                                }}
+                                className="shrink-0 py-1.5 px-2.5 rounded-lg bg-blue-600 text-white font-semibold text-[11px] inline-flex items-center gap-1 shadow-sm shadow-blue-600/30 active:scale-95"
+                                aria-label={`Assign substitute for ${slot.period}`}
+                              >
+                                <UserCheck className="w-3.5 h-3.5" />
+                                Assign
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop / tablet: comfortable cards */}
+              <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
               {uncoveredSlots.map((slot, idx) => {
                 const parsed = parseCellSlot(slot.task);
                 const absenceRecord = absences.find(
@@ -790,7 +914,8 @@ export const SubstitutionsRegister: React.FC = () => {
                   </div>
                 );
               })}
-            </div>
+              </div>
+            </>
           ) : (
             <div className="space-y-2">
               {uncoveredSlots.map((slot, idx) => {
@@ -817,7 +942,7 @@ export const SubstitutionsRegister: React.FC = () => {
                         task: slot.task,
                       });
                     }}
-                    className={`glass-panel px-3 sm:px-4 py-2.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm transition-all cursor-pointer select-none active:scale-[0.99] group ${
+                    className={`glass-panel px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border flex flex-row items-center justify-between gap-2 sm:gap-3 text-xs shadow-sm transition-all cursor-pointer select-none active:scale-[0.99] group ${
                       isAwayDuty
                         ? 'border-indigo-500/30 hover:border-indigo-500/60 bg-indigo-950/15 hover:bg-indigo-950/25'
                         : 'border-rose-500/30 hover:border-rose-500/60 bg-rose-950/10 hover:bg-rose-950/20'
@@ -1158,7 +1283,7 @@ export const SubstitutionsRegister: React.FC = () => {
 
       {/* Officiating Staff Overview (Section 3 - UI-03) */}
       {(offACResult.isManuallyAssigned || offACResult.needsAppointment || Object.keys(offCTMap).length > 0 || unappointedCTs.length > 0) && (
-        <section className="glass-panel rounded-2xl p-4 sm:p-5 border border-purple-500/30 bg-purple-950/10 shadow-lg space-y-3">
+        <section className="glass-panel rounded-2xl p-3 sm:p-5 border border-purple-500/30 bg-purple-950/10 shadow-lg space-y-2.5 sm:space-y-3">
           <h3 className="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-purple-400" />
             Officiating Staff ({selectedDay})
@@ -1226,7 +1351,7 @@ export const SubstitutionsRegister: React.FC = () => {
             )}
 
             {unappointedCTs.length > 1 && (
-              <div className="bg-amber-950/40 border border-amber-500/60 rounded-xl p-3.5 flex flex-col justify-between gap-2.5 off-ct-appoint-quiet sm:col-span-2">
+              <div className="bg-amber-950/40 border border-amber-500/60 rounded-xl p-2.5 sm:p-3.5 flex flex-col justify-between gap-2 off-ct-appoint-quiet sm:col-span-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">

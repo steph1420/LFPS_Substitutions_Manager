@@ -18,6 +18,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Changed
+- **Bundle 40 (phone polish)**: Routine matrix keeps period column min-widths and horizontal scroll on narrow viewports (no more squeezed headers). Light-theme absent sticky names + Free / Need Sub contrast. Substitutions phone densify (group by absent teacher; compact Assign). Header mobile two-row layout for guest + logged-in; BUG-29 hysteresis widened (direction-aware, viewport freeze). Design note `docs/HEADER_MOBILE_40.md`. `npm run e2e:phone` portrait+landscape screenshots.
+
+
 ### Added
 - **SEC-03 (Bundle 38b)**: Developer Options has its own 6-digit passcode (`VITE_DEV_PASSCODE_SHA256`, `npm run admin:hash -- --dev`). 5-tap Build Info asks for the Dev code (not admin). Tab session + separate lockout. Edit-without-login can be enabled from a Dev session.
 - **SEC-02 (Bundle 38b)**: Design in `docs/SEC_02_SERVER_AUTH.md`; thin relay stub — optional `adminToken` on HELLO; `LFPS_REQUIRE_ADMIN_TOKEN=1` rejects `sched`/`limbo` without a token (default **off** so Front Desk sync is unchanged).
