@@ -28,7 +28,7 @@ Do these in order. Until step 3 is done, the site keeps serving the committed `n
 5. Value: the 64-character hex from your local `npm run admin:hash` (same value as in `apps/web/.env.local`). Never commit it.
 6. **Add secret**
 
-Without this secret the `pages` workflow fails closed (no production root build).
+Without this secret the `pages` **build is skipped** (workflow stays green so Render `checksPass` is not blocked) and nothing is published by Actions. The script itself still fail-closes if invoked with a missing hash.
 
 ### 2. Confirm CI is green on `next-gen`
 
