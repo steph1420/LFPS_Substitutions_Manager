@@ -21,7 +21,8 @@
     "version:sync": "node scripts/version.mjs sync",
     "admin:hash": "node scripts/hash-admin-passcode.mjs",
     "build:web:local": "node scripts/build-web-local.mjs",
-    "e2e:sheets": "node apps/web/e2e/sheets-restart.mjs"
+    "e2e:sheets": "node apps/web/e2e/sheets-restart.mjs",
+    "build:pages-actions": "node scripts/build-pages-site.mjs"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

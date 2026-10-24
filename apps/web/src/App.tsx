@@ -6,7 +6,7 @@ import { AbsenceRoster } from './components/AbsenceRoster.js';
 import { SubstitutionsRegister } from './components/SubstitutionsRegister.js';
 import { RoutineGrid } from './components/RoutineGrid.js';
 import { TabBar } from './components/TabBar.js';
-import { BUILD_LABEL, BUILD_TIME } from './lib/buildInfo.js';
+import { BUILD_LABEL, BUILD_TIME, GIT_BRANCH, IS_PREVIEW_BUILD, PREVIEW_INDEX_HREF } from './lib/buildInfo.js';
 import { MicroContextMenu } from './components/MicroContextMenu.js';
 import { SubAvailabilityModal } from './components/SubAvailabilityModal.js';
 import { CoTeacherModal } from './components/CoTeacherModal.js';
@@ -142,7 +142,18 @@ export const App: React.FC = () => {
 
         {/* Footer Status Bar — inside scroll so it does not steal height from the shell */}
         <footer className="w-full border-t border-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--surface-opaque)_88%,transparent)] px-6 pt-3 pb-[calc(7.25rem+env(safe-area-inset-bottom))] text-center text-xs text-[color-mix(in_srgb,var(--text-primary)_55%,transparent)]">
-          <span title={`Built ${BUILD_TIME}`}>LFPS Substitutions Manager · {BUILD_LABEL}</span>
+          <span className="inline-flex flex-wrap items-center justify-center gap-2">
+            {IS_PREVIEW_BUILD && (
+              <a
+                href={PREVIEW_INDEX_HREF}
+                className="rounded-full border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200 transition-transform duration-150 hover:scale-[1.03]"
+                title="Preview build — open the preview list"
+              >
+                Preview · {GIT_BRANCH}
+              </a>
+            )}
+            <span title={`Built ${BUILD_TIME}`}>LFPS Substitutions Manager · {BUILD_LABEL}</span>
+          </span>
         </footer>
       </div>
 

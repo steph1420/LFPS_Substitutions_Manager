@@ -68,5 +68,5 @@ tar -czf _backups/LFPS_Substitutions_Manager_v2.0.0_<label>_$(date +%Y%m%d_%H%M%
 4. Commit with `chore(release): …`. **Push only when the owner approves.** Pages redeploys from the `next-gen` root, and Render auto-deploys the server.
    - If `VITE_ADMIN_PASSCODE_SHA256` is not set in `apps/web/.env.local` on the machine that runs the build, the deployed app has **no admin access** (Settings shows "not configured"). See [`ADMIN_ACCESS.md`](./ADMIN_ACCESS.md).
    - Render: no time-zone setting is needed (Asia/Kolkata is the default in code; optional `APP_TZ` override under the service's **Environment** page). The relay is stateless, so a restart or redeploy clears live relay state by design (Google Sheets is the source of truth from Bundle 35).
-   - Bundle 36 (ARCH-05/06) replaces steps 1–2 with an Actions-built Pages artefact and check-gated Render deploys.
+   - Bundle 36 (ARCH-05/FEAT-64): Actions can build Pages (`docs/PAGES_SETUP.md`). Until the owner switches Pages → Source to **GitHub Actions** and sets `PAGES_ACTIONS_DEPLOY=true`, keep committing root assets (steps 1–2) so the live site stays up. Render remains check-gated (`checksPass`).
 5. To roll back, follow `CLOUD_CONNECTIONS_AND_ROLLBACK_GUIDE.md`.

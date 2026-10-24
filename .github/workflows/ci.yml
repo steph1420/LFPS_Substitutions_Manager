@@ -1,8 +1,13 @@
 # Checks that gate the Render deploy (render.yaml: autoDeployTrigger: checksPass).
+# Render only watches checks on commits that land on next-gen. bundle/* / preview/*
+# runs are for early feedback and do not affect production deploys.
 name: ci
 on:
   push:
-    branches: [next-gen]
+    branches:
+      - next-gen
+      - 'bundle/**'
+      - 'preview/**'
   pull_request:
     branches: [next-gen]
 permissions:

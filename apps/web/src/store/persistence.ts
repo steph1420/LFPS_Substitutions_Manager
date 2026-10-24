@@ -49,9 +49,10 @@ import type {
   RoutineSnapshot,
   SubstitutionsSnapshot,
 } from './useTimetableStore.js';
+import { scopedStorageKey } from '../lib/storageScope.js';
 
-export const OPERATIONAL_STATE_KEY = 'lfps_operational_state';
-export const OPERATIONAL_STATE_BACKUP_PREFIX = 'lfps_operational_state_backup_';
+export const OPERATIONAL_STATE_KEY = scopedStorageKey('lfps_operational_state');
+export const OPERATIONAL_STATE_BACKUP_PREFIX = scopedStorageKey('lfps_operational_state_backup_');
 export const CURRENT_SCHEMA_VERSION = 1;
 /** Day/week records older than this many days (relative to today) are pruned. */
 export const RETENTION_DAYS = 42;

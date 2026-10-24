@@ -1,3 +1,4 @@
+import { scopedStorageKey } from './storageScope.js';
 /**
  * Admin unlock (SEC-01 interim, Bundle 34).
  *
@@ -16,10 +17,10 @@
  */
 
 const SHA256_HEX = /^[0-9a-f]{64}$/;
-export const ADMIN_SESSION_KEY = 'lfps_admin_session_v2';
+export const ADMIN_SESSION_KEY = scopedStorageKey('lfps_admin_session_v2');
 /** Pre-34a sessions (no identity). Ignored and cleared on logout. */
-export const LEGACY_ADMIN_SESSION_KEY = 'lfps_admin_session_v1';
-export const ADMIN_LOCKOUT_KEY = 'lfps_admin_lockout_v1';
+export const LEGACY_ADMIN_SESSION_KEY = scopedStorageKey('lfps_admin_session_v1');
+export const ADMIN_LOCKOUT_KEY = scopedStorageKey('lfps_admin_lockout_v1');
 
 /** The admin passcode is exactly six digits (entered on a numeric keypad). */
 export const ADMIN_PASSCODE_LENGTH = 6;

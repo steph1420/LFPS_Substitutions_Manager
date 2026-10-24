@@ -23,7 +23,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 | **34** | Date-scoped local persistence; stateless relay hardening; fresh-clone build order; Front Desk by default with a **6-digit** passcode-gated admin (escalating lockout); footer version visible above the tab bar; single-source versioning (2.0.0-alpha.2); **school time zone Asia/Kolkata** on client and server | FEAT-62 (part 1), BUG-24, BUG-25 (part 1), BUG-26, BUG-27, BUG-28, SEC-01 interim, ARCH-02 (relay decision), ARCH-07 | 🟢 Live: v2.0.0-alpha.2, released 2026-10-24 |
 | **35** | Cross-device sync through the relay (devices ⇄ relay over WebSocket only); Sheets bridge: app-owned `Subs` + `App_Meta` (+ optional log) written async/batched/debounced/retried, read-only tabs pulled at startup + periodically and streamed; client "Connecting…" state for relay cold starts; Render re-setup guide + `render.yaml`. **Owner setup first:** service account + real spreadsheet ID | FEAT-62 (part 2), BUG-25 (part 2), BUG-32, FEAT-65, FEAT-66, FEAT-63, ARCH-06 | 🟢 Live in v2.0.0-alpha.3 (2026-10-24) |
 | **35a** | Close the two sync gaps (FEAT-62 part 3): devices apply the Sheet's read-only tabs (precedence: local edits > Sheet > bundled; version-gated; shown in Settings → Build Info); the relay reloads substitutions and their deletions from `Subs` after a restart (schema 2: tombstones, versions, idempotent upsert; hydrating gate). Relay guard so dev/test builds can't reach the production relay. Fake-Sheet tests, two-browser e2e with a restart, real-Sheet self-test. Go-live runbook for alpha.3 | FEAT-62 (part 3), FEAT-65 (reads), BUG-33, BUG-34 | 🟢 Live in v2.0.0-alpha.3 (2026-10-24; runbook docs/RELEASE_2.0.0-alpha.3.md) |
-| **36** | GitHub Actions CI (test, build, `go vet`, `go test -race`); Pages built by Actions instead of committed root assets (`next-gen` → root); Render deploys only after checks pass; branch previews at `/preview/<branch>/` with a footer branch badge (option A) | ARCH-05 (rest), ARCH-02 (adoption), FEAT-64 | ⚪ Planned (parallel / whenever; infra) |
+| **36** | GitHub Actions CI (test, build, `go vet`, `go test -race`); Pages built by Actions instead of committed root assets (`next-gen` → root); Render deploys only after checks pass; branch previews at `/preview/<branch>/` with a footer branch badge (option A) | ARCH-05 (rest), ARCH-02 (adoption), FEAT-64 | 🟡 Workflows + docs on `bundle/36` / `next-gen`; **owner cutover** still required (`docs/PAGES_SETUP.md`) |
 | **37** | Header/grid motion fix (no new shake); absent red-glow rewrite; Dev Options A/B (UI-10, auto-filter, needs-attention); pulse one-shot | UI-10, BUG-29, BUG-30, UI-06, FEAT-69 | 🟢 Done on `bundle/37` (merged into `bundle/38a`) |
 | **38a** | Bundle 37 follow-through + fixed routine geometry + day-load Dev Option + FIND motion/absent consistency | UI-11, FEAT-70, FIND-01/03/04/09/10/11/12 | 🟢 Merged to `next-gen` (2026-10-24) |
 | **38b** | Server-side admin auth; Dev Options own passcode; per-admin design spike; docs reconciliation; BUG-31 HEAD reminder | SEC-02, SEC-03, ARCH-03, ARCH-04 | ⚪ Planned |
@@ -79,7 +79,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - [ ] Verify after deploy (owner + agent, after approval; steps in `docs/RENDER_SETUP.md`): health check (reports `version`), WS connect from the Pages origin, mutation round-trip between two devices, and devices re-hydrating from Sheets after a relay restart. Release steps: [`docs/RELEASE_2.0.0-alpha.3.md`](docs/RELEASE_2.0.0-alpha.3.md).
 
 ### ARCH-02: Deployment Model Decision & Adoption
-- **Status**: 🟡 Decided in part (JB34): Sheets = source of truth, Render = stateless relay, Pages from `next-gen`. Adoption of CI-built Pages and gated Render deploys → Bundle 36 (ARCH-05, ARCH-06).
+- **Status**: 🟡 JB34 decisions + JB35 `checksPass` + JB36 Actions Pages workflow. Live cutover still owner: `docs/PAGES_SETUP.md` (secret, Pages source, `PAGES_ACTIONS_DEPLOY`).
 - **Reported**: *"How should deployment be handled? Suggest the best method and adhere to it."*
 - **Current Behaviour**:
   - Built assets are committed into the `next-gen` root, and GitHub Pages serves that root.
@@ -88,8 +88,8 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
   - The repo has no `.github/workflows/` and no `render.yaml`.
 - **Target Solution**:
   - [ ] Write up a recommended model and get the owner's approval, recorded as a new ADR in `docs/DECISIONS/`. It must respect the owner's rules: never touch `main`, work on separate branches, always back up.
-  - [ ] Adopt the approved model: CI checks, Pages built by GitHub Actions without committed build output, Render deploy gating, and an optional staging preview.
-  - [ ] Update `docs/WORKFLOW.md` and the cloud guide to match.
+  - [x] (JB36) Adopt CI + Actions Pages workflow + Render `checksPass` (already in JB35). Committed build output removed only after owner cutover.
+  - [x] (JB36) `docs/PAGES_SETUP.md`, ADR-0006, WORKFLOW note. Cloud guide still accurate for rollback tags.
 
 ### ARCH-03: Resolve Documentation Inconsistencies
 - **Status**: 🔴 Open
@@ -230,7 +230,7 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - **Limit**: same as SEC-01. The hash ships in the public bundle and can be brute-forced offline; real enforcement is SEC-02.
 
 ### FEAT-64: Preview / Test-Branch Builds ("switch to a test branch")
-- **Status**: 🔵 Scheduled → **Bundle 36**, with ARCH-05. **Owner chose option A** (2026-10-24: "Test-branch previews: Yes please").
+- **Status**: 🟡 Implemented on Bundle 36 (`pages.yml`, preview badge, scoped storage); **live previews after owner cutover** in [`docs/PAGES_SETUP.md`](docs/PAGES_SETUP.md). **Owner chose option A** (2026-10-24).
 - **Reported**: *"Add a way to switch to test branches."*
 - **Decision**: previews live under the existing Pages address. Options B (hosted previews on a third party) and C (local only) were not chosen.
 - **Design sketch** (to confirm in an ADR when built; supersedes ADR-0004's "Pages serves the committed `next-gen` root"):
@@ -295,10 +295,10 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - Until then, the app never writes to master tabs. The earlier app's `Baseline_Updates` log is read-only.
 
 ### ARCH-05: GitHub Actions CI
-- **Status**: 🟡 Partly done on `bundle/35`: `.github/workflows/ci.yml` runs on push/PR to `next-gen` (server: gofmt, vet, `test -race`, no spreadsheet ID in Go; web: `npm ci`, `build:web`, `npm test`). Rest → Bundle 36
+- **Status**: 🟡 Bundle 36: `ci.yml` on `next-gen` + `bundle/**` + `preview/**`; `pages.yml` builds the site artifact. Committed root assets remain until owner cutover ([`docs/PAGES_SETUP.md`](docs/PAGES_SETUP.md)).
 - **Target Solution**:
-  - [ ] (partly, JB35: `next-gen` only, so the Render gate has a check to wait for) Workflow on push/PR for every branch: `npm ci`, `npm test` (includes `version:check`), `npm run build:web`, and in `apps/server`: `gofmt -l`, `go vet ./...`, `go test -race ./...`.
-  - [ ] Build the Pages artifact in Actions (inject `VITE_ADMIN_PASSCODE_SHA256` from an Actions variable, `GIT_COMMIT`/`GIT_BRANCH` from the run) so the committed root `assets/` can be removed.
+  - [x] (JB35 + JB36) Workflow on push/PR: `npm ci`, `npm test` (includes `version:check`), `npm run build:web`, and in `apps/server`: `gofmt -l`, `go vet ./...`, `go test -race ./...`. Also runs on `bundle/**` / `preview/**`.
+  - [x] (JB36) Build the Pages artifact in Actions (`VITE_ADMIN_PASSCODE_SHA256` secret, `GIT_COMMIT`/`GIT_BRANCH`, `VITE_BUILD_CHANNEL`). Deploy gated by `PAGES_ACTIONS_DEPLOY` + Pages source switch. Root `assets/` removal is an **optional follow-up after cutover**.
   - [ ] Branch protection on `next-gen` requiring the checks (owner action in GitHub settings).
 
 ### ARCH-06: `render.yaml` and Check-Gated Render Deploys

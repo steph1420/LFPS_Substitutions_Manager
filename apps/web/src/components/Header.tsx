@@ -17,7 +17,7 @@ import {
 import { useLiveSync } from '../hooks/useLiveSync.js';
 import { syncDisplay } from '../sync/status.js';
 import { ResetDayButton } from './ResetDayButton.js';
-import { APP_VERSION, BUILD_LABEL } from '../lib/buildInfo.js';
+import { APP_VERSION, BUILD_LABEL, GIT_BRANCH, IS_PREVIEW_BUILD, PREVIEW_INDEX_HREF } from '../lib/buildInfo.js';
 import { AddToHomeScreenModal } from './AddToHomeScreenModal.js';
 import {
   APP_SCROLL_ID,
@@ -395,6 +395,14 @@ export const Header: React.FC = () => {
                   >
                     v{APP_VERSION}
                   </span>
+                  {IS_PREVIEW_BUILD && (
+                    <a
+                      href={PREVIEW_INDEX_HREF}
+                      className="inline-flex h-2 w-2 flex-shrink-0 rounded-full bg-amber-400 shadow-[0_0_0_2px_rgba(251,191,36,0.25)]"
+                      title={`Preview · ${GIT_BRANCH}`}
+                      aria-label={`Preview build ${GIT_BRANCH}`}
+                    />
+                  )}
                   {isAdmin && (
                     <span
                       className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"

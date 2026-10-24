@@ -19,7 +19,7 @@ Everything below is owner work in the Render Dashboard. Nothing deploys from thi
 
 ## 2. Deploy gate: decision
 
-**Chosen: `autoDeployTrigger: checksPass` ("After CI Checks Pass").** Render deploys a new `next-gen` commit only after **every** GitHub check on it passes. The checks come from `.github/workflows/ci.yml`:
+**Chosen: `autoDeployTrigger: checksPass` ("After CI Checks Pass").** Render deploys a new `next-gen` commit only after **every** GitHub check on it passes. The checks come from `.github/workflows/ci.yml` (Bundle 36 also adds `.github/workflows/pages.yml` for the static site — see [`PAGES_SETUP.md`](./PAGES_SETUP.md); the pages **deploy** job is skipped until you enable it, so it does not block Render):
 
 - **server:** `gofmt`, `go vet`, `go test -race`, and a grep proving the spreadsheet ID is not in any `.go` file
 - **web:** `npm ci`, `npm run build:web`, `npm test` (version drift check plus core and web tests)

@@ -1,3 +1,4 @@
+import { scopedStorageKey } from './storageScope.js';
 import {
   adminOfficeFor,
   schoolDayForDate,
@@ -18,7 +19,7 @@ import {
  * Dev Options → "Edit without login". Device-local (localStorage), never part of the
  * synced operational state, so it can't spread to other devices.
  */
-export const EDITING_OVERRIDE_KEY = 'lfps_dev_editing_unlocked_v1';
+export const EDITING_OVERRIDE_KEY = scopedStorageKey('lfps_dev_editing_unlocked_v1');
 
 function localStore(): Storage | null {
   try {

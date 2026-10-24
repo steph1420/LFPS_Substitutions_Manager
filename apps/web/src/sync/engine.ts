@@ -36,10 +36,11 @@
  */
 import type { KeyValueStorage } from '../store/persistence.js';
 import { stableStringify, type EntityChanges, type EntityMap } from './entities.js';
+import { scopedStorageKey } from '../lib/storageScope.js';
 
-export const SYNC_META_KEY = 'lfps_sync_v1';
-export const DEVICE_ID_KEY = 'lfps_device_id';
-export const TAB_ID_KEY = 'lfps_tab_id';
+export const SYNC_META_KEY = scopedStorageKey('lfps_sync_v1');
+export const DEVICE_ID_KEY = scopedStorageKey('lfps_device_id');
+export const TAB_ID_KEY = scopedStorageKey('lfps_tab_id');
 const TOMB = '-';
 
 /** Wire format, matching apps/server/internal/livesync.Entity. */

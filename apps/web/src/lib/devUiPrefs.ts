@@ -1,3 +1,4 @@
+import { scopedStorageKey } from './storageScope.js';
 /**
  * Device-local Developer Options for Bundle 37/38a UI experiments (FEAT-69, FEAT-70).
  * Same pattern as "Edit without login" (lib/access.ts): localStorage only, never synced.
@@ -23,7 +24,7 @@ export interface DevUiPrefs {
   lastFreeDay: DayOfWeek | null;
 }
 
-export const DEV_UI_PREFS_KEY = 'lfps_dev_ui_prefs_v1';
+export const DEV_UI_PREFS_KEY = scopedStorageKey('lfps_dev_ui_prefs_v1');
 
 const SCHOOL_DAYS: DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 

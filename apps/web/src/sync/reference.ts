@@ -18,8 +18,9 @@ import { create } from 'zustand';
 import { DEFAULT_MASTER_SCHEDULE, DEFAULT_STAFF_DIRECTORY, type DayOfWeek, type MasterSchedule, type StaffDirectory } from '@lfps/core';
 import { applyDayOverrides, diffDaySchedule, type KeyValueStorage } from '../store/persistence.js';
 import { mapSheetData, type SheetSnapshot } from './sheetData.js';
+import { scopedStorageKey } from '../lib/storageScope.js';
 
-export const REFERENCE_KEY = 'lfps_reference_v1';
+export const REFERENCE_KEY = scopedStorageKey('lfps_reference_v1');
 
 export interface ReferenceCache {
   v: 1;

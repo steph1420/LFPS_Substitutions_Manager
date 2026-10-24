@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [Bundle 36] — 2026-10-24 (FEAT-64 / ARCH-05 rest)
+
+> GitHub Actions builds the Pages site; branch previews under `/preview/<slug>/`. **Owner cutover** (secret + Pages source + `PAGES_ACTIONS_DEPLOY`) is required before Actions publishes — until then committed root assets keep the live site up. Guide: [`docs/PAGES_SETUP.md`](docs/PAGES_SETUP.md).
+
+- **`pages.yml`**: on push to `next-gen` / `bundle/**` / `preview/**` and `workflow_dispatch`; builds root from `next-gen`, previews into `preview/<slug>/`, listing page; `actions/upload-pages-artifact` + `deploy-pages` when `PAGES_ACTIONS_DEPLOY=true`.
+- **`ci.yml`**: also runs on `bundle/**` and `preview/**` (Render still gates on `next-gen` checks only).
+- **Preview channel (FEAT-64)**: `VITE_BUILD_CHANNEL=preview`, footer/header badge, scoped `localStorage` keys, loopback relay (no production Sheets).
+- **Docs**: `docs/PAGES_SETUP.md` cutover clicks; ADR-0006. Root `index.html`/`assets/` **not** deleted in this bundle.
+- **Not in this bundle**: SEC-02/03 (38b); deleting committed root assets (optional after cutover).
+
 ## [Unreleased]
 
 ### Fixed

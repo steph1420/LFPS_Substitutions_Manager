@@ -33,6 +33,7 @@ import {
   startAdminSession,
   verifyAdminPasscode,
 } from '../lib/adminGate.js';
+import { scopedStorageKey } from '../lib/storageScope.js';
 import {
   adminOfficeToday,
   readEditingOverride,
@@ -374,7 +375,7 @@ interface TimetableState {
   purgeHistory: () => void;
 }
 
-const PREFERENCES_STORAGE_KEY = 'lfps_user_preferences_v2';
+const PREFERENCES_STORAGE_KEY = scopedStorageKey('lfps_user_preferences_v2');
 
 interface StoredPreferences {
   hideOverviewsByDefault?: boolean;
@@ -426,7 +427,7 @@ function autoPersistPreferences(prefs: StoredPreferences) {
   }
 }
 
-const AUTORESOLVE_POLICY_STORAGE_KEY = 'lfps_autoresolve_policy_v2';
+const AUTORESOLVE_POLICY_STORAGE_KEY = scopedStorageKey('lfps_autoresolve_policy_v2');
 
 function loadStoredPolicy(): AutoResolvePolicyConfig {
   if (typeof window === 'undefined') return DEFAULT_AUTORESOLVE_POLICY;
