@@ -61,7 +61,7 @@ Ask the user which of these they want. Don't assume. Steps A1–A8 apply to **bo
 
 The handover zip holds `LFPS_all_branches.bundle`, a git bundle of every branch and tag, including the local-only work branches that were **never pushed**. **(A)** Ask the user to upload the zip to your computer (or the bundle file itself). **(B)** The user has already unzipped it into their folder (A0); run the commands below there, with `~/work` replaced by that folder's parent (in Git Bash on Windows).
 
-The zip also includes `AGENTS.md`: the standing working rules that Grok Build / AFK Pilot read automatically from the repo root. The copy in the zip is identical to the one on `handover/2026-10-24`.
+The zip also includes `AGENTS.md`: the standing working rules that Grok Build / AFK Pilot read automatically from the repo root. It also includes `CHEATSHEET.md` (quality-neutral quota tips). The copies in the zip are identical to the ones on `handover/2026-10-24`.
 
 ```sh
 mkdir -p ~/work && cd ~/work

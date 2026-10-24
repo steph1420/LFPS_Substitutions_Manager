@@ -4,6 +4,13 @@
 
 **Who:** Steve (GitHub `steph1420`) owns the project. It is Little Flower Preparatory School's live front-desk tool for teacher absences and substitutions, used every school morning. He is not a developer. Job Bundles 34 to 35a (admin hierarchy, live sync, the Google Sheets bridge, CI, `render.yaml`, the tests and the docs suite) were built by Lippy, the previous assistant, in the way described below. Keep that standard.
 
+## Reading: read what the task touches
+This cuts **bookkeeping rereads**, never understanding.
+- **Always read fully:** `HANDOVER.md` and `AGENTS.md` at the start of each session, plus the code and docs for the area you're changing.
+- **Search before you change:** grep `BUGS.md`, `docs/DECISIONS/` (ADRs) and `TODO.md` for the area, files or feature you're touching, and read every hit in full.
+- **Write-only edits:** to add a CHANGELOG entry or a new BUG-/other ID, open only the top of the file (`[Unreleased]`) or grep for the last ID. No full reread.
+- **When in doubt, read it.** Never trade care or understanding for quota.
+
 ## 1. Backup first
 - Before **any** change, make a tarball in `_backups/`:
   ```sh

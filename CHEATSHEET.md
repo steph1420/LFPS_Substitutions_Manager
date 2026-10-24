@@ -23,6 +23,8 @@
   *Why:* the project context is already written down, so the model doesn't re-derive it.
 - **Keep `HANDOVER.md` current when you pause** (done / next / open issues / branch + commit).
   *Why:* the next session starts warm from one file instead of re-exploring the repo.
+- **Read what the task touches, not whole logs.** Read the code, docs, bugs and ADRs for the area fully; for a CHANGELOG line or new ID, open only the top or grep for the last ID.
+  *Why:* saves rereading bookkeeping files, while the model still reads everything relevant (see `AGENTS.md` → Reading).
 - **Ask for targeted changes** ("fix `parseKey` in `apps/web/src/sync/entities.ts`"), not broad rewrites.
   *Why:* a narrow ask reads and changes less, and is easier to test and review. Same diligence, smaller scope.
 - **Close sessions when done** (`/quit`, or close them in `/sessions`) rather than leaving long histories idle.
