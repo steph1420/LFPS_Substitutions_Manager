@@ -19,10 +19,11 @@ import { DisputeModal } from './components/DisputeModal.js';
 import { NotificationCenterDrawer } from './components/NotificationCenterDrawer.js';
 import { AwayOfficialModal } from './components/AwayOfficialModal.js';
 import { startLiveSync } from './sync/live.js';
+import { schoolDayForDate } from '@lfps/core';
 import { APP_SCROLL_ID, readDevUiPrefs, type HeaderScrollMode } from './lib/devUiPrefs.js';
 
 export const App: React.FC = () => {
-  const { activeTab, isFitGrid, undo, redo } = useTimetableStore();
+  const { activeTab, isFitGrid, undo, redo, setDay } = useTimetableStore();
   const [headerScrollMode, setHeaderScrollMode] = React.useState<HeaderScrollMode>(
     () => readDevUiPrefs().headerScrollMode
   );
@@ -36,6 +37,23 @@ export const App: React.FC = () => {
       window.removeEventListener('lfps-dev-ui-prefs', sync);
     };
   }, []);
+
+  // FEAT-70: day load mode — free pick restores last day; follow snaps on load + visibility
+  React.useEffect(() => {
+    const prefs = readDevUiPrefs();
+    if (prefs.dayLoadMode === 'free' && prefs.lastFreeDay) {
+      setDay(prefs.lastFreeDay);
+    } else if (prefs.dayLoadMode === 'follow') {
+      setDay(schoolDayForDate(new Date()) ?? 'MON');
+    }
+    const onVis = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (readDevUiPrefs().dayLoadMode !== 'follow') return;
+      setDay(schoolDayForDate(new Date()) ?? 'MON');
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [setDay]);
 
   // Bundle 35: the one live sync socket for this tab (ref-counted, StrictMode-safe).
   React.useEffect(() => startLiveSync(), []);
@@ -122,7 +140,7 @@ export const App: React.FC = () => {
         </main>
 
         {/* Footer Status Bar — inside scroll so it does not steal height from the shell */}
-        <footer className="w-full glass-panel border-t border-slate-800/80 px-6 pt-3 pb-[calc(6rem+env(safe-area-inset-bottom))] text-center text-xs text-slate-500">
+        <footer className="w-full border-t border-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--surface-opaque)_88%,transparent)] px-6 pt-3 pb-[calc(7.25rem+env(safe-area-inset-bottom))] text-center text-xs text-[color-mix(in_srgb,var(--text-primary)_55%,transparent)]">
           <span title={`Built ${BUILD_TIME}`}>LFPS Substitutions Manager · {BUILD_LABEL}</span>
         </footer>
       </div>

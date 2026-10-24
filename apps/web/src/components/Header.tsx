@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
-import { DayOfWeek } from '@lfps/core';
+import { DayOfWeek, schoolDayForDate, dateForSchoolDay } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
 import { usePermissions } from './PermissionGuard.js';
 import {
@@ -22,7 +22,9 @@ import { AddToHomeScreenModal } from './AddToHomeScreenModal.js';
 import {
   APP_SCROLL_ID,
   readDevUiPrefs,
+  writeDevUiPrefs,
   type HeaderScrollMode,
+  type DevUiPrefs,
 } from '../lib/devUiPrefs.js';
 
 // Perfectly symmetrical Apple-grade spring physics (timed equally for expand and collapse)
@@ -41,6 +43,7 @@ export const Header: React.FC = () => {
   const {
     selectedDay,
     setDay,
+    activeWeekStart,
     loggedInTeacher,
     logout,
     openSettings,
@@ -70,20 +73,26 @@ export const Header: React.FC = () => {
   const [headerScrollMode, setHeaderScrollMode] = React.useState<HeaderScrollMode>(
     () => readDevUiPrefs().headerScrollMode
   );
+  const [devUiPrefs, setDevUiPrefs] = React.useState<DevUiPrefs>(() => readDevUiPrefs());
+
+  const todaySchoolDay = React.useMemo(() => schoolDayForDate(new Date()), [selectedDay]);
 
   React.useEffect(() => {
     headerStateRef.current = headerState;
   }, [headerState]);
 
-  // Re-read Dev Options header mode when storage changes (same tab via custom event, other tabs via storage)
+  // Re-read Dev Options when storage changes (same tab via custom event, other tabs via storage)
   React.useEffect(() => {
-    const sync = () => setHeaderScrollMode(readDevUiPrefs().headerScrollMode);
-    const onCustom = () => sync();
+    const sync = () => {
+      const prefs = readDevUiPrefs();
+      setHeaderScrollMode(prefs.headerScrollMode);
+      setDevUiPrefs(prefs);
+    };
     window.addEventListener('storage', sync);
-    window.addEventListener('lfps-dev-ui-prefs', onCustom);
+    window.addEventListener('lfps-dev-ui-prefs', sync);
     return () => {
       window.removeEventListener('storage', sync);
-      window.removeEventListener('lfps-dev-ui-prefs', onCustom);
+      window.removeEventListener('lfps-dev-ui-prefs', sync);
     };
   }, []);
 
@@ -114,6 +123,10 @@ export const Header: React.FC = () => {
     // Freeze scroll delta calculations so day height diffs don't trigger false header reveal
     isDayChangingRef.current = true;
     setDay(day);
+    // FEAT-70: remember free-pick day on this device
+    if (readDevUiPrefs().dayLoadMode === 'free') {
+      writeDevUiPrefs({ lastFreeDay: day });
+    }
 
     if (headerState !== 'FULL') {
       resetAutoCollapseTimer();
@@ -241,10 +254,10 @@ export const Header: React.FC = () => {
           <span
             className={`w-2 h-2 rounded-full ${
               sync.status.phase === 'live'
-                ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
+                ? 'status-dot-live'
                 : sync.status.phase === 'connecting'
-                  ? 'bg-amber-400 animate-pulse'
-                  : 'bg-slate-500'
+                  ? 'status-dot-connecting'
+                  : 'status-dot-offline'
             }`}
           />
           <span className="font-bold tracking-wider">{selectedDay}</span>
@@ -260,17 +273,33 @@ export const Header: React.FC = () => {
           <div className="flex items-center gap-0.5 sm:gap-1">
             {DAYS.map((day) => {
               const isActive = selectedDay === day;
+              const isToday = todaySchoolDay === day;
+              const dateIso = activeWeekStart ? dateForSchoolDay(activeWeekStart, day) : '';
+              const dateShort = dateIso ? dateIso.slice(8) : ''; // DD
               return (
                 <button
                   key={day}
                   onClick={() => handleSelectDay(day)}
+                  title={isToday ? `Today · ${dateIso}` : dateIso || day}
                   className={`relative px-2.5 sm:px-3 py-0.5 text-xs font-bold rounded-full transition-colors select-none ${
                     isActive
                       ? 'text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-600/40'
                       : 'text-slate-400 hover:text-slate-200'
-                  }`}
+                  } ${isToday && !isActive ? 'ring-1 ring-emerald-400/70' : ''}`}
                 >
-                  {day}
+                  <span className="inline-flex flex-col items-center leading-none gap-0.5">
+                    <span className="inline-flex items-center gap-1">
+                      {day}
+                      {isToday && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-label="Today" />
+                      )}
+                    </span>
+                    {devUiPrefs.dayLoadMode === 'free' && dateShort && (
+                      <span className={`text-[8px] font-semibold ${isActive ? 'text-blue-100/90' : 'text-slate-500'}`}>
+                        {dateShort}
+                      </span>
+                    )}
+                  </span>
                 </button>
               );
             })}
@@ -392,7 +421,7 @@ export const Header: React.FC = () => {
               >
                 <Bell className="w-3.5 h-3.5 text-purple-400" />
                 {alertBadgeCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-[9px] font-bold text-white flex items-center justify-center animate-pulse">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-[9px] font-bold text-white flex items-center justify-center">
                     {alertBadgeCount > 9 ? '9+' : alertBadgeCount}
                   </span>
                 )}
@@ -429,13 +458,17 @@ export const Header: React.FC = () => {
               >
                 {DAYS.map((day) => {
                   const isActive = selectedDay === day;
+                  const isToday = todaySchoolDay === day;
+                  const dateIso = activeWeekStart ? dateForSchoolDay(activeWeekStart, day) : '';
+                  const dateShort = dateIso ? dateIso.slice(8) : '';
                   return (
                     <button
                       key={day}
                       onClick={() => handleSelectDay(day)}
+                      title={isToday ? `Today · ${dateIso}` : dateIso || day}
                       className={`relative px-3.5 py-1 text-xs font-semibold rounded-full transition-colors z-10 select-none ${
                         isActive ? 'text-white' : 'text-slate-400 hover:text-slate-200'
-                      }`}
+                      } ${isToday && !isActive ? 'ring-1 ring-emerald-400/60' : ''}`}
                     >
                       {isActive && (
                         <motion.div
@@ -444,7 +477,19 @@ export const Header: React.FC = () => {
                           className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-600/30 -z-10"
                         />
                       )}
-                      {day}
+                      <span className="inline-flex flex-col items-center leading-none gap-0.5 relative">
+                        <span className="inline-flex items-center gap-1">
+                          {day}
+                          {isToday && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-label="Today" />
+                          )}
+                        </span>
+                        {devUiPrefs.dayLoadMode === 'free' && dateShort && (
+                          <span className={`text-[8px] font-semibold ${isActive ? 'text-blue-100/90' : 'text-slate-500'}`}>
+                            {dateShort}
+                          </span>
+                        )}
+                      </span>
                     </button>
                   );
                 })}
@@ -482,10 +527,10 @@ export const Header: React.FC = () => {
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
                   sync.status.phase === 'live'
-                    ? 'bg-emerald-400 animate-pulse'
+                    ? 'status-dot-live'
                     : sync.status.phase === 'connecting'
-                      ? 'bg-amber-400 animate-pulse'
-                      : 'bg-slate-500'
+                      ? 'status-dot-connecting'
+                      : 'status-dot-offline'
                 }`}
               />
               <span>{phaseLabel(sync.status.phase)}</span>
@@ -498,7 +543,7 @@ export const Header: React.FC = () => {
             <button
               onClick={() => setIsPwaModalOpen(true)}
               className="p-1.5 rounded-lg border glass-pill border-slate-700 hover:border-blue-500/40 text-slate-300 hover:text-blue-400 transition-colors active:scale-95"
-              title="Add to Home Screen / Install PWA (FEAT-59)"
+              title="Add to Home Screen / Install PWA"
             >
               <Smartphone className="w-4 h-4 text-blue-400" />
             </button>
@@ -507,7 +552,7 @@ export const Header: React.FC = () => {
             <button
               onClick={() => sync.downloadExcel()}
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg glass-pill border-slate-700 hover:border-emerald-500/40 text-xs font-semibold text-slate-300 hover:text-emerald-400 transition-colors"
-              title="Download Dated Excel Register (FEAT-25)"
+              title="Download Dated Excel Register"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
               <span>Excel</span>
@@ -517,11 +562,11 @@ export const Header: React.FC = () => {
             <button
               onClick={openNotificationCenter}
               className="relative p-1.5 rounded-lg border glass-pill border-slate-700 hover:border-purple-500/40 text-slate-300 hover:text-purple-400 transition-colors active:scale-95 cursor-pointer"
-              title="Universal Notification Center (FEAT-50)"
+              title="Notifications"
             >
               <Bell className="w-4 h-4 text-purple-400" />
               {alertBadgeCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 px-1 min-w-[16px] h-4 rounded-full bg-rose-500 text-[9px] font-bold text-white flex items-center justify-center animate-pulse">
+                <span className="absolute -top-1.5 -right-1.5 px-1 min-w-[16px] h-4 rounded-full bg-rose-500 text-[9px] font-bold text-white flex items-center justify-center">
                   {alertBadgeCount > 9 ? '9+' : alertBadgeCount}
                 </span>
               )}
@@ -538,7 +583,7 @@ export const Header: React.FC = () => {
 
             {loggedInTeacher ? (
               <div className="flex items-center gap-2 glass-pill px-3 py-1.5 rounded-full border border-slate-700/80">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-2 h-2 rounded-full status-dot-live" />
                 <span className="text-xs font-medium text-slate-200">{loggedInTeacher}</span>
                 <button
                   onClick={logout}

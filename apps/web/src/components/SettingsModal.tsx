@@ -29,8 +29,7 @@ import {
   LockOpen,
   LogIn,
   RefreshCw,
-  Sparkles,
-} from 'lucide-react';
+  } from 'lucide-react';
 import { AddToHomeScreenModal } from './AddToHomeScreenModal.js';
 import { AdminAccessPanel } from './AdminAccessPanel.js';
 import { usePermissions } from './PermissionGuard.js';
@@ -39,9 +38,11 @@ import { useReferenceInfo } from '../sync/reference.js';
 import {
   readDevUiPrefs,
   writeDevUiPrefs,
+  type DayLoadMode,
   type DevUiPrefs,
   type HeaderScrollMode,
 } from '../lib/devUiPrefs.js';
+import { schoolDayForDate } from '@lfps/core';
 
 interface ThemeOption {
   id: ThemeId;
@@ -155,6 +156,7 @@ export const SettingsModal: React.FC = () => {
     isSettingsOpen,
     closeSettings,
     selectedDay,
+    setDay,
     loggedInTeacher,
     logout,
     directory,
@@ -177,10 +179,6 @@ export const SettingsModal: React.FC = () => {
     setDeveloperMode,
     samePeriodLock,
     setSamePeriodLock,
-    subHaloIndicator,
-    setSubHaloIndicator,
-    subHaloColor,
-    setSubHaloColor,
     acceptanceCountdown,
     setAcceptanceCountdown,
     acceptanceDuration,
@@ -405,13 +403,13 @@ export const SettingsModal: React.FC = () => {
               {/* Section 2: Interface & View Preferences (FEAT-45, FEAT-55, FEAT-60, BUG-17) */}
               <div className="space-y-2">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Interface Preferences & Persistence (FEAT-60)
+                  Interface Preferences & Persistence
                 </span>
                 <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/80 space-y-3">
                   {/* Minimal UI Toggle */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-semibold text-slate-200">Minimal UI Mode (BUG-17)</div>
+                      <div className="font-semibold text-slate-200">Minimal UI Mode</div>
                       <div className="text-[11px] text-slate-400">
                         Use compact padding and dense typography across all workstation tabs.
                       </div>
@@ -435,7 +433,7 @@ export const SettingsModal: React.FC = () => {
                     <div>
                       <div className="font-semibold text-slate-200 flex items-center gap-1.5">
                         <PanelTopClose className="w-3.5 h-3.5 text-indigo-400" />
-                        Hide Overviews by Default (FEAT-45)
+                        Hide Overviews by Default
                       </div>
                       <div className="text-[11px] text-slate-400">
                         Start Substitutions & Roster KPI overviews in collapsed state on application boot.
@@ -460,7 +458,7 @@ export const SettingsModal: React.FC = () => {
                     <div>
                       <div className="font-semibold text-slate-200 flex items-center gap-1.5">
                         <EyeOff className="w-3.5 h-3.5 text-rose-400" />
-                        Hide Absent Teachers in Routine Matrix (FEAT-55)
+                        Hide Absent Teachers in Routine Matrix
                       </div>
                       <div className="text-[11px] text-slate-400">
                         Filter out absent faculty rows from the routine table view.
@@ -520,7 +518,7 @@ export const SettingsModal: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <Palette className="w-3.5 h-3.5 text-purple-400" />
-                    Complete 12-Theme Engine (FEAT-46)
+                    Complete 12-Theme Engine
                   </span>
                   <span className="text-[10px] text-slate-400">
                     Active: <strong className="text-white capitalize">{currentTheme}</strong>
@@ -608,7 +606,7 @@ export const SettingsModal: React.FC = () => {
               {/* Section 3: App Installation & PWA (FEAT-59) */}
               <div className="space-y-2">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Mobile App & PWA Installation (FEAT-59)
+                  Mobile App & PWA Installation
                 </span>
                 <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -660,9 +658,9 @@ export const SettingsModal: React.FC = () => {
                         <span
                           className={`w-2 h-2 rounded-full ${
                             sync.status.phase === 'live'
-                              ? 'bg-emerald-400 animate-pulse'
+                              ? 'status-dot-live'
                               : sync.status.phase === 'connecting'
-                                ? 'bg-amber-400 animate-pulse'
+                                ? 'status-dot-connecting'
                                 : 'bg-slate-500'
                           }`}
                         />
@@ -708,7 +706,7 @@ export const SettingsModal: React.FC = () => {
                   >
                     <FileSpreadsheet className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                     <div>
-                      <div className="font-semibold text-slate-200">Export Excel (FEAT-25)</div>
+                      <div className="font-semibold text-slate-200">Export Excel</div>
                       <div className="text-[10px] text-slate-400">Dated XLSX register with signatures</div>
                     </div>
                   </button>
@@ -766,7 +764,7 @@ export const SettingsModal: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
                       <Terminal className="w-4 h-4 text-emerald-400" />
-                      Developer & Diagnostics Console (FEAT-47)
+                      Developer & Diagnostics Console
                     </span>
                     <button
                       type="button"
@@ -868,7 +866,7 @@ export const SettingsModal: React.FC = () => {
 
                     {/* Bundle 37 / FEAT-69: device-local UI experiments */}
                     <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2.5">
-                      <div className="font-semibold text-slate-200 text-xs">Header scroll mode (UI-10)</div>
+                      <div className="font-semibold text-slate-200 text-xs">Header scroll mode</div>
                       <div className="text-[10px] text-slate-400 -mt-1">
                         This device only. (A) keeps the browser toolbar still; (B) uses window scroll with hysteresis.
                       </div>
@@ -956,12 +954,49 @@ export const SettingsModal: React.FC = () => {
                       </button>
                     </div>
 
+
+                    <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2.5">
+                      <div className="font-semibold text-slate-200 text-xs">Day load mode</div>
+                      <div className="text-[10px] text-slate-400 -mt-1">
+                        This device only. (A) always opens on today&apos;s school day; (B) remembers the day you last picked.
+                      </div>
+                      <div className="flex gap-1.5">
+                        {(
+                          [
+                            ['follow', 'A · Follow school day'],
+                            ['free', 'B · Free pick'],
+                          ] as [DayLoadMode, string][]
+                        ).map(([mode, label]) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => {
+                              patchDevUiPrefs({ dayLoadMode: mode });
+                              if (mode === 'follow') {
+                                setDay(schoolDayForDate(new Date()) ?? 'MON');
+                              }
+                              showToast(
+                                mode === 'follow' ? 'Day load: follow school day' : 'Day load: free pick'
+                              );
+                            }}
+                            className={`flex-1 px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer ${
+                              devUiPrefs.dayLoadMode === mode
+                                ? 'bg-emerald-600/30 border-emerald-500/50 text-emerald-200'
+                                : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-200'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     {/* Cross-Period Substitution Lock */}
                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
                       <div>
                         <div className="font-semibold text-slate-200 flex items-center gap-1.5">
                           <Lock className="w-3.5 h-3.5 text-amber-400" />
-                          Cross-Period Lock (samePeriodLock)
+                          Cross-Period Lock
                         </div>
                         <div className="text-[10px] text-slate-400">
                           Strictly restrict substitute candidates to teachers with Free slot in the exact period.
@@ -980,58 +1015,6 @@ export const SettingsModal: React.FC = () => {
                           }`}
                         />
                       </button>
-                    </div>
-
-                    {/* Target Cell Halo Pulse Indicator */}
-                    <div className="space-y-2 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-semibold text-slate-200 flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                            Target Cell Halo Pulse Indicator
-                          </div>
-                          <div className="text-[10px] text-slate-400">
-                            Render animated aura pulse on target candidate substitute cells.
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setSubHaloIndicator(!subHaloIndicator)}
-                          className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
-                            subHaloIndicator ? 'bg-cyan-600' : 'bg-slate-800'
-                          }`}
-                        >
-                          <span
-                            className={`block w-4 h-4 rounded-full bg-white transition-transform ${
-                              subHaloIndicator ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </div>
-
-                      {subHaloIndicator && (
-                        <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
-                          <span className="text-[10px] text-slate-400 font-semibold uppercase">
-                            Halo Color Palette:
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            {(['emerald', 'cyan', 'amber', 'violet'] as const).map((color) => (
-                              <button
-                                key={color}
-                                type="button"
-                                onClick={() => setSubHaloColor(color)}
-                                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                                  subHaloColor === color
-                                    ? 'bg-white text-slate-950 shadow-sm'
-                                    : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                                }`}
-                              >
-                                {color}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
 
                     {/* Acceptance Countdown Timer */}

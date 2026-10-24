@@ -7,6 +7,7 @@ import {
   isTeacherCoTeachingInSlot,
   compareTeachersByHierarchy,
   compareTeachersByName,
+  schoolDayForDate,
 } from '@lfps/core';
 import { useTimetableStore } from '../store/useTimetableStore.js';
 import { Maximize2, Minimize2, Users, School, Eye, EyeOff, Check, Building2 } from 'lucide-react';
@@ -80,7 +81,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
     );
   }, [directory, routineSortBy]);
 
-  // Filter teachers when hideAbsentStaff is active (FEAT-55)
+  // Filter teachers when hideAbsentStaff is active (FEAT-55). UI-11: outer shell keeps min-height.
   const teachers = React.useMemo(() => {
     if (!hideAbsentStaff) return sortedTeachers;
     return sortedTeachers.filter((t) => {
@@ -88,6 +89,8 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
       return !abs || abs.type === 'AWAY_OFFICIAL';
     });
   }, [sortedTeachers, hideAbsentStaff, absences, selectedDay]);
+
+  const routineShellMinPx = Math.max(352, 48 + sortedTeachers.length * 44);
 
   // List of distinct classes for Class View (LOGIC-07: Nursery removed)
   const classSections = ['KG A', 'KG B', 'PREP A', 'PREP B'];
@@ -150,7 +153,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
 
   // Render Table Header and Body (High-Density Multi-Axial Sticky Architecture)
   const renderTable = () => (
-    <table className="w-full text-left border-collapse select-none">
+    <table className="routine-matrix-table w-full text-left border-collapse select-none">
       <thead className="sticky top-0 z-30 bg-slate-900 shadow-sm">
         <tr className="border-b border-slate-800 text-slate-300 font-semibold text-xs">
           {/* Sticky Corner Header with solid masking flange (BUG-05, BUG-08, FEAT-53) */}
@@ -279,7 +282,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
                       : 'w-[130px] min-w-[130px] max-w-[130px] sm:w-[155px] sm:min-w-[155px] sm:max-w-[155px] px-2 sm:px-3.5 py-1.5 sm:py-2'
                   } ${
                     isAbsent
-                      ? 'bg-rose-950/90 border-r-2 border-r-rose-500 text-rose-200 font-bold shadow-[3px_0_12px_rgba(244,63,94,0.35)]'
+                      ? 'matrix-absent-sticky font-bold'
                       : isAwayTargetRow
                       ? 'bg-indigo-950/95 border-r-2 border-r-indigo-400 text-indigo-100 font-bold shadow-[3px_0_12px_rgba(99,102,241,0.4)]'
                       : 'bg-slate-900/98 font-semibold text-slate-200 border-r-2 border-slate-700 shadow-[3px_0_10px_rgba(0,0,0,0.5)]'
@@ -713,19 +716,24 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
         {/* Fullscreen Day Switcher Pills */}
         {isExpanded && (
           <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs font-semibold overflow-x-auto">
-            {DAYS.map((d) => (
+            {DAYS.map((d) => {
+              const isToday = schoolDayForDate(new Date()) === d;
+              return (
               <button
                 key={d}
                 onClick={() => setDay(d)}
-                className={`px-2 py-0.5 rounded-lg transition-colors ${
+                title={isToday ? 'Today' : d}
+                className={`px-2 py-0.5 rounded-lg transition-colors inline-flex items-center gap-1 ${
                   selectedDay === d
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-slate-400 hover:text-slate-200'
-                }`}
+                } ${isToday && selectedDay !== d ? 'ring-1 ring-emerald-400/60' : ''}`}
               >
                 {d}
+                {isToday && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-label="Today" />}
               </button>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -887,6 +895,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
           ref={tableWrapperRef}
           onScroll={handleTableScroll}
           className="flex-1 w-full min-h-0 overflow-auto rounded-xl border border-slate-800 bg-slate-900/60 relative scrollbar-thin"
+          style={{ minHeight: routineShellMinPx }}
         >
           {renderTable()}
         </div>
@@ -907,7 +916,8 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
       <div
         ref={tableWrapperRef}
         onScroll={handleTableScroll}
-        className="w-full overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60 relative scrollbar-thin"
+        className="routine-matrix-shell w-full overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60 relative scrollbar-thin"
+        style={{ minHeight: routineShellMinPx }}
       >
         {renderTable()}
       </div>
