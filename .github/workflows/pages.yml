@@ -1,0 +1,123 @@
+# FEAT-64 / ARCH-05 (Bundle 36): build the GitHub Pages site in Actions.
+#
+# Until the owner switches Settings → Pages → Source to "GitHub Actions" AND sets the
+# repo variable PAGES_ACTIONS_DEPLOY=true, the deploy job is skipped so Render's
+# checksPass gate is not blocked. Branch deploy of committed root assets keeps working.
+#
+# Required secret: VITE_ADMIN_PASSCODE_SHA256 (64-char hex from `npm run admin:hash`)
+# Optional secret: VITE_DEV_PASSCODE_SHA256 (SEC-03; `npm run admin:hash -- --dev`) — Dev Options unlock
+# Optional var:    PAGES_ACTIONS_DEPLOY=true  (set after switching Pages source)
+#
+# Docs: docs/PAGES_SETUP.md
+name: pages
+
+on:
+  push:
+    branches:
+      - next-gen
+      - 'bundle/**'
+      - 'preview/**'
+  workflow_dispatch:
+    inputs:
+      full_previews:
+        description: 'Rebuild every bundle/* and preview/* branch'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Check admin hash secret
+        id: secret
+        env:
+          VITE_ADMIN_PASSCODE_SHA256: ${{ secrets.VITE_ADMIN_PASSCODE_SHA256 }}
+        run: |
+          if [[ "$VITE_ADMIN_PASSCODE_SHA256" =~ ^[0-9a-fA-F]{64}$ ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Add repo secret VITE_ADMIN_PASSCODE_SHA256 (64-char hex from npm run admin:hash). Pages build skipped so Render checksPass is not blocked. See docs/PAGES_SETUP.md"
+          fi
+
+      - name: Restore previous preview tree
+        if: steps.secret.outputs.configured == 'true'
+        uses: actions/cache@v4
+        with:
+          path: site/preview
+          key: pages-previews-${{ github.sha }}
+          restore-keys: |
+            pages-previews-
+
+      - name: Build site tree
+        if: steps.secret.outputs.configured == 'true'
+        env:
+          VITE_ADMIN_PASSCODE_SHA256: ${{ secrets.VITE_ADMIN_PASSCODE_SHA256 }}
+          VITE_DEV_PASSCODE_SHA256: ${{ secrets.VITE_DEV_PASSCODE_SHA256 }}
+          PAGES_OUT: ${{ github.workspace }}/site
+          PAGES_EVENT_BRANCH: ${{ github.ref_name }}
+        run: |
+          if [ "${{ github.ref_name }}" = "next-gen" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            export PAGES_FULL_PREVIEWS=1
+          fi
+          # workflow_dispatch can opt out of full rebuilds
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.full_previews }}" != "true" ]; then
+            unset PAGES_FULL_PREVIEWS
+            export PAGES_EVENT_BRANCH="${{ github.ref_name }}"
+          fi
+          node scripts/build-pages-site.mjs
+
+      - name: Upload Pages artifact
+        if: steps.secret.outputs.configured == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Save preview tree cache
+        if: steps.secret.outputs.configured == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: site/preview
+          key: pages-previews-${{ github.sha }}
+
+      - name: Skip notice (secret missing)
+        if: steps.secret.outputs.configured != 'true'
+        run: echo "pages build skipped — committed root assets still serve via branch deploy until cutover."
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    # Skip until owner switches Pages source to Actions and sets this variable.
+    # Skipping (not failing) keeps Render checksPass green while branch deploy still serves root assets.
+    # Only next-gen (and manual workflow_dispatch) may deploy: github-pages environment
+    # protection rejects other branches (red X on bundle/** / preview/**). Build still
+    # runs on those branches so preview trees validate without attempting deploy.
+    if: vars.PAGES_ACTIONS_DEPLOY == 'true' && (github.ref_name == 'next-gen' || github.event_name == 'workflow_dispatch')
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

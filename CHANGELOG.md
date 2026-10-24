@@ -6,13 +6,315 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [Bundle 36] — 2026-10-24 (FEAT-64 / ARCH-05 rest)
+
+> GitHub Actions builds the Pages site; branch previews under `/preview/<slug>/`. **Owner cutover** (secret + Pages source + `PAGES_ACTIONS_DEPLOY`) is required before Actions publishes — until then committed root assets keep the live site up. Guide: [`docs/PAGES_SETUP.md`](docs/PAGES_SETUP.md).
+
+- **`pages.yml`**: on push to `next-gen` / `bundle/**` / `preview/**` and `workflow_dispatch`; builds root from `next-gen`, previews into `preview/<slug>/`, listing page; `actions/upload-pages-artifact` + `deploy-pages` when `PAGES_ACTIONS_DEPLOY=true`.
+- **`ci.yml`**: also runs on `bundle/**` and `preview/**` (Render still gates on `next-gen` checks only).
+- **Preview channel (FEAT-64)**: `VITE_BUILD_CHANNEL=preview`, footer/header badge, scoped `localStorage` keys, loopback relay (no production Sheets).
+- **Docs**: `docs/PAGES_SETUP.md` cutover clicks; ADR-0006. Root `index.html`/`assets/` **not** deleted in this bundle.
+- **Not in this bundle**: SEC-02/03 (38b); deleting committed root assets (optional after cutover).
+
 ## [Unreleased]
 
+- **Docs:** Split Bundle 42 redesign doc into [`docs/redesign/LOGIC_SHEET.md`](docs/redesign/LOGIC_SHEET.md) + [`docs/redesign/MOCKUPS_GUIDE.md`](docs/redesign/MOCKUPS_GUIDE.md); combined path kept as stub.
+### Added
+- **Bundle 42 (docs)**: Foundational redesign document — [`docs/redesign/LOGIC_SHEET_AND_MOCKUPS_GUIDE.md`](docs/redesign/LOGIC_SHEET_AND_MOCKUPS_GUIDE.md). Full product/domain logic sheet (LOG-*) + screen inventory + mockups guide for a clean-slate redesign. No runtime/UI feature changes. Image mockups are a later phase after owner review.
+
+### Changed
+- **Bundle 41a (phone feel)**: Portrait faculty/name column **narrow by default** with expand toggle (persisted); calm 0.38s width ease (UI-14). Header hide/show responds **during active scroll** — scroll-up expands mid-page, no post-scroll debounce (BUG-35). Absent cards/chips use soft rose tint + rail, not solid magenta fill (UI-15). Themes still parked. `e2e:phone` checks portrait name-col default + toggle.
+- **Bundle 40 (phone polish)**: Routine matrix keeps period column min-widths and horizontal scroll on narrow viewports (no more squeezed headers). Light-theme absent sticky names + Free / Need Sub contrast. Substitutions phone densify (group by absent teacher; compact Assign). Header mobile two-row layout for guest + logged-in; BUG-29 hysteresis widened (direction-aware, viewport freeze). Design note `docs/HEADER_MOBILE_40.md`. `npm run e2e:phone` portrait+landscape screenshots.
+
+
+### Added
+- **SEC-03 (Bundle 38b)**: Developer Options has its own 6-digit passcode (`VITE_DEV_PASSCODE_SHA256`, `npm run admin:hash -- --dev`). 5-tap Build Info asks for the Dev code (not admin). Tab session + separate lockout. Edit-without-login can be enabled from a Dev session.
+- **SEC-02 (Bundle 38b)**: Design in `docs/SEC_02_SERVER_AUTH.md`; thin relay stub — optional `adminToken` on HELLO; `LFPS_REQUIRE_ADMIN_TOKEN=1` rejects `sched`/`limbo` without a token (default **off** so Front Desk sync is unchanged).
+- Per-admin / role privileges design spike: `docs/PER_ADMIN_ACCESS.md`.
+
+### Fixed
+- **BUG-35 (Bundle 41a)**: Header FULL↔PILL now flips while scrolling (direction-aware mid-page expand), not only after finger release / near top.
+- **Pages workflow (Bundle 40 follow-up)**: `pages.yml` deploy job runs only on `next-gen` or `workflow_dispatch` (still gated by `PAGES_ACTIONS_DEPLOY`). Feature-branch pushes keep building preview trees but no longer attempt `deploy-pages`, so github-pages environment protection does not paint a red X on `bundle/**` / `preview/**`. Docs: `docs/PAGES_SETUP.md`.
+- **Pages preview tests (Bundle 40 follow-up)**: `storage-scope` and `access` tests tolerate `VITE_BUILD_CHANNEL=preview` (scoped localStorage keys) so Actions preview builds stop failing vitest and marking `preview/<slug>` as “build failed — kept previous”.
+- **UI-12 (Bundle 39)**: Day-theme contrast — semantic `text-ink` / `bg-surface-*` / soft chip tokens; bare `text-white` remapped to ink on light families; `*-950` chips softened; Settings / Staff Login / Midnight modal surfaces tokenized.
+- **FIND-05 (Bundle 39)**: Sync pill shows **Sheets error** / **Loading sheet…** when the bridge exposes it; tap opens Settings → Cloud.
+- Front Desk copy: Off. CT tooltips, Brain Studio → Auto-Resolve, KPI “ALERT 0” honesty, friendlier empty states; remaining ticket IDs scrubbed from titles.
+- A11y: focus-visible rings, larger header icon hit targets, `prefers-reduced-motion` on tab fades.
+- **UI-11 (Bundle 38a)**: Routine matrix uses `table-layout: fixed`, reserved row height, and a directory-based min shell height so SAT / Hide Absent no longer collapses the card frame.
+- **FIND-01 (Bundle 38a)**: Replaced infinite Tailwind `animate-pulse` on Live/Connecting dots and badges with static status-dot classes; honor `prefers-reduced-motion` for attention / look-at-me animations.
+- **FIND-03 (Bundle 38a)**: Removed dead Target Cell Halo Pulse Developer Option (and color palette) — toggle had no runtime effect.
+- **FIND-04 (Bundle 38a)**: Routine sticky absent name cell uses the same left-rail / no-bloom treatment as roster cards (UI-06 parity).
+- **FIND-09 (Bundle 38a)**: Substitutions Overview / Off. CT appoint affordances quieted (no infinite pulse; quieter appoint chrome).
+- **FIND-10 (Bundle 38a)**: Amber first-view look-at-me on compact roster card and list variants.
+- **FIND-11 (Bundle 38a)**: Auto-filter Absent resets on Mark Present / Mark All Present, shows **Show all**, and uncovered chip opens Substitutions.
+- Settings preference labels: removed FEAT-/BUG- ticket IDs from user-visible strings. Footer padding/theme so the dock does not cover the version line.
+- **BUG-29 / UI-10 (Bundle 37)**: Header FULL↔PILL jitter — fix-only; Dev Options A/B container vs thresholds.
+- **BUG-30 (Bundle 37)**: Routine name-column collapse jitter — fix-only.
+- **UI-06 (Bundle 37)**: Absent card/row rail rewrite; quieter Off. CT Appoint; one-shot CSS attention pulses.
+
+### Added
+- **FEAT-70 (Bundle 38a)**: Dev Options day load mode — **(A) Follow school day** (default; snaps on load + tab visibility) vs **(B) Free pick** (remembers last MON–SAT on device). Today marker on day chips; date subtitle in free mode.
+- **FEAT-69 (Bundle 37)**: Device-local Dev Options (`lfps_dev_ui_prefs_v1`): Header scroll mode, Auto-filter Absent, Needs attention strip.
+- Assessment: [`docs/ASSESSMENT_2026-10-24.md`](docs/ASSESSMENT_2026-10-24.md).
+
 ### Planned
-- **Simple Mode**:
-  - Streamlined view option presenting strictly basic manual substitution logic.
-- **Codebase Technical Debt & Bloat Elimination**:
-  - Prune dead static arrays (`masterTimetableLog`, `subjectsCatalog`) and streamline dual-stack actionHistory.
+- **Ops reminder**: BUG-31 — cron-job.org → **HEAD** (still parked).
+- **Deferred**: FEAT-67 lockout settings (unblocked after SEC-03); full SEC-02 token mint; per-admin server accounts.
+- **Bundle 36**: CI builds Pages; stop committing root assets (FEAT-64).
+
+
+## [v2.0.0-alpha.3] - 2026-10-24
+
+> Job Bundles **34a** + **35** + **35a** (via `handover/2026-10-24`, which includes `bundle/35a`). **Live on `next-gen` / GitHub Pages + Render** (go-live 2026-10-24) (Pages + Render together). Rollback point: tag `rollback/pre-v2.0.0-alpha.3` → `362d887` (`v2.0.0-alpha.2`). Runbook: [`docs/RELEASE_2.0.0-alpha.3.md`](docs/RELEASE_2.0.0-alpha.3.md).
+> Wire protocol changed vs alpha.2: client and relay must ship together for sync (SAS §6.3).
+
+### Added
+- **Live sync across devices (FEAT-62 part 2, BUG-25, Job Bundle 35)**: Absences, availabilities, substitutions, displaced slots, Off. AC / Off. CT appointments and dated routine edits now sync through the relay over one WebSocket. On connect a device sends `HELLO` and gets `HYDRATE` (the relay's current week). Edits go out as small per-entity changes (`STATE_MUTATION`, acknowledged, broadcast to the other devices). Conflicts resolve per entity, last writer wins. Edits made while offline queue in the tab and go out on reconnect. A relay that restarted empty is refilled by the devices.
+- **"Connecting…" state (FEAT-66)**: The header pill shows **Live**, **Connecting…** (amber, gentle pulse) or **Offline**. A sleeping Render relay takes about a minute to wake; that stays Connecting…, and the app is fully usable from local data meanwhile. Offline means no network, or still failing after 90 s. The hover text shows queued changes. Reconnects back off from 1 s to 30 s with jitter, and retry at once when the network returns or the window regains focus.
+- **Google Sheets bridge (FEAT-65)**: With credentials set, the relay writes substitutions to the app's own `Subs` tab and its state to `App_Meta` (optional `App_Log` with `SHEETS_LOG=1`). Writes are debounced, batched and retried with backoff, and never block devices. It pulls the owner's read-only tabs at startup and every 5 min and streams them to devices (`SHEETS_SNAPSHOT`; applied on devices since JB35a). An allowlist guard means the relay can write **only** to app-owned tabs; it refuses a foreign tab that has an app tab's name, and never reads hidden tabs. Without credentials it runs **relay-only**.
+- **`sheetcheck` tool** (`apps/server/cmd/sheetcheck`): lists the Sheet's tabs and protections read-only; `-ensure` creates the app tabs; `-protect` (not run) would add warning-only protection to them.
+- **`render.yaml` Blueprint (FEAT-63, ARCH-06)**: Docker web service on `next-gen`, health check `/api/v1/health`, deploys only after CI checks pass (`autoDeployTrigger: checksPass`), and env var names (the service-account key is a Secret File). Owner guide: `docs/RENDER_SETUP.md`.
+- **CI workflow (part of ARCH-05)**: `.github/workflows/ci.yml` on push/PR to `next-gen`: gofmt, `go vet`, `go test -race`, a check that the spreadsheet ID isn't in Go code, `npm ci`, `npm run build:web`, `npm test`.
+- **Devices apply the Sheet (FEAT-62 part 3, JB35a)**: Staff Directory, the per-teacher routine tabs and Subjects List now replace the bundled directory and routine on every device. Local date-scoped edits win over the Sheet, and the Sheet over the bundled data, so an edit in progress is never overwritten. A snapshot applies only when its data version is new; it is cached for reloads and followed by other tabs. Settings → Build Info shows **Sheet data `<version>` · `<time>`**. Cells the app can't read safely keep the bundled value and are reported in Developer Options.
+- **Deletions survive a relay restart (BUG-33, JB35a)**: in sheets mode the relay reloads the week's substitutions and deletions from `Subs` before letting devices in (`/health` `store: hydrating`, then `ready`; `SHEETS_HYDRATE_TIMEOUT`, default 20 s). A device that missed a deletion can no longer bring the substitution back.
+- **`sheetcheck -selftest` / `-clean` (JB35a)**: writes, reloads, deletes and removes test rows in `Subs` on the real Sheet, and checks that no other tab changed.
+- **Relay guard (BUG-34, JB35a)**: dev servers and test builds refuse a production relay URL (`VITE_ALLOW_PROD_RELAY=1` to override on purpose); `npm run build:web:local` builds for a loopback relay and checks the bundle.
+- **End-to-end test (JB35a)**: `npm run e2e:sheets`: two browsers and a fresh third against a local relay in sheets mode with a fake Sheet (`SHEETS_FAKE_FILE`), restart mid-test.
+- **Admin Hierarchy at Staff Login (FEAT-68, Job Bundle 34a)**: The Principal, the Academic Coordinator, the Asst. Academic Coordinator and **today's** Officiating AC are the admins. In Staff Login they are tagged "Admin" (or "Off. AC today"). Choosing one asks for the 6-digit admin passcode (same keypad and lockout), and success turns on editing in that tab for that person. Everyone else is still identified at a tap. Log Out, or choosing another name, ends admin. An Off. AC is an admin only on the day the appointment is in force. `@lfps/core` adds `adminOfficeFor()` and the `'Principal'` staff role. The school data names no Principal, so Staff Login offers the Principal **by designation**; a Staff Directory row with Role `Principal` replaces it automatically.
+- **Dev Options → "Edit without login" (FEAT-68)**: A device-local switch (`localStorage`, never synced) that allows editing with nobody logged in. While it is on, the header shows an amber **Editing unlocked** badge, and Settings → Admin Access offers **Turn off**. Developer Options themselves still need an admin login (until SEC-03). See the risks in `docs/ADMIN_ACCESS.md`.
+
+### Changed
+- **One sign-in place (FEAT-68)**: The separate Settings → Admin Access keypad is folded into Staff Login. The Admin Access panel shows who is signed in as admin, with Log Out, or an "Admin login" button that opens Staff Login. The Settings "I am…" picker is replaced by a **Staff Login** button (this also fixes its overflow at phone width).
+- **One permission helper (FEAT-68)**: `apps/web/src/lib/access.ts` `resolveAccess()` now decides every admin-gated action and screen (store guards, `usePermissions`, `PermissionGuard`, Developer Options). Admin sessions are tied to the identity that entered the passcode (`lfps_admin_session_v2`); sessions from before 34a are ignored, so admins sign in once more.
+- The lockout countdown is announced to screen readers (`role="status"`).
+- **Health reports the mode (JB35)**: `/api/v1/health` adds `mode` (`sheets` or `relay-only`) and, in sheets mode, `sheets` (`starting`, `ok` or `error`). It stays small and does no I/O.
+- **Settings → "Cloud Synchronization & Health" (JB35)**: real diagnostics: phase, mode, Sheets state, devices online, queued changes, last sync, and Reconnect.
+- `useLiveSync()` only reads the sync status now; one client per tab owns the socket.
+- **`Subs` schema 2 (JB35a)**: new columns Deleted At, Version TS, Version By and Payload; a removal is a tombstone row; writing the same state twice changes nothing. A schema-1 tab is upgraded in place (its rows aren't reloaded). `App_Meta` adds `data_version` and `subs_reloaded_at`.
+- **One read per pull (JB35a)**: the owner tabs are read with a single `batchGet`, well inside the Sheets read quota (60/min).
+- **Production relay URLs moved (JB35a)**: `apps/web/.env` → `apps/web/.env.production`, so only the production build uses them.
+- Health adds `store` (`hydrating` / `ready`); the Sheets state can read `hydrating` (JB35a).
+
+### Removed
+- **REST mutation routes (JB35)**: `POST /api/v1/absence/toggle`, `POST /api/v1/availability`, `POST /api/v1/substitutions/assign` and `DELETE /api/v1/substitutions`. Edits travel over the WebSocket only.
+
+### Fixed
+- **BUG-32 (JB35)**: Opening Settings no longer opens a second WebSocket per tab.
+- **JB35a**: a change made while a Sheet snapshot arrived is now sent at once, and a batch refused with "hydrating" is re-sent after 2 s.
+
+### Docs
+- **JB35**: new `docs/RENDER_SETUP.md` (Render fields, deploy gate, env vars, verify, rollback) and `docs/SHEETS_SETUP.md` (write rules and their tests, setup, tabs found, owner decisions). SAS §2.1, §6.3 (sync protocol), §7 and §9 updated.
+- **JB35a**: ADR-0005 amended (substitutions reload from `Subs` after a restart); SAS §2.1, §3.1, §6.2, §6.3, §6.5, §7, §9; SHEETS_SETUP (schema 2, self-test and its real-Sheet result, fake Sheet, limits); RENDER_SETUP (new env vars, `store`, client and relay go live together); new `docs/RELEASE_2.0.0-alpha.3.md` go-live runbook.
+- **DEVELOPER_GUIDE.md updated at the owner's request (2026-10-24, branch `handover/2026-10-24`)**: rewritten to match the code and docs as of JB35a: monorepo layout and ordered builds, single-sourced version and footer, date-scoped persistence, the relay and Google Sheets bridge (`Subs` schema 2, `App_Meta`, write allowlist, rehydrate on restart), IST in code, `ALLOWED_ORIGINS`, the production-relay guard, the admin gate with `resolveAccess` and "Edit without login", env vars and `.env.local`, test commands (incl. `sheetcheck -selftest` and `e2e:sheets`), `render.yaml` and CI, the release runbook, the backup/branch rule and a new §13 docs index. Stale facts removed (disk storage, `cmd/server`, `scratch` image, teal CT colour, old spring values and scoring formula, "work on `next-gen` and push"); people named by role only. Closes the DG parts of DOC_ISSUES DI-04, DI-07, DI-09–DI-16, DI-19, DI-23–DI-25 (§E).
+- **`AGENTS.md` (2026-10-24, branch `handover/2026-10-24`, Steve's request)**: new root file for AI coding agents, distilled from HANDOVER Part C and WORKFLOW: backup and branch first, plan as job bundles, test before and after (real numbers), root-cause bug fixes with IDs, Sheets rules (source of truth, write allowlist, read-only owner tabs, `Subs` schema 2, IST), docs in sync, handover notes, plain-English communication, secrets. Indexed in `docs/README.md`.
+- **AGENTS.md "Reading: read what the task touches" (2026-10-24, branch `handover/2026-10-24`, Steve's request)**: new short section that cuts bookkeeping rereads, not understanding (read HANDOVER/AGENTS and the touched area fully; grep BUGS.md, ADRs and TODO.md and read every hit; write-only CHANGELOG/ID edits open just the top or grep the last ID; when in doubt, read it). Matching CHEATSHEET.md tip; HANDOVER A1 now says the zip also includes `CHEATSHEET.md`.
+- **`CHEATSHEET.md` and HANDOVER zip note (2026-10-24, branch `handover/2026-10-24`, Steve's request)**: new root cheat sheet of quality-neutral quota savers for Grok Build / AFK Pilot (`/compact` at a natural break, `/context`, plan mode, one session, short fresh prompts, `AGENTS.md`/`HANDOVER.md`/`@file`, targeted asks, closing sessions), each checked against docs.x.ai/build; explicitly excludes lower effort, cheaper models and skipped tests or backups. Indexed in `docs/README.md`. HANDOVER A1 now says the zip includes `AGENTS.md`.
+- **BUG-31 (ops)**: Saving responses was already off on the owner's cron-job.org job, so the fix is switching its request method to **HEAD** (job → Edit → Advanced → Request method).
+
+---
+
+## [v2.0.0-alpha.2] - 2026-10-24
+
+> Job Bundle 34, branch `bundle/34` (off `refine/jb31`). **Released 2026-10-24** on the owner's approval ("Go live now"): merged into `next-gen` (GitHub Pages and Render auto-deploy from it), tag `v2.0.0-alpha.2`. Rollback point: tag `rollback/pre-v2.0.0-alpha.2` (the previous `next-gen`, `19c1a1a`).
+> The 2026-10-24 follow-ups (6-digit passcode, school time zone, owner clarifications) are part of Job Bundle 34 and **keep the version at 2.0.0-alpha.2**: nothing has shipped, and VERSIONING §2.1 bumps `-alpha.N` once per bundle shipped to Pages (see VERSIONING §2.5).
+> Owner direction recorded here: **Google Sheets is the source of truth; the Render server is a stateless live relay, not storage.**
+
+### Added
+- **Reload-Safe Local Persistence (FEAT-62 part 1, BUG-25 part 1, Job Bundle 34)**: Operational state now survives a reload on the same device. It is saved to `localStorage` (`lfps_operational_state`, schema v1) 250 ms after each change and flushed when the tab is hidden or closed. Saved: absences, availability/deputations, substitutions (including Accepted/Disputed), displaced slots, Off. AC / Off. CT appointments, routine edits, the active week's undo history (last 10) and notifications (14 days, max 100). Open tabs on the same device stay in step through the `storage` event.
+- **Calendar-Date Scoping (Job Bundle 34)**: `@lfps/core` `calendar` maps MON–SAT to the active school week's dates (Sunday rolls to the coming week). Last week's absences no longer reappear; data older than 42 days is pruned. The app now opens on **today's** weekday and rolls over at midnight. Routine edits are stored as per-date overrides; permanent routine changes will come from Google Sheets (Bundle 35).
+- **Passcode-Gated Admin (SEC-01 interim, Job Bundle 34)**: The app opens as **Front Desk**. Admin (schedule editing, solver policy, Reset Day, history purge, developer mode) requires a passcode whose SHA-256 is set at build time (`VITE_ADMIN_PASSCODE_SHA256`, `npm run admin:hash`). Session is per tab; Lock in Settings. (The passcode format and lockout were revised the next day; see the 6-digit entry below.) Staff Login is now identity only. Client-side protection only; see `docs/ADMIN_ACCESS.md` and SEC-02.
+- **6-Digit Admin Passcode (SEC-01 interim, Job Bundle 34 follow-up, owner 2026-10-24)**: The admin passcode is exactly six digits, entered as six dots over a numeric keypad. It submits on the sixth digit, and a wrong code shakes the row (transform only; respects Reduce Motion). The lockout now persists per device (`lfps_admin_lockout_v1`) and escalates: 4 free misses, then 30 s, 1 min, 5 min, 15 min, then 1 h per further miss. It resets on success or after 24 h. `npm run admin:hash` accepts only six digits and refuses easy codes unless `--allow-weak`.
+- **School Time Zone (ARCH-07, Job Bundle 34 follow-up)**: The calendar follows **Asia/Kolkata** on every device, whatever the device's zone: date keys, the Sunday 00:00 week switch, the midnight rollover, pruning, the Excel file name and displayed times (`@lfps/core` `SCHOOL_TIME_ZONE`, `schoolDateFor`). The server defaults to Asia/Kolkata in code (`internal/schooltz`; `APP_TZ`, then `TZ`, override it), embeds zone data (`time/tzdata`) and reports `timeZone` in `/api/v1/health`. No Render setting is needed.
+- **Build Info (Job Bundle 34)**: Header shows `v2.0.0-alpha.2`; the footer and Settings show `v<version> · <commit> · <branch>` (build time on hover). Settings shows "Saved on this device · <time>".
+- **Tests (Job Bundle 34)**: `@lfps/web` gets a Vitest suite (persistence 11, reload 5, access 14 = 30; one access test runs only where the owner's passcode is configured). `@lfps/core` gains 11 calendar tests (30 total), including IST rollover. Go adds `schooltz` tests and an IST week-rollover test. Go gets tests for the store, handlers, router and hub, all run under `go test -race`.
+- **Version tooling (Job Bundle 34)**: `scripts/version.mjs` (`npm run version:check` / `version:sync`) keeps the root, the three workspaces and `apps/server/internal/version` on one version; `npm test` fails on a mismatch.
+- **Standard Documentation Suite (Job Bundle 31 workspace, `refine/jb31`)**:
+  - **Docs Index**: Added `docs/README.md`, which indexes every project document and records that `DEVELOPER_GUIDE.md` is owner-controlled and only updated on explicit request.
+  - **Software Architecture Specification**: Added `docs/SAS.md`, a code-verified description of the monorepo topology, the `@lfps/core` solver and scoring, the `@lfps/ui` tokens, the web store, persistence and RBAC, the Go server API and WebSocket hub, and deployment.
+  - **Versioning Policy**: Added `docs/VERSIONING.md`, which covers SemVer lockstep across workspaces, the bump procedure, CHANGELOG conventions and the ID prefixes.
+  - **Bug Register**: Added `BUGS.md`, which tabulates BUG-01 to BUG-23 from `TODO.md`/`CHANGELOG.md` (ID, title, severity, status, found in, fixed in, notes).
+  - **Contributor & Workflow Guides**: Added `CONTRIBUTING.md` and `docs/WORKFLOW.md`, which describe the Job Bundle cycle, backups, the branch model and the verification baseline.
+  - **Architecture Decision Records**: Added `docs/DECISIONS/` with a template and ADR-0001 to ADR-0004 (monorepo with a TS core and a Go server; Zustand per-tab undo stacks; root-mounted modals for BUG-14/15; GitHub Pages served from the `next-gen` root).
+  - **Documentation Issues Audit**: Added `docs/DOC_ISSUES.md`, which lists contradictions between the existing docs and the code (DI-01 to DI-22). No existing document was rewritten.
+- **User-Reported Items Logged (`refine/jb31`, docs only, no code changed)**:
+  - **TODO.md**: Added a new section, "🔴 OPEN — User-Reported Items". No Job Bundle number is assigned yet; the plan awaits owner approval. It contains:
+    - FEAT-62: reload-safe persistence across web and server
+    - FEAT-63: Render server re-provisioning
+    - ARCH-02: deployment model
+    - ARCH-03: resolving the docs inconsistencies in `docs/DOC_ISSUES.md`
+    - ARCH-04: codebase bug and quality audit
+    - UI-10: detach the header from browser toolbar hide/show
+    - BUG-29: header jitter
+    - BUG-30: routine grid teacher name collapse jitter
+  - **BUGS.md**: Registered seven open defects. Severities are proposed and await owner confirmation.
+    - BUG-24: fresh-clone build fails because `@lfps/ui` is not built
+    - BUG-25: changes lost on reload; sync is not wired and the server discards messages
+    - BUG-26: WS hub mutates the client map under a read lock
+    - BUG-27: unregistered backup download route
+    - BUG-28: ignored state save errors
+    - BUG-29 and BUG-30: reported, not yet reproduced
+
+### Changed
+- **Stateless Live Relay (ARCH-02 decision, Job Bundle 34)**: The Go server keeps state in memory only, scoped to the active school week, with "today" computed per request in the school time zone. `DATA_DIR`/`current_state.json` are no longer used. Server model matches `@lfps/core` (`ACCEPTED`, `disputeRemark`, `acceptedAt`, `disputedAt`); invalid input → 400. Broadcasts and responses are deep copies.
+- **CORS and WebSocket origins (Job Bundle 34)**: One allowlist (`ALLOWED_ORIGINS`, default: the GitHub Pages origin and localhost 5173/4173) governs both REST and `/api/v1/ws`. Disallowed browser origins get 403.
+- **Limits (Job Bundle 34)**: WebSocket messages up to 256 KiB (was 512 bytes); request bodies capped at 1 MiB (413).
+- **Build order (Job Bundle 34)**: Root `build` runs `build:libs` (`@lfps/ui` → `@lfps/core`) before `build:web`; `npm test` runs every workspace.
+- **Repo hygiene (Job Bundle 34)**: `apps/web/tsconfig.tsbuildinfo` is no longer tracked (it marked every build "-dirty"); `*.local` env files are ignored.
+
+### Fixed
+- **BUG-24 (Job Bundle 34)**: A fresh clone now builds (`npm ci && npm test && npm run build`, verified on a scratch clone).
+- **BUG-26 (Job Bundle 34)**: WebSocket hub drops slow clients under the write lock.
+- **BUG-28 (Job Bundle 34)**: No more silently ignored save errors; encode and Excel errors are logged or returned.
+- **Footer hidden behind the tab bar (Job Bundle 34)**: The footer reserves the floating tab bar's height plus the iOS safe area on all breakpoints; the tab bar respects the safe area. Verified at 1280×800, 820×1180 and iPhone 13.
+
+- **Plan and docs (owner clarifications, 2026-10-24)**:
+  - In-app timetable edits are substitutions. They sync to an app-owned `Subs` tab, never to the master timetable.
+  - Master TimeTable editing becomes EPIC-01 (unscheduled), with the conflict against per-date overrides noted.
+  - Bundle 35's scope now covers: devices ⇄ relay over WebSocket only; app-owned `Subs` / `App_Meta` (+ log) written asynchronously, batched, debounced and retried; read-only tabs pulled at startup and periodically, then streamed; a client "Connecting…" state (FEAT-66); and owner setup of a service account and the real spreadsheet ID.
+  - Relay keep-warm (PERF-03) is handled by the owner's uptime pinger during school hours, so no cron.
+  - Previews: option A (`/preview/<branch>/`, footer branch badge) is scheduled with Bundle 36 (FEAT-64).
+  - Updated: ADR-0005, SAS §2.1, ADMIN_ACCESS.
+
+### Removed
+- **BUG-27 (Job Bundle 34)**: `GET /api/v1/backups` and the server-side dated Excel copy. Under the relay model the server writes no files; `GET /api/v1/export/excel` still streams the workbook.
+
+### Security
+- Admin actions are guarded in the store as well as the UI; the developer console requires an admin session (Job Bundle 34).
+- The relay no longer answers `Access-Control-Allow-Origin: *` (Job Bundle 34).
+- The admin passcode hash ships in the public bundle, and a 6-digit code can be recovered from it offline in under a second. The gate prevents accidents only, so a real fix needs SEC-02. The new lockout only slows guessing through the app's own screen (Job Bundle 34).
+
+## [v2.0.0-alpha.1] - 2026-10-18
+
+### Added
+- **Tactile Squircle Action Cards, Zero-Pass-Thru Appoint Squircles, Purple Attention Glow & AC Decluttering (Job Bundle 33)**:
+  - **Tactile Squircle Action Row**: Replaced wide stacked action pills in `RosterNormalCard.tsx` with Apple-grade squircle cards. The left-aligned `[ Present / Absent ]` squircle sits side-by-side with `[ Off. CT ]` and `[ Off. AC ]` appointment squircles in one clean, horizontal row capable of holding 3 squircles without wrapping.
+  - **Zero Pass-Thru Direct Appointment Tap**: Converted entire appointment squircles into explicit buttons with `e.stopPropagation()`. Tapping anywhere on the squircle card opens the designation modal directly with zero risk of toggling teacher absence.
+  - **Coordinator Purple Glow (`.purple-attention-pulse`)**: Added dedicated purple pulsing keyframes and class in `index.css`. The Officiating AC card now pulses with an authentic coordinator purple halo rather than conflicting amber.
+  - **AC & CT Card Decluttering**: Streamlined the bottom AC card by removing redundant "Appointment Needed" headline, and stripped away the unnecessary explanatory paragraph from the clubbed Class Teacher appointment card.
+- **Clubbed Officiating Appointments, Coordinator Purple AC Appoint Card & Clean Name Overlays (Job Bundle 32)**:
+  - **Clubbed Officiating Appointment Actions**: In the top action toolbar, multiple pending officiating appointments (AC and/or multiple CTs) are consolidated into a single sleek dropdown button (`[ 🛡️ Appoint Staff (X) ▾ ]`) with an auto-dismissing selection menu. When only 1 appointment is needed, renders a single direct pill button.
+  - **Consolidated Officiating CT Cards in Section 3**: In Section 3 (`OFFICIATING STAFF`), multiple unappointed CT sections are clubbed into a single unified card (`Officiating Class Teachers (N Required)`) containing direct section appoint tiles (`KG A`, `KG B`, etc.), eliminating redundant multi-card clutter.
+  - **Coordinator Purple Theme for AC Appoint Card**: The Officiating AC appointment card is styled strictly in Coordinator Purple (`border-purple-500/60 bg-purple-950/40 text-purple-200` with purple `[ Appoint ]` button), visibly distinguishing AC succession from Class Teacher duties.
+  - **Designation-Free Full Teacher Name Overlay**: Removed role and designation subtitles from `TeacherNameOverlay.tsx`. The sliding acrylic window displays strictly the clean, full teacher name with zero layout shift.
+- **Moral Science Nomenclature, Auto-Resolve Period Normalization, Officiating CT Appointment Cards & Column Header Sorter (Job Bundle 31)**:
+  - **Canonical Subject Nomenclature (`M. SC.` = Moral Science)**: Defined `SUBJECT_FULL_NAMES` dictionary and `getSubjectFullName()` in `@lfps/core` with vitest test coverage. Guaranteed that "M. SC." is strictly Moral Science (never Mental). Integrated into Brain Studio and subject selection dropdowns.
+  - **Auto-Resolve Count & Misleading Period Stamp Resolution**: Completely removed redundant and misleading `⚡ Auto-Resolve CT Classes (X)` button that caused confusion when 1 CT had 4 uncovered teaching slots. Stripped `• CT` stamp and amber borders from uncovered duty cards; all slots display clean `{period} Period` cards under unified `Auto-Resolve (X Slots)`.
+  - **Officiating CT Appointment in Substitutions Page**: Added `OFFICIATING CT Required - Appointment Needed` cards with direct `[ Appoint ]` action in both the top toolbar and Section 3 (`OFFICIATING STAFF`), with alert status in the KPI summary strip, mirroring the Officiating AC workflow.
+  - **Native Faculty Column Header Sorter**: Embedded the `[ Role | A-Z ]` sorting switcher directly inside the sticky Faculty table column header (`<th>`) in `RoutineGrid.tsx`, removing duplicate toolbar clutter.
+  - **Apple-Grade Sliding Window Overlay (`TeacherNameOverlay.tsx`)**: Upgraded full-name overlay to a smooth sliding acrylic window (`stiffness: 450, damping: 28`) with acrylic grip accent that glides open horizontally over the abbreviation with zero layout reflow, overlaying freely over neighboring elements.
+- **Whole-Day Off. CT Domain Alignment, Teacher Self-Service Login Scoping, Ergonomic Card Full-Name Overlays & Hierarchy Sorting (Job Bundle 30)**:
+  - **Whole-Day Off. CT Precedence & Clean Period Substitutions**: Officiating Class Teacher (`Off. CT`) is anchored as a whole-day class responsibility for parent communication, attendance, and administrative duties. Teaching periods are substituted by subject specialists without misleading period-level `• CT` stamps.
+  - **Scoped Teacher Self-Service Acceptance / Dispute**: `[ ✓ Accept ]` and `[ ⚑ Dispute ]` actions appear strictly for authenticated staff viewing their own assigned duties. Unauthenticated coordinators view clean status pills (`Assigned`, `✓ Accepted`, `⚑ Disputed`) with administrative controls.
+  - **Staff Roster Tab Bar Glow Removal**: Completely eliminated `isUrgent` and amber text from the Staff Roster navigation tab.
+  - **Role Hierarchy & Alphabetical Faculty Sorting**: Implemented 5-tier role hierarchy sorting (`Academic Coordinator` -> `Assistant Academic Coordinator` -> `Class Teachers` -> `2nd Teachers` -> `Other Staff`) and alphabetical ordering across both `RoutineGrid.tsx` and `AbsenceRoster.tsx` with a clean segmented toggle.
+  - **Zero-Shift Full Name Overlay Component (`TeacherNameOverlay.tsx`)**: Displays abbreviated names in static flow with zero layout reflow, while instantly revealing the full name directly over the abbreviation on desktop hover or mobile touch with outside-tap dismissal.
+  - **Off. CT Assign Pill Reordering**: Placed the Off. CT and Off. AC appointment pills directly above the attendance toggle button on teacher roster cards.
+- **Security RBAC, Teacher Self-Service & Universal Notification Center (Job Bundle 29)**:
+  - **Three-Tier Role-Based Access Control (`SEC-01`)**: Implemented `UserRole` (`'ADMIN' | 'TEACHER' | 'GUEST'`), `<PermissionGuard>` component, and `usePermissions()` hook. Unlocks teacher self-service while safeguarding master schedule integrity and destructive actions.
+  - **Teacher Substitution Acceptance & Dispute Workflow (`FEAT-49`)**: Wired `[ ✓ Accept ]` and `[ ⚑ Dispute ]` actions across both Grid Card and List view modes in `SubstitutionsRegister.tsx`. Disputing summons `DisputeModal.tsx` allowing staff to record dispute remarks, marks status as `DISPUTED`, dispatches a real-time notification to coordinators, and surfaces a 1-tap `[ Reassign ]` button.
+  - **Universal Notification Center & Live Alert Hub (`FEAT-50`)**: Integrated Apple HIG Bell button (`🔔`) with live unread counter badge in `Header.tsx` and built `NotificationCenterDrawer.tsx` slide-over drawer aggregating disputes, clashing commitments, pending duties, officiating prompts, and acceptance receipts with 1-tap mark-all-read and quick filters.
+  - **Clean Routine Grid Teacher Names**: Eradicated golden and purple colors from teacher names in Routine Grid; standard clean text (`text-slate-100` / `text-rose-100` when absent).
+  - **Universal Class Teacher Recognition**: Removed `&& !isAC && !isAAC` exclusion across `RoutineGrid.tsx`, `SubstitutionsRegister.tsx`, and `TabBar.tsx`. Academic Coordinators who are Class Teachers (`Mrs. R. Pahwa` - PREP A, `Mrs. S. Lakra` - KG A) now show both their AC/AAC and CT badges with full CT auto-resolve participation.
+  - **Segregated Unavailable Staff in Popup Teacher Selector**: Replaced the accordion toggle in `AssignSubstituteModal.tsx` with segregated Available Candidates and Unavailable/Busy Staff sections, showing clear conflict reasons and `[ Override ]` button.
+  - **Strict 1-Pulse Amber Attention Glow**: Configured amber glow animation strictly to 1 iteration (`.amber-look-at-me-1x`).
+- **Whole-Day Officiating CT, Auto-Resolve Brain Studio & Ergonomic Polish (Job Bundle 28)**:
+  - **Whole-Day Off. CT Priority (`BUG-18`)**: Officiating Class Teacher is anchored as a whole-day section responsibility in `@lfps/core` and `useTimetableStore`. `calculateCandidateAffinity` assigns +250 points affinity to the designated Off. CT for uncovered periods of their assigned class, ensuring the engine covers the section with the designated Off. CT before choosing other staff.
+  - **Auto-Resolve Brain Studio (`FEAT-61`)**: Built `AutoResolveBrainModal.tsx` launched via the Brain icon in `SubstitutionsRegister.tsx`. Enables school coordinators to configure heuristic weights (Same Subject Co-Workers, Class Teacher, Second Teacher, Workload Balance penalty, Fatigue penalty, Whole-Day Off. CT priority, and Principal Preferred Subject Overrides).
+  - **Strict 3 Single Pulses for Amber Glow**: Replaced multi-peak keyframe with `@keyframes singleAmberPulse` running exactly 3 individual pulses (0% -> 50% peak -> 100% rest) when switching to Staff Roster.
+  - **Roster Normal Card Breathing Room & Text Cutoff Elimination**: Restored spacious card dimensions (`min-h-[210px]`, `p-4 sm:p-5`, `rounded-2xl`, `w-12 h-12` avatar) and converted Off. CT and Off. AC blocks to full-width vertical stacks, eliminating text cutoff for dual-role staff.
+  - **Abbreviated Names with Hover Tooltip**: Standardized teacher card titles on `teacher.abbr` with full name on hover across all 4 roster layout modes (Normal Grid, Compact Grid, Normal List, Compact List).
+  - **Binary Header Navigation Mode**: Simplified header states in `Header.tsx` to strictly Full Console or Dynamic Island Day Pill (`'FULL' | 'PILL'`), eliminating the slim peek strip for clean, zero-jerk mobile scrolling.
+- **Academic Coordinator Succession & Officiating Workflow (LOGIC-04, Job Bundle 26A)**:
+  - Engineered pure domain succession function `getEffectiveOfficiatingAC(day, absences, officiatingACMap)` in `@lfps/core` with comprehensive Vitest coverage.
+  - Automatic chain of command: When Academic Coordinator (`Mrs. R. Pahwa`) is marked absent, the Assistant Academic Coordinator (`Mrs. S. Lakra`, AAC) automatically acts on her behalf as Officiating AC (`Off. AC`).
+  - Only when BOTH the AC and AAC are absent does the system require appointing a 3rd-party Officiating AC (`needsAppointment: true`).
+  - Surfaced dedicated Officiating AC prompt card in `SubstitutionsRegister.tsx` with 1-tap manual designation (`openOfficiatingModal({ type: 'AC' })`).
+  - Visual Attention Glow: When an appointment is required, flashes both the **Substitutions** and **Staff Roster** navigation tabs with a soft pulsing amber halo (`@keyframes softAmberAttention` / `attention-pulse`).
+  - In `AbsenceRoster.tsx`, dynamically indicates `Mrs. S. Lakra (Acting for Mrs. R. Pahwa)` on duty.
+- **Dedicated Class Teacher Auto-Resolve & Golden Substitution Cards (LOGIC-05, Job Bundle 26A)**:
+  - In `SubstitutionsRegister.tsx`, added dedicated `[ ⚡ Auto-Resolve CT (X Slots) ]` button next to the standard solver button that filters uncovered periods strictly to absent Class Teachers.
+  - Rendered all Class Teacher substitution cards in both Grid Card View and List View with an eye-catching golden aesthetic (`border-amber-500/60 bg-gradient-to-br from-amber-950/35 via-slate-900/95 to-amber-900/25 ring-1 ring-amber-500/40 text-amber-200`).
+  - When any Class Teacher has uncovered class periods, flashes both the **Substitutions** and **Staff Roster** tabs with the soft pulsing amber glow until coverage is complete.
+- **Monorepo Architecture & Package Separation (Job Bundle 19)**:
+  - Migrated legacy single-file codebase to modern NPM workspaces monorepo:
+    - `@lfps/core`: Pure TypeScript domain engine, types, and substitution solver.
+    - `@lfps/ui`: Apple HIG design tokens, spring physics curves, and semantic role palettes.
+    - `apps/web`: React 19 + Vite 6 + Tailwind CSS + Framer Motion high-speed PWA.
+    - `apps/server`: Go 1.23 high-concurrency microservice with WebSocket hub and Excel generation.
+- **Pure TypeScript Substitution Solver & Domain Engine (`@lfps/core`)**:
+  - Strict domain contracts: `Teacher`, `DailySchedule`, `MasterSchedule`, `AbsenceRecord`, `StaffAvailabilityRecord`, `SubstitutionAssignment`, `AutoResolvePlan`.
+  - Deterministic solver scoring candidates by subject specialization, class familiarity, and daily load balance with 100% Vitest coverage.
+  - Staff disambiguation engine resolving shared staff surnames.
+- **Dynamic Island Day Bar with Symmetrical Spring Physics (`apps/web`)**:
+  - Floating top-bar capsule that automatically morphs from the docked console to a floating capsule at `top-3` when scrolling down.
+  - Symmetrical 600ms duration-based spring timing (`duration: 0.6`, `bounce: 0.12`) ensuring expand and collapse animate with identical fluidity.
+  - Relaxed 4.8s auto-collapse countdown giving comfortable breathing room.
+  - Full-screen backdrop enabling instant 1-tap outside dismissal.
+- **Master Routine Matrix Fullscreen Workstation (`isFitGrid`, `apps/web`)**:
+  - Full-viewport spreadsheet overlay (`fixed inset-0 z-50 bg-slate-950/98 backdrop-blur-2xl`) for wide table management.
+  - Pinned multi-axial headers: period columns stay pinned at `sticky top-0 z-30`, teacher column stays pinned at `sticky left-0 z-20`, and corner cell anchors at `sticky top-0 left-0 z-40`.
+  - Body scroll lock during fullscreen and instant <kbd>Esc</kbd> dismissal.
+- **Apple HIG Floating Tab Navigation Dock & View Partitioning (`apps/web`)**:
+  - Floating bottom navigation dock (`TabBar.tsx`) with animated pill indicator (`layoutId="activeNavDockPill"`), live notification count badges (amber for uncovered slots, rose for absent staff), and keyboard shortcuts (`1`, `2`, `3`).
+  - Separated the congested vertical page flow into three high-velocity dedicated tabs: **Routine Matrix**, **Substitutions**, and **Staff Roster**.
+  - Restored immediate, top-of-screen visibility for the Master Routine Matrix on mobile without requiring users to scroll past other tables.
+- **Tab Overview Collapsible Controls (FEAT-38 & FEAT-39)**:
+  - Added tactile Apple HIG collapse/expand toggle buttons (`[ ▾ Collapse Overview ]` / `[ ▸ Show Overview ]`) to both the **Substitutions** and **Staff Roster** workstation headers.
+  - Smooth Framer Motion spring-animated accordion folding reclaims ~160px+ of vertical space on mobile screens, bringing the primary data tables and staff cards directly into immediate view.
+- **Routine Fullscreen Workstation Root View Architecture (BUG-10)**:
+  - Eliminated the Expand Grid blank screen error across mobile and desktop by hoisting fullscreen workstation rendering to the top-level application root in `App.tsx` (`h-screen h-[100dvh] w-screen z-[100] bg-slate-950`).
+  - Eliminated CSS transform containing block collisions and portal attachment quirks.
+  - Integrated direct MON..SAT day navigation pills into the fullscreen controls bar alongside the dual Teachers/Classes view toggle and <kbd>Esc</kbd> dismissal.
+- **Dedicated Vertical Staff Attendance & Availability Workstation (`apps/web`)**:
+  - Replaced the horizontal scrolling tray with a spacious, dedicated vertical workstation.
+  - Implemented operational responsibility hierarchy sorting (FEAT-36): `AC` (Mrs. R. Pahwa) → `AAC` (Mrs. S. Lakra) → `CT` (Mrs. M. Midha, Mrs. R. Narayan) → `ST` (Ms. N. Horo, Ms. K. Sanga, etc.).
+  - Added KPI metrics strip (Present, Marked Absent, Free from Sub, Away Official), quick search bar, category filters, and 1-tap "Mark All Present".
+- **Dedicated Vertical Substitution Coverage Engine (`apps/web`)**:
+  - Dedicated workstation featuring high-visibility action-required cards for uncovered slots, 1-tap Smart Auto-Resolve solver, active covered duties ledger, and temporary officiating summaries.
+- **Tactile Interaction Modals & Micro Context Menus (`apps/web`)**:
+  - Ultra-compact floating micro context menu on right-click or 500ms long-press.
+  - Hero Substitution Availability Modal with 4 clean presets (`Bus Duty`, `PTM`, `Exam Duty`, `Away Official`) and inline status toggle.
+  - Co-Teacher Inspector Modal with strictly per-period release (`releaseCoTeacher`), preserving teachers' solo classes.
+  - Officiating Leadership Modal designating temporary Off. AC and Off. CT roles with class team partner recommendation.
+- **Go 1.23 Cloud Backend & WebSocket Hub (`apps/server`, Job Bundle 20)**:
+  - Gorilla WebSocket hub broadcasting `STATE_MUTATION` events across all connected tablets and phones with sub-millisecond latency.
+  - Thread-safe RWMutex disk JSON storage (`data/state.json`) persisting state across restarts.
+  - Excelize v2 XLSX engine generating publication-ready daily substitution tables with formal navy branding and Principal signature lines.
+  - Production multi-stage Docker container (`~15MB`) deployed to Render.
+- **Interactive Settings Console Modal & Mobile Affordance (BUG-11, Job Bundle 23)**:
+  - Replaced the minimal UI boolean toggle in the header with an Apple HIG `SettingsModal.tsx` console featuring 5 distinct control groups: Operating Identity (Staff login/logout), Interface & 120fps GPU compositing status, Cloud & Live Sync diagnostics with manual reconnect, Data Management (Export Excel, Reset Day, Purge Buffers), and System Version metadata.
+  - Added dedicated Settings button in mobile header navigation for parity with desktop.
+- **Per-Tab Isolated Undo/Redo Engine (FEAT-40, Job Bundle 23)**:
+  - Implemented three independent FIFO history stacks in `useTimetableStore.ts` (`routineHistory`, `substitutionsHistory`, `rosterHistory`) capped at 30 snapshots each, ensuring actions on one tab never corrupt or undo actions on another tab.
+  - Bound global keyboard shortcuts (`⌘Z` / `Ctrl+Z`, `⌘⇧Z` / `Ctrl+Y`) dynamically routed to the active tab.
+  - Embedded tactile `<UndoRedoControls />` button pairs on Routine Grid, Substitutions Register, and Staff Roster toolbars with live disabled states.
+- **Global Reset Day & Contextual History Purge Engine (FEAT-41, Job Bundle 23)**:
+  - Built tactile `ResetDayButton.tsx` in header: single-tap resets the current day's modifications back to master baseline with automatic undo snapshot capture (making reset fully reversible with `⌘Z`).
+  - Added 500ms touch long-press (mobile) and desktop right-click context popover allowing administrators to completely purge all undo/redo history buffers across all tabs.
+- **Tactile Front-Desk Polish & Manual Substitute Workflow (Job Bundle 24)**:
+  - **Auto-Reset Substitutions on Teacher Present (`BUG-12`)**: When marking an absent teacher back to present, `toggleAbsence()` automatically scans and removes all substitution assignments involving that teacher (as either absent teacher or substitute), restoring original baseline schedule slots and updating live counters with undo snapshot preservation.
+  - **Routine Instructional Period Cell Freedom (`BUG-13`)**: Scoped the `MicroContextMenu` trigger strictly to the sticky teacher name column cells, freeing instructional period cells for cell inspection, co-teaching modals, and future hold-and-drag reordering gestures.
+  - **Staff Login Root Modal (`BUG-14`)**: Hoisted `StaffLoginModal.tsx` to application root in `App.tsx`, eliminating CSS transform containing block collisions that previously positioned the panel awkwardly at the top-middle off-screen. Added outside-click and <kbd>Escape</kbd> dismissal (`LOGIC-02`).
+  - **Screen-Clamped History Purge Context Menu (`BUG-15`)**: Hoisted `ResetPurgeContextMenu.tsx` to application root in `App.tsx` with screen-space edge clamping, tactile spring animations, and outside-click dismissal (`LOGIC-02`).
+  - **120fps GPU Spring Accordion Easing (`BUG-16`)**: Replaced jerky accordion animation on Substitutions and Roster overviews with `SPRING_TRANSITIONS.snappy`, strict `overflow-hidden`, and `will-change-[height,opacity]`.
+  - **Away (Official) Classified Under 'Free' (`LOGIC-01`)**: Counted and filtered teachers on `Away (Official)` deputations under 'Free' in attendance roster metrics and filters.
+  - **Universal Dismissal on Outside Click (`LOGIC-02`)**: Ensured all popovers, context menus, modals, and dropdowns close on outside click/tap and <kbd>Escape</kbd>.
+  - **Equalized Co-Teacher Semantic Color-Coding (`LOGIC-03`)**: Built `areTeachersCoTeachingPartners` and `isTeacherCoTeachingInSlot` in `@lfps/core` with cross-partner inspection so all co-teachers' cells receive identical semantic color styling and badge indicators.
+  - **Interactive Candidate Substitute Selection Drawer (`FEAT-42`)**: Added 1-tap `[ Assign Substitute ]` on uncovered teacher cards in `SubstitutionsRegister.tsx` opening `AssignSubstituteModal.tsx` with ranked candidate substitutes from `@lfps/core`.
+  - **Substitutions Overview Cards Reordered (`FEAT-43`)**: Reordered KPI cards to 1st Covered (green border), 2nd Uncovered (red border), 3rd Officiating Staff (`border-purple-500/40`).
+  - **Header Overview Collapse Ergonomics (`FEAT-44`)**: Replaced verbose text buttons with a sleek, rightmost-aligned Apple collapse/expand icon button (`ChevronUp`/`ChevronDown`) and enabled tapping empty header space to toggle collapse/expand state.
+- **Tactical Matrix Ergonomics, Header Peek Navigation & Golden CT Tokens (Job Bundle 25)**:
+  - **Scroll Peek Header Utility Console (`FEAT-52`)**: On downward scroll (`scrollY > 50`), smoothly transitioned the elevated console into a compact peek utility bar providing continuous 1-tap access to Reset Day, Settings, PWA Install, Excel export, and Staff Login, alongside the dynamic island day bar pill. Full branding console re-expands when scrolled to top.
+  - **Mobile Browser URL Bar & Scroll Synchronization (`FEAT-57`)**: Connected a `window.visualViewport` resize listener with hysteresis to eliminate the jerky double-jump artifact on mobile browsers (Chromium, Firefox, Safari, Edge, Opera) when the native URL bar expands or collapses.
+  - **Horizontal-Scroll Dynamic Teacher Column Collapse on Narrow Screens (`FEAT-53`)**: Added a horizontal scroll observer in `RoutineGrid.tsx` on narrow viewports: scrolling past 15px collapses the leftmost sticky column to ~64px width and switches teacher names to an ultra-clean 2-line split font (Line 1: initials/title, Line 2: surname), maximizing visible instructional periods while preserving row identity.
+  - **Absent Teacher High-Contrast Crimson Highlight (`FEAT-54`)**: In `RoutineGrid.tsx`, absent teachers' sticky first-column name cells are rendered in bold crimson red (`bg-rose-950/90 border-r-2 border-r-rose-500 text-rose-200 font-bold shadow-[3px_0_12px_rgba(244,63,94,0.35)]`), ensuring absences are immediately noticeable.
+  - **Hide Absent Teachers Routine Matrix Toggle (`FEAT-55`)**: Added interactive `[ 👁‍🗨 Hide Absent ]` / `[ 👁 Show All ]` toggle button in the Routine Grid toolbar and in Settings, filtering out absent staff rows for focused routine analysis.
+  - **Class Teacher Golden Token Overhaul (`FEAT-56`)**: Color-coded Class Teachers in vibrant **Golden / Amber** (`#f59e0b` / `text-amber-300 bg-amber-500/15 border-amber-500/40`) across `@lfps/ui`, `RoutineGrid.tsx`, `AbsenceRoster.tsx`, and `SubstitutionsRegister.tsx`. Academic Coordinators (`AC` and `AAC`) strictly retain their signature **Purple / Violet** (`#8b5cf6`).
+  - **Substitutions & Roster List/Grid View Types & Multi-Criteria Sorting (`FEAT-58`)**: Added tactile View Mode toggle (`[ ⊞ Grid ]` / `[ ☰ List ]`) and multi-criteria sorting pills (Role hierarchy, Alphabetical name, and Period sequence) to both the Substitutions Register and Staff Roster workstations.
+  - **Add to Home Screen PWA Installation & iOS Safari Walkthrough (`FEAT-59`)**: Added `beforeinstallprompt` listener with an interactive "Install App" button in Header and Settings, and created `AddToHomeScreenModal.tsx` providing a 3-step visual guide for iOS Safari users.
+  - **Unified Preferences Persistence Engine (`FEAT-60`)**: Auto-persisted all user preferences (view modes, sort orders, hidden overviews, hide absent staff, minimal UI) to `localStorage` under `lfps_user_preferences_v2`, complete with explicit `[ Save Preferences ]` and `[ Reset Defaults ]` actions in Settings.
+  - **Minimal UI Mode Visual Implementation (`BUG-17`)**: Applied high-density compact styles across Header, Routine Grid, Substitutions Register, Absence Roster, and TabBar when `isMinimalUI` is enabled.
+  - **Settings Preference: Hide Overviews by Default (`FEAT-45`)**: Added a preference toggle in Settings starting the Substitutions and Roster overviews in collapsed state on application launch.
 
 ## [v1.53.0] - 2026-10-17
 

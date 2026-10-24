@@ -1,0 +1,1206 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --ease-spring: cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+
+  body {
+    -webkit-tap-highlight-color: transparent;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Glassmorphism helpers */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-pill {
+  background: rgba(30, 41, 59, 0.70);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Elevated Header: 100% Opaque Backing with Layered Depth Shadow */
+.header-elevated {
+  background-color: #020617 !important; /* solid slate-950 */
+  border-bottom: 1px solid rgba(51, 65, 85, 0.8);
+  box-shadow: 0 14px 34px -4px rgba(0, 0, 0, 0.85),
+              0 6px 14px -2px rgba(0, 0, 0, 0.6),
+              inset 0 -1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Attention Glow: one-shot (3 beats) — Bundle 37; no infinite loops */
+@keyframes softAmberAttention {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(245, 158, 11, 0.2), inset 0 0 2px rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.4), inset 0 0 4px rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.7);
+  }
+}
+
+.attention-pulse {
+  animation: softAmberAttention 1.1s ease-in-out 3;
+}
+
+@keyframes softPurpleAttention {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(168, 85, 247, 0.2), inset 0 0 2px rgba(168, 85, 247, 0.08);
+    border-color: rgba(168, 85, 247, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.4), inset 0 0 4px rgba(168, 85, 247, 0.15);
+    border-color: rgba(168, 85, 247, 0.7);
+  }
+}
+
+.purple-attention-pulse {
+  animation: softPurpleAttention 1.1s ease-in-out 3;
+}
+
+/* Quiet static Off. CT / Appoint affordance (Bundle 37 — Absent stays primary) */
+.off-ct-appoint-quiet {
+  box-shadow: none;
+  border-color: rgba(245, 158, 11, 0.45);
+  background-color: rgba(69, 26, 3, 0.28);
+}
+
+/* Absent card: soft rose tint + gentle rail (UI-06 + UI-15 Bundle 41a).
+   Beautiful, not blunt magenta fill — works in light and Midnight. */
+.card-absent-illuminated {
+  background: color-mix(in srgb, var(--accent-red) 8%, var(--surface-opaque)) !important;
+  border-color: color-mix(in srgb, var(--accent-red) 36%, transparent) !important;
+  border-left: 3px solid color-mix(in srgb, var(--accent-red) 72%, transparent) !important;
+  box-shadow: none !important;
+}
+
+.card-compact-absent-illuminated {
+  background: color-mix(in srgb, var(--accent-red) 7%, var(--surface-opaque)) !important;
+  border-color: color-mix(in srgb, var(--accent-red) 32%, transparent) !important;
+  border-left: 3px solid color-mix(in srgb, var(--accent-red) 68%, transparent) !important;
+  box-shadow: none !important;
+}
+
+.row-absent-illuminated {
+  background: color-mix(in srgb, var(--accent-red) 7%, var(--surface-opaque)) !important;
+  border-left: 3px solid color-mix(in srgb, var(--accent-red) 68%, transparent) !important;
+  box-shadow: none !important;
+}
+
+/* Soft Absent status chip / button — tinted surface, not solid rose-600 (UI-15) */
+.status-btn-absent {
+  background: color-mix(in srgb, var(--accent-red) 15%, var(--surface-opaque)) !important;
+  border: 1px solid color-mix(in srgb, var(--accent-red) 40%, transparent) !important;
+  color: #fecdd3 !important; /* rose-200 */
+  box-shadow: none !important;
+}
+.status-btn-absent:hover {
+  background: color-mix(in srgb, var(--accent-red) 22%, var(--surface-opaque)) !important;
+}
+.status-btn-absent svg {
+  color: #fda4af !important; /* rose-300 */
+}
+.status-chip-absent {
+  background: color-mix(in srgb, var(--accent-red) 14%, var(--surface-opaque)) !important;
+  border: 1px solid color-mix(in srgb, var(--accent-red) 38%, transparent) !important;
+  color: #fecdd3 !important;
+  box-shadow: none !important;
+}
+.status-dot-absent {
+  background-color: color-mix(in srgb, var(--accent-red) 70%, #fda4af) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-red) 22%, transparent);
+}
+.status-badge-absent {
+  background: color-mix(in srgb, var(--accent-red) 55%, transparent) !important;
+  border: 1.5px solid color-mix(in srgb, var(--accent-red) 45%, var(--surface-opaque)) !important;
+  color: #fff !important;
+}
+
+/* UI-15: soft absent chips stay readable on light / day themes */
+[data-theme="light"] .status-btn-absent,
+[data-theme="warm-sepia"] .status-btn-absent,
+[data-theme="utopian-glass"] .status-btn-absent,
+[data-theme="aero-frost"] .status-btn-absent,
+[data-theme="high-contrast"] .status-btn-absent,
+[data-theme="light"] .status-chip-absent,
+[data-theme="warm-sepia"] .status-chip-absent,
+[data-theme="utopian-glass"] .status-chip-absent,
+[data-theme="aero-frost"] .status-chip-absent,
+[data-theme="high-contrast"] .status-chip-absent {
+  color: var(--danger-soft-fg, #9f1239) !important;
+}
+[data-theme="light"] .status-btn-absent svg,
+[data-theme="warm-sepia"] .status-btn-absent svg,
+[data-theme="utopian-glass"] .status-btn-absent svg,
+[data-theme="aero-frost"] .status-btn-absent svg,
+[data-theme="high-contrast"] .status-btn-absent svg {
+  color: var(--danger-soft-fg, #9f1239) !important;
+}
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] .status-btn-absent,
+  [data-theme="system"] .status-chip-absent {
+    color: var(--danger-soft-fg, #9f1239) !important;
+  }
+  [data-theme="system"] .status-btn-absent svg {
+    color: var(--danger-soft-fg, #9f1239) !important;
+  }
+}
+
+/* Routine "Need Sub!" / missing cell — crisp, no harsh outer glow */
+.cell-missing-quiet {
+  background: color-mix(in srgb, var(--accent-red) 12%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--accent-red) 40%, transparent) !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+/* One-shot amber look-at-me on first viewport enter (UI-07) */
+@keyframes singleAmberPulse {
+  0%, 100% {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-red) 40%, transparent);
+    border-color: color-mix(in srgb, var(--accent-red) 55%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-amber) 55%, transparent),
+                inset 0 0 12px color-mix(in srgb, var(--accent-amber) 25%, transparent);
+    border-color: var(--accent-amber);
+  }
+}
+
+.amber-look-at-me-1x,
+.amber-look-at-me-3x {
+  animation: singleAmberPulse 0.9s ease-in-out 1;
+}
+
+/* FIND-01: static status dots — no infinite Tailwind animate-pulse */
+.status-dot-live {
+  background-color: rgb(52 211 153); /* emerald-400 */
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.55);
+}
+.status-dot-connecting {
+  background-color: rgb(251 191 36); /* amber-400 */
+  box-shadow: 0 0 6px rgba(251, 191, 36, 0.4);
+}
+.status-dot-offline {
+  background-color: rgb(100 116 139); /* slate-500 */
+}
+.status-badge-static {
+  /* badges stay solid; no pulse */
+}
+
+/* UI-11: stable routine matrix geometry */
+.routine-matrix-table {
+  table-layout: fixed;
+  /* Bundle 40: do NOT squeeze columns into the viewport on phone.
+     max-content + min-width:100% → horizontal scroll when narrow, fill when wide. */
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+}
+.routine-matrix-table tbody tr {
+  height: 2.75rem; /* reserve sub-label / ABS line */
+  min-height: 2.75rem;
+}
+.routine-matrix-table td,
+.routine-matrix-table th {
+  vertical-align: middle;
+}
+/* Bundle 40: period columns keep a readable min width; faculty stays sticky. */
+.routine-matrix-table th.period-col,
+.routine-matrix-table td.period-col {
+  min-width: 92px;
+  width: 92px;
+  max-width: none;
+  white-space: nowrap;
+}
+.routine-matrix-table th.period-col-break,
+.routine-matrix-table td.period-col-break {
+  min-width: 72px;
+  width: 72px;
+}
+@media (min-width: 640px) {
+  .routine-matrix-table th.period-col,
+  .routine-matrix-table td.period-col {
+    min-width: 105px;
+    width: 105px;
+  }
+  .routine-matrix-table th.period-col-break,
+  .routine-matrix-table td.period-col-break {
+    min-width: 88px;
+    width: 88px;
+  }
+}
+.routine-matrix-shell {
+  min-height: 22rem; /* SAT shouldn't collapse the card shell */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* UI-14: calm faculty/name column width ease (not snappy / jittery) */
+.routine-matrix-table th.faculty-col,
+.routine-matrix-table td.faculty-col {
+  transition:
+    width 0.38s cubic-bezier(0.22, 0.61, 0.36, 1),
+    min-width 0.38s cubic-bezier(0.22, 0.61, 0.36, 1),
+    max-width 0.38s cubic-bezier(0.22, 0.61, 0.36, 1),
+    padding 0.38s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .routine-matrix-table th.faculty-col,
+  .routine-matrix-table td.faculty-col {
+    transition: none;
+  }
+}
+
+/* FIND-04 / UI-15: matrix sticky absent cell — soft rail, no outer bloom */
+.matrix-absent-sticky {
+  background: color-mix(in srgb, var(--accent-red) 14%, #0f172a) !important;
+  border-right: 2px solid color-mix(in srgb, var(--accent-red) 55%, transparent) !important;
+  border-left: 3px solid color-mix(in srgb, var(--accent-red) 72%, transparent) !important;
+  color: #fecdd3 !important;
+  box-shadow: none !important;
+}
+
+/* Bundle 40: light / system-light — absent names must be readable (not pale pink) */
+[data-theme="light"] .matrix-absent-sticky,
+[data-theme="warm-sepia"] .matrix-absent-sticky,
+[data-theme="utopian-glass"] .matrix-absent-sticky,
+[data-theme="aero-frost"] .matrix-absent-sticky,
+[data-theme="high-contrast"] .matrix-absent-sticky {
+  background: color-mix(in srgb, var(--accent-red) 14%, var(--surface-opaque)) !important;
+  color: var(--danger-soft-fg) !important;
+  border-right-color: color-mix(in srgb, var(--accent-red) 55%, transparent) !important;
+}
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] .matrix-absent-sticky {
+    background: color-mix(in srgb, var(--accent-red) 14%, var(--surface-opaque)) !important;
+    color: var(--danger-soft-fg) !important;
+    border-right-color: color-mix(in srgb, var(--accent-red) 55%, transparent) !important;
+  }
+}
+[data-theme="light"] .matrix-absent-sticky .text-rose-100,
+[data-theme="light"] .matrix-absent-sticky .text-rose-200,
+[data-theme="light"] .matrix-absent-sticky .text-rose-300,
+[data-theme="warm-sepia"] .matrix-absent-sticky .text-rose-100,
+[data-theme="warm-sepia"] .matrix-absent-sticky .text-rose-200,
+[data-theme="utopian-glass"] .matrix-absent-sticky .text-rose-100,
+[data-theme="utopian-glass"] .matrix-absent-sticky .text-rose-200,
+[data-theme="aero-frost"] .matrix-absent-sticky .text-rose-100,
+[data-theme="aero-frost"] .matrix-absent-sticky .text-rose-200,
+[data-theme="high-contrast"] .matrix-absent-sticky .text-rose-100,
+[data-theme="high-contrast"] .matrix-absent-sticky .text-rose-200 {
+  color: var(--danger-soft-fg) !important;
+}
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] .matrix-absent-sticky .text-rose-100,
+  [data-theme="system"] .matrix-absent-sticky .text-rose-200,
+  [data-theme="system"] .matrix-absent-sticky .text-rose-300 {
+    color: var(--danger-soft-fg) !important;
+  }
+}
+
+/* Bundle 40: Free / muted cell + Need Sub contrast on day themes */
+[data-theme="light"] .cell-free-label,
+[data-theme="warm-sepia"] .cell-free-label,
+[data-theme="utopian-glass"] .cell-free-label,
+[data-theme="aero-frost"] .cell-free-label,
+[data-theme="high-contrast"] .cell-free-label {
+  color: #475569 !important; /* slate-600 solid — readable on white/pink tint */
+}
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] .cell-free-label {
+    color: #475569 !important;
+  }
+}
+[data-theme="light"] .cell-missing-quiet,
+[data-theme="warm-sepia"] .cell-missing-quiet,
+[data-theme="utopian-glass"] .cell-missing-quiet,
+[data-theme="aero-frost"] .cell-missing-quiet,
+[data-theme="high-contrast"] .cell-missing-quiet {
+  color: var(--danger-soft-fg) !important;
+}
+[data-theme="light"] .cell-missing-quiet .text-rose-300,
+[data-theme="light"] .cell-missing-quiet .text-rose-400,
+[data-theme="warm-sepia"] .cell-missing-quiet .text-rose-300,
+[data-theme="warm-sepia"] .cell-missing-quiet .text-rose-400,
+[data-theme="utopian-glass"] .cell-missing-quiet .text-rose-300,
+[data-theme="utopian-glass"] .cell-missing-quiet .text-rose-400,
+[data-theme="aero-frost"] .cell-missing-quiet .text-rose-300,
+[data-theme="aero-frost"] .cell-missing-quiet .text-rose-400 {
+  color: var(--danger-soft-fg) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .attention-pulse,
+  .purple-attention-pulse,
+  .amber-look-at-me-1x,
+  .amber-look-at-me-3x {
+    animation: none !important;
+  }
+}
+
+/* Soft thin scrollbars in dark modals (Bundle 37 polish) */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.55);
+}
+
+/* ==========================================================================
+   FEAT-46: Complete 12-Theme Engine Token Definitions (Adapted from THEMES.md)
+   ========================================================================== */
+
+:root,
+[data-theme="dark"] {
+  --bg-color: #0b1120;
+  --surface-color: rgba(15, 23, 42, 0.75);
+  --surface-opaque: #020617;
+  --surface-elevated: #1e293b;
+  --nav-bg: rgba(2, 6, 23, 0.85);
+  --segment-bg: rgba(30, 41, 59, 0.7);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --accent-blue: #3b82f6;
+  --accent-green: #34d399;
+  --accent-red: #f43f5e;
+  --accent-amber: #f59e0b;
+  --accent-purple: #a855f7;
+  /* Bundle 39 / UI-12 semantic soft chips + modal */
+  --surface-modal: #020617;
+  --danger-soft-bg: color-mix(in srgb, var(--accent-red) 14%, var(--surface-opaque));
+  --danger-soft-fg: #fecdd3;
+  --danger-soft-border: color-mix(in srgb, var(--accent-red) 45%, transparent);
+  --amber-soft-bg: color-mix(in srgb, var(--accent-amber) 14%, var(--surface-opaque));
+  --amber-soft-fg: #fde68a;
+  --amber-soft-border: color-mix(in srgb, var(--accent-amber) 45%, transparent);
+  --purple-soft-bg: color-mix(in srgb, var(--accent-purple) 14%, var(--surface-opaque));
+  --purple-soft-fg: #e9d5ff;
+  --purple-soft-border: color-mix(in srgb, var(--accent-purple) 45%, transparent);
+  --emerald-soft-bg: color-mix(in srgb, var(--accent-green) 14%, var(--surface-opaque));
+  --emerald-soft-fg: #a7f3d0;
+  --emerald-soft-border: color-mix(in srgb, var(--accent-green) 45%, transparent);
+  --on-accent: #ffffff;
+}
+
+/* System Theme (Follows OS Light/Dark Preference) */
+@media (prefers-color-scheme: light) {
+  :root,
+  [data-theme="system"] {
+    --color-slate-950: #f1f5f9;
+    --color-slate-900: #ffffff;
+    --color-slate-800: #e2e8f0;
+    --color-slate-700: #cbd5e1;
+    --color-slate-600: #94a3b8;
+    --color-slate-500: #64748b;
+    --color-slate-400: #475569;
+    --color-slate-300: #334155;
+    --color-slate-200: #1e293b;
+    --color-slate-100: #0f172a;
+    --color-slate-50: #020617;
+
+    --bg-color: #f1f5f9;
+    --surface-color: rgba(255, 255, 255, 0.88);
+    --surface-opaque: #ffffff;
+    --surface-elevated: #ffffff;
+    --nav-bg: rgba(255, 255, 255, 0.95);
+    --segment-bg: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --border-color: #94a3b8;
+    --accent-blue: #0284c7;
+    --accent-green: #16a34a;
+    --accent-red: #e11d48;
+    --accent-amber: #d97706;
+    --accent-purple: #9333ea;
+    --surface-modal: #ffffff;
+    --danger-soft-bg: color-mix(in srgb, var(--accent-red) 12%, var(--surface-opaque));
+    --danger-soft-fg: #9f1239;
+    --danger-soft-border: color-mix(in srgb, var(--accent-red) 40%, transparent);
+    --amber-soft-bg: color-mix(in srgb, var(--accent-amber) 12%, var(--surface-opaque));
+    --amber-soft-fg: #92400e;
+    --amber-soft-border: color-mix(in srgb, var(--accent-amber) 40%, transparent);
+    --purple-soft-bg: color-mix(in srgb, var(--accent-purple) 12%, var(--surface-opaque));
+    --purple-soft-fg: #6b21a8;
+    --purple-soft-border: color-mix(in srgb, var(--accent-purple) 40%, transparent);
+    --emerald-soft-bg: color-mix(in srgb, var(--accent-green) 12%, var(--surface-opaque));
+    --emerald-soft-fg: #166534;
+    --emerald-soft-border: color-mix(in srgb, var(--accent-green) 40%, transparent);
+    --on-accent: #ffffff;
+  }
+}
+
+[data-theme="light"] {
+  --color-slate-950: #f1f5f9;
+  --color-slate-900: #ffffff;
+  --color-slate-800: #e2e8f0;
+  --color-slate-700: #cbd5e1;
+  --color-slate-600: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-400: #475569;
+  --color-slate-300: #334155;
+  --color-slate-200: #1e293b;
+  --color-slate-100: #0f172a;
+  --color-slate-50: #020617;
+
+  --bg-color: #f1f5f9;
+  --surface-color: rgba(255, 255, 255, 0.9);
+  --surface-opaque: #ffffff;
+  --surface-elevated: #ffffff;
+  --nav-bg: rgba(255, 255, 255, 0.95);
+  --segment-bg: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --border-color: #94a3b8;
+  --accent-blue: #0284c7;
+  --accent-green: #16a34a;
+  --accent-red: #e11d48;
+  --accent-amber: #d97706;
+  --accent-purple: #9333ea;
+  --surface-modal: #ffffff;
+  --danger-soft-bg: color-mix(in srgb, var(--accent-red) 12%, var(--surface-opaque));
+  --danger-soft-fg: #9f1239;
+  --danger-soft-border: color-mix(in srgb, var(--accent-red) 40%, transparent);
+  --amber-soft-bg: color-mix(in srgb, var(--accent-amber) 12%, var(--surface-opaque));
+  --amber-soft-fg: #92400e;
+  --amber-soft-border: color-mix(in srgb, var(--accent-amber) 40%, transparent);
+  --purple-soft-bg: color-mix(in srgb, var(--accent-purple) 12%, var(--surface-opaque));
+  --purple-soft-fg: #6b21a8;
+  --purple-soft-border: color-mix(in srgb, var(--accent-purple) 40%, transparent);
+  --emerald-soft-bg: color-mix(in srgb, var(--accent-green) 12%, var(--surface-opaque));
+  --emerald-soft-fg: #166534;
+  --emerald-soft-border: color-mix(in srgb, var(--accent-green) 40%, transparent);
+  --on-accent: #ffffff;
+}
+
+[data-theme="warm-sepia"] {
+  --color-slate-950: #f5f0e6;
+  --color-slate-900: #fdfbf7;
+  --color-slate-800: #e8ded1;
+  --color-slate-700: #dfd3c3;
+  --color-slate-600: #a39587;
+  --color-slate-500: #8a7e72;
+  --color-slate-400: #5c5349;
+  --color-slate-300: #433b32;
+  --color-slate-200: #2d261e;
+  --color-slate-100: #1f1912;
+  --color-slate-50: #0f0c09;
+
+  --bg-color: #f5f0e6;
+  --surface-color: rgba(253, 251, 247, 0.95);
+  --surface-opaque: #fdfbf7;
+  --surface-elevated: #ffffff;
+  --nav-bg: rgba(245, 240, 230, 0.96);
+  --segment-bg: #e8ded1;
+  --text-primary: #2d261e;
+  --text-secondary: #5c5349;
+  --border-color: #c4b5a5;
+  --accent-blue: #2563eb;
+  --accent-green: #15803d;
+  --accent-red: #b91c1c;
+  --accent-amber: #b45309;
+  --accent-purple: #7e22ce;
+  --surface-modal: #fdfbf7;
+  --danger-soft-bg: color-mix(in srgb, var(--accent-red) 12%, var(--surface-opaque));
+  --danger-soft-fg: #9f1239;
+  --danger-soft-border: color-mix(in srgb, var(--accent-red) 40%, transparent);
+  --amber-soft-bg: color-mix(in srgb, var(--accent-amber) 12%, var(--surface-opaque));
+  --amber-soft-fg: #92400e;
+  --amber-soft-border: color-mix(in srgb, var(--accent-amber) 40%, transparent);
+  --purple-soft-bg: color-mix(in srgb, var(--accent-purple) 12%, var(--surface-opaque));
+  --purple-soft-fg: #6b21a8;
+  --purple-soft-border: color-mix(in srgb, var(--accent-purple) 40%, transparent);
+  --emerald-soft-bg: color-mix(in srgb, var(--accent-green) 12%, var(--surface-opaque));
+  --emerald-soft-fg: #166534;
+  --emerald-soft-border: color-mix(in srgb, var(--accent-green) 40%, transparent);
+  --on-accent: #ffffff;
+}
+
+[data-theme="midnight"] {
+  --bg-color: #000000;
+  --surface-color: rgba(11, 12, 14, 0.85);
+  --surface-opaque: #000000;
+  --surface-elevated: #14161a;
+  --nav-bg: rgba(0, 0, 0, 0.95);
+  --segment-bg: #16181d;
+  --text-primary: #f5f7fa;
+  --text-secondary: #7f8694;
+  --border-color: #1f232b;
+  --accent-blue: #3b82f6;
+  --accent-green: #10b981;
+  --accent-red: #ef4444;
+  --accent-amber: #f59e0b;
+  --accent-purple: #8b5cf6;
+  --surface-modal: #000000;
+  --danger-soft-bg: color-mix(in srgb, var(--accent-red) 14%, var(--surface-opaque));
+  --danger-soft-fg: #fecdd3;
+  --danger-soft-border: color-mix(in srgb, var(--accent-red) 45%, transparent);
+  --amber-soft-bg: color-mix(in srgb, var(--accent-amber) 14%, var(--surface-opaque));
+  --amber-soft-fg: #fde68a;
+  --amber-soft-border: color-mix(in srgb, var(--accent-amber) 45%, transparent);
+  --purple-soft-bg: color-mix(in srgb, var(--accent-purple) 14%, var(--surface-opaque));
+  --purple-soft-fg: #e9d5ff;
+  --purple-soft-border: color-mix(in srgb, var(--accent-purple) 45%, transparent);
+  --emerald-soft-bg: color-mix(in srgb, var(--accent-green) 14%, var(--surface-opaque));
+  --emerald-soft-fg: #a7f3d0;
+  --emerald-soft-border: color-mix(in srgb, var(--accent-green) 45%, transparent);
+  --on-accent: #ffffff;
+}
+
+[data-theme="slate-nord"] {
+  --bg-color: #242933;
+  --surface-color: rgba(46, 52, 64, 0.85);
+  --surface-opaque: #242933;
+  --surface-elevated: #3b4252;
+  --nav-bg: rgba(36, 41, 51, 0.95);
+  --segment-bg: #383f50;
+  --text-primary: #eceff4;
+  --text-secondary: #d8dee9;
+  --border-color: #434c5e;
+  --accent-blue: #88c0d0;
+  --accent-green: #a3be8c;
+  --accent-red: #bf616a;
+  --accent-amber: #ebcb8b;
+  --accent-purple: #b48ead;
+  --surface-modal: #242933;
+  --danger-soft-bg: color-mix(in srgb, var(--accent-red) 14%, var(--surface-opaque));
+  --danger-soft-fg: #fecdd3;
+  --danger-soft-border: color-mix(in srgb, var(--accent-red) 45%, transparent);
+  --amber-soft-bg: color-mix(in srgb, var(--accent-amber) 14%, var(--surface-opaque));
+  --amber-soft-fg: #fde68a;
+  --amber-soft-border: color-mix(in srgb, var(--accent-amber) 45%, transparent);
+  --purple-soft-bg: color-mix(in srgb, var(--accent-purple) 14%, var(--surface-opaque));
+  --purple-soft-fg: #e9d5ff;
+  --purple-soft-border: color-mix(in srgb, var(--accent-purple) 45%, transparent);
+  --emerald-soft-bg: color-mix(in srgb, var(--accent-green) 14%, var(--surface-opaque));
+  --emerald-soft-fg: #a7f3d0;
+  --emerald-soft-border: color-mix(in srgb, var(--accent-green) 45%, transparent);
+  --on-accent: #ffffff;
+}
+
+[data-theme="utopian-glass"] {
+  --color-slate-950: #f0f9ff;
+  --color-slate-900: rgba(255, 255, 255, 0.85);
+  --color-slate-800: rgba(186, 230, 253, 0.8);
+  --color-slate-700: #7dd3fc;
+  --color-slate-600: #38bdf8;
+  --color-slate-500: #0284c7;
+  --color-slate-400: #0369a1;
+  --color-slate-300: #075985;
+  --color-slate-200: #0c4a6e;
+  --color-slate-100: #082f49;
+  --color-slate-50: #031525;
+
+  --bg-color: #f0f9ff;
+  --surface-color: rgba(255, 255, 255, 0.72);
+  --surface-opaque: #ffffff;
+  --surface-elevated: rgba(255, 255, 255, 0.92);
+  --nav-bg: rgba(240, 249, 255, 0.92);
+  --segment-bg: rgba(224, 242, 254, 0.85);
+  --text-primary: #0c4a6e;
+  --text-secondary: #0369a1;
+  --border-color: rgba(186, 230, 253, 0.7);
+  --accent-blue: #0284c7;
+  --accent-green: #059669;
+  --accent-red: #e11d48;
+  --accent-amber: #d97706;
+  --accent-purple: #7c3aed;
+  --surface-modal: #ffffff;
+  --danger-soft-bg: color-mix(in srgb, var(--accent-red) 12%, var(--surface-opaque));
+  --danger-soft-fg: #9f1239;
+  --danger-soft-border: color-mix(in srgb, var(--accent-red) 40%, transparent);
+  --amber-soft-bg: color-mix(in srgb, var(--accent-amber) 12%, var(--surface-opaque));
+  --amber-soft-fg: #92400e;
+  --amber-soft-border: color-mix(in srgb, var(--accent-amber) 40%, transparent);
+  --purple-soft-bg: color-mix(in srgb, var(--accent-purple) 12%, var(--surface-opaque));
+  --purple-soft-fg: #6b21a8;
+  --purple-soft-border: color-mix(in srgb, var(--accent-purple) 40%, transparent);
+  --emerald-soft-bg: color-mix(in srgb, var(--accent-green) 12%, var(--surface-opaque));
+  --emerald-soft-fg: #166534;
+  --emerald-soft-border: color-mix(in srgb, var(--accent-green) 40%, transparent);
+  --on-accent: #ffffff;
+}
+
+[data-theme="utopian-night"] {
+  --bg-color: #040811;
+  --surface-color: rgba(9, 18, 34, 0.76);
+  --surface-opaque: #040811;
+  --surface-elevated: #0f1f38;
+  --nav-bg: rgba(4, 8, 17, 0.9);
+  --segment-bg: #0c182c;
+  --text-primary: #e0f2fe;
+  --text-secondary: #7dd3fc;
+  --border-color: rgba(56, 189, 248, 0.22);
+  --accent-blue: #38bdf8;
+  --accent-green: #34d399;
+  --accent-red: #f43f5e;
+  --accent-amber: #fbbf24;
+  --accent-purple: #c084fc;
+  --surface-modal: #040811;
+  --danger-soft-bg: color-mix(in srgb, var(--accent-red) 14%, var(--surface-opaque));
+  --danger-soft-fg: #fecdd3;
+  --danger-soft-border: color-mix(in srgb, var(--accent-red) 45%, transparent);
+  --amber-soft-bg: color-mix(in srgb, var(--accent-amber) 14%, var(--surface-opaque));
+  --amber-soft-fg: #fde68a;
+  --amber-soft-border: color-mix(in srgb, var(--accent-amber) 45%, transparent);
+  --purple-soft-bg: color-mix(in srgb, var(--accent-purple) 14%, var(--surface-opaque));
+  --purple-soft-fg: #e9d5ff;
+  --purple-soft-border: color-mix(in srgb, var(--accent-purple) 45%, transparent);
+  --emerald-soft-bg: color-mix(in srgb, var(--accent-green) 14%, var(--surface-opaque));
+  --emerald-soft-fg: #a7f3d0;
+  --emerald-soft-border: color-mix(in srgb, var(--accent-green) 45%, transparent);
+  --on-accent: #ffffff;
+}
+
+[data-theme="aero-frost"] {
+  --color-slate-950: #e8eef5;
+  --color-slate-900: #ffffff;
+  --color-slate-800: #dbe4ee;
+  --color-slate-700: #cbd5e1;
+  --color-slate-600: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-400: #475569;
+  --color-slate-300: #334155;
+  --color-slate-200: #1e293b;
+  --color-slate-100: #0f172a;
+  --color-slate-50: #000000;
+
+  --bg-color: #e8eef5;
+  --surface-color: rgba(255, 255, 255, 0.82);
+  --surface-opaque: #f1f5f9;
+  --surface-elevated: #ffffff;
+  --nav-bg: rgba(232, 238, 245, 0.95);
+  --segment-bg: rgba(203, 213, 225, 0.8);
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: rgba(203, 213, 225, 0.9);
+  --accent-blue: #2563eb;
+  --accent-green: #16a34a;
+  --accent-red: #dc2626;
+  --accent-amber: #d97706;
+  --accent-purple: #9333ea;
+  --surface-modal: #ffffff;
+  --danger-soft-bg: color-mix(in srgb, var(--accent-red) 12%, var(--surface-opaque));
+  --danger-soft-fg: #9f1239;
+  --danger-soft-border: color-mix(in srgb, var(--accent-red) 40%, transparent);
+  --amber-soft-bg: color-mix(in srgb, var(--accent-amber) 12%, var(--surface-opaque));
+  --amber-soft-fg: #92400e;
+  --amber-soft-border: color-mix(in srgb, var(--accent-amber) 40%, transparent);
+  --purple-soft-bg: color-mix(in srgb, var(--accent-purple) 12%, var(--surface-opaque));
+  --purple-soft-fg: #6b21a8;
+  --purple-soft-border: color-mix(in srgb, var(--accent-purple) 40%, transparent);
+  --emerald-soft-bg: color-mix(in srgb, var(--accent-green) 12%, var(--surface-opaque));
+  --emerald-soft-fg: #166534;
+  --emerald-soft-border: color-mix(in srgb, var(--accent-green) 40%, transparent);
+  --on-accent: #ffffff;
+}
+
+[data-theme="cyber-glass"] {
+  --bg-color: #090d16;
+  --surface-color: rgba(18, 24, 38, 0.8);
+  --surface-opaque: #090d16;
+  --surface-elevated: #161e30;
+  --nav-bg: rgba(9, 13, 22, 0.95);
+  --segment-bg: #141c2c;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border-color: rgba(56, 189, 248, 0.3);
+  --accent-blue: #38bdf8;
+  --accent-green: #34d399;
+  --accent-red: #fb7185;
+  --accent-amber: #fbbf24;
+  --accent-purple: #a78bfa;
+  --surface-modal: #090d16;
+  --danger-soft-bg: color-mix(in srgb, var(--accent-red) 14%, var(--surface-opaque));
+  --danger-soft-fg: #fecdd3;
+  --danger-soft-border: color-mix(in srgb, var(--accent-red) 45%, transparent);
+  --amber-soft-bg: color-mix(in srgb, var(--accent-amber) 14%, var(--surface-opaque));
+  --amber-soft-fg: #fde68a;
+  --amber-soft-border: color-mix(in srgb, var(--accent-amber) 45%, transparent);
+  --purple-soft-bg: color-mix(in srgb, var(--accent-purple) 14%, var(--surface-opaque));
+  --purple-soft-fg: #e9d5ff;
+  --purple-soft-border: color-mix(in srgb, var(--accent-purple) 45%, transparent);
+  --emerald-soft-bg: color-mix(in srgb, var(--accent-green) 14%, var(--surface-opaque));
+  --emerald-soft-fg: #a7f3d0;
+  --emerald-soft-border: color-mix(in srgb, var(--accent-green) 45%, transparent);
+  --on-accent: #ffffff;
+}
+
+[data-theme="retro-glass"] {
+  --bg-color: #16181f;
+  --surface-color: rgba(30, 33, 42, 0.92);
+  --surface-opaque: #1a1c24;
+  --surface-elevated: #262936;
+  --nav-bg: rgba(22, 24, 31, 0.96);
+  --segment-bg: #272a38;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --border-color: rgba(255, 255, 255, 0.16);
+  --accent-blue: #38bdf8;
+  --accent-green: #34d399;
+  --accent-red: #f43f5e;
+  --accent-amber: #fbbf24;
+  --accent-purple: #c084fc;
+  --surface-modal: #1a1c24;
+  --danger-soft-bg: color-mix(in srgb, var(--accent-red) 14%, var(--surface-opaque));
+  --danger-soft-fg: #fecdd3;
+  --danger-soft-border: color-mix(in srgb, var(--accent-red) 45%, transparent);
+  --amber-soft-bg: color-mix(in srgb, var(--accent-amber) 14%, var(--surface-opaque));
+  --amber-soft-fg: #fde68a;
+  --amber-soft-border: color-mix(in srgb, var(--accent-amber) 45%, transparent);
+  --purple-soft-bg: color-mix(in srgb, var(--accent-purple) 14%, var(--surface-opaque));
+  --purple-soft-fg: #e9d5ff;
+  --purple-soft-border: color-mix(in srgb, var(--accent-purple) 45%, transparent);
+  --emerald-soft-bg: color-mix(in srgb, var(--accent-green) 14%, var(--surface-opaque));
+  --emerald-soft-fg: #a7f3d0;
+  --emerald-soft-border: color-mix(in srgb, var(--accent-green) 45%, transparent);
+  --on-accent: #ffffff;
+}
+
+[data-theme="high-contrast"] {
+  --color-slate-950: #ffffff;
+  --color-slate-900: #ffffff;
+  --color-slate-800: #000000;
+  --color-slate-700: #000000;
+  --color-slate-600: #000000;
+  --color-slate-500: #222222;
+  --color-slate-400: #111111;
+  --color-slate-300: #000000;
+  --color-slate-200: #000000;
+  --color-slate-100: #000000;
+  --color-slate-50: #000000;
+
+  --bg-color: #ffffff;
+  --surface-color: #ffffff;
+  --surface-opaque: #ffffff;
+  --surface-elevated: #ffffff;
+  --nav-bg: #ffffff;
+  --segment-bg: #f1f5f9;
+  --text-primary: #000000;
+  --text-secondary: #222222;
+  --border-color: #000000;
+  --accent-blue: #0044cc;
+  --accent-green: #008800;
+  --accent-red: #cc0000;
+  --accent-amber: #bb7700;
+  --accent-purple: #660099;
+  --surface-modal: #ffffff;
+  --danger-soft-bg: color-mix(in srgb, var(--accent-red) 12%, var(--surface-opaque));
+  --danger-soft-fg: #cc0000;
+  --danger-soft-border: color-mix(in srgb, var(--accent-red) 40%, transparent);
+  --amber-soft-bg: color-mix(in srgb, var(--accent-amber) 12%, var(--surface-opaque));
+  --amber-soft-fg: #bb7700;
+  --amber-soft-border: color-mix(in srgb, var(--accent-amber) 40%, transparent);
+  --purple-soft-bg: color-mix(in srgb, var(--accent-purple) 12%, var(--surface-opaque));
+  --purple-soft-fg: #660099;
+  --purple-soft-border: color-mix(in srgb, var(--accent-purple) 40%, transparent);
+  --emerald-soft-bg: color-mix(in srgb, var(--accent-green) 12%, var(--surface-opaque));
+  --emerald-soft-fg: #008800;
+  --emerald-soft-border: color-mix(in srgb, var(--accent-green) 40%, transparent);
+  --on-accent: #ffffff;
+}
+
+/* Dynamic Token Hooks for App Canvas & Glassmorphism */
+body {
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.glass-panel {
+  background: var(--surface-color) !important;
+  border-color: var(--border-color) !important;
+}
+
+.glass-pill {
+  background: var(--segment-bg) !important;
+  border-color: var(--border-color) !important;
+}
+
+.header-elevated {
+  background-color: var(--surface-opaque) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* Shake Animation for Limbo Tray / Validation Errors */
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: errorShake 0.4s ease-in-out;
+}
+
+/* Displace Alert Animation: Flash Overwrite & Falling Ghost Text */
+@keyframes flashRedOverwrite {
+  0% { 
+    box-shadow: inset 0 0 0 4px rgba(244, 63, 94, 0.9), 0 0 16px rgba(244, 63, 94, 0.6); 
+    transform: scale(0.92); 
+    border-radius: 12px; 
+  }
+  50% { 
+    box-shadow: inset 0 0 0 4px rgba(244, 63, 94, 0.5), 0 0 8px rgba(244, 63, 94, 0.3); 
+    transform: scale(1.05); 
+    border-radius: 10px; 
+  }
+  100% { 
+    box-shadow: inset 0 0 0 0 transparent; 
+    transform: scale(1); 
+    border-radius: 8px; 
+  }
+}
+
+@keyframes ghostSlideOut {
+  0% { transform: translateY(0) scale(1); opacity: 0.95; }
+  100% { transform: translateY(52px) scale(0.78); opacity: 0; }
+}
+
+.cell-displaced-flash {
+  animation: flashRedOverwrite 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  position: relative !important;
+  z-index: 25 !important;
+}
+
+.ghost-displaced {
+  position: absolute;
+  top: 6px;
+  left: 4px;
+  right: 4px;
+  text-align: center;
+  color: #fb7185;
+  font-weight: 800;
+  font-size: 11px;
+  z-index: 30;
+  pointer-events: none;
+  animation: ghostSlideOut 0.75s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+}
+
+/* Away Period Marquee Selection */
+.away-period-marquee {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(99, 102, 241, 0.2),
+    rgba(99, 102, 241, 0.2) 8px,
+    rgba(99, 102, 241, 0.38) 8px,
+    rgba(99, 102, 241, 0.38) 16px
+  ) !important;
+  border: 2px dashed #818cf8 !important;
+  box-shadow: 0 0 14px rgba(99, 102, 241, 0.6), inset 0 0 10px rgba(99, 102, 241, 0.3) !important;
+}
+
+/* ==========================================================================
+   RETRO GLASS: SKEUOMORPHIC CURVED GLASS PEBBLE KEYPADS & BUTTONS
+   ========================================================================== */
+
+[data-theme="retro-glass"] table tbody td:not(:first-child) {
+  border-radius: 12px !important;
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.14) 0%, 
+    rgba(255, 255, 255, 0.03) 48%, 
+    rgba(0, 0, 0, 0.28) 52%, 
+    rgba(0, 0, 0, 0.48) 100%
+  ) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.55),
+    inset 0 -2px 3.5px rgba(0, 0, 0, 0.55),
+    0 3px 6px -1px rgba(0, 0, 0, 0.5),
+    0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.12s ease !important;
+}
+
+[data-theme="retro-glass"] table tbody td:not(:first-child):active {
+  transform: translateY(1.5px) scale(0.975) !important;
+  box-shadow: 
+    inset 0 2.5px 4px rgba(0, 0, 0, 0.7),
+    0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Assigned / Busy Pebble (Curved Aquamarine Jewel) */
+[data-theme="retro-glass"] table tbody td div.rounded-lg:not([class*="emerald"]):not([class*="amber"]):not([class*="rose"]) {
+  background: linear-gradient(180deg, 
+    rgba(56, 189, 248, 0.42) 0%, 
+    rgba(56, 189, 248, 0.14) 48%, 
+    rgba(0, 0, 0, 0.28) 52%, 
+    rgba(14, 165, 233, 0.38) 100%
+  ) !important;
+  border: 1px solid rgba(56, 189, 248, 0.55) !important;
+  border-radius: 10px !important;
+  box-shadow: 
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.7),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.45),
+    0 4px 10px rgba(14, 165, 233, 0.3) !important;
+}
+
+/* Substitution Covering Pebble (Curved Emerald Jewel) */
+[data-theme="retro-glass"] table tbody td div.rounded-lg[class*="emerald"] {
+  background: linear-gradient(180deg, 
+    rgba(52, 211, 153, 0.45) 0%, 
+    rgba(52, 211, 153, 0.15) 48%, 
+    rgba(0, 0, 0, 0.28) 52%, 
+    rgba(16, 185, 129, 0.42) 100%
+  ) !important;
+  border: 1px solid rgba(52, 211, 153, 0.6) !important;
+  border-radius: 10px !important;
+  box-shadow: 
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.75),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.45),
+    0 4px 10px rgba(16, 185, 129, 0.35) !important;
+}
+
+/* Absent / Need Sub Pebble (Curved Ruby Jewel) */
+[data-theme="retro-glass"] table tbody td div.rounded-lg[class*="rose"] {
+  background: linear-gradient(180deg, 
+    rgba(244, 63, 94, 0.45) 0%, 
+    rgba(244, 63, 94, 0.15) 48%, 
+    rgba(0, 0, 0, 0.28) 52%, 
+    rgba(225, 29, 72, 0.42) 100%
+  ) !important;
+  border: 1px solid rgba(244, 63, 94, 0.6) !important;
+  border-radius: 10px !important;
+  box-shadow: 
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.75),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.45),
+    0 4px 10px rgba(225, 29, 72, 0.35) !important;
+}
+
+/* Sub Active Pebble (Curved Amber Jewel) */
+[data-theme="retro-glass"] table tbody td div.rounded-lg[class*="amber"] {
+  background: linear-gradient(180deg, 
+    rgba(251, 191, 36, 0.45) 0%, 
+    rgba(251, 191, 36, 0.15) 48%, 
+    rgba(0, 0, 0, 0.28) 52%, 
+    rgba(217, 119, 6, 0.42) 100%
+  ) !important;
+  border: 1px solid rgba(251, 191, 36, 0.6) !important;
+  border-radius: 10px !important;
+  box-shadow: 
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.75),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.45),
+    0 4px 10px rgba(217, 119, 6, 0.35) !important;
+}
+
+/* ==========================================================================
+   GLOBAL CONTRAST & LEGIBILITY SAFEGUARDS (LIGHT & HIGH-CONTRAST THEMES)
+   ========================================================================== */
+
+[data-theme="light"] table th,
+[data-theme="warm-sepia"] table th,
+[data-theme="aero-frost"] table th,
+[data-theme="utopian-glass"] table th,
+[data-theme="high-contrast"] table th {
+  background-color: var(--surface-opaque) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="light"] table td.sticky,
+[data-theme="warm-sepia"] table td.sticky,
+[data-theme="aero-frost"] table td.sticky,
+[data-theme="utopian-glass"] table td.sticky,
+[data-theme="high-contrast"] table td.sticky {
+  background-color: var(--surface-opaque) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="high-contrast"] * {
+  border-color: #000000 !important;
+}
+
+
+
+
+/* Bundle 37: light-theme muted label contrast (targeted, not full rewrite) */
+[data-theme="light"] .text-slate-500,
+[data-theme="light"] .text-slate-400,
+[data-theme="warm-sepia"] .text-slate-500,
+[data-theme="warm-sepia"] .text-slate-400 {
+  color: var(--text-secondary) !important;
+}
+[data-theme="light"] .border-slate-800,
+[data-theme="light"] .border-slate-700,
+[data-theme="warm-sepia"] .border-slate-800,
+[data-theme="warm-sepia"] .border-slate-700 {
+  border-color: var(--border-color) !important;
+}
+
+/* ==========================================================================
+   Bundle 39 / UI-12: semantic utilities + day-theme contrast rewrite
+   ========================================================================== */
+
+.text-ink { color: var(--text-primary) !important; }
+.text-muted { color: var(--text-secondary) !important; }
+.bg-surface { background-color: var(--surface-opaque) !important; }
+.bg-surface-elev { background-color: var(--surface-elevated) !important; }
+.bg-surface-modal { background-color: var(--surface-modal) !important; }
+.bg-surface-soft { background: var(--surface-color) !important; }
+.border-default { border-color: var(--border-color) !important; }
+.text-on-accent { color: var(--on-accent) !important; }
+
+.chip-danger {
+  background-color: var(--danger-soft-bg) !important;
+  color: var(--danger-soft-fg) !important;
+  border-color: var(--danger-soft-border) !important;
+}
+.chip-amber {
+  background-color: var(--amber-soft-bg) !important;
+  color: var(--amber-soft-fg) !important;
+  border-color: var(--amber-soft-border) !important;
+}
+.chip-purple {
+  background-color: var(--purple-soft-bg) !important;
+  color: var(--purple-soft-fg) !important;
+  border-color: var(--purple-soft-border) !important;
+}
+.chip-emerald {
+  background-color: var(--emerald-soft-bg) !important;
+  color: var(--emerald-soft-fg) !important;
+  border-color: var(--emerald-soft-border) !important;
+}
+
+/* Day themes: bare text-white on chrome → primary ink.
+   Elements that are themselves an accent fill keep --on-accent. */
+[data-theme="light"] .text-white:not(.text-on-accent),
+[data-theme="warm-sepia"] .text-white:not(.text-on-accent),
+[data-theme="utopian-glass"] .text-white:not(.text-on-accent),
+[data-theme="aero-frost"] .text-white:not(.text-on-accent),
+[data-theme="high-contrast"] .text-white:not(.text-on-accent) {
+  color: var(--text-primary) !important;
+}
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] .text-white:not(.text-on-accent) {
+    color: var(--text-primary) !important;
+  }
+  [data-theme="system"] [class*="bg-blue-"].text-white,
+  [data-theme="system"] [class*="bg-rose-"].text-white,
+  [data-theme="system"] [class*="bg-emerald-"].text-white,
+  [data-theme="system"] [class*="bg-amber-"].text-white,
+  [data-theme="system"] [class*="bg-indigo-"].text-white,
+  [data-theme="system"] [class*="bg-purple-"].text-white,
+  [data-theme="system"] [class*="bg-gradient-"].text-white {
+    color: var(--on-accent) !important;
+  }
+}
+[data-theme="light"] [class*="bg-blue-"].text-white,
+[data-theme="light"] [class*="bg-rose-"].text-white,
+[data-theme="light"] [class*="bg-emerald-"].text-white,
+[data-theme="light"] [class*="bg-amber-"].text-white,
+[data-theme="light"] [class*="bg-indigo-"].text-white,
+[data-theme="light"] [class*="bg-purple-"].text-white,
+[data-theme="light"] [class*="bg-gradient-"].text-white,
+[data-theme="warm-sepia"] [class*="bg-blue-"].text-white,
+[data-theme="warm-sepia"] [class*="bg-rose-"].text-white,
+[data-theme="warm-sepia"] [class*="bg-emerald-"].text-white,
+[data-theme="warm-sepia"] [class*="bg-amber-"].text-white,
+[data-theme="warm-sepia"] [class*="bg-indigo-"].text-white,
+[data-theme="warm-sepia"] [class*="bg-purple-"].text-white,
+[data-theme="warm-sepia"] [class*="bg-gradient-"].text-white,
+[data-theme="utopian-glass"] [class*="bg-blue-"].text-white,
+[data-theme="utopian-glass"] [class*="bg-rose-"].text-white,
+[data-theme="utopian-glass"] [class*="bg-emerald-"].text-white,
+[data-theme="utopian-glass"] [class*="bg-amber-"].text-white,
+[data-theme="utopian-glass"] [class*="bg-indigo-"].text-white,
+[data-theme="utopian-glass"] [class*="bg-purple-"].text-white,
+[data-theme="utopian-glass"] [class*="bg-gradient-"].text-white,
+[data-theme="aero-frost"] [class*="bg-blue-"].text-white,
+[data-theme="aero-frost"] [class*="bg-rose-"].text-white,
+[data-theme="aero-frost"] [class*="bg-emerald-"].text-white,
+[data-theme="aero-frost"] [class*="bg-amber-"].text-white,
+[data-theme="aero-frost"] [class*="bg-indigo-"].text-white,
+[data-theme="aero-frost"] [class*="bg-purple-"].text-white,
+[data-theme="aero-frost"] [class*="bg-gradient-"].text-white,
+[data-theme="high-contrast"] [class*="bg-blue-"].text-white,
+[data-theme="high-contrast"] [class*="bg-rose-"].text-white,
+[data-theme="high-contrast"] [class*="bg-emerald-"].text-white,
+[data-theme="high-contrast"] [class*="bg-amber-"].text-white,
+[data-theme="high-contrast"] [class*="bg-indigo-"].text-white,
+[data-theme="high-contrast"] [class*="bg-purple-"].text-white,
+[data-theme="high-contrast"] [class*="bg-gradient-"].text-white {
+  color: var(--on-accent) !important;
+}
+
+/* Soften hard *-950 chips on day themes */
+[data-theme="light"] [class*="bg-rose-950"],
+[data-theme="warm-sepia"] [class*="bg-rose-950"],
+[data-theme="utopian-glass"] [class*="bg-rose-950"],
+[data-theme="aero-frost"] [class*="bg-rose-950"],
+[data-theme="high-contrast"] [class*="bg-rose-950"] {
+  background-color: var(--danger-soft-bg) !important;
+}
+[data-theme="light"] [class*="bg-amber-950"],
+[data-theme="warm-sepia"] [class*="bg-amber-950"],
+[data-theme="utopian-glass"] [class*="bg-amber-950"],
+[data-theme="aero-frost"] [class*="bg-amber-950"],
+[data-theme="high-contrast"] [class*="bg-amber-950"] {
+  background-color: var(--amber-soft-bg) !important;
+}
+[data-theme="light"] [class*="bg-purple-950"],
+[data-theme="warm-sepia"] [class*="bg-purple-950"],
+[data-theme="utopian-glass"] [class*="bg-purple-950"],
+[data-theme="aero-frost"] [class*="bg-purple-950"],
+[data-theme="high-contrast"] [class*="bg-purple-950"] {
+  background-color: var(--purple-soft-bg) !important;
+}
+
+/* Expand muted contrast to remaining day families */
+[data-theme="utopian-glass"] .text-slate-500,
+[data-theme="utopian-glass"] .text-slate-400,
+[data-theme="aero-frost"] .text-slate-500,
+[data-theme="aero-frost"] .text-slate-400,
+[data-theme="high-contrast"] .text-slate-500,
+[data-theme="high-contrast"] .text-slate-400 {
+  color: var(--text-secondary) !important;
+}
+[data-theme="utopian-glass"] .border-slate-800,
+[data-theme="utopian-glass"] .border-slate-700,
+[data-theme="aero-frost"] .border-slate-800,
+[data-theme="aero-frost"] .border-slate-700,
+[data-theme="high-contrast"] .border-slate-800,
+[data-theme="high-contrast"] .border-slate-700 {
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="midnight"] .glass-panel {
+  background-color: var(--surface-modal) !important;
+  color: var(--text-primary);
+}
+
+/* A11y: focus-visible rings */
+:where(button, a, input, select, textarea, [role="button"]):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent-blue) 80%, white);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-shake,
+  .cell-displaced-flash,
+  .ghost-displaced {
+    animation: none !important;
+  }
+}
