@@ -302,6 +302,8 @@ done
 
 Run `bash ~/leakcheck.sh` after `git add` and before every `git commit`. On a hit, locate it by printing only the needle number, file and line numbers, never the value. The service-account domain may appear in a report to the user, but never in docs.
 
+**One expected exception:** the release build commit (B4 step 4) puts the admin **hash** into `assets/index-*.js`. That's by design: the client-side gate compares against it (SEC-01, see `docs/ADMIN_ACCESS.md`), and the live alpha.2 asset already contains it. For that commit only, check the staged diff **excluding** `assets/` and `index.html` (`git diff --cached -- . ':!assets' ':!index.html'`) and confirm the passcode itself appears nowhere. The hash must never appear in source, docs or `.env*` files. The real fix is server-side auth (SEC-02).
+
 ---
 
 ## Part C. How to work with this user (the working psychology)
