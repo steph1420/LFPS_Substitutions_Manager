@@ -314,7 +314,7 @@ export const SubstitutionsRegister: React.FC = () => {
             {pendingAppointmentsCount === 1 && offACResult.needsAppointment && (
               <button
                 onClick={() => openOfficiatingModal({ type: 'AC' })}
-                className="w-fit flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/50 text-purple-300 text-xs font-bold active:scale-95 transition-all cursor-pointer shadow-sm attention-pulse"
+                className="w-fit flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/50 text-purple-300 text-xs font-bold active:scale-95 transition-colors cursor-pointer shadow-sm"
                 title="Both AC and AAC are absent today — designate Officiating AC"
               >
                 <ShieldAlert className="w-3.5 h-3.5 text-purple-400" />
@@ -325,7 +325,7 @@ export const SubstitutionsRegister: React.FC = () => {
             {pendingAppointmentsCount === 1 && unappointedCTs.length === 1 && (
               <button
                 onClick={() => openOfficiatingModal({ type: 'CT', section: unappointedCTs[0].section })}
-                className="w-fit flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 text-xs font-bold active:scale-95 transition-all cursor-pointer shadow-sm attention-pulse"
+                className="w-fit flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 text-xs font-bold active:scale-95 transition-colors cursor-pointer shadow-sm"
                 title={`Class Teacher ${unappointedCTs[0].teacher.abbr} is absent today — appoint Officiating CT for ${unappointedCTs[0].section}`}
               >
                 <School className="w-3.5 h-3.5 text-amber-400" />
@@ -337,7 +337,7 @@ export const SubstitutionsRegister: React.FC = () => {
               <div className="relative" ref={appointDropdownRef}>
                 <button
                   onClick={() => setIsAppointDropdownOpen((prev) => !prev)}
-                  className="w-fit flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-purple-500/20 via-amber-500/20 to-purple-500/20 hover:from-purple-500/30 hover:to-amber-500/30 border border-amber-500/50 text-amber-300 text-xs font-bold active:scale-95 transition-all cursor-pointer shadow-sm attention-pulse"
+                  className="w-fit flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-purple-500/20 via-amber-500/20 to-purple-500/20 hover:from-purple-500/30 hover:to-amber-500/30 border border-amber-500/50 text-amber-300 text-xs font-bold active:scale-95 transition-colors cursor-pointer shadow-sm"
                   title="Multiple officiating appointments required today — tap to select"
                 >
                   <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
@@ -505,7 +505,7 @@ export const SubstitutionsRegister: React.FC = () => {
                     <div
                       className={`p-3 sm:p-4 rounded-xl transition-all ${
                         hasPending
-                          ? 'bg-amber-950/30 border border-amber-500/70 ring-1 ring-amber-500/30 attention-pulse'
+                          ? 'bg-amber-950/30 border border-amber-500/70 ring-1 ring-amber-500/30'
                           : 'bg-slate-900/60 border border-purple-500/40'
                       }`}
                     >
@@ -762,7 +762,7 @@ export const SubstitutionsRegister: React.FC = () => {
                         <div
                           className={`font-bold ${
                             isAwayDuty ? 'text-indigo-400' : 'text-rose-400'
-                          } animate-pulse`}
+                          }`}
                         >
                           Needs Sub!
                         </div>
@@ -857,7 +857,7 @@ export const SubstitutionsRegister: React.FC = () => {
                         </span>
                       </div>
                       <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border animate-pulse ${
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
                           isAwayDuty
                             ? 'bg-indigo-500/25 text-indigo-200 border-indigo-500/40'
                             : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
@@ -1168,7 +1168,7 @@ export const SubstitutionsRegister: React.FC = () => {
             {offACResult.needsAppointment && (
               <div
                 onClick={() => openOfficiatingModal({ type: 'AC' })}
-                className="bg-purple-950/40 border border-purple-500/60 hover:border-purple-400 rounded-xl p-3 flex items-center justify-between purple-attention-pulse cursor-pointer select-none active:scale-[0.99] transition-all group"
+                className="bg-purple-950/40 border border-purple-500/60 hover:border-purple-400 rounded-xl p-3 flex items-center justify-between cursor-pointer select-none active:scale-[0.99] transition-colors group"
                 title="Tap anywhere to designate Officiating AC"
               >
                 <div>
@@ -1197,7 +1197,7 @@ export const SubstitutionsRegister: React.FC = () => {
               <div
                 key={`unappointed-${unappointedCTs[0].section}`}
                 onClick={() => openOfficiatingModal({ type: 'CT', section: unappointedCTs[0].section })}
-                className="bg-amber-950/40 border border-amber-500/60 hover:border-amber-400 rounded-xl p-3 flex items-center justify-between attention-pulse cursor-pointer select-none active:scale-[0.99] transition-all group"
+                className="bg-amber-950/40 border border-amber-500/60 hover:border-amber-400 rounded-xl p-3 flex items-center justify-between off-ct-appoint-quiet cursor-pointer select-none active:scale-[0.99] transition-colors group"
                 title={`Tap anywhere to appoint Officiating CT for ${unappointedCTs[0].section}`}
               >
                 <div>
@@ -1225,7 +1225,7 @@ export const SubstitutionsRegister: React.FC = () => {
             )}
 
             {unappointedCTs.length > 1 && (
-              <div className="bg-amber-950/40 border border-amber-500/60 rounded-xl p-3.5 flex flex-col justify-between gap-2.5 attention-pulse sm:col-span-2">
+              <div className="bg-amber-950/40 border border-amber-500/60 rounded-xl p-3.5 flex flex-col justify-between gap-2.5 off-ct-appoint-quiet sm:col-span-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">

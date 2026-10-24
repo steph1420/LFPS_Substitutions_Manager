@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Teacher } from '@lfps/core';
 import { Check, UserX, SlidersHorizontal } from 'lucide-react';
 import { TeacherNameOverlay } from '../common/TeacherNameOverlay.js';
@@ -11,6 +12,7 @@ interface RosterCompactListRowProps {
   isAC: boolean;
   isAAC: boolean;
   isFreeFromSub?: boolean;
+  wasAbsentOnMount?: boolean;
   onToggleAbsence: (abbr: string) => void;
   onOpenAvailability: (abbr: string) => void;
 }
@@ -23,11 +25,24 @@ export const RosterCompactListRow: React.FC<RosterCompactListRowProps> = ({
   isAC,
   isAAC,
   isFreeFromSub,
+  wasAbsentOnMount,
   onToggleAbsence,
   onOpenAvailability,
 }) => {
+  const [hasPulsed, setHasPulsed] = React.useState(false);
+  const [shouldPulse, setShouldPulse] = React.useState(false);
+  const handleViewportEnter = () => {
+    if (!hasPulsed && wasAbsentOnMount && isAbsent) {
+      setShouldPulse(true);
+      setHasPulsed(true);
+    }
+  };
+
   return (
-    <div
+    <motion.div
+      viewport={{ once: true, amount: 0.3 }}
+      onViewportEnter={handleViewportEnter}
+      onAnimationEnd={() => setShouldPulse(false)}
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('button, input, select, a')) return;
         onToggleAbsence(teacher.abbr);
@@ -38,7 +53,7 @@ export const RosterCompactListRow: React.FC<RosterCompactListRowProps> = ({
           : isAwayOfficial
           ? 'bg-indigo-950/20 border-l-4 border-l-indigo-500 hover:bg-indigo-950/30'
           : 'hover:bg-slate-800/40'
-      }`}
+      } ${shouldPulse ? 'amber-look-at-me-1x' : ''}`}
     >
       {/* Left: Indicator, Avatar & Full Name */}
       <div className="flex items-center gap-2.5 min-w-[220px] flex-1">
@@ -127,7 +142,6 @@ export const RosterCompactListRow: React.FC<RosterCompactListRowProps> = ({
           <SlidersHorizontal className="w-3.5 h-3.5" />
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 };
-

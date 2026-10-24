@@ -151,7 +151,7 @@ export const StaffLoginModal: React.FC = () => {
                 {loggedInTeacher && (
                   <div className="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between flex-shrink-0">
                     <div className="flex items-center gap-2 text-xs">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="w-2 h-2 rounded-full status-dot-live" />
                       <span className="text-slate-300">Active: </span>
                       <span className="font-bold text-white">{loggedInTeacher}</span>
                       {isAdmin && (

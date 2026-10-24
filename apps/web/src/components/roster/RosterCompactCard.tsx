@@ -10,6 +10,7 @@ interface RosterCompactCardProps {
   isCT: boolean;
   isAC: boolean;
   isAAC: boolean;
+  wasAbsentOnMount?: boolean;
   onToggleAbsence: (abbr: string) => void;
   onOpenAvailability: (abbr: string) => void;
 }
@@ -20,13 +21,25 @@ export const RosterCompactCard: React.FC<RosterCompactCardProps> = ({
   isCT,
   isAC,
   isAAC,
+  wasAbsentOnMount,
   onToggleAbsence,
   onOpenAvailability,
 }) => {
+  const [hasPulsed, setHasPulsed] = React.useState(false);
+  const [shouldPulse, setShouldPulse] = React.useState(false);
+  const handleViewportEnter = () => {
+    if (!hasPulsed && wasAbsentOnMount && isAbsent) {
+      setShouldPulse(true);
+      setHasPulsed(true);
+    }
+  };
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
+      viewport={{ once: true, amount: 0.3 }}
+      onViewportEnter={handleViewportEnter}
+      onAnimationEnd={() => setShouldPulse(false)}
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('button, input, select, a')) return;
         onToggleAbsence(teacher.abbr);
@@ -37,7 +50,7 @@ export const RosterCompactCard: React.FC<RosterCompactCardProps> = ({
           : isCT
           ? 'border-amber-500/30 bg-slate-900/80 hover:border-amber-500/50'
           : 'border-slate-800 hover:border-slate-700 bg-slate-900/60'
-      }`}
+      } ${shouldPulse ? 'amber-look-at-me-1x' : ''}`}
     >
       <div className="flex items-center gap-2 min-w-0">
         <div

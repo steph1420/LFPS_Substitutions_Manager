@@ -121,6 +121,58 @@
   animation: singleAmberPulse 0.9s ease-in-out 1;
 }
 
+/* FIND-01: static status dots — no infinite Tailwind animate-pulse */
+.status-dot-live {
+  background-color: rgb(52 211 153); /* emerald-400 */
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.55);
+}
+.status-dot-connecting {
+  background-color: rgb(251 191 36); /* amber-400 */
+  box-shadow: 0 0 6px rgba(251, 191, 36, 0.4);
+}
+.status-dot-offline {
+  background-color: rgb(100 116 139); /* slate-500 */
+}
+.status-badge-static {
+  /* badges stay solid; no pulse */
+}
+
+/* UI-11: stable routine matrix geometry */
+.routine-matrix-table {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+}
+.routine-matrix-table tbody tr {
+  height: 2.75rem; /* reserve sub-label / ABS line */
+  min-height: 2.75rem;
+}
+.routine-matrix-table td,
+.routine-matrix-table th {
+  vertical-align: middle;
+}
+.routine-matrix-shell {
+  min-height: 22rem; /* SAT shouldn't collapse the card shell */
+}
+
+/* FIND-04: matrix sticky absent cell — rail, no outer bloom (parity with UI-06 cards) */
+.matrix-absent-sticky {
+  background: color-mix(in srgb, var(--accent-red) 18%, #0f172a) !important;
+  border-right: 2px solid color-mix(in srgb, var(--accent-red) 70%, transparent) !important;
+  border-left: 3px solid var(--accent-red) !important;
+  color: #fecdd3 !important;
+  box-shadow: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .attention-pulse,
+  .purple-attention-pulse,
+  .amber-look-at-me-1x,
+  .amber-look-at-me-3x {
+    animation: none !important;
+  }
+}
+
 /* Soft thin scrollbars in dark modals (Bundle 37 polish) */
 .scrollbar-thin {
   scrollbar-width: thin;

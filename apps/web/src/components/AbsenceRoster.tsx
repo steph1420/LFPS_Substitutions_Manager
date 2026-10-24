@@ -45,6 +45,7 @@ export const AbsenceRoster: React.FC = () => {
     isMinimalUI,
     substitutions,
     schedule,
+    setActiveTab,
   } = useTimetableStore();
 
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -136,8 +137,13 @@ export const AbsenceRoster: React.FC = () => {
       (a) => a.teacherName === abbr && a.type !== 'AWAY_OFFICIAL'
     );
     toggleAbsence(abbr, options);
-    if (devUiPrefs.autoFilterAbsent && !alreadyAbsent) {
-      setStatusFilter('absent');
+    if (devUiPrefs.autoFilterAbsent) {
+      if (!alreadyAbsent) {
+        setStatusFilter('absent');
+      } else if (statusFilter === 'absent') {
+        // FIND-11: clearing an absence while auto-filtered — offer full roster again
+        setStatusFilter('all');
+      }
     }
   };
 
@@ -169,6 +175,10 @@ export const AbsenceRoster: React.FC = () => {
 
   const handleMarkAllPresent = () => {
     markAllPresent(selectedDay);
+    // FIND-11: Mark All Present resets sticky auto-filter
+    if (devUiPrefs.autoFilterAbsent && statusFilter === 'absent') {
+      setStatusFilter('all');
+    }
   };
 
   // UI-09: Normal & Compact Mode Flags (Fully backwards-compatible)
@@ -197,9 +207,14 @@ export const AbsenceRoster: React.FC = () => {
             >
               {absentCount} absent
             </button>
-            <span className="px-2 py-0.5 rounded-lg bg-slate-900/40 border border-slate-700/60 font-semibold text-slate-200">
+            <button
+              type="button"
+              onClick={() => setActiveTab('substitutions')}
+              className="px-2 py-0.5 rounded-lg bg-slate-900/40 border border-slate-700/60 font-semibold text-slate-200 cursor-pointer hover:bg-slate-800/60"
+              title="Open Substitutions for uncovered slots"
+            >
               {uncoveredCount} uncovered
-            </span>
+            </button>
             {pendingAppointCount > 0 && (
               <span className="px-2 py-0.5 rounded-lg bg-amber-500/15 border border-amber-500/35 font-semibold text-amber-200">
                 {pendingAppointCount} appoint
@@ -209,6 +224,19 @@ export const AbsenceRoster: React.FC = () => {
         </div>
       )}
 
+
+      {devUiPrefs.autoFilterAbsent && statusFilter === 'absent' && (
+        <div className="w-full rounded-lg border border-slate-700/50 bg-slate-900/50 px-3 py-1.5 flex items-center justify-between gap-2 text-[11px] text-slate-300">
+          <span>Showing Absent only (auto-filter)</span>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('all')}
+            className="px-2 py-0.5 rounded-md bg-slate-800 border border-slate-600 font-semibold text-slate-100 cursor-pointer hover:bg-slate-700"
+          >
+            Show all
+          </button>
+        </div>
+      )}
       {/* Top Header & KPI Summary Bar (UI-01) */}
       <section
         className={`w-full glass-panel rounded-2xl border border-slate-800 shadow-xl ${
@@ -518,6 +546,7 @@ export const AbsenceRoster: React.FC = () => {
                 isCT={isCT}
                 isAC={isAC}
                 isAAC={isAAC}
+                wasAbsentOnMount={initialAbsentTeachersRef.current.has(teacher.abbr)}
                 onToggleAbsence={handleToggleAbsence}
                 onOpenAvailability={openAvailabilityModal}
               />
@@ -551,6 +580,7 @@ export const AbsenceRoster: React.FC = () => {
                 isAC={isAC}
                 isAAC={isAAC}
                 isFreeFromSub={isFreeFromSub}
+                wasAbsentOnMount={initialAbsentTeachersRef.current.has(teacher.abbr)}
                 onToggleAbsence={handleToggleAbsence}
                 onOpenAvailability={openAvailabilityModal}
               />
