@@ -9,6 +9,7 @@
  *
  * Env:
  *   VITE_ADMIN_PASSCODE_SHA256  required (64-char hex) — fail closed without it
+ *   VITE_DEV_PASSCODE_SHA256    optional (SEC-03) — passed through when set
  *   PAGES_OUT                   default: <repo>/site
  *   PAGES_ROOT_REF              default: origin/next-gen
  *   PAGES_EVENT_BRANCH          branch that triggered the workflow (optional)
@@ -40,6 +41,7 @@ const FULL =
 const SKIP_PREVIEWS = process.env.PAGES_SKIP_PREVIEWS === '1';
 const SKIP_TESTS = process.env.PAGES_SKIP_TESTS === '1';
 const ADMIN_HASH = (process.env.VITE_ADMIN_PASSCODE_SHA256 || '').trim();
+const DEV_HASH = (process.env.VITE_DEV_PASSCODE_SHA256 || '').trim();
 
 function sh(cmd, opts = {}) {
   const r = spawnSync(cmd, {
@@ -199,6 +201,9 @@ function main() {
     process.exit(1);
   }
 
+  if (!/^[0-9a-fA-F]{64}$/.test(DEV_HASH)) {
+    console.warn('[pages] VITE_DEV_PASSCODE_SHA256 unset/invalid — Developer Options unlock disabled in this build (SEC-03).');
+  }
   sh('git fetch --prune origin', { stdio: 'inherit' });
 
   if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
@@ -222,7 +227,7 @@ function main() {
       channel: 'production',
       branch: 'next-gen',
       commit,
-      extraEnv: { VITE_ADMIN_PASSCODE_SHA256: ADMIN_HASH },
+      extraEnv: { VITE_ADMIN_PASSCODE_SHA256: ADMIN_HASH, VITE_DEV_PASSCODE_SHA256: DEV_HASH },
     });
     cpSync(dist, OUT, { recursive: true });
     writeFileSync(join(OUT, '.nojekyll'), '');
@@ -271,6 +276,7 @@ function main() {
         commit,
         extraEnv: {
           VITE_ADMIN_PASSCODE_SHA256: ADMIN_HASH,
+          VITE_DEV_PASSCODE_SHA256: DEV_HASH,
           VITE_RELAY_TARGET: 'local',
           VITE_WS_URL: 'ws://127.0.0.1:8080',
           VITE_API_URL: 'http://127.0.0.1:8080',

@@ -43,6 +43,13 @@ import {
   type HeaderScrollMode,
 } from '../lib/devUiPrefs.js';
 import { schoolDayForDate } from '@lfps/core';
+import { PasscodeField } from './PasscodeField.js';
+import {
+  ADMIN_PASSCODE_LENGTH,
+  formatWait,
+  getConfiguredDevHash,
+  hasDevSession,
+} from '../lib/adminGate.js';
 
 interface ThemeOption {
   id: ThemeId;
@@ -177,6 +184,8 @@ export const SettingsModal: React.FC = () => {
     setTheme,
     isDeveloperMode,
     setDeveloperMode,
+    unlockDeveloperMode,
+    devLockedUntil,
     samePeriodLock,
     setSamePeriodLock,
     acceptanceCountdown,
@@ -197,6 +206,10 @@ export const SettingsModal: React.FC = () => {
   const [toastMessage, setToastMessage] = React.useState<string | null>(null);
   const [isPwaModalOpen, setIsPwaModalOpen] = React.useState(false);
   const [tapCount, setTapCount] = React.useState(0);
+  const [devPasscodeOpen, setDevPasscodeOpen] = React.useState(false);
+  const [devPasscodeError, setDevPasscodeError] = React.useState<string | null>(null);
+  const [devNow, setDevNow] = React.useState(() => Date.now());
+  const isDevConfigured = React.useMemo(() => getConfiguredDevHash() !== null, []);
   const lastTapTimeRef = React.useRef(0);
   const [devUiPrefs, setDevUiPrefs] = React.useState<DevUiPrefs>(() => readDevUiPrefs());
 
@@ -204,6 +217,17 @@ export const SettingsModal: React.FC = () => {
     const next = writeDevUiPrefs(patch);
     setDevUiPrefs(next);
   };
+
+  React.useEffect(() => {
+    if (!devLockedUntil || devLockedUntil <= Date.now()) return;
+    setDevNow(Date.now());
+    const id = setInterval(() => {
+      setDevNow(Date.now());
+      if (Date.now() >= devLockedUntil) clearInterval(id);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [devLockedUntil]);
+
 
   const handleBuildInfoTap = () => {
     const now = Date.now();
@@ -213,24 +237,56 @@ export const SettingsModal: React.FC = () => {
       const next = tapCount + 1;
       setTapCount(next);
       if (next >= 5) {
-        if (!canEdit && !isDeveloperMode) {
-          setTapCount(0);
-          showToast('Admin login required');
+        setTapCount(0);
+        if (isDeveloperMode) {
+          setDeveloperMode(false);
+          setDevPasscodeOpen(false);
+          setDevPasscodeError(null);
+          if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+            try {
+              navigator.vibrate([30, 50, 30]);
+            } catch {}
+          }
+          showToast('Developer Mode Deactivated');
           lastTapTimeRef.current = now;
           return;
         }
-        const nextDevMode = !isDeveloperMode;
-        setDeveloperMode(nextDevMode);
-        setTapCount(0);
-        if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-          try {
-            navigator.vibrate([30, 50, 30]);
-          } catch {}
+        // SEC-03: 5-tap is discovery only. Same-tab Dev session can reopen without re-entry.
+        if (hasDevSession()) {
+          setDeveloperMode(true);
+          setDevPasscodeOpen(false);
+          if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+            try {
+              navigator.vibrate([30, 50, 30]);
+            } catch {}
+          }
+          showToast('Developer & Diagnostics Console Unlocked!');
+          lastTapTimeRef.current = now;
+          return;
         }
-        showToast(nextDevMode ? 'Developer & Diagnostics Console Unlocked!' : 'Developer Mode Deactivated');
+        setDevPasscodeError(null);
+        setDevPasscodeOpen(true);
+        showToast(isDevConfigured ? 'Enter Developer Options passcode' : 'Developer Options not configured');
       }
     }
     lastTapTimeRef.current = now;
+  };
+
+  const submitDevPasscode = async (code: string): Promise<boolean> => {
+    const result = await unlockDeveloperMode(code);
+    if (result.ok) {
+      setDevPasscodeOpen(false);
+      setDevPasscodeError(null);
+      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+        try {
+          navigator.vibrate([30, 50, 30]);
+        } catch {}
+      }
+      showToast('Developer & Diagnostics Console Unlocked!');
+      return true;
+    }
+    setDevPasscodeError(result.reason ?? 'Incorrect passcode.');
+    return false;
   };
 
   const showToast = (msg: string) => {
@@ -771,8 +827,8 @@ export const SettingsModal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Section 5.5: Developer & Diagnostics Console (FEAT-47, Unlocked via 5-tap) */}
-              {canEdit && isDeveloperMode && (
+              {/* Section 5.5: Developer & Diagnostics Console (FEAT-47 / SEC-03: Dev passcode) */}
+              {isDeveloperMode && (
                 <div className="space-y-2 border-2 border-dashed border-emerald-500/40 rounded-2xl p-3.5 bg-emerald-950/10">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -1128,12 +1184,59 @@ export const SettingsModal: React.FC = () => {
                 </div>
               )}
 
+              {/* SEC-03: Dev Options passcode after 5-tap discovery */}
+              {devPasscodeOpen && !isDeveloperMode && (
+                <div className="p-3 rounded-xl bg-surface-elev border border-emerald-500/30 space-y-2">
+                  <div className="text-xs font-semibold text-emerald-300">Developer Options passcode</div>
+                  <div className="text-[10px] text-muted">
+                    Separate from admin login. Front Desk day work does not need this.
+                  </div>
+                  {isDevConfigured ? (
+                    <>
+                      <PasscodeField
+                        length={ADMIN_PASSCODE_LENGTH}
+                        label="Developer Options passcode"
+                        disabled={(devLockedUntil ?? 0) > devNow}
+                        onComplete={submitDevPasscode}
+                        autoFocus
+                      />
+                      <div className="text-[11px] text-muted" role="status" aria-live="polite">
+                        {(devLockedUntil ?? 0) > devNow
+                          ? `Too many attempts. Try again in ${formatWait((devLockedUntil ?? 0) - devNow)}.`
+                          : 'Enter the 6-digit Developer Options passcode'}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-[11px] text-amber-300/90 bg-amber-950/30 border border-amber-500/20 rounded-lg px-2.5 py-1.5">
+                      Not set up for this build. Run <code className="font-mono">npm run admin:hash -- --dev</code>, put the
+                      result in <code className="font-mono">VITE_DEV_PASSCODE_SHA256</code> (and the matching Actions secret),
+                      then rebuild. See docs/ADMIN_ACCESS.md.
+                    </div>
+                  )}
+                  {devPasscodeError && (devLockedUntil ?? 0) <= devNow && (
+                    <div className="text-[11px] text-rose-300" role="alert">
+                      {devPasscodeError}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDevPasscodeOpen(false);
+                      setDevPasscodeError(null);
+                    }}
+                    className="text-[11px] text-muted hover:text-ink transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+
               {/* Section 6: Build Info (5-tap easter egg to toggle Developer Options) */}
               <button
                 type="button"
                 onClick={handleBuildInfoTap}
                 className="w-full p-3 rounded-xl bg-surface-elev hover:opacity-95 border border-default flex items-center justify-between text-[10px] text-muted transition-colors cursor-pointer select-none"
-                title="Tap 5 times to open Developer & Diagnostics Console"
+                title="Tap 5 times, then enter the Developer Options passcode"
               >
                 <div className="flex items-center gap-2">
                   <Info className="w-3.5 h-3.5 text-slate-600 flex-shrink-0" />
@@ -1144,7 +1247,7 @@ export const SettingsModal: React.FC = () => {
                     {5 - tapCount} more taps
                   </span>
                 )}
-                {canEdit && isDeveloperMode && (
+                {isDeveloperMode && (
                   <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-bold uppercase tracking-wider">
                     Dev Mode Active
                   </span>

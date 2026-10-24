@@ -19,16 +19,18 @@ Preview builds set `VITE_BUILD_CHANNEL=preview`, show a footer **Preview · &lt;
 
 Do these in order. Until step 3 is done, the site keeps serving the committed `next-gen` root.
 
-### 1. Add the admin hash secret (required for the pages build)
+### 1. Add the passcode hash secrets
 
 1. Open the repo on GitHub: **steph1420/LFPS_Substitutions_Manager**
 2. **Settings** → **Secrets and variables** → **Actions**
 3. Under **Repository secrets** → **New repository secret**
-4. Name: `VITE_ADMIN_PASSCODE_SHA256`
-5. Value: the 64-character hex from your local `npm run admin:hash` (same value as in `apps/web/.env.local`). Never commit it.
-6. **Add secret**
 
-Without this secret the `pages` **build is skipped** (workflow stays green so Render `checksPass` is not blocked) and nothing is published by Actions. The script itself still fail-closes if invoked with a missing hash.
+| Secret | Required | How to get the value |
+|---|---|---|
+| `VITE_ADMIN_PASSCODE_SHA256` | **Yes** (pages build) | `npm run admin:hash` → same hex as `apps/web/.env.local` |
+| `VITE_DEV_PASSCODE_SHA256` | Recommended (SEC-03) | `npm run admin:hash -- --dev` → must **differ** from admin |
+
+Never commit either value. Without the **admin** secret the `pages` **build is skipped** (workflow stays green so Render `checksPass` is not blocked). Without the **Dev** secret, Developer Options shows “not configured” in Actions-built sites; committed branch-deploy assets use whatever is in the build machine’s `.env.local`.
 
 ### 2. Confirm CI is green on `next-gen`
 
@@ -72,6 +74,7 @@ Only after steps 3–5 look good for a day or two:
 
 ```sh
 export VITE_ADMIN_PASSCODE_SHA256='<64-char hex>'
+export VITE_DEV_PASSCODE_SHA256='<64-char hex>'   # optional; SEC-03
 PAGES_SKIP_PREVIEWS=1 npm run build:pages-actions
 # inspect ./site/
 ```

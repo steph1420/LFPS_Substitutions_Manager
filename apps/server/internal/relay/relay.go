@@ -2,7 +2,7 @@
 // (Bundle 35). Protocol, all packets {type, payload, timestamp}:
 //
 //	server → device  CONNECT_ACK      {clients, mode}
-//	device → server  HELLO            {deviceId, appVersion}
+//	device → server  HELLO            {deviceId, appVersion, adminToken?}
 //	server → device  HYDRATE          {weekStart, rev, entities, mode, sheets}
 //	server → device  SHEETS_SNAPSHOT  {fetchedAt, hash, tabs:[{name, rows}]}  (after HYDRATE and on change)
 //	device → server  STATE_MUTATION   {batchId, changes:[entity]}
@@ -24,6 +24,8 @@ package relay
 import (
 	"encoding/json"
 	"log"
+	"os"
+	"strings"
 	"sync"
 
 	"lfps/server/internal/livesync"
@@ -149,6 +151,7 @@ func (r *Relay) PublishSnapshot(s sheets.Snapshot) { r.Hub.Broadcast("SHEETS_SNA
 type hello struct {
 	DeviceID   string `json:"deviceId"`
 	AppVersion string `json:"appVersion"`
+	AdminToken string `json:"adminToken,omitempty"` // SEC-02 stub; ignored unless LFPS_REQUIRE_ADMIN_TOKEN=1
 }
 
 type mutation struct {
@@ -166,6 +169,7 @@ func (r *Relay) HandleMessage(c *ws.Client, msg ws.Inbound) {
 			h.DeviceID = h.DeviceID[:livesync.MaxByBytes]
 		}
 		c.SetDeviceID(h.DeviceID)
+		c.SetAdminToken(strings.TrimSpace(h.AdminToken))
 		r.gate.Lock()
 		if r.hydrating {
 			for _, p := range r.pending {
@@ -212,12 +216,44 @@ func (r *Relay) sendHydrate(c *ws.Client) {
 	}
 }
 
+// requireAdminToken reports whether SEC-02 privileged-kind enforcement is on (default off).
+func requireAdminToken() bool {
+	v := strings.TrimSpace(os.Getenv("LFPS_REQUIRE_ADMIN_TOKEN"))
+	return v == "1" || strings.EqualFold(v, "true") || strings.EqualFold(v, "yes")
+}
+
+// adminPrivilegedKind is true for entity kinds that the product treats as admin-only (SEC-02).
+func adminPrivilegedKind(kind string) bool {
+	return kind == "sched" || kind == "limbo"
+}
+
+// filterAdminPrivileged drops sched/limbo changes when enforcement is on and the client
+// has no admin token. Any-role kinds (abs/sub/avail/oac/oct) always pass. See docs/SEC_02_SERVER_AUTH.md.
+func filterAdminPrivileged(c *ws.Client, changes []livesync.Entity) (allowed []livesync.Entity, rejected []livesync.Rejection) {
+	if !requireAdminToken() || c.AdminToken() != "" {
+		return changes, nil
+	}
+	for _, e := range changes {
+		kind, _, ok := livesync.ParseKey(e.Key)
+		if ok && adminPrivilegedKind(kind) {
+			rejected = append(rejected, livesync.Rejection{Key: e.Key, Reason: "admin required"})
+			continue
+		}
+		allowed = append(allowed, e)
+	}
+	return allowed, rejected
+}
+
 func (r *Relay) mutate(c *ws.Client, m mutation) {
 	if len(m.Changes) > MaxBatch {
 		c.Send("ERROR", map[string]any{"reason": "batch too large", "batchId": m.BatchID})
 		return
 	}
-	res := r.Store.Merge(m.Changes)
+	changes, preReject := filterAdminPrivileged(c, m.Changes)
+	res := r.Store.Merge(changes)
+	if len(preReject) > 0 {
+		res.Rejected = append(preReject, res.Rejected...)
+	}
 	if len(res.Rejected) > 0 {
 		log.Printf("[Relay] %d change(s) rejected from %s (first: %s)", len(res.Rejected), c.DeviceID(), res.Rejected[0].Reason)
 	}

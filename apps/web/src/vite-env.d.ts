@@ -18,6 +18,8 @@ interface ImportMetaEnv {
   readonly VITE_ALLOW_PROD_RELAY?: string;
   /** SHA-256 hex digest of the admin passcode. Unset = admin unlock unavailable. See docs/ADMIN_ACCESS.md. */
   readonly VITE_ADMIN_PASSCODE_SHA256?: string;
+  /** SHA-256 hex digest of the Developer Options passcode (SEC-03). Must differ from admin. Unset = Dev unlock unavailable. */
+  readonly VITE_DEV_PASSCODE_SHA256?: string;
   /** "production" (default) or "preview" — FEAT-64 branch previews. */
   readonly VITE_BUILD_CHANNEL?: string;
 }

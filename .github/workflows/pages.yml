@@ -5,6 +5,7 @@
 # checksPass gate is not blocked. Branch deploy of committed root assets keeps working.
 #
 # Required secret: VITE_ADMIN_PASSCODE_SHA256 (64-char hex from `npm run admin:hash`)
+# Optional secret: VITE_DEV_PASSCODE_SHA256 (SEC-03; `npm run admin:hash -- --dev`) — Dev Options unlock
 # Optional var:    PAGES_ACTIONS_DEPLOY=true  (set after switching Pages source)
 #
 # Docs: docs/PAGES_SETUP.md
@@ -73,6 +74,7 @@ jobs:
         if: steps.secret.outputs.configured == 'true'
         env:
           VITE_ADMIN_PASSCODE_SHA256: ${{ secrets.VITE_ADMIN_PASSCODE_SHA256 }}
+          VITE_DEV_PASSCODE_SHA256: ${{ secrets.VITE_DEV_PASSCODE_SHA256 }}
           PAGES_OUT: ${{ github.workspace }}/site
           PAGES_EVENT_BRANCH: ${{ github.ref_name }}
         run: |

@@ -79,6 +79,41 @@ describe('admin gate (lib/adminGate)', () => {
   });
 });
 
+
+describe('dev options gate (SEC-03)', () => {
+  const DEV_CODE = '918273';
+  const DEV_HASH = createHash('sha256').update(DEV_CODE).digest('hex');
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  it('normalises a valid Dev hash and refuses one that matches admin', async () => {
+    const { getConfiguredDevHash } = await import('../src/lib/adminGate.js');
+    expect(getConfiguredDevHash(`  ${DEV_HASH.toUpperCase()} `, HASH)).toBe(DEV_HASH);
+    expect(getConfiguredDevHash('')).toBeNull();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(getConfiguredDevHash(HASH, HASH)).toBeNull(); // same as admin
+    expect(getConfiguredDevHash('not-a-hash')).toBeNull();
+    warn.mockRestore();
+  });
+
+  it('verifies the Dev passcode and starts a tab session', async () => {
+    const { verifyDevPasscode, startDevSession, hasDevSession, endDevSession, getConfiguredDevHash } = await import(
+      '../src/lib/adminGate.js'
+    );
+    expect(await verifyDevPasscode(DEV_CODE, DEV_HASH)).toBe(true);
+    expect(await verifyDevPasscode('000001', DEV_HASH)).toBe(false);
+    startDevSession(DEV_HASH);
+    expect(hasDevSession(DEV_HASH)).toBe(true);
+    endDevSession();
+    expect(hasDevSession(DEV_HASH)).toBe(false);
+    expect(getConfiguredDevHash(DEV_HASH, HASH)).toBe(DEV_HASH);
+  });
+});
+
 /**
  * The owner's real passcode is provided out of band (env LFPS_ADMIN_PASSCODE) and its hash
  * lives in the untracked apps/web/.env.local. Skipped when either is missing (CI, clones).
@@ -330,12 +365,41 @@ describe('dev override: Edit without login (Bundle 34a)', () => {
     store = await loadStore();
     expect(store.getState().access.canEdit).toBe(true);
 
-    // Anyone can switch it off (no login needed); editing then stops and Dev Options close.
+    // Editing override still works; Dev Options needs its own passcode (SEC-03).
     store.getState().setDeveloperMode(true);
-    expect(store.getState().isDeveloperMode).toBe(true);
+    expect(store.getState().isDeveloperMode).toBe(false);
     store.getState().setEditingOverride(false);
     expect(store.getState().access.canEdit).toBe(false);
-    expect(store.getState().isDeveloperMode).toBe(false);
     expect(localStorage.getItem('lfps_dev_editing_unlocked_v1')).toBeNull();
+  });
+
+  it('unlocks Developer Options with the Dev passcode alone (no admin session)', async () => {
+    const DEV_CODE = '918273';
+    const DEV_HASH = createHash('sha256').update(DEV_CODE).digest('hex');
+    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', HASH);
+    vi.stubEnv('VITE_DEV_PASSCODE_SHA256', DEV_HASH);
+    const store = await loadStore();
+    expect(store.getState().access.canEdit).toBe(false);
+    expect((await store.getState().unlockDeveloperMode('000001')).ok).toBe(false);
+    expect(store.getState().isDeveloperMode).toBe(false);
+    expect((await store.getState().unlockDeveloperMode(DEV_CODE)).ok).toBe(true);
+    expect(store.getState().isDeveloperMode).toBe(true);
+    // With Dev session, Edit without login can be turned on without admin.
+    store.getState().setEditingOverride(true);
+    expect(store.getState().access).toMatchObject({ canEdit: true, editingUnlocked: true, role: 'GUEST' });
+    store.getState().setDeveloperMode(false);
+    expect(store.getState().isDeveloperMode).toBe(false);
+    // Closing Dev session does not clear the device-local editing override.
+    expect(store.getState().access.canEdit).toBe(true);
+  });
+
+  it('refuses a Dev passcode that was baked equal to the admin hash', async () => {
+    vi.stubEnv('VITE_ADMIN_PASSCODE_SHA256', HASH);
+    vi.stubEnv('VITE_DEV_PASSCODE_SHA256', HASH);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const store = await loadStore();
+    const result = await store.getState().unlockDeveloperMode(PASSCODE);
+    expect(result.ok).toBe(false);
+    warn.mockRestore();
   });
 });

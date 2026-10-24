@@ -204,3 +204,104 @@ export function endAdminSession(): void {
     // ignore
   }
 }
+
+// ---------------------------------------------------------------------------
+// Developer Options passcode (SEC-03, Bundle 38b)
+// Same interim caveats as admin: hash ships in the public bundle. Accident
+// protection only. Unlocking Dev Options no longer requires an admin session.
+// ---------------------------------------------------------------------------
+
+export const DEV_SESSION_KEY = scopedStorageKey('lfps_dev_session_v1');
+export const DEV_LOCKOUT_KEY = scopedStorageKey('lfps_dev_lockout_v1');
+
+/** Configured Dev Options hash, or null if unset / malformed / identical to admin. */
+export function getConfiguredDevHash(
+  raw: string | undefined = import.meta.env.VITE_DEV_PASSCODE_SHA256,
+  adminRaw: string | undefined = import.meta.env.VITE_ADMIN_PASSCODE_SHA256
+): string | null {
+  const value = raw?.trim().toLowerCase();
+  if (!value) return null;
+  if (!SHA256_HEX.test(value)) {
+    console.warn('[dev] VITE_DEV_PASSCODE_SHA256 is not a 64-character SHA-256 hex digest; Dev Options unlock disabled.');
+    return null;
+  }
+  const admin = getConfiguredAdminHash(adminRaw);
+  if (admin && equalHex(value, admin)) {
+    console.warn('[dev] VITE_DEV_PASSCODE_SHA256 matches the admin hash; Dev Options unlock disabled. Choose a different code.');
+    return null;
+  }
+  return value;
+}
+
+export function readDevLockout(now: number = Date.now(), storage: KeyValue | null = localStore()): AdminLockoutState {
+  let parsed: Partial<AdminLockoutState> | null = null;
+  try {
+    const raw = storage?.getItem(DEV_LOCKOUT_KEY);
+    parsed = raw ? (JSON.parse(raw) as Partial<AdminLockoutState>) : null;
+  } catch {
+    parsed = null;
+  }
+  if (!parsed || typeof parsed.failures !== 'number' || parsed.failures < 0) return NO_LOCKOUT;
+  const lastFailureAt = typeof parsed.lastFailureAt === 'number' ? parsed.lastFailureAt : null;
+  if (lastFailureAt === null || now - lastFailureAt > LOCKOUT_RESET_MS) return NO_LOCKOUT;
+  const lockedUntil = typeof parsed.lockedUntil === 'number' && parsed.lockedUntil > now ? parsed.lockedUntil : null;
+  return { failures: Math.floor(parsed.failures), lockedUntil, lastFailureAt };
+}
+
+export function recordFailedDevAttempt(
+  previous: AdminLockoutState,
+  now: number = Date.now(),
+  storage: KeyValue | null = localStore()
+): AdminLockoutState {
+  const failures = previous.failures + 1;
+  const delay = lockoutDelayMs(failures);
+  const next: AdminLockoutState = { failures, lockedUntil: delay ? now + delay : null, lastFailureAt: now };
+  try {
+    storage?.setItem(DEV_LOCKOUT_KEY, JSON.stringify(next));
+  } catch {
+    // Storage unavailable: caller still enforces in memory.
+  }
+  return next;
+}
+
+export function clearDevLockout(storage: KeyValue | null = localStore()): void {
+  try {
+    storage?.removeItem(DEV_LOCKOUT_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+export async function verifyDevPasscode(passcode: string, configuredHash: string | null): Promise<boolean> {
+  if (!configuredHash || !isWellFormedPasscode(passcode)) return false;
+  return equalHex(await sha256Hex(passcode), configuredHash);
+}
+
+/** Tab-scoped Dev Options unlock (sessionStorage). Survives reload; ends when the tab closes. */
+export function hasDevSession(configuredHash: string | null = getConfiguredDevHash()): boolean {
+  if (!configuredHash) return false;
+  try {
+    const raw = sessionStore()?.getItem(DEV_SESSION_KEY);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw) as { hash?: unknown };
+    return parsed.hash === configuredHash;
+  } catch {
+    return false;
+  }
+}
+
+export function startDevSession(configuredHash: string): void {
+  try {
+    sessionStore()?.setItem(DEV_SESSION_KEY, JSON.stringify({ hash: configuredHash }));
+  } catch {
+    // Storage unavailable: stays unlocked in memory for this page only.
+  }
+}
+
+export function endDevSession(): void {
+  try {
+    sessionStore()?.removeItem(DEV_SESSION_KEY);
+  } catch {
+    // ignore
+  }
+}
