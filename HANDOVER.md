@@ -14,9 +14,52 @@
 
 Take **one step at a time**. Explain what the step does and why in one or two sentences, give the exact clicks or commands, then **wait for the user** to say it's done. Verify it yourself before moving on. If a step fails, fix it before going further. Never ask for a secret in chat: use your masked secret-request field, so the value reaches you as an environment variable you never print.
 
-### A1. Restore the code
+### A0. Choose where the project lives (ask the user first)
 
-The handover zip holds `LFPS_all_branches.bundle`, a git bundle of every branch and tag, including the local-only work branches that were **never pushed**. Ask the user to upload the zip to your computer (or the bundle file itself).
+Ask the user which of these they want. Don't assume. Steps A1–A8 apply to **both** modes unless a step says otherwise.
+
+| | **(A) Your own cloud computer** (the default) | **(B) The user's own computer, via Local execution** |
+|---|---|---|
+| Where the code is | Your cloud box | A folder on the user's PC |
+| Works when | Always | Only while the PC is on and the Grok Bot desktop app is open and connected |
+| Off-machine copy | The bundle in the zip, plus pushes once approved | Same, and pushes matter more (see the caveats below) |
+
+**(A) Cloud computer:** follow A1–A8 as written, with the bash commands as shown.
+
+**(B) User's computer (Local execution):**
+
+1. **The user enables it.** In the Grok Bot desktop app: **Settings → Computer → Local execution**. Their machine must be listed (and connected) under **Computers**. Check from your side that you can see the machine and run a harmless command there (for example `git --version`, or `echo ok`). If the machine doesn't appear, or a command fails, stop and help the user fix that first.
+2. **The user unzips the handover zip** into a folder on their PC, for example `LFPS_handover` in their Documents or home folder. Ask them for the full path. **Work only inside that folder and the repo folder you create next to it** (step 4). Don't read, change or list anything else on their computer.
+3. **Prerequisites: check first, install only with the user's OK.** Check each one and tell the user what is missing before you install anything:
+   - **Git** (`git --version`). It must be on the PATH, because the web build reads the commit and branch from git.
+   - **Node.js + npm**: the repo declares **no** `engines` field and has **no** `.nvmrc`; CI uses **Node 20**, so install Node 20 LTS (npm 10+).
+   - **Go**: `apps/server/go.mod` says `go 1.23.2`; 1.23 or newer works. Needed only for the server and `sheetcheck`.
+   - **GitHub CLI** (`gh --version`), for A2.
+   - **Playwright + Chromium**, only if the user wants the browser e2e test (A8). Keep it outside the repo, for example in a `pw` folder in the user's home.
+   - On Windows, prefer `winget` (for example `winget install Git.Git OpenJS.NodeJS.LTS GoLang.Go GitHub.cli`) and confirm each package with the user. On macOS, Homebrew; on Linux, the distro's package manager.
+4. **Restore the repo** from the bundle (A1) into a **sibling** folder next to the handover folder, for example `LFPS_Substitutions_Manager` beside `LFPS_handover`. Never inside a cloud-synced or shared folder if you can avoid it (OneDrive, Dropbox, Google Drive, iCloud).
+5. **GitHub login** (A2): the same device flow, run **on that machine**, so the login lives there.
+6. **Secrets** (A3, A4): still only through your masked secret-request field. Never in chat.
+   - `apps/web/.env.local` stays git-ignored. Check it with `git check-ignore`, as in A3.
+   - Any temporary key file goes **outside** the repo and outside synced folders. On macOS and Linux: `chmod 600`, as in A4.
+   - On **Windows**, `chmod 600` doesn't apply. Put the key file in the user's profile (for example `%USERPROFILE%\_secrets\sa.json`, readable only by that user by default), and **delete it** right after use.
+7. **OS differences to watch:**
+   - **Windows:** use backslash paths and quote paths with spaces. PowerShell differs from bash:
+     - set variables with `$env:NAME = "…"` (not `NAME=…`), and `cmd` uses `set`;
+     - there is no `printf`, `umask`, `grep` or `unzip` by default.
+   - **Easiest on Windows:** run the bash snippets in this file (A1, A3, A4, the B8 leak check) in **Git Bash**, which comes with Git for Windows.
+   - The npm scripts themselves are cross-platform.
+   - Watch line endings: keep git's defaults, and don't let an editor convert files to CRLF.
+   - In A1, `~/work` becomes the folder the user chose.
+
+**Caveats for (B):**
+- It works only while the PC is on and the app is open. If the machine disconnects mid-task, stop, and resume when it is back. Don't switch to your cloud computer without telling the user.
+- The code then lives **only on that PC**. Once the user approves, **push working branches to GitHub regularly** as an off-machine backup: bundle and work branches only, **never `main`**, and **never `next-gen` without the user's go-live approval** (same rules as Part C).
+- Keep `_backups/` tarballs out of synced or shared folders: they contain `.env.local`. `_backups/` is inside the repo folder and git-ignored, so also keep the repo folder out of synced folders.
+
+### A1. Restore the code (both modes)
+
+The handover zip holds `LFPS_all_branches.bundle`, a git bundle of every branch and tag, including the local-only work branches that were **never pushed**. **(A)** Ask the user to upload the zip to your computer (or the bundle file itself). **(B)** The user has already unzipped it into their folder (A0); run the commands below there, with `~/work` replaced by that folder's parent (in Git Bash on Windows).
 
 ```sh
 mkdir -p ~/work && cd ~/work
@@ -51,11 +94,11 @@ for b in $(git for-each-ref --format='%(refname:lstrip=3)' refs/remotes/origin/ 
 done
 ```
 
-Then install the toolchain: **Node 20** (npm 10+), **Go 1.23+** (`apps/server/go.mod` says `go 1.23.2`; newer Go works too), `zip`/`unzip`. Run `npm ci` at the repo root.
+Then install the toolchain: **Node 20** (npm 10+), **Go 1.23+** (`apps/server/go.mod` says `go 1.23.2`; newer Go works too), `zip`/`unzip`. In mode (B), only with the user's OK (A0 step 3). Run `npm ci` at the repo root.
 
 **Make your first backup now** (see Part C). `_backups/` is git-ignored. The old tarballs were not handed over, because they contain secrets.
 
-### A2. GitHub CLI login (device flow)
+### A2. GitHub CLI login (device flow; both modes, run on the machine that holds the repo)
 
 1. If `gh --version` fails, install the GitHub CLI (https://cli.github.com, or your package manager).
 2. Run `gh auth login --hostname github.com --git-protocol https --web --scopes repo,workflow`.
@@ -64,7 +107,7 @@ Then install the toolchain: **Node 20** (npm 10+), **Go 1.23+** (`apps/server/go
 
 **Verify:** `gh auth status` shows "Logged in to github.com account steph1420". **Never** ask the user to paste a token.
 
-### A3. Admin passcode → hash
+### A3. Admin passcode → hash (both modes; on Windows run the snippet in Git Bash)
 
 The app has a 6-digit admin passcode. Only its SHA-256 hash is baked into the web build, as `VITE_ADMIN_PASSCODE_SHA256` in the **git-ignored** `apps/web/.env.local`. Without it, a build has **no admin access** at all ("not configured"). Read `docs/ADMIN_ACCESS.md` first.
 
@@ -80,7 +123,7 @@ The app has a 6-digit admin passcode. Only its SHA-256 hash is baked into the we
 
 If the user wants a **new** passcode, follow ADMIN_ACCESS "Owner setup"; old sessions become invalid automatically.
 
-### A4. Google Sheets service-account key
+### A4. Google Sheets service-account key (both modes; Windows key-file note in A0 step 6)
 
 The relay (server) reads and writes the user's Google Sheet through a Google service account. You only need the key locally for `sheetcheck` and for checks against the real Sheet. Read `docs/SHEETS_SETUP.md`.
 
@@ -98,7 +141,7 @@ The relay (server) reads and writes the user's Google Sheet through a Google ser
 5. **Verify:** the read-only `sheetcheck` report lists the tabs (no cell data) and exits 0. Optionally `-selftest` (writes and removes test rows in `Subs` only, and proves no other tab changed; it passed twice on 2026-10-24).
 6. `npm run e2e:sheets` needs **no** key: it uses a fake Sheet and a local relay.
 
-### A5. Render (the relay)
+### A5. Render (the relay; both modes, done in the user's browser)
 
 Nothing to re-link: the service `lfps-substitutions-manager` lives on the user's Render account, and auto-deploys from `next-gen`. Read `docs/RENDER_SETUP.md`.
 
@@ -117,7 +160,7 @@ Nothing to re-link: the service `lfps-substitutions-manager` lives on the user's
 
 **After alpha.3 is live,** health must show `"version":"2.0.0-alpha.3"`, `"mode":"sheets"`, `"store":"ready"`, `"sheets":"ok"`. Ask the user what's in the Dashboard today; don't assume steps 1–3 are done or not done.
 
-### A6. GitHub Pages (the website)
+### A6. GitHub Pages (the website; both modes)
 
 Current source: **Deploy from a branch → `next-gen` / `(root)`** (ADR-0004). The built `index.html` and `assets/` are **committed** at the `next-gen` root by the release step.
 
@@ -125,7 +168,7 @@ Current source: **Deploy from a branch → `next-gen` / `(root)`** (ADR-0004). T
 - **Verify:** `gh api repos/steph1420/LFPS_Substitutions_Manager/pages --jq '{status,source}'` → `{"status":"built","source":{"branch":"next-gen","path":"/"}}`. The site loads and its footer reads "LFPS Substitutions Manager · v2.0.0-alpha.2…" (build label; hover shows build time).
 - Bundle 36 plans to move Pages to an Actions-built artifact. Not done yet; don't change the source.
 
-### A7. cron-job.org uptime pinger (BUG-31)
+### A7. cron-job.org uptime pinger (BUG-31; both modes, user's browser)
 
 The user already has a cron-job.org job that pings `https://lfps-substitutions-manager.onrender.com/api/v1/health` during school hours to keep the free Render relay awake. Don't build a keep-warm. During the alpha.2 deploy it reported "Failed (output too large)". Our earlier advice to use GET was wrong; the fix is **HEAD**:
 
@@ -135,7 +178,7 @@ The user already has a cron-job.org job that pings `https://lfps-substitutions-m
 
 **Verify:** the job's history shows successes. `curl -sI https://lfps-substitutions-manager.onrender.com/api/v1/health` returns `HTTP/2 200` with no body.
 
-### A8. Final verification checklist
+### A8. Final verification checklist (both modes, on the machine that holds the repo)
 
 Run these on `bundle/35a` (or `handover/2026-10-24`) and report the real numbers:
 
@@ -150,9 +193,9 @@ Run these on `bundle/35a` (or `handover/2026-10-24`) and report the real numbers
 | Relay | `curl -s https://lfps-substitutions-manager.onrender.com/api/v1/health` | `healthy`, version = live version |
 | Site | open https://steph1420.github.io/LFPS_Substitutions_Manager/ | loads; footer shows the version; header pill (Live / Connecting… / Offline) |
 
-Playwright isn't a repo dependency: `mkdir ~/pw && cd ~/pw && npm i playwright && npx playwright install --with-deps chromium`.
+Playwright isn't a repo dependency: `mkdir ~/pw && cd ~/pw && npm i playwright && npx playwright install --with-deps chromium`. In mode (B) only if the user wants the e2e test, and with their OK (`--with-deps` is for Linux; on Windows and macOS use `npx playwright install chromium`).
 
-When all of A1–A8 pass, tell the user in a short summary, then ask what they'd like next. Don't start the release on your own.
+When all of A0–A8 pass, tell the user in a short summary, then ask what they'd like next. Don't start the release on your own.
 
 ---
 
