@@ -806,7 +806,7 @@ export const RoutineGrid: React.FC<RoutineGridProps> = ({ isFullscreen = false }
             ) : (
               <PanelLeftOpen className="w-3.5 h-3.5" />
             )}
-            <span>{routineNameColExpandedPortrait ? 'Names' : 'Names'}</span>
+            <span>{routineNameColExpandedPortrait ? 'Narrow' : 'Names'}</span>
           </button>
         )}
 
