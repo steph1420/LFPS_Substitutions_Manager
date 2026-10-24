@@ -630,8 +630,16 @@ export const AbsenceRoster: React.FC = () => {
 
       {/* Empty State */}
       {filteredTeachers.length === 0 && (
-        <div className="glass-panel rounded-2xl p-10 text-center text-slate-500 text-xs">
-          No staff matching &ldquo;{searchQuery}&rdquo; under the &ldquo;{statusFilter}&rdquo; filter.
+        <div className="glass-panel rounded-2xl p-10 text-center text-muted text-xs">
+          {searchQuery
+            ? `No one matches “${searchQuery}” in ${statusFilter}. Try All or clear the search.`
+            : statusFilter === 'absent'
+              ? 'Everyone is present today — nice and quiet.'
+              : statusFilter === 'free_from_sub'
+                ? 'No one is marked free from sub duty right now.'
+                : statusFilter === 'present'
+                  ? 'No one is marked present under this filter.'
+                  : 'No staff to show for this filter.'}
         </div>
       )}
     </div>

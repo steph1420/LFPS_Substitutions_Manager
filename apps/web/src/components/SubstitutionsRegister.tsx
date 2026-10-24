@@ -297,7 +297,7 @@ export const SubstitutionsRegister: React.FC = () => {
           className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800/80 pb-3.5 cursor-pointer select-none"
         >
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-bold text-ink flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
               Substitutions Overview ({selectedDay})
             </h2>
@@ -318,7 +318,7 @@ export const SubstitutionsRegister: React.FC = () => {
                 title="Both AC and AAC are absent today — designate Officiating AC"
               >
                 <ShieldAlert className="w-3.5 h-3.5 text-purple-400" />
-                <span>Appoint Off. AC</span>
+                <span title="Officiating Academic Coordinator">Appoint Off. AC</span>
               </button>
             )}
 
@@ -329,7 +329,7 @@ export const SubstitutionsRegister: React.FC = () => {
                 title={`Class Teacher ${unappointedCTs[0].teacher.abbr} is absent today — appoint Officiating CT for ${unappointedCTs[0].section}`}
               >
                 <School className="w-3.5 h-3.5 text-amber-400" />
-                <span>Appoint Off. CT ({unappointedCTs[0].section})</span>
+                <span title="Officiating Class Teacher">Appoint Off. CT ({unappointedCTs[0].section})</span>
               </button>
             )}
 
@@ -395,7 +395,7 @@ export const SubstitutionsRegister: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <School className="w-3.5 h-3.5 text-amber-400" />
                             <div>
-                              <div className="font-bold text-amber-200">Off. CT • {section}</div>
+                              <div className="font-bold text-amber-200" title="Officiating Class Teacher">Off. CT · {section}</div>
                               <div className="text-[10px] text-slate-400">{teacher.abbr} absent</div>
                             </div>
                           </div>
@@ -420,14 +420,15 @@ export const SubstitutionsRegister: React.FC = () => {
               </button>
             )}
 
-            {/* Brain Studio Config Button (FEAT-61) */}
+            {/* Auto-Resolve settings (heuristic weights) */}
             <button
               onClick={() => setIsBrainModalOpen(true)}
-              className="w-fit flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/40 hover:border-purple-400 text-purple-200 text-xs font-semibold active:scale-95 transition-all cursor-pointer shadow-sm group"
-              title="Configure Auto-Resolve Strategy & Heuristic Weights"
+              className="w-fit flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl chip-purple border text-xs font-semibold active:scale-95 transition-colors cursor-pointer shadow-sm group"
+              title="Auto-Resolve settings — how the app ranks substitute candidates"
+              aria-label="Auto-Resolve settings"
             >
               <Brain className="w-4 h-4 text-purple-400 group-hover:rotate-12 transition-transform duration-200" />
-              <span className="hidden sm:inline">Brain Studio</span>
+              <span className="hidden sm:inline">Auto-Resolve</span>
             </button>
 
             {/* Rightmost Aligned Collapse Icon Button (FEAT-44) */}
@@ -463,7 +464,7 @@ export const SubstitutionsRegister: React.FC = () => {
                   className={`p-3 sm:p-4 rounded-xl border transition-all cursor-pointer ${
                     filterMode === 'covered'
                       ? 'bg-emerald-500/20 border-emerald-500/50 shadow-md shadow-emerald-500/10'
-                      : 'bg-slate-900/60 border-emerald-500/50 hover:border-emerald-500/70'
+                      : 'bg-surface-elev border-emerald-500/50 hover:border-emerald-500/70'
                   }`}
                 >
                   <div className="flex items-center justify-between text-slate-400 mb-1">
@@ -472,7 +473,7 @@ export const SubstitutionsRegister: React.FC = () => {
                       ACTIVE
                     </span>
                   </div>
-                  <div className="text-2xl sm:text-3xl font-bold text-white">{daySubstitutions.length}</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-ink">{daySubstitutions.length}</div>
                   <div className="text-[11px] text-emerald-400 mt-1">Assignments resolved</div>
                 </div>
 
@@ -482,16 +483,16 @@ export const SubstitutionsRegister: React.FC = () => {
                   className={`p-3 sm:p-4 rounded-xl border transition-all cursor-pointer ${
                     filterMode === 'uncovered'
                       ? 'bg-rose-500/20 border-rose-500/60 '
-                      : 'bg-slate-900/60 border-rose-500/60 hover:border-rose-500/80'
+                      : 'bg-surface-elev border-rose-500/60 hover:border-rose-500/80'
                   }`}
                 >
                   <div className="flex items-center justify-between text-slate-400 mb-1">
                     <span className="font-semibold text-xs text-rose-300">Uncovered Needs</span>
                     <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/40">
-                      {uncoveredSlots.length > 0 ? 'ALERT' : 'CLEAR'}
+                      {uncoveredSlots.length > 0 ? 'Needs cover' : 'All clear'}
                     </span>
                   </div>
-                  <div className="text-2xl sm:text-3xl font-bold text-white">{uncoveredSlots.length}</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-ink">{uncoveredSlots.length}</div>
                   <div className="text-[11px] text-rose-400 mt-1">Pending substitution coverage</div>
                 </div>
 
@@ -505,8 +506,8 @@ export const SubstitutionsRegister: React.FC = () => {
                     <div
                       className={`p-3 sm:p-4 rounded-xl transition-all ${
                         hasPending
-                          ? 'bg-amber-950/30 border border-amber-500/70 ring-1 ring-amber-500/30'
-                          : 'bg-slate-900/60 border border-purple-500/40'
+                          ? 'chip-amber border ring-1 ring-amber-500/30'
+                          : 'bg-surface-elev border border-purple-500/40'
                       }`}
                     >
                       <div className="flex items-center justify-between text-slate-400 mb-1">
@@ -520,21 +521,21 @@ export const SubstitutionsRegister: React.FC = () => {
                               : 'bg-purple-500/20 text-purple-400 border-purple-500/40'
                           }`}
                         >
-                          {hasPending ? 'ALERT' : 'ROLE'}
+                          {hasPending ? 'Needs appoint' : assignedCount > 0 ? 'Set' : 'None'}
                         </span>
                       </div>
-                      <div className="text-2xl sm:text-3xl font-bold text-white">
-                        {assignedCount}
+                      <div className="text-2xl sm:text-3xl font-bold text-ink">
+                        {hasPending ? pendingCount : assignedCount}
                       </div>
                       <div className="flex items-center justify-between mt-1 text-[11px] gap-2">
                         <span className={hasPending ? 'text-amber-300 font-semibold truncate' : 'text-purple-400 truncate'}>
                           {hasPending
-                            ? `${pendingCount} Appointment${pendingCount > 1 ? 's' : ''} Needed`
+                            ? `${pendingCount} appointment${pendingCount > 1 ? 's' : ''} still needed`
                             : offACResult.isManuallyAssigned
                             ? `Off. AC: ${effectiveAC}`
                             : Object.keys(offCTMap).length > 0
-                            ? `${Object.keys(offCTMap).length} Off. CT Assigned`
-                            : 'No temporary roles assigned'}
+                            ? `${Object.keys(offCTMap).length} Off. CT assigned`
+                            : 'No temporary roles today'}
                         </span>
                         {hasPending && (
                           <button
@@ -569,7 +570,7 @@ export const SubstitutionsRegister: React.FC = () => {
               placeholder="Search by teacher, sub, class (e.g. Prep A)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full bg-surface-elev border border-default rounded-xl pl-9 pr-4 py-2 text-xs text-ink placeholder:text-muted focus:outline-none focus:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-400/50 transition-colors"
             />
           </div>
 
@@ -1148,8 +1149,8 @@ export const SubstitutionsRegister: React.FC = () => {
           ) : (
             <div className="glass-panel rounded-2xl p-8 text-center text-slate-500 text-xs">
               {filterMode === 'my'
-                ? `No substitution duties assigned to ${loggedInTeacher || 'you'} today.`
-                : `No covered substitutions recorded for ${selectedDay}.`}
+                ? `No duties for ${loggedInTeacher || 'you'} today — you're clear.`
+                : `Nobody covered yet for ${selectedDay}. Assign a substitute when you're ready.`}
             </div>
           )}
         </section>
@@ -1207,7 +1208,7 @@ export const SubstitutionsRegister: React.FC = () => {
                       Required
                     </span>
                   </div>
-                  <div className="font-bold text-amber-200 text-sm">Appointment Needed</div>
+                  <div className="font-bold text-amber-200 text-sm" title="Officiating Class Teacher needed">Appointment needed</div>
                   <div className="text-[10px] text-slate-300">
                     CT {unappointedCTs[0].teacher.abbr} absent today
                   </div>
@@ -1304,7 +1305,7 @@ export const SubstitutionsRegister: React.FC = () => {
                 title={`Tap anywhere to change Officiating CT for ${section}`}
               >
                 <div>
-                  <span className="text-[10px] text-amber-400 font-bold uppercase">Off. CT • {section}</span>
+                  <span className="text-[10px] text-amber-400 font-bold uppercase" title="Officiating Class Teacher">Off. CT · {section}</span>
                   <div className="font-bold text-white text-sm">{teacherName}</div>
                   <div className="text-[10px] text-slate-400">Class Teacher Responsibilities</div>
                 </div>

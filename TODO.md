@@ -25,9 +25,9 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 | **35a** | Close the two sync gaps (FEAT-62 part 3): devices apply the Sheet's read-only tabs (precedence: local edits > Sheet > bundled; version-gated; shown in Settings → Build Info); the relay reloads substitutions and their deletions from `Subs` after a restart (schema 2: tombstones, versions, idempotent upsert; hydrating gate). Relay guard so dev/test builds can't reach the production relay. Fake-Sheet tests, two-browser e2e with a restart, real-Sheet self-test. Go-live runbook for alpha.3 | FEAT-62 (part 3), FEAT-65 (reads), BUG-33, BUG-34 | 🟢 Live in v2.0.0-alpha.3 (2026-10-24; runbook docs/RELEASE_2.0.0-alpha.3.md) |
 | **36** | GitHub Actions CI (test, build, `go vet`, `go test -race`); Pages built by Actions instead of committed root assets (`next-gen` → root); Render deploys only after checks pass; branch previews at `/preview/<branch>/` with a footer branch badge (option A) | ARCH-05 (rest), ARCH-02 (adoption), FEAT-64 | ⚪ Planned (parallel / whenever; infra) |
 | **37** | Header/grid motion fix (no new shake); absent red-glow rewrite; Dev Options A/B (UI-10, auto-filter, needs-attention); pulse one-shot | UI-10, BUG-29, BUG-30, UI-06, FEAT-69 | 🟢 Done on `bundle/37` (merged into `bundle/38a`) |
-| **38a** | Bundle 37 follow-through + fixed routine geometry + day-load Dev Option + FIND motion/absent consistency | UI-11, FEAT-70, FIND-01/03/04/09/10/11/12 | 🟡 In progress on `bundle/38a` |
+| **38a** | Bundle 37 follow-through + fixed routine geometry + day-load Dev Option + FIND motion/absent consistency | UI-11, FEAT-70, FIND-01/03/04/09/10/11/12 | 🟢 Merged to `next-gen` (2026-10-24) |
 | **38b** | Server-side admin auth; Dev Options own passcode; per-admin design spike; docs reconciliation; BUG-31 HEAD reminder | SEC-02, SEC-03, ARCH-03, ARCH-04 | ⚪ Planned |
-| **39** | Day-theme contrast rewrite; a11y; Front Desk copy; sync pill honesty | UI-12, FIND-02/05/14/15, FIND-13/22 | ⚪ Planned |
+| **39** | Day-theme contrast rewrite; a11y; Front Desk copy; sync pill honesty | UI-12, FIND-02/05/14/15, FIND-13/22 | 🟢 Done on `bundle/39` (pushing to next-gen) |
 
 > Split after post–Bundle 37 assessment (`docs/ASSESSMENT_2026-10-24.md`): **38a** UI/motion, **38b** security/docs, **39** themes/a11y/copy, **36** CI/Pages anytime. SEC-02 (38b) before privileged admin Sheets writes. Bundle 35 substitutions do not depend on SEC-02.
 >
@@ -167,9 +167,9 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - **Delivered**: Dev Options A/B in `devUiPrefs.dayLoadMode`; follow snaps on load + visibility; free pick persists `lastFreeDay`; Today marker on Header/Routine day chips; date subtitle in free mode.
 
 ### UI-12: Day Theme Contrast Rewrite
-- **Status**: ⚪ Planned → **Bundle 39**
+- **Status**: 🟢 Done on `bundle/39`
 - **Reported**: Owner — night themes strong; day themes washed out.
-- **Direction**: Semantic tokens; retire hardcoded `text-white` / `*-950` chips (see assessment FIND-02 / FIND-14).
+- **Direction**: Semantic tokens (`text-ink`, `bg-surface-*`, soft chips); day-theme remap of bare `text-white` / `*-950` chips; Midnight modal surfaces tokenized (FIND-02 / FIND-14).
 
 ### Bundle 38a FIND follow-through
 - **Status**: 🟢 Done on `bundle/38a` — FIND-01 pulse, FIND-03 remove halo, FIND-04 matrix rail, FIND-09/10/11/12 (with FEAT-70).
@@ -181,8 +181,12 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 - ARCH-03 docs reconciliation; mark tracker accurately.
 - BUG-31: owner switches cron-job.org → **HEAD**.
 
-### Bundle 39 (planned)
-- UI-12 day themes; a11y (focus rings, hit targets, reduced motion); Front Desk copy; FIND-05 sync pill honesty.
+### Bundle 39 (done on `bundle/39`)
+- [x] UI-12 day themes — semantic tokens + light-family contrast remap
+- [x] FIND-05 sync pill honesty (Sheets error / Loading sheet…)
+- [x] Front Desk copy — ticket IDs out of titles, Off. CT tooltips, Brain Studio → Auto-Resolve, friendlier empties, KPI ALERT honesty
+- [x] A11y basics — focus-visible rings, ~40px header hits, prefers-reduced-motion on tab fades
+- Leave **38b** / **36** planned (no SEC-02/03, no CI/Pages pipeline here)
 
 
 ### SEC-02: Server-Side Authentication for Admin Writes

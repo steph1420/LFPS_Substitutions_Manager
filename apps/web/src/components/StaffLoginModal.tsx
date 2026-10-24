@@ -98,17 +98,17 @@ export const StaffLoginModal: React.FC = () => {
           role="dialog"
           aria-modal="true"
           aria-label="Staff Login"
-          className="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-4 max-h-[85vh] flex flex-col"
+          className="bg-surface-modal border border-default rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-4 max-h-[85vh] flex flex-col text-ink"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-800 pb-3 flex-shrink-0">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <h3 className="text-sm font-bold text-ink flex items-center gap-2">
               <User className="w-4 h-4 text-blue-400" />
               Operating Identity & Staff Login
             </h3>
             <button
               onClick={closeStaffLogin}
-              className="p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="p-2.5 min-w-10 min-h-10 rounded-full text-slate-400 hover:text-ink hover:bg-surface-elev transition-colors inline-flex items-center justify-center"
               title="Close (Esc)"
             >
               <X className="w-4 h-4" />
@@ -153,7 +153,7 @@ export const StaffLoginModal: React.FC = () => {
                     <div className="flex items-center gap-2 text-xs">
                       <span className="w-2 h-2 rounded-full status-dot-live" />
                       <span className="text-slate-300">Active: </span>
-                      <span className="font-bold text-white">{loggedInTeacher}</span>
+                      <span className="font-bold text-ink">{loggedInTeacher}</span>
                       {isAdmin && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Admin</span>
                       )}

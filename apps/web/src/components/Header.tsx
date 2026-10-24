@@ -15,7 +15,7 @@ import {
   Bell,
 } from 'lucide-react';
 import { useLiveSync } from '../hooks/useLiveSync.js';
-import { phaseLabel } from '../sync/status.js';
+import { syncDisplay } from '../sync/status.js';
 import { ResetDayButton } from './ResetDayButton.js';
 import { APP_VERSION, BUILD_LABEL } from '../lib/buildInfo.js';
 import { AddToHomeScreenModal } from './AddToHomeScreenModal.js';
@@ -40,6 +40,14 @@ type HeaderState = 'FULL' | 'PILL';
 
 export const Header: React.FC = () => {
   const sync = useLiveSync();
+  const syncPill = syncDisplay({
+    phase: sync.status.phase,
+    mode: sync.status.mode,
+    sheetsState: sync.status.sheetsState,
+    pending: sync.status.pending,
+    clients: sync.status.activeClients,
+    error: sync.status.error,
+  });
   const {
     selectedDay,
     setDay,
@@ -416,8 +424,9 @@ export const Header: React.FC = () => {
               <ResetDayButton compact />
               <button
                 onClick={openNotificationCenter}
-                className="relative p-1.5 rounded-full glass-pill border-slate-800 text-slate-300 hover:text-white transition-colors active:scale-95 cursor-pointer"
-                title="Notification Center & Live Alerts (FEAT-50)"
+                className="relative p-2.5 min-w-10 min-h-10 rounded-full glass-pill border-slate-800 text-slate-300 hover:text-ink transition-colors active:scale-95 cursor-pointer inline-flex items-center justify-center"
+                title="Notifications"
+                aria-label="Notifications"
               >
                 <Bell className="w-3.5 h-3.5 text-purple-400" />
                 {alertBadgeCount > 0 && (
@@ -428,8 +437,9 @@ export const Header: React.FC = () => {
               </button>
               <button
                 onClick={openSettings}
-                className="p-1.5 rounded-full glass-pill border-slate-800 text-slate-300 hover:text-white transition-colors active:scale-95"
+                className="p-2.5 min-w-10 min-h-10 rounded-full glass-pill border-slate-800 text-slate-300 hover:text-ink transition-colors active:scale-95 inline-flex items-center justify-center"
                 title="Console & Settings"
+                aria-label="Console & Settings"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5 text-blue-400" />
               </button>
@@ -501,40 +511,36 @@ export const Header: React.FC = () => {
 
           {/* Right: Desktop Controls, Cloud Sync, Excel, Settings & Login */}
           <div className="hidden md:flex items-center gap-2.5">
-            {/* Live sync status pill (Bundle 35): Live / Connecting… / Offline */}
-            <div
+            {/* Live sync status pill (Bundle 35 + FIND-05 honesty) */}
+            <button
+              type="button"
               data-testid="sync-pill"
               data-phase={sync.status.phase}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors duration-200 ${
-                sync.status.phase === 'live'
+              data-tone={syncPill.tone}
+              onClick={openSettings}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-400/60 ${
+                syncPill.tone === 'live'
                   ? 'bg-emerald-500/10 border-emerald-500/30 text-[var(--accent-green)]'
-                  : sync.status.phase === 'connecting'
-                    ? 'bg-amber-500/10 border-amber-500/30 text-[var(--accent-amber)]'
-                    : 'bg-slate-800/60 border-slate-700/40 text-slate-400'
+                  : syncPill.tone === 'error'
+                    ? 'bg-rose-500/10 border-rose-500/40 text-[var(--accent-red)]'
+                    : syncPill.tone === 'warn'
+                      ? 'bg-amber-500/10 border-amber-500/30 text-[var(--accent-amber)]'
+                      : 'bg-slate-800/60 border-slate-700/40 text-slate-400'
               }`}
-              title={
-                sync.status.phase === 'live'
-                  ? `Live · ${sync.status.activeClients} device${sync.status.activeClients === 1 ? '' : 's'}${
-                      sync.status.pending ? ` · ${sync.status.pending} pending` : ''
-                    }`
-                  : sync.status.phase === 'connecting'
-                    ? sync.status.pending
-                      ? `Reconnecting — ${sync.status.pending} change${sync.status.pending === 1 ? '' : 's'} queued`
-                      : 'Waking the server — local data stays usable'
-                    : `Offline — ${sync.status.pending} change${sync.status.pending === 1 ? '' : 's'} queued`
-              }
+              title={syncPill.title}
+              aria-label={`${syncPill.label}. Open Cloud settings.`}
             >
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  sync.status.phase === 'live'
+                  syncPill.tone === 'live'
                     ? 'status-dot-live'
-                    : sync.status.phase === 'connecting'
-                      ? 'status-dot-connecting'
-                      : 'status-dot-offline'
+                    : syncPill.tone === 'offline'
+                      ? 'status-dot-offline'
+                      : 'status-dot-connecting'
                 }`}
               />
-              <span>{phaseLabel(sync.status.phase)}</span>
-            </div>
+              <span>{syncPill.label}</span>
+            </button>
 
             {/* Reset Day Button (FEAT-41) */}
             <ResetDayButton />
@@ -542,8 +548,9 @@ export const Header: React.FC = () => {
             {/* Add to Home Screen PWA Install (FEAT-59) */}
             <button
               onClick={() => setIsPwaModalOpen(true)}
-              className="p-1.5 rounded-lg border glass-pill border-slate-700 hover:border-blue-500/40 text-slate-300 hover:text-blue-400 transition-colors active:scale-95"
+              className="p-2.5 min-w-10 min-h-10 rounded-lg border glass-pill border-slate-700 hover:border-blue-500/40 text-slate-300 hover:text-blue-400 transition-colors active:scale-95 inline-flex items-center justify-center"
               title="Add to Home Screen / Install PWA"
+              aria-label="Add to Home Screen"
             >
               <Smartphone className="w-4 h-4 text-blue-400" />
             </button>
@@ -561,8 +568,9 @@ export const Header: React.FC = () => {
             {/* Notification Center Bell (FEAT-50) */}
             <button
               onClick={openNotificationCenter}
-              className="relative p-1.5 rounded-lg border glass-pill border-slate-700 hover:border-purple-500/40 text-slate-300 hover:text-purple-400 transition-colors active:scale-95 cursor-pointer"
+              className="relative p-2.5 min-w-10 min-h-10 rounded-lg border glass-pill border-slate-700 hover:border-purple-500/40 text-slate-300 hover:text-purple-400 transition-colors active:scale-95 cursor-pointer inline-flex items-center justify-center"
               title="Notifications"
+              aria-label="Notifications"
             >
               <Bell className="w-4 h-4 text-purple-400" />
               {alertBadgeCount > 0 && (
@@ -575,8 +583,9 @@ export const Header: React.FC = () => {
             {/* Settings Console Button (BUG-11) */}
             <button
               onClick={openSettings}
-              className="p-1.5 rounded-lg border glass-pill border-slate-700 hover:border-blue-500/40 text-slate-300 hover:text-blue-400 transition-colors active:scale-95"
+              className="p-2.5 min-w-10 min-h-10 rounded-lg border glass-pill border-slate-700 hover:border-blue-500/40 text-slate-300 hover:text-blue-400 transition-colors active:scale-95 inline-flex items-center justify-center"
               title="Console & Settings"
+              aria-label="Console & Settings"
             >
               <SlidersHorizontal className="w-4 h-4" />
             </button>

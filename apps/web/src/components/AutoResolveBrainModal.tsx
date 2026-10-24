@@ -124,13 +124,13 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
           {/* Header */}
           <div className="flex items-start justify-between border-b border-slate-800/80 pb-4 flex-shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20 text-white flex-shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20 text-on-accent flex-shrink-0">
                 <Brain className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base font-bold text-white tracking-tight">
-                    Auto-Resolve Brain Studio
+                  <h2 className="text-base font-bold text-ink tracking-tight">
+                    Auto-Resolve settings
                   </h2>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40">
                     POLICY ENGINE
@@ -146,8 +146,8 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
                 onClick={() => setShowHelp((prev) => !prev)}
                 className={`p-1.5 rounded-xl border transition-colors ${
                   showHelp
-                    ? 'bg-purple-600 text-white border-purple-500'
-                    : 'glass-pill text-slate-400 hover:text-white border-slate-700'
+                    ? 'bg-purple-600 text-on-accent border-purple-500'
+                    : 'glass-pill text-slate-400 hover:text-ink border-slate-700'
                 }`}
                 title="View Algorithm Heuristics"
               >
@@ -155,7 +155,7 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
               </button>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-xl glass-pill text-slate-400 hover:text-white border-slate-700 transition-colors"
+                className="p-1.5 rounded-xl glass-pill text-slate-400 hover:text-ink border-slate-700 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -205,7 +205,7 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-amber-400" />
-                  <span className="font-bold text-white text-xs">
+                  <span className="font-bold text-ink text-xs">
                     Whole-Day Officiating Class Teacher Precedence
                   </span>
                 </div>
@@ -232,7 +232,7 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
             {/* RULE 2: Scoring Heuristics Sliders */}
             <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-3.5">
               <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                <div className="flex items-center gap-2 font-bold text-white text-xs">
+                <div className="flex items-center gap-2 font-bold text-ink text-xs">
                   <Sliders className="w-4 h-4 text-blue-400" />
                   <span>Heuristic Priority Weights</span>
                 </div>
@@ -349,7 +349,7 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
             {/* RULE 3: Principal Preferred / Defined Subject Overrides */}
             <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-3">
               <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                <div className="flex items-center gap-2 font-bold text-white text-xs">
+                <div className="flex items-center gap-2 font-bold text-ink text-xs">
                   <BookOpen className="w-4 h-4 text-purple-400" />
                   <span>Principal Preferred Subject Overrides</span>
                 </div>
@@ -373,7 +373,7 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
                         {subj}
                       </span>
                       <span className="text-slate-400">→</span>
-                      <span className="font-bold text-white">{teacherAbbr}</span>
+                      <span className="font-bold text-ink">{teacherAbbr}</span>
                     </div>
                     <button
                       onClick={() => handleRemoveOverride(subj)}
@@ -396,7 +396,7 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
                 <select
                   value={newSubject}
                   onChange={(e) => setNewSubject(e.target.value)}
-                  className="w-full sm:flex-1 bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500"
+                  className="w-full sm:flex-1 bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-ink focus:outline-none focus:border-purple-500"
                 >
                   <option value="">Select Subject...</option>
                   {COMMON_SUBJECTS.map((s) => (
@@ -409,7 +409,7 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
                 <select
                   value={newTeacher}
                   onChange={(e) => setNewTeacher(e.target.value)}
-                  className="w-full sm:flex-1 bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500"
+                  className="w-full sm:flex-1 bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-ink focus:outline-none focus:border-purple-500"
                 >
                   <option value="">Select Specialist Staff...</option>
                   {teachers.map((t) => (
@@ -422,7 +422,7 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
                 <button
                   onClick={handleAddOverride}
                   disabled={!newSubject || !newTeacher}
-                  className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:pointer-events-none text-white font-semibold text-xs flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                  className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:pointer-events-none text-on-accent font-semibold text-xs flex items-center justify-center gap-1 transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Rule</span>
@@ -436,7 +436,7 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
             {canConfigureSolver ? (
             <button
               onClick={handleReset}
-              className="px-3 py-2 rounded-xl glass-pill text-slate-400 hover:text-white border-slate-700 flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer"
+              className="px-3 py-2 rounded-xl glass-pill text-slate-400 hover:text-ink border-slate-700 flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset Defaults</span>
@@ -451,14 +451,14 @@ export const AutoResolveBrainModal: React.FC<AutoResolveBrainModalProps> = ({ is
             <div className="flex items-center gap-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-xl text-slate-400 hover:text-ink text-xs font-semibold transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               {canConfigureSolver && (
               <button
                 onClick={handleSave}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-purple-500/25 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-on-accent font-bold text-xs shadow-lg shadow-purple-500/25 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
               >
                 <Check className="w-4 h-4" />
                 <span>Save & Apply Rules</span>

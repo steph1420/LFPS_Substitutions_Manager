@@ -292,11 +292,14 @@ export function createLiveSyncClient<S extends SyncStoreState>(opts: LiveSyncOpt
           clearInflight();
           // "hydrating": the relay is reloading Subs after a restart — the batch stays in
           // the outbox and is sent again shortly.
-          if (payload.reason === 'hydrating' && !retryFlushTimer) {
-            retryFlushTimer = setTimeout(() => {
-              retryFlushTimer = null;
-              flush();
-            }, 2000);
+          if (payload.reason === 'hydrating') {
+            setStatus({ sheetsState: 'hydrating' });
+            if (!retryFlushTimer) {
+              retryFlushTimer = setTimeout(() => {
+                retryFlushTimer = null;
+                flush();
+              }, 2000);
+            }
           }
         }
         break;

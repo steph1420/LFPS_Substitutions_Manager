@@ -9,6 +9,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Fixed
+- **UI-12 (Bundle 39)**: Day-theme contrast — semantic `text-ink` / `bg-surface-*` / soft chip tokens; bare `text-white` remapped to ink on light families; `*-950` chips softened; Settings / Staff Login / Midnight modal surfaces tokenized.
+- **FIND-05 (Bundle 39)**: Sync pill shows **Sheets error** / **Loading sheet…** when the bridge exposes it; tap opens Settings → Cloud.
+- Front Desk copy: Off. CT tooltips, Brain Studio → Auto-Resolve, KPI “ALERT 0” honesty, friendlier empty states; remaining ticket IDs scrubbed from titles.
+- A11y: focus-visible rings, larger header icon hit targets, `prefers-reduced-motion` on tab fades.
 - **UI-11 (Bundle 38a)**: Routine matrix uses `table-layout: fixed`, reserved row height, and a directory-based min shell height so SAT / Hide Absent no longer collapses the card frame.
 - **FIND-01 (Bundle 38a)**: Replaced infinite Tailwind `animate-pulse` on Live/Connecting dots and badges with static status-dot classes; honor `prefers-reduced-motion` for attention / look-at-me animations.
 - **FIND-03 (Bundle 38a)**: Removed dead Target Cell Halo Pulse Developer Option (and color palette) — toggle had no runtime effect.
@@ -28,9 +32,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Planned
 - **Bundle 38b**: SEC-02, SEC-03, per-admin design spike, ARCH-03 docs, BUG-31 HEAD reminder.
-- **Bundle 39**: UI-12 day themes, a11y, Front Desk copy, FIND-05 sync pill honesty.
 - **Bundle 36**: CI builds Pages; stop committing root assets (FEAT-64).
-- **Deferred**: FEAT-67 lockout settings; per-admin passcodes / role privileges (after 38b); full day-theme rewrite → 39.
+- **Deferred**: FEAT-67 lockout settings; per-admin passcodes / role privileges (after 38b).
 
 
 ## [v2.0.0-alpha.3] - 2026-10-24

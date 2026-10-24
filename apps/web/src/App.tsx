@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useTimetableStore } from './store/useTimetableStore.js';
 import { Header } from './components/Header.js';
 import { AbsenceRoster } from './components/AbsenceRoster.js';
@@ -23,6 +23,7 @@ import { schoolDayForDate } from '@lfps/core';
 import { APP_SCROLL_ID, readDevUiPrefs, type HeaderScrollMode } from './lib/devUiPrefs.js';
 
 export const App: React.FC = () => {
+  const reduceMotion = useReducedMotion();
   const { activeTab, isFitGrid, undo, redo, setDay } = useTimetableStore();
   const [headerScrollMode, setHeaderScrollMode] = React.useState<HeaderScrollMode>(
     () => readDevUiPrefs().headerScrollMode
@@ -127,10 +128,10 @@ export const App: React.FC = () => {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 6 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.16 }}
+              exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
+              transition={{ duration: reduceMotion ? 0 : 0.16 }}
             >
               {activeTab === 'routine' && <RoutineGrid />}
               {activeTab === 'substitutions' && <SubstitutionsRegister />}

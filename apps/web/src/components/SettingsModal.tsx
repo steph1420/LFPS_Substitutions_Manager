@@ -4,7 +4,7 @@ import { SCHOOL_TIME_ZONE } from '@lfps/core';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
 import { useTimetableStore, ThemeId } from '../store/useTimetableStore.js';
 import { useLiveSync } from '../hooks/useLiveSync.js';
-import { phaseLabel } from '../sync/status.js';
+import { phaseLabel, syncDisplay } from '../sync/status.js';
 import {
   X,
   LogOut,
@@ -280,7 +280,7 @@ export const SettingsModal: React.FC = () => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 12 }}
             transition={SPRING_TRANSITIONS.smooth}
-            className="w-full max-w-xl glass-panel bg-slate-950/95 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            className="w-full max-w-xl glass-panel bg-surface-modal border border-default rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-ink"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -290,14 +290,14 @@ export const SettingsModal: React.FC = () => {
                   <SlidersHorizontal className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-sm sm:text-base font-bold text-white">Console & Settings</h2>
+                  <h2 className="text-sm sm:text-base font-bold text-ink">Console & Settings</h2>
                   <p className="text-[11px] text-slate-400">System preferences, staff identity & data controls</p>
                 </div>
               </div>
 
               <button
                 onClick={closeSettings}
-                className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-2.5 min-w-10 min-h-10 rounded-full text-slate-400 hover:text-ink hover:bg-surface-elev transition-colors inline-flex items-center justify-center"
                 title="Close Settings (Esc)"
               >
                 <X className="w-4 h-4" />
@@ -324,7 +324,7 @@ export const SettingsModal: React.FC = () => {
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Operating Identity
                 </span>
-                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-surface-elev border border-default flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-xs">
                       {loggedInTeacher ? loggedInTeacher.charAt(0) : 'G'}
@@ -377,7 +377,7 @@ export const SettingsModal: React.FC = () => {
 
               <div className="space-y-2">
                 <AdminAccessPanel onToast={showToast} />
-                <div className="px-3.5 py-2 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between gap-3 text-[11px]">
+                <div className="px-3.5 py-2 rounded-xl bg-surface-elev/80 border border-default flex items-center justify-between gap-3 text-[11px]">
                   <span className="text-slate-400">This device</span>
                   <span
                     className={
@@ -405,7 +405,7 @@ export const SettingsModal: React.FC = () => {
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Interface Preferences & Persistence
                 </span>
-                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/80 space-y-3">
+                <div className="p-3.5 rounded-xl bg-surface-elev border border-default space-y-3">
                   {/* Minimal UI Toggle */}
                   <div className="flex items-center justify-between">
                     <div>
@@ -513,19 +513,19 @@ export const SettingsModal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Section 2.5: Complete 12-Theme Engine (FEAT-46, Adapted from THEMES.md) */}
+              {/* Section 2.5: Appearance & Themes (FEAT-46, Adapted from THEMES.md) */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <Palette className="w-3.5 h-3.5 text-purple-400" />
-                    Complete 12-Theme Engine
+                    Appearance & Themes
                   </span>
                   <span className="text-[10px] text-slate-400">
-                    Active: <strong className="text-white capitalize">{currentTheme}</strong>
+                    Active: <strong className="text-ink capitalize">{currentTheme}</strong>
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/80 space-y-3">
+                <div className="p-3.5 rounded-xl bg-surface-elev border border-default space-y-3">
                   {(['Minimalist Light', 'Minimalist Dark', 'Glass Materials', 'Studio & Accessibility'] as const).map(
                     (family) => {
                       const familyThemes = THEME_OPTIONS.filter((t) => t.family === family);
@@ -558,10 +558,10 @@ export const SettingsModal: React.FC = () => {
                                       try { navigator.vibrate(25); } catch {}
                                     }
                                   }}
-                                  className={`p-2 rounded-xl border flex flex-col justify-between gap-2 text-left transition-all cursor-pointer select-none active:scale-95 shadow-sm ${
+                                  className={`p-2 rounded-xl border flex flex-col justify-between gap-2 text-left transition-colors cursor-pointer select-none active:scale-95 shadow-sm ${
                                     isSelected
-                                      ? 'bg-blue-600/20 border-blue-500 ring-1 ring-blue-500/50 shadow-blue-500/10'
-                                      : 'bg-slate-950/60 hover:bg-slate-900/90 border-slate-800/80'
+                                      ? 'bg-blue-600/20 border-blue-500 ring-1 ring-blue-500/50 shadow-blue-500/10 text-ink'
+                                      : 'bg-surface-elev hover:opacity-95 border-default text-ink'
                                   }`}
                                   title={t.description}
                                 >
@@ -585,7 +585,7 @@ export const SettingsModal: React.FC = () => {
                                   </div>
 
                                   <div>
-                                    <div className="font-bold text-slate-100 text-[11px] leading-tight">
+                                    <div className="font-bold text-ink text-[11px] leading-tight">
                                       {t.name}
                                     </div>
                                     <div className="text-[9px] text-slate-400 truncate mt-0.5">
@@ -608,7 +608,7 @@ export const SettingsModal: React.FC = () => {
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Mobile App & PWA Installation
                 </span>
-                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-surface-elev border border-default flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-blue-500/15 text-blue-400 flex items-center justify-center">
                       <Smartphone className="w-4 h-4" />
@@ -638,7 +638,7 @@ export const SettingsModal: React.FC = () => {
                 <div
                   data-testid="sync-card"
                   data-phase={sync.status.phase}
-                  className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between"
+                  className="p-3.5 rounded-xl bg-surface-elev border border-default flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
                     <div
@@ -653,23 +653,36 @@ export const SettingsModal: React.FC = () => {
                       <Cloud className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="font-semibold text-slate-200 flex items-center gap-1.5">
-                        {phaseLabel(sync.status.phase)}
+                      <div className="font-semibold text-ink flex items-center gap-1.5">
+                        {syncDisplay({
+                          phase: sync.status.phase,
+                          mode: sync.status.mode,
+                          sheetsState: sync.status.sheetsState,
+                          pending: sync.status.pending,
+                          clients: sync.status.activeClients,
+                          error: sync.status.error,
+                        }).label}
                         <span
                           className={`w-2 h-2 rounded-full ${
-                            sync.status.phase === 'live'
-                              ? 'status-dot-live'
-                              : sync.status.phase === 'connecting'
+                            sync.status.phase === 'live' && sync.status.sheetsState !== 'error'
+                              ? sync.status.sheetsState === 'starting' || sync.status.sheetsState === 'hydrating'
+                                ? 'status-dot-connecting'
+                                : 'status-dot-live'
+                              : sync.status.phase === 'connecting' || sync.status.sheetsState === 'error'
                                 ? 'status-dot-connecting'
                                 : 'bg-slate-500'
                           }`}
                         />
                       </div>
-                      <div className="text-[11px] text-slate-400">
+                      <div className="text-[11px] text-muted">
                         {sync.status.phase === 'live'
-                          ? `${sync.status.activeClients} device${sync.status.activeClients === 1 ? '' : 's'} · ${
-                              sync.status.mode === 'sheets' ? 'Sheets linked' : 'Relay only'
-                            }`
+                          ? sync.status.mode === 'sheets' && sync.status.sheetsState === 'error'
+                            ? 'Sheets bridge error · local only'
+                            : sync.status.mode === 'sheets' && (sync.status.sheetsState === 'starting' || sync.status.sheetsState === 'hydrating')
+                              ? 'Loading sheet · local data ready'
+                              : `${sync.status.activeClients} device${sync.status.activeClients === 1 ? '' : 's'} · ${
+                                  sync.status.mode === 'sheets' ? 'Sheets linked' : 'Relay only'
+                                }`
                           : sync.status.phase === 'connecting'
                             ? 'Waking server · local data ready'
                             : 'Saved on device'}
@@ -780,7 +793,7 @@ export const SettingsModal: React.FC = () => {
 
                   <div className="space-y-3 pt-1">
                     {/* Live sync diagnostics (Bundle 35): real values only */}
-                    <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+                    <div className="p-2.5 rounded-xl bg-surface-elev border border-default flex items-center justify-between">
                       <div>
                         <div className="font-semibold text-slate-200 flex items-center gap-1.5">
                           <Activity className="w-3.5 h-3.5 text-emerald-400" />
@@ -816,7 +829,7 @@ export const SettingsModal: React.FC = () => {
                     </div>
 
                     {/* FEAT-62 part 3: what the Sheet mapping used and skipped (no personal data) */}
-                    <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-[10px] text-slate-400">
+                    <div className="p-2.5 rounded-xl bg-surface-elev border border-default text-[10px] text-slate-400">
                       <div className="font-semibold text-slate-200 text-xs">Sheet mapping</div>
                       {reference.source === 'sheet' ? (
                         <>
@@ -833,7 +846,7 @@ export const SettingsModal: React.FC = () => {
                     </div>
 
                     {/* Bundle 34a: device-local editing override (lib/access.ts). Never synced. */}
-                    <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-900/90 border border-amber-500/30">
+                    <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-surface-elev border border-amber-500/30">
                       <div>
                         <div className="font-semibold text-slate-200 flex items-center gap-1.5">
                           <LockOpen className="w-3.5 h-3.5 text-amber-400" />
@@ -865,7 +878,7 @@ export const SettingsModal: React.FC = () => {
                     </div>
 
                     {/* Bundle 37 / FEAT-69: device-local UI experiments */}
-                    <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2.5">
+                    <div className="p-2.5 rounded-xl bg-surface-elev border border-default space-y-2.5">
                       <div className="font-semibold text-slate-200 text-xs">Header scroll mode</div>
                       <div className="text-[10px] text-slate-400 -mt-1">
                         This device only. (A) keeps the browser toolbar still; (B) uses window scroll with hysteresis.
@@ -896,7 +909,7 @@ export const SettingsModal: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
+                    <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-surface-elev border border-default">
                       <div>
                         <div className="font-semibold text-slate-200">Auto-filter Absent</div>
                         <div className="text-[10px] text-slate-400">
@@ -925,7 +938,7 @@ export const SettingsModal: React.FC = () => {
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
+                    <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-surface-elev border border-default">
                       <div>
                         <div className="font-semibold text-slate-200">Needs attention strip</div>
                         <div className="text-[10px] text-slate-400">
@@ -955,7 +968,7 @@ export const SettingsModal: React.FC = () => {
                     </div>
 
 
-                    <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2.5">
+                    <div className="p-2.5 rounded-xl bg-surface-elev border border-default space-y-2.5">
                       <div className="font-semibold text-slate-200 text-xs">Day load mode</div>
                       <div className="text-[10px] text-slate-400 -mt-1">
                         This device only. (A) always opens on today&apos;s school day; (B) remembers the day you last picked.
@@ -992,7 +1005,7 @@ export const SettingsModal: React.FC = () => {
                     </div>
 
                     {/* Cross-Period Substitution Lock */}
-                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-surface-elev border border-default">
                       <div>
                         <div className="font-semibold text-slate-200 flex items-center gap-1.5">
                           <Lock className="w-3.5 h-3.5 text-amber-400" />
@@ -1018,7 +1031,7 @@ export const SettingsModal: React.FC = () => {
                     </div>
 
                     {/* Acceptance Countdown Timer */}
-                    <div className="space-y-2 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
+                    <div className="space-y-2 p-2.5 rounded-xl bg-surface-elev border border-default">
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="font-semibold text-slate-200">
@@ -1069,7 +1082,7 @@ export const SettingsModal: React.FC = () => {
                     </div>
 
                     {/* Mobile Undo/Redo Icon Style Selector */}
-                    <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+                    <div className="p-2.5 rounded-xl bg-surface-elev border border-default flex items-center justify-between">
                       <div>
                         <div className="font-semibold text-slate-200">
                           Mobile Undo/Redo Icon Style
@@ -1091,7 +1104,7 @@ export const SettingsModal: React.FC = () => {
                     </div>
 
                     {/* Live Solver Heuristic Weights Display */}
-                    <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1.5">
+                    <div className="p-2.5 rounded-xl bg-surface-elev border border-default space-y-1.5">
                       <div className="font-semibold text-slate-200 text-[11px] flex items-center justify-between">
                         <span>Core Solver Scoring Weights</span>
                         <span className="text-[9px] text-slate-500 font-mono">solver.ts</span>
@@ -1119,7 +1132,7 @@ export const SettingsModal: React.FC = () => {
               <button
                 type="button"
                 onClick={handleBuildInfoTap}
-                className="w-full p-3 rounded-xl bg-slate-950/60 hover:bg-slate-900/60 border border-slate-900 hover:border-slate-800 flex items-center justify-between text-[10px] text-slate-500 transition-colors cursor-pointer select-none"
+                className="w-full p-3 rounded-xl bg-surface-elev hover:opacity-95 border border-default flex items-center justify-between text-[10px] text-muted transition-colors cursor-pointer select-none"
                 title="Tap 5 times to open Developer & Diagnostics Console"
               >
                 <div className="flex items-center gap-2">

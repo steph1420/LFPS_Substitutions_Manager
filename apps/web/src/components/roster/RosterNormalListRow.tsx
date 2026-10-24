@@ -129,7 +129,7 @@ export const RosterNormalListRow: React.FC<RosterNormalListRowProps> = ({
             }}
             className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1 cursor-pointer"
           >
-            <span>Off. CT: {offCTSection || 'None'}</span>
+            <span title="Officiating Class Teacher">Off. CT: {offCTSection || 'None'}</span>
             <span className="font-bold underline text-amber-400 ml-1">
               {offCTSection ? 'Reassign' : 'Assign'}
             </span>

@@ -239,9 +239,7 @@ export const RosterNormalCard: React.FC<RosterNormalCardProps> = ({
           >
             <div className="flex items-center gap-1">
               <School className={`w-3.5 h-3.5 flex-shrink-0 ${offCTSection ? 'text-emerald-400' : 'text-amber-400'}`} />
-              <span className={`text-[10px] font-bold uppercase tracking-tight ${offCTSection ? 'text-emerald-400' : 'text-amber-400'}`}>
-                Off. CT
-              </span>
+              <span className={`text-[10px] font-bold uppercase tracking-tight ${offCTSection ? 'text-emerald-400' : 'text-amber-400'}`}>Off. CT</span>
             </div>
             {offCTSection ? (
               <div className="inline-flex items-center justify-center gap-1 max-w-full leading-none mt-0.5">
