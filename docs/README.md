@@ -34,7 +34,7 @@ When documents disagree, the **source code is the ground truth**. Known contradi
 
 | Document | Purpose | Notes |
 |---|---|---|
-| [`../DEVELOPER_GUIDE.md`](../DEVELOPER_GUIDE.md) | Main developer handbook | **Owner-controlled. Edit only on explicit request.** Several stale facts are listed in DOC_ISSUES |
+| [`../DEVELOPER_GUIDE.md`](../DEVELOPER_GUIDE.md) | Main developer handbook | **Owner-controlled. Edit only on explicit request.** Updated at the owner's request on 2026-10-24 to match JB35a (DOC_ISSUES §E) |
 | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) | Earlier architecture overview | Some paths and claims are stale (DI-09 to DI-14). Prefer `SAS.md` |
 | [`../DESIGN_PHILOSOPHY.md`](../DESIGN_PHILOSOPHY.md) | Visual and interaction design principles | CT colour is stale (DI-09) |
 | [`../THEMES.md`](../THEMES.md) | Theme engine reference | — |

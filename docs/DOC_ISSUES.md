@@ -84,7 +84,9 @@ The real figure is `npm test` = 1 file, **19 passed**, in 6 suites (see SAS §4.
 - Because Pages serves the `next-gen` root (ADR-0004), the documented procedure deploys to production on every push.
 - `git add -A` would also stage the tracked `tsconfig.tsbuildinfo`, `.DS_Store` and similar files.
 
-*Owner action needed:* confirm the branch model, then update DG if desired. `docs/WORKFLOW.md` §3 records the feature-branch model in the meantime.
+*Update 2026-10-24:* the DG part is closed (§E); the DG now records the owner's rule. CU §2.2 is still stale.
+
+*Owner action needed (original):* confirm the branch model, then update DG if desired. `docs/WORKFLOW.md` §3 records the feature-branch model in the meantime.
 
 ### DI-08 (M): CATCH_UP §2.1 tells contributors to log changes under the released version
 
@@ -221,6 +223,8 @@ DG §7.2 (l.313) requires zero `any`. There are 5 occurrences across `apps/web/s
 | DI-21, DI-22 | **Yes** | repo / server code (largely done in JB34, see §D) |
 | DI-23, DI-24, DI-25 | No (DG parts are owner-only) | AR, CG, CU, TD; DG on request |
 
+> **2026-10-24:** the DG parts of all items above are closed by the owner-requested DEVELOPER_GUIDE update (§E). The non-DG parts (AR, CU, CG, DP, TD) stay open (ARCH-03).
+
 ---
 
 ## D. Job Bundle 34 update (branch `bundle/34`, 2026-10-23)
@@ -249,3 +253,27 @@ Code changes in Bundle 34 change the verdict of several items. The older docs (A
 ### DI-25 (L): Admin gate vs DESIGN_PHILOSOPHY "no login walls" (checked, compatible)
 
 - DP l.48–49 forbid compulsory login walls and require instant Front Desk access. The JB34 admin passcode only gates admin actions (schedule editing, solver policy, Reset Day, purge, developer mode); Front Desk keeps 0-second access to attendance, substitutions, Off. AC / Off. CT and export. No contradiction, but DG/CL describe SEC-01 as role selection without a passcode and should be updated (ARCH-03; DG owner-only).
+
+---
+
+## E. DEVELOPER_GUIDE update (2026-10-24, owner request, branch `handover/2026-10-24`)
+
+The owner asked for `DEVELOPER_GUIDE.md` to be updated. It was rewritten against the code and docs as of `bundle/35a`. Only the **DG parts** of these items are closed; other documents named in them are unchanged (ARCH-03, Bundle 38).
+
+| ID | DG status | How |
+|---|---|---|
+| DI-04 | Closed | DG no longer quotes a stale count; §11.3 gives the 35a counts (core 35, web 73, Go 46, e2e 22) and points to WORKFLOW §4 |
+| DI-07 | Closed | DG §7.4/§11.4 now give the owner's rule: back up, new branch per bundle, never `main`, push/release only on the owner's go (WORKFLOW §3, §5) |
+| DI-09 | Closed (DG) | CT colour is amber `#f59e0b`. DP still says teal |
+| DI-10 | Closed (DG) | Paths corrected (`cmd/api`, `src/sync/*`, `lib/*`) |
+| DI-11 | Closed (DG) | Docker runtime is `alpine:3.20` |
+| DI-12, DI-23 | Closed (DG) | No server storage; the relay is stateless, Sheets is the source of truth (ADR-0005) |
+| DI-13 | Closed (DG) | Spring tokens match `@lfps/ui`; `ISLAND_SPRING` noted as local to `Header.tsx` |
+| DI-14 | Closed (DG) | §10 describes the real sync (35/35a): outbox, LWW per entity, HYDRATE, offline queue |
+| DI-15 | Closed (DG) | Ordered builds (`build:libs`) documented; root `build` is release-only |
+| DI-16 | Closed (DG) | Version table now indicative, with the installed Vitest noted |
+| DI-19 | Closed (DG) | DG reworded to "do not add new `any`; a few legacy ones remain". The cleanup itself stays open |
+| DI-24 | Closed (DG) | No hard-coded version strings; §9.4 points to the single source |
+| DI-25 | Closed (DG) | §9.3 describes the passcode gate, `resolveAccess` and "Edit without login" |
+
+DG §8.2 also now matches SAS §4.1 for candidate scoring. DG §1, §5 and §10 named individual teachers; they now use roles only.

@@ -32,7 +32,7 @@ for b in $(git for-each-ref --format='%(refname:lstrip=3)' refs/remotes/handover
 done
 git fetch origin                   # needs A2 for private access; the repo is public, so it may work already
 git branch -vv && git tag
-git switch bundle/35a              # the newest work branch (handover/2026-10-24 = it plus this file)
+git switch handover/2026-10-24     # newest: bundle/35a + this file + the updated DEVELOPER_GUIDE.md
 ```
 
 **Verify:**
@@ -206,7 +206,7 @@ The docs index is **`docs/README.md`**; start there. The source code is the grou
 | `bundle/34a` | `e72ea8e` | **local only** | Admin hierarchy / Edit without login: `77d68e1`, `e34c0fe`, `d522792`, `e72ea8e` |
 | `bundle/35` | `5bcb55d` | **local only** | Live sync + Sheets bridge + CI + `render.yaml`: `202b2bc` `55c6035` `22a7c20` `fae689f` `ef32283` `2d1e494` `717fa89` `230ad60` `5bcb55d` |
 | `bundle/35a` | `fd573b5` | **local only** | Sync gaps closed: `0c0df12` `470613c` `f038ca3` `d0199e3` `c404faf` `8f89ed2` `e4ddd65` `355ce42` `fd573b5` |
-| `handover/2026-10-24` | (this file) | **local only** | `bundle/35a` + `HANDOVER.md` |
+| `handover/2026-10-24` | (tip; see `git log -1`) | **local only** | `bundle/35a` + `HANDOVER.md` + the user-requested `DEVELOPER_GUIDE.md` update (and matching CHANGELOG / DOC_ISSUES / README / WORKFLOW / CONTRIBUTING notes) |
 | `origin/test` | `9e99a64` | remote only | "Add files via upload". Unknown purpose; leave it alone |
 | tag `v2.0.0-alpha.2` | → `362d887` | pushed | Release |
 | tag `rollback/pre-v2.0.0-alpha.2` | → `19c1a1a` | pushed | Rollback point before alpha.2 |
@@ -253,7 +253,7 @@ Fully prepared, **not executed**: `docs/RELEASE_2.0.0-alpha.3.md`. The order:
 3. **Protect the app tabs** (`sheetcheck -protect` adds protections to the app tabs only, so only the service account and the file owner can edit them; reversible in Data → Protect sheets and ranges). Proposed, not applied.
 4. **Remove the service account from the owner tabs' protections.** It's listed as an editor there today. The code never writes there, but removing it makes Google enforce the rule too. Owner-only, manual: **Data → Protect sheets and ranges**.
 5. **Publish-to-web privacy:** the published `2PACX` link is public and includes staff data. Consider unpublishing it, since the relay reads through the API. **Sharing:** if the Sheet's **Share → General access** was widened during setup, set it back to **Restricted**. The service account keeps its explicit Editor access, so the relay still works.
-6. **`DEVELOPER_GUIDE.md`:** owner-controlled and stale in places (see `docs/DOC_ISSUES.md`). Update it only if the user asks.
+6. **`DEVELOPER_GUIDE.md`:** owner-controlled. At the user's request it was **updated on branch `handover/2026-10-24`** (2026-10-24) to match the code and docs as of `bundle/35a` (CHANGELOG `[Unreleased]` Docs; DOC_ISSUES §E). That update exists **only on this branch**, so carry it into the next bundle branch (cut new work from `handover/2026-10-24`, or merge it in). The rule still holds: change the guide **only when the user asks**.
 7. The branch model in `docs/WORKFLOW.md` §3 vs the older guide (DI-07): the user follows "new branch per bundle", but the docs still ask for confirmation.
 
 ### B6. Later bundles (see the plan table at the top of `TODO.md`)
@@ -349,4 +349,4 @@ These are firm principles. Each has a reason; keep the reason in mind when a sit
 
 ---
 
-*Prepared 2026-10-24 by the previous assistant from `bundle/35a` @ `fd573b5`. If anything here disagrees with the code or the docs, the code wins; log the difference in `docs/DOC_ISSUES.md`.*
+*Prepared 2026-10-24 by the previous assistant from `bundle/35a` @ `fd573b5`; `DEVELOPER_GUIDE.md` was then updated on `handover/2026-10-24` at the user's request. If anything here disagrees with the code or the docs, the code wins; log the difference in `docs/DOC_ISSUES.md`.*
