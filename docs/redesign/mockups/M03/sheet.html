@@ -1,0 +1,58 @@
+<!doctype html><html><head><meta charset="utf-8"><title>M03 Staff Roster phone</title><link rel="stylesheet" href="../_shared/tokens.css"><link rel="stylesheet" href="../_shared/lfps.css"><style>body{width:390px}</style><style>
+.app{width:390px;height:844px;display:flex;flex-direction:column}
+.ph-hdr{padding:8px 4px 10px 16px;border-bottom:1px solid var(--lucid-color-border)}
+.ph-hdr .r1{display:flex;align-items:center;height:48px}
+.ph-hdr .r2{padding-right:12px;margin-top:4px}
+.live{margin-left:12px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--lucid-color-accent-soft);display:flex;align-items:center;gap:6px}
+.sp{flex:1}
+.ttl{padding:16px 16px 0}
+.ttl h1{font-size:28px;font-weight:600;letter-spacing:-.3px;color:var(--lucid-color-text-strong)}
+.ttl p{font-size:13px;color:var(--lucid-color-text-secondary);margin-top:2px}
+.tools{display:flex;gap:8px;padding:12px 16px;overflow:hidden}
+.main{flex:1;overflow:hidden;position:relative}
+.tabs{padding-bottom:20px}
+</style><style>
+.kp{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 16px 0}
+.kp div{background:var(--lucid-color-fill-1);border:1px solid var(--lucid-color-border);border-radius:12px;padding:10px 10px 8px}
+.kp b{display:block;font-size:24px;font-weight:200;color:var(--lucid-color-text-display);line-height:1.1}
+.kp span{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--lucid-color-text-secondary)}
+.kp .abs{border-color:var(--lfps-absent-ring);background:var(--lfps-absent-fill)} .kp .abs b{color:var(--lfps-absent)}
+.kp .away b{color:var(--lfps-away)} .kp .nos b{color:var(--lfps-free)}
+.search{margin:14px 16px 0;height:48px;border-radius:12px;background:var(--lucid-color-fill-2);border:1px solid var(--lucid-color-border);display:flex;align-items:center;gap:8px;padding:0 14px;color:var(--lucid-color-text-muted);font-size:15px}
+.search svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6}
+.filt{display:flex;margin:12px 16px 0;padding:3px;border-radius:12px;background:var(--lucid-color-fill-1);border:1px solid var(--lucid-color-border)}
+.filt span{flex:1;height:40px;display:flex;align-items:center;justify-content:center;border-radius:9px;font-size:13px;color:var(--lucid-color-text-secondary)}
+.filt span.on{background:var(--lfps-absent-fill);color:var(--lfps-absent);box-shadow:inset 0 0 0 1px var(--lfps-absent-ring)}
+.sec{display:flex;justify-content:space-between;align-items:center;padding:18px 16px 8px}
+.sec .mp{font-size:13px;color:var(--lucid-color-accent);height:36px;display:flex;align-items:center}
+.rc{margin:0 16px 8px;display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;background:linear-gradient(90deg,var(--lfps-absent-fill),rgba(255,255,255,.02));border:1px solid var(--lfps-absent-ring)}
+.av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:var(--lfps-absent);background:rgba(227,154,164,.12)}
+.rt{flex:1} .rt b{font-size:16px;font-weight:500;color:var(--lucid-color-text-strong)} .rt small{display:block;font-size:12px;color:var(--lucid-color-text-secondary);margin-top:1px}
+.meta{display:flex;gap:8px;align-items:center;margin-top:7px}
+.pill{font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:999px;font-weight:500}
+.pill.abs{color:var(--lfps-absent);background:var(--lfps-absent-fill);box-shadow:inset 0 0 0 1px var(--lfps-absent-ring)}
+.need{font-size:12px;color:var(--lucid-color-warning-text)}
+.more{width:48px;height:48px;display:flex;align-items:center;justify-content:center;color:var(--lucid-color-icon);font-size:20px}
+.hint{margin:10px 20px;font-size:12px;line-height:1.5;color:var(--lucid-color-text-muted)}
+.scrim{position:absolute;inset:0;background:var(--lucid-color-scrim)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--lucid-color-surface-raised);border-top:1px solid var(--lucid-color-border-highlight);border-radius:20px 20px 0 0;padding:8px 16px 28px}
+.grab{width:36px;height:5px;border-radius:3px;background:var(--lucid-color-tick);margin:0 auto 14px}
+.sh{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+.sh .av{color:var(--lucid-color-text-display);background:var(--lucid-color-fill-4)}
+.sh b{font-size:17px;font-weight:500;color:var(--lucid-color-text-strong)} .sh small{display:block;font-size:12px;color:var(--lucid-color-text-secondary)}
+.opt{height:56px;display:flex;align-items:center;gap:14px;padding:0 14px;border-radius:12px;background:var(--lucid-color-fill-2);margin-bottom:8px;font-size:15px;color:var(--lucid-color-text-primary)}
+.opt i{width:10px;height:10px;border-radius:50%}
+.opt span{margin-left:auto;font-size:12px;color:var(--lucid-color-text-muted)}
+.cancel{height:48px;display:flex;align-items:center;justify-content:center;color:var(--lucid-color-text-secondary);font-size:15px;margin-top:4px}
+</style></head><body><div class="app"><header class="ph-hdr"><div class="r1"><div class="wordmark">LFPS <b>·</b> Subs</div><div class="live"><span class="dot"></span>Live</div><div class="sp"></div><span class="ico"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></span><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span></div><div class="r2"><div class="days"><div class="day on">MON<small>2</small></div><div class="day">TUE<small>3</small></div><div class="day">WED<small>4</small></div><div class="day">THU<small>5</small></div><div class="day">FRI<small>6</small></div><div class="day">SAT<small>7</small></div></div></div></header>
+<div class="ttl"><h1>Staff Roster</h1><p>Monday 2 November · 12 staff</p></div>
+<div class="kp"><div><b>9</b><span>Present</span></div><div class="abs"><b>2</b><span>Absent</span></div><div class="away"><b>1</b><span>Away</span></div><div class="nos"><b>3</b><span>No subs</span></div></div>
+<div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg>Search name or role</div>
+<div class="filt"><span>All</span><span>Present</span><span class="on">Absent</span><span>No subs</span></div>
+<div class="main"><div class="sec"><span class="label">Absent today · 2</span><span class="mp">Mark all present</span></div><div class="rc"><div class="av">TB</div><div class="rt"><b>Teacher-B</b><small>Class Teacher · 1 B</small><div class="meta"><span class="pill abs">Absent · Full day</span><span class="need">2 covered</span></div></div><span class="more">⋯</span></div><div class="rc"><div class="av">TI</div><div class="rt"><b>Teacher-I</b><small>Subject · Art</small><div class="meta"><span class="pill abs">Absent · 1st, 3rd</span><span class="need">0 covered</span></div></div><span class="more">⋯</span></div><p class="hint">Away on duty (1) is not counted as Absent. Tap any name in All to mark absent or away.</p>
+</div>
+<nav class="tabs"><div class="tab"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>Routine</div><div class="tab"><svg viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>Subs</div><div class="tab on"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1-3.5 3.5-5 6.5-5s5.5 1.5 6.5 5"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14c2.5 0 4 1.5 4.8 4"/></svg>Roster</div></nav><div class="scrim"></div><div class="sheet"><div class="grab"></div><div class="sh"><div class="av">TL</div><div><b>Teacher-L</b><small>Subject · English · present</small></div></div>
+<div class="opt"><i style="background:var(--lfps-absent)"></i>Mark absent — full day</div>
+<div class="opt"><i style="background:var(--lfps-absent);opacity:.5"></i>Mark absent — some periods<span>pick periods</span></div>
+<div class="opt"><i style="background:var(--lfps-away)"></i>Mark away on duty…<span>periods + venue</span></div>
+<div class="cancel">Cancel</div></div></div></body></html>

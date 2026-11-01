@@ -1,0 +1,187 @@
+/* LUCID style kit tokens.css — generated from tokens.json (values verbatim from LUCID v0.53.1 design kit v1).
+ * Components read var(--lucid-*) only. Status per token is in tokens.json; PROPOSED = tunable default. */
+:root,[data-lucid-theme="master-panel"]{
+  --lucid-color-bg: #000000; /* LOCKED */
+  --lucid-color-surface-top: #121317; /* LOCKED */
+  --lucid-color-surface-bottom: #0a0b0f; /* LOCKED */
+  --lucid-color-surface: linear-gradient(180deg, #121317 0%, #111216 25%, #0e0f13 45%, #0c0d11 65%, #0b0c10 80%, #0a0b0f 100%); /* LOCKED */
+  --lucid-color-surface-raised: rgba(22, 26, 32, .97); /* LOCKED in use; PROPOSED as token */
+  --lucid-color-scrim: rgba(0, 0, 0, .65); /* PROPOSED */
+  --lucid-color-border: #232426; /* LOCKED */
+  --lucid-color-border-highlight: #35363a; /* LOCKED */
+  --lucid-color-divider: #2e3034; /* LOCKED */
+  --lucid-color-divider-vertical: #232428; /* LOCKED */
+  --lucid-color-tick: #393d40; /* LOCKED */
+  --lucid-color-track: #040507; /* LOCKED */
+  --lucid-color-track-border: #2b2c2e; /* LOCKED */
+  --lucid-color-text-display: #e0f7fc; /* LOCKED */
+  --lucid-color-text-primary: #d3d7da; /* LOCKED */
+  --lucid-color-text-secondary: #9ca1a6; /* LOCKED */
+  --lucid-color-text-tertiary: #94979d; /* LOCKED */
+  --lucid-color-text-muted: #6b7177; /* PROPOSED */
+  --lucid-color-text-faint: #4a5056; /* PROPOSED */
+  --lucid-color-accent: #45eef8; /* LOCKED */
+  --lucid-color-accent-play: #5de8f6; /* LOCKED */
+  --lucid-color-accent-soft: #75d6dc; /* LOCKED */
+  --lucid-color-accent-muted: #65bdc1; /* LOCKED */
+  --lucid-color-accent-hot: #8bf9fd; /* LOCKED */
+  --lucid-color-icon: #828990; /* LOCKED */
+  --lucid-color-warning: #e8b25a; /* LOCKED in use; PROPOSED as token */
+  --lucid-color-warning-text: #ffcf66; /* LOCKED in use; PROPOSED as token */
+  --lucid-color-danger: #c84f5a; /* LOCKED */
+  --lucid-color-danger-text: #c9575f; /* LOCKED */
+  --lucid-color-danger-bg: #200e0e; /* LOCKED */
+  --lucid-color-danger-border: #62383c; /* LOCKED */
+  --lucid-glow-accent: 0 0 6px 2px rgba(69, 238, 248, .35), 0 0 16px 6px rgba(69, 238, 248, .12); /* LOCKED */
+  --lucid-glow-danger: 0 0 8px rgba(200, 79, 90, .18); /* LOCKED */
+  --lucid-grain-opacity: .025; /* LOCKED */
+  --lucid-link-dot: 10px; /* LOCKED */
+  --lucid-link-connected: var(--lucid-color-accent); /* LOCKED */
+  --lucid-link-degraded: var(--lucid-color-warning); /* LOCKED */
+  --lucid-link-lost: var(--lucid-color-danger); /* LOCKED */
+  --lucid-font-sans: "SF Pro Text", "SF Pro Display", -apple-system, "Inter", system-ui, sans-serif; /* LOCKED */
+  --lucid-font-display: "SF Pro Display", -apple-system, "Inter", system-ui, sans-serif; /* LOCKED */
+  --lucid-weight-thin: 200; /* LOCKED */
+  --lucid-weight-light: 300; /* PROPOSED */
+  --lucid-weight-regular: 400; /* PROPOSED */
+  --lucid-weight-medium: 500; /* PROPOSED */
+  --lucid-tracking-wordmark: .30em; /* PROPOSED */
+  --lucid-tracking-label: .24em; /* PROPOSED */
+  --lucid-tracking-tab: .14em; /* PROPOSED */
+  --lucid-size-display: 42px; /* LOCKED */
+  --lucid-size-wordmark: 15px; /* PROPOSED */
+  --lucid-size-title: 17px; /* PROPOSED */
+  --lucid-size-body: 15px; /* PROPOSED */
+  --lucid-size-tab: 14px; /* LOCKED */
+  --lucid-size-label: 11px; /* PROPOSED */
+  --lucid-size-caption: 9px; /* PROPOSED */
+  --lucid-space-1: 4px; /* PROPOSED */
+  --lucid-space-2: 8px; /* PROPOSED */
+  --lucid-space-3: 12px; /* PROPOSED */
+  --lucid-space-4: 16px; /* PROPOSED */
+  --lucid-space-5: 20px; /* PROPOSED */
+  --lucid-space-6: 24px; /* PROPOSED */
+  --lucid-space-8: 32px; /* PROPOSED */
+  --lucid-space-10: 40px; /* PROPOSED */
+  --lucid-space-12: 48px; /* PROPOSED */
+  --lucid-statusbar-h: 0px; /* LOCKED */
+  --lucid-safe-top: var(--lucid-statusbar-h); /* LOCKED */
+  --lucid-safe-bottom: 20px; /* LOCKED */
+  --lucid-tab-h: 56px; /* LOCKED size/slot; value PROPOSED */
+  --lucid-tab-w-min: 112px; /* LOCKED size/slot; value PROPOSED */
+  --lucid-tab-w-max: 144px; /* LOCKED size/slot; value PROPOSED */
+  --lucid-tab-pressed-bg: rgba(255, 255, 255, .07); /* PROPOSED */
+  --lucid-tab-active-bg: rgba(69, 238, 248, .055); /* PROPOSED */
+  --lucid-tab-active-border: rgba(69, 238, 248, .14); /* PROPOSED */
+  --lucid-page-bottombar-h: 64px; /* LOCKED size/slot; value PROPOSED */
+  --lucid-margin: 0px; /* LOCKED */
+  --lucid-shell-gutter: 0px; /* LOCKED */
+  --lucid-inset: 12px; /* LOCKED */
+  --lucid-gutter: 12px; /* LOCKED */
+  --lucid-topbar-h: 56px; /* LOCKED size/slot; value PROPOSED */
+  --lucid-master-w: 184px; /* LOCKED */
+  --lucid-touch-min: 48px; /* LOCKED */
+  --lucid-touch-critical: 56px; /* PROPOSED */
+  --lucid-radius-shell: 0px; /* LOCKED */
+  --lucid-radius-container: 10px; /* LOCKED */
+  --lucid-radius-sheet: 20px; /* PROPOSED */
+  --lucid-radius-card: 14px; /* LOCKED */
+  --lucid-radius-control: 12px; /* PROPOSED */
+  --lucid-radius-pill: 999px; /* PROPOSED */
+  --lucid-squircle-n: 4.6; /* LOCKED */
+  --lucid-radius-popover: 12px; /* PROPOSED */
+  --lucid-hairline: 1px; /* LOCKED */
+  --lucid-hairline-opacity: 1; /* PROPOSED */
+  --lucid-glow-strength: 1; /* PROPOSED */
+  --lucid-size-page-title: 30px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-weight-semibold: 600; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-tracking-page-title: -0.3px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-size-list-title: 28px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-size-subtitle: 15px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-size-section-label: 11px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-fill-1: rgba(255,255,255,.035); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-fill-2: rgba(255,255,255,.04); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-fill-3: rgba(255,255,255,.05); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-fill-4: rgba(255,255,255,.06); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-fill-selected: rgba(255,255,255,.09); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-accent-fill: rgba(69,238,248,.10); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-accent-ring: rgba(69,238,248,.22); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-on-accent: #05121a; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-on-accent-alt: #03191b; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-text-strong: #f1f3f4; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-text-button: #e9ecee; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-key: #75d6dc; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-seg-h: 48px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-seg-item-w: 52px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-seg-item-h: 40px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-radius-seg-item: 9px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-pill-h: 48px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-toggle-w: 51px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-toggle-h: 31px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-toggle-off: #2a2d33; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-toggle-knob: #c3c8cc; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-toggle-knob-on: #f4fdff; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-row-sidebar-h: 48px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-row-list-h: 56px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-search-h: 48px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-edit-border: #3a4047; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-sheet-border: #2a3038; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-shadow-sheet: -20px 0 60px rgba(0,0,0,.7); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-app-banner-h: 56px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-radius-banner: 14px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-banner-red: rgba(42,17,20,.97); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-banner-red-border: #6a3a3f; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-shadow-banner: 0 10px 30px rgba(0,0,0,.45); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-card: rgba(21,24,29,.98); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-radius-problem-card: 22px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-shadow-card: 0 24px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-toast: rgba(28,32,38,.98); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-shadow-toast: 0 14px 36px rgba(0,0,0,.5); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-button-h-app: 52px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-radius-button-app: 14px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-btn-danger-fill: rgba(200,79,90,.16); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-btn-danger-border: rgba(255,125,135,.5); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-btn-danger-text: #ffd5d9; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-app-veil-filter: saturate(.25) brightness(.55); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-app-skeleton: linear-gradient(90deg, rgba(255,255,255,.035), rgba(255,255,255,.075), rgba(255,255,255,.035)); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-empty-icon: 88px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-radius-empty-icon: 28px; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-pad-base: #0c0e12; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-led-idle: #1e2329; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-onstate-white: #e6fdff; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-line-card: rgba(255,255,255,.08); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-line-ghost: rgba(255,255,255,.09); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-line-button: rgba(255,255,255,.10); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-line-toast: rgba(255,255,255,.12); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-banner-btn-fill: rgba(255,125,135,.14); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-color-banner-btn-border: rgba(255,125,135,.45); /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-overlay-fade: .25s; /* drawn in a LOCKED final; name PROPOSED by kit */
+  --lucid-swatch-cyan: #45eef8; /* LOCKED */
+  --lucid-swatch-cyan-v1: #00767f; /* LOCKED */
+  --lucid-swatch-cyan-v2: #00565e; /* LOCKED */
+  --lucid-swatch-cyan-lt: #81e4ea; /* LOCKED */
+  --lucid-swatch-blue: #5a9cf0; /* LOCKED */
+  --lucid-swatch-blue-v1: #2f64a6; /* LOCKED */
+  --lucid-swatch-blue-v2: #1e487c; /* LOCKED */
+  --lucid-swatch-blue-lt: #a5d4ff; /* LOCKED */
+  --lucid-swatch-violet: #a77ee6; /* LOCKED */
+  --lucid-swatch-violet-v1: #6f519c; /* LOCKED */
+  --lucid-swatch-violet-v2: #513975; /* LOCKED */
+  --lucid-swatch-violet-lt: #dcc1ff; /* LOCKED */
+  --lucid-swatch-magenta: #d36bd8; /* LOCKED */
+  --lucid-swatch-magenta-v1: #854888; /* LOCKED */
+  --lucid-swatch-magenta-v2: #623264; /* LOCKED */
+  --lucid-swatch-magenta-lt: #fdb3ff; /* LOCKED */
+  --lucid-swatch-amber: #e8b25a; /* LOCKED */
+  --lucid-swatch-amber-v1: #885800; /* LOCKED */
+  --lucid-swatch-amber-v2: #653f00; /* LOCKED */
+  --lucid-swatch-amber-lt: #f1ca91; /* LOCKED */
+  --lucid-swatch-teal: #4fc3b0; /* LOCKED */
+  --lucid-swatch-teal-v1: #007666; /* LOCKED */
+  --lucid-swatch-teal-v2: #00584a; /* LOCKED */
+  --lucid-swatch-teal-lt: #99e2d3; /* LOCKED */
+  --lucid-color-transport-play: #44e0a3; /* LOCKED (hex PROPOSED) */
+  --lucid-color-transport-play-glow: rgba(68, 224, 163, .32); /* LOCKED (hex PROPOSED) */
+  --lucid-color-transport-click: #ffad42; /* LOCKED */
+  --lucid-color-transport-click-glow: rgba(255, 173, 66, .32); /* LOCKED */
+}

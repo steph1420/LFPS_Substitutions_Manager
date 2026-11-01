@@ -6,6 +6,13 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 > **Terminology Standard**: Do NOT use the informal term `offCT`. Always use **Officiating Class Teacher**, abbreviated as **Off. CT.**. Similarly, use **Officiating AC**, abbreviated as **Off. AC**.
 
 
+
+## 🎨 Bundle 43 — Redesign mockups v1 (UNLOCKED, awaiting Steve)
+
+- [x] M01 Routine Matrix phone, M02 desktop, M03 Staff Roster absent focus (+ sheet) — `docs/redesign/mockups/`
+- [ ] Steve answers Q-43-01…07 (see mockups README)
+- [ ] Next: M04 Assign Substitute, M05 Uncovered (pending Q-43-07)
+
 ## 🗺️ Job Bundle Plan 34–38 (approved by the owner 2026-10-23)
 
 > [!IMPORTANT]

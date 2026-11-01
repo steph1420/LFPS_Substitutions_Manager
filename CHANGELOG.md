@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- **Bundle 43 (docs/images, mockups v1 — UNLOCKED):** first still mockups for the redesign — M01 Routine Matrix phone, M02 Routine Matrix desktop, M03 Staff Roster absent focus (+ mark-absent sheet). LUCID tokens adapted for school front desk; all LFPS choices PROPOSED. Placeholder data only. See [`docs/redesign/mockups/README.md`](docs/redesign/mockups/README.md) (Q-43-01…07). No app code changes.
+
 - **Docs:** Split Bundle 42 redesign doc into [`docs/redesign/LOGIC_SHEET.md`](docs/redesign/LOGIC_SHEET.md) + [`docs/redesign/MOCKUPS_GUIDE.md`](docs/redesign/MOCKUPS_GUIDE.md); combined path kept as stub.
 ### Added
 - **Bundle 42 (docs)**: Foundational redesign document — [`docs/redesign/LOGIC_SHEET_AND_MOCKUPS_GUIDE.md`](docs/redesign/LOGIC_SHEET_AND_MOCKUPS_GUIDE.md). Full product/domain logic sheet (LOG-*) + screen inventory + mockups guide for a clean-slate redesign. No runtime/UI feature changes. Image mockups are a later phase after owner review.
