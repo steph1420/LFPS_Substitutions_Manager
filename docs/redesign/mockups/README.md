@@ -71,7 +71,7 @@ Edge states not drawn yet (listed for v2): loading / offline sync dot (amber/red
 - Motion uses the shared spring tokens `--lfps-spring` / `--lfps-spring-dur` (Q-HARM-3). With reduce-motion on (or `?rm`), the width snaps and the content fades instead.
 - Footer stamp `vX.Y.Z · hash · IST date` (Q-HARM-7) appears under the tabs and is a placeholder. Tapping it would open What's New.
 
-## Open questions (Bundle 44)
-- **Q-44-01 Absent colour.** The handover says "absent = calm amber", but amber already means Need sub, and M01–M03 use soft rose `#e39aa4` (Q-43-01 a). I kept rose so the two states stay distinct. a) Keep rose — **recommended**; b) amber for Absent and a different colour for Need sub.
-- **Q-44-02 Best-fit ranking.** a) Free that period → fewest subs today → same subject/class — **recommended**; b) fewest subs only.
-- **Q-44-03 Settle delay.** The quiet time before the column folds is 140 ms. a) Keep it; b) 250 ms (calmer).
+## Decisions (Bundle 44) — LOCKED by Steve (t19u)
+- **Q-44-01 Absent colour — LOCKED: soft rose `#e39aa4`.** Amber stays reserved for Need sub.
+- **Q-44-02 Best-fit ranking — LOCKED.** Default order: free that period → fewest subs today → same subject/class. **It must be manageable:** the user can change the order of these criteria in a Settings option that lives in the shared Settings registry (Q-HARM-5). The mockups don't draw this UI.
+- **Q-44-03 Settle delay — LOCKED: 140 ms.** The name column folds after 140 ms without scrolling, or on `scrollend`.
