@@ -1,3 +1,5 @@
+> 📘 Tour guide for all features and micro-behaviours: [`../FEATURE_GUIDE.md`](../FEATURE_GUIDE.md)
+
 # LFPS redesign — still mockups v1 (Bundle 43)
 
 > **Status: mockups v1 — UNLOCKED.** Nothing here is decided. Only Steve locks.
