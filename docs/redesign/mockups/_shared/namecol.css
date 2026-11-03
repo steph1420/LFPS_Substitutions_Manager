@@ -1,7 +1,7 @@
 /* Bundle 44 — overlay name column (Steve's spec, t15u–t17u). PROPOSED. */
 :root{
-  --lfps-spring-dur:420ms;                              /* shared spring token (Q-HARM-3) */
-  --lfps-spring:cubic-bezier(.34,1.36,.64,1);           /* gentle overshoot */
+  --lfps-spring-dur:300ms;                              /* shared spring token (Q-HARM-3) */
+  --lfps-spring:cubic-bezier(.3,1.25,.55,1);           /* gentle overshoot */
   --lfps-fade-dur:200ms;                                /* reduce-motion fallback */
   --nc-full:132px; --nc-strip:30px; --nc-row:60px; --nc-head:48px;
 }

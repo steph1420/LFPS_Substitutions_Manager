@@ -64,7 +64,7 @@ Edge states not drawn yet (listed for v2): loading / offline sync dot (amber/red
 
 **Name column (Steve t15u–t17u)**, in `_shared/namecol.css` and `_shared/namecol.js`:
 - It is an overlay on the left. The period columns slide underneath it, and nothing reflows.
-- It changes state only after the finger has lifted **and** the scroll momentum has fully settled (no scroll event for 140 ms, or `scrollend`), like YouTube comments.
+- It changes state only after the finger has lifted **and** the scroll momentum has fully settled (no scroll event for 80 ms, or `scrollend`), like YouTube comments.
 - It opens to full width only when it settles at the exact full-left edge (`scrollLeft ≤ 0.5`). Passing the start mid-drag does nothing. Settling even a few pixels away from the edge shrinks it.
 - In the shrunk state, names read sideways from bottom to top. One font size, set by the longest name, applies to every row.
 - Tapping the strip opens a peek overlay. It closes on a tap anywhere else or when scrolling starts. There is no swipe gesture.
@@ -74,4 +74,4 @@ Edge states not drawn yet (listed for v2): loading / offline sync dot (amber/red
 ## Decisions (Bundle 44) — LOCKED by Steve (t19u)
 - **Q-44-01 Absent colour — LOCKED: soft rose `#e39aa4`.** Amber stays reserved for Need sub.
 - **Q-44-02 Best-fit ranking — LOCKED.** Default order: free that period → fewest subs today → same subject/class. **It must be manageable:** the user can change the order of these criteria in a Settings option that lives in the shared Settings registry (Q-HARM-5). The mockups don't draw this UI.
-- **Q-44-03 Settle delay — LOCKED: 140 ms.** The name column folds after 140 ms without scrolling, or on `scrollend`.
+- **Q-44-03 Settle delay — LOCKED: 80 ms (revised by Steve t20u, was 140 ms).** The name column folds after 80 ms without scrolling, or on `scrollend`.

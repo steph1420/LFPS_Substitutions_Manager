@@ -6,7 +6,7 @@
    - Tap on the strip = temporary peek (overlay, no reflow); closes on tap elsewhere or scroll start.
    - No swipe gesture. Reduce-motion => fade only (no spring width animation). */
 (function(){
-  const SETTLE_MS = 140;               // no scroll events for this long => momentum settled
+  const SETTLE_MS = 80;                // no scroll events for this long => momentum settled
   document.querySelectorAll('.tbl').forEach(tbl => {
     const xs = tbl.querySelector('.xs'), nc = tbl.querySelector('.nc');
     const rm = matchMedia('(prefers-reduced-motion: reduce)');
