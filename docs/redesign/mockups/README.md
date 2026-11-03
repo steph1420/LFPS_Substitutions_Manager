@@ -46,3 +46,32 @@ Edge states not drawn yet (listed for v2): loading / offline sync dot (amber/red
 - b) Add a light version of M01–M03 in the next bundle
 
 **Q-43-07 — Next frames.** a) M04 Assign Substitute + M05 Uncovered (phone) — **recommended**; b) Revise M01–M03 first; c) Other order.
+
+---
+
+# Bundle 44 — M04 Assign Substitute + M05 Uncovered (phone, interactive)
+
+> **Status: mockups — UNLOCKED.** Branch `bundle/44-m04-m05` off `bundle/43-mockups` (backup tag `backup/bundle-43-mockups-pre-44-20261104`). Docs/images only; no app code. Codenames only. Dark only (Q-43-06 a).
+
+**Rebuild:** `cd _shared && python build44.py` writes the HTML (reuses `build.py` data). PNGs were rendered with Playwright/Chromium at 390×844 @2x. The HTML files are **interactive**: open them in a phone browser or in DevTools device mode with touch.
+
+| Frame | File | What it shows |
+|---|---|---|
+| M04 | [`M04/M04.png`](M04/M04.png) | Routine with the selected Need-sub cell (3rd · EVS 1 B, amber ring) and the **Assign substitute** bottom sheet: free teachers for that period, best fit first, with **Assign** as the primary button and **Skip for now** as a quiet secondary. Tap the grab bar to lower the sheet. |
+| M04 shrunk | [`M04/M04-shrunk.png`](M04/M04-shrunk.png) | The name column after a horizontal scroll has settled: a narrow strip with names turned sideways (reading bottom to top), all at the same font size. (`index.html?nosheet&state=shrunk`) |
+| M04 peek | [`M04/M04-peek.png`](M04/M04-peek.png) | The strip after a tap: a temporary full-width overlay on top of the columns. (`?nosheet&state=peek`) |
+| M05 | [`M05/M05.png`](M05/M05.png) | Uncovered: Need-sub / Covered / Free-now tiles, a By period / By teacher toggle, a quiet "Auto-suggest all" button, and each uncovered period as an amber card with a quiet **Assign ›** button. The away reason is shown in violet and Absent in soft rose. |
+
+**Name column (Steve t15u–t17u)**, in `_shared/namecol.css` and `_shared/namecol.js`:
+- It is an overlay on the left. The period columns slide underneath it, and nothing reflows.
+- It changes state only after the finger has lifted **and** the scroll momentum has fully settled (no scroll event for 140 ms, or `scrollend`), like YouTube comments.
+- It opens to full width only when it settles at the exact full-left edge (`scrollLeft ≤ 0.5`). Passing the start mid-drag does nothing. Settling even a few pixels away from the edge shrinks it.
+- In the shrunk state, names read sideways from bottom to top. One font size, set by the longest name, applies to every row.
+- Tapping the strip opens a peek overlay. It closes on a tap anywhere else or when scrolling starts. There is no swipe gesture.
+- Motion uses the shared spring tokens `--lfps-spring` / `--lfps-spring-dur` (Q-HARM-3). With reduce-motion on (or `?rm`), the width snaps and the content fades instead.
+- Footer stamp `vX.Y.Z · hash · IST date` (Q-HARM-7) appears under the tabs and is a placeholder. Tapping it would open What's New.
+
+## Open questions (Bundle 44)
+- **Q-44-01 Absent colour.** The handover says "absent = calm amber", but amber already means Need sub, and M01–M03 use soft rose `#e39aa4` (Q-43-01 a). I kept rose so the two states stay distinct. a) Keep rose — **recommended**; b) amber for Absent and a different colour for Need sub.
+- **Q-44-02 Best-fit ranking.** a) Free that period → fewest subs today → same subject/class — **recommended**; b) fewest subs only.
+- **Q-44-03 Settle delay.** The quiet time before the column folds is 140 ms. a) Keep it; b) 250 ms (calmer).
