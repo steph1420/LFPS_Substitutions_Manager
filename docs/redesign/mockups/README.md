@@ -77,3 +77,31 @@ Edge states not drawn yet (listed for v2): loading / offline sync dot (amber/red
 - **Q-44-01 Absent colour — LOCKED: soft rose `#e39aa4`.** Amber stays reserved for Need sub.
 - **Q-44-02 Best-fit ranking — LOCKED.** Default order: free that period → fewest subs today → same subject/class. **It must be manageable:** the user can change the order of these criteria in a Settings option that lives in the shared Settings registry (Q-HARM-5). The mockups don't draw this UI.
 - **Q-44-03 Settle delay — LOCKED: 80 ms (revised by Steve t20u, was 140 ms).** The name column folds after 80 ms without scrolling, or on `scrollend`.
+
+---
+
+# Bundle 45 — M06 Settings + M07 Pairing (phone, interactive)
+
+> **Status: mockups — UNLOCKED.** Branch `bundle/45-m06-m07` off `bundle/44-m04-m05` (backup tag `backup/bundle-44-pre-45-20261104`). Docs/images only. Codenames only. Dark only.
+
+**Rebuild:** `cd _shared && python build45.py`. Full behaviour is described in [`../FEATURE_GUIDE.md`](../FEATURE_GUIDE.md) §11–§12.
+
+| Frame | PNG | Live state URL |
+|---|---|---|
+| M06 Settings | [M06.png](M06/M06.png) | `M06/index.html` |
+| M06 Best-fit order | [M06-bestfit.png](M06/M06-bestfit.png) | `?state=best` |
+| M06 7-tap countdown | [M06-taps.png](M06/M06-taps.png) | `?state=taps` |
+| M06 Developer on | [M06-dev.png](M06/M06-dev.png) | `?state=dev` |
+| M06 What's New | [M06-whatsnew.png](M06/M06-whatsnew.png) | `?state=whatsnew` |
+| M07 Host code + QR | [M07-host.png](M07/M07-host.png) | `M07/index.html?state=host` |
+| M07 Code used → reset | [M07-used.png](M07/M07-used.png) | `?state=used` (`&hold` = stay on success) |
+| M07 Client entry | [M07-client.png](M07/M07-client.png) | `?state=client` / `client6` |
+| M07 Retain pairing | [M07-retain.png](M07/M07-retain.png) | `?state=login` |
+| M07 Devices | [M07-devices.png](M07/M07-devices.png) | `?state=devices` |
+| M07 Guest unpaired | [M07-guest.png](M07/M07-guest.png) | `?state=guest` |
+
+## Open questions (Bundle 45)
+- **Q-45-01 Developer unlock window.** The 7 taps must land within 1.5 s of each other, and the countdown toast appears from the 3rd tap. a) Keep this — **recommended**; b) show the countdown from the 1st tap.
+- **Q-45-02 Best-fit rules on/off.** Each rule can also be switched off, but at least one must stay on. a) Keep — **recommended**; b) reorder only.
+- **Q-45-03 After a code is used.** The host shows a ✓ for 3.5 s, then a fresh code. a) Keep — **recommended**; b) return to the Devices list instead.
+- **Q-45-04 Revoke one device.** Revoking happens at once, with no confirmation. a) Add an Undo toast — **recommended**; b) a confirm sheet like revoke-all.

@@ -1,7 +1,7 @@
 # LFPS Substitutions Manager — Feature Guide (tour edition)
 
-> **Living document.** Version **0.1.0** · 2026-11-04 IST · branch `bundle/44-m04-m05`.
-> Covers the redesign mockups M01–M05 and the locked shared patterns. Codenames only (Teacher-A…L, ST-1). The real app loads real names live from the Sheet.
+> **Living document.** Version **0.2.0** · 2026-11-04 IST · branch `bundle/45-m06-m07`.
+> Covers the redesign mockups M01–M07 and the locked shared patterns. Codenames only (Teacher-A…L, ST-1). The real app loads real names live from the Sheet.
 > Status words: **LOCKED** = Steve decided · **APPLIED** = recommended option used after Steve's "go" (t18u) · **PROPOSED** = not decided yet.
 
 ## How to use this guide for a tour
@@ -251,9 +251,109 @@ Default ranking of candidates for a period:
 - Setup files never contain the shared token, only a one-time code.
 - SoW migrates over one release, accepting both kinds of key.
 
+## 11. M06 — Settings (phone, interactive)
+**What it shows**
+- One standard Settings screen built from a **single registry** (Q-HARM-5).
+- The page source holds a `REGISTRY` array with id, section, type, default, and a developer flag. The screen is generated from it.
+- **Modular:** LFPS declares only the options it needs (Q-HARM-6), so no unused options ship.
+
+**Calm first layer**
+- Short rows, each with one value.
+- Detail lives one level down (progressive disclosure).
+
+**Sections**
+- **Display:**
+  - Theme = Dark. It is locked and greyed, with the note "Dark only in v1".
+  - Reduce motion follows the phone setting.
+- **Substitutes:**
+  - **Best-fit order ›** opens the reorder page.
+  - Hide absent in Routine.
+- **Account & Pairing:**
+  - **Devices & pairing ›** links to M07.
+  - Staff login.
+- **Data:** last sync time in IST.
+- **About:**
+  - Version.
+  - What's New.
+- **Developer:** hidden until unlocked. Its options:
+  - **Unused-device expiry 90 days.**
+  - Name-column settle wait 80 ms.
+  - Data source (Apps Script · Go relay · Fake).
+  - Hide Developer options.
+
+**Best-fit order page**
+- Three rules: Free that period → Fewest subs today → Same subject / class.
+- Drag **≡** to reorder. The dragged row lifts with a shadow, and the others spring into place.
+- Each rule has an on/off switch, but at least one must stay on; trying to turn off the last shows a toast.
+- A "Restore default order" button resets it.
+- The order is saved as `subs.bestFit`.
+
+**7-tap Developer unlock**
+- Tap **Version** (or the footer stamp).
+- The taps must come within 1.5 s of each other.
+- From the 3rd tap a toast counts down: "4 more taps to Developer options".
+- At the 7th tap: "Developer options unlocked", and the Developer section appears.
+- Tapping again once unlocked says "already on".
+
+**What's New**
+- Tapping the footer stamp opens a bottom sheet with release notes per version.
+- It closes with **Done** or a tap outside.
+
+**Demo it**
+1. Open [Settings](https://raw.githack.com/steph1420/LFPS_Substitutions_Manager/bundle/45-m06-m07/docs/redesign/mockups/M06/index.html).
+2. Tap Best-fit order, drag a rule, switch one off, then restore the default.
+3. Go back, tap Version 7 times and watch the countdown.
+4. Tap the stamp to open What's New.
+
+Direct states:
+- [best](https://raw.githack.com/steph1420/LFPS_Substitutions_Manager/bundle/45-m06-m07/docs/redesign/mockups/M06/index.html?state=best)
+- [taps](https://raw.githack.com/steph1420/LFPS_Substitutions_Manager/bundle/45-m06-m07/docs/redesign/mockups/M06/index.html?state=taps)
+- [dev](https://raw.githack.com/steph1420/LFPS_Substitutions_Manager/bundle/45-m06-m07/docs/redesign/mockups/M06/index.html?state=dev)
+- [whatsnew](https://raw.githack.com/steph1420/LFPS_Substitutions_Manager/bundle/45-m06-m07/docs/redesign/mockups/M06/index.html?state=whatsnew)
+
+## 12. M07 — Pairing (phone, interactive)
+**Host screen ("Pair a device")**
+- A 6-digit code in large boxes and a **QR** of the same code.
+- A cyan bar shrinks over **5 minutes**, labelled "Expires in m:ss · 5 tries · Works once".
+- When the code is used, the host **instantly blocks it**, shows "✓ Desk phone paired · Code used and blocked", and after 3.5 s **resets** to a fresh code and timer.
+
+**Client screen ("Pair with code")**
+- The code field **focuses itself** on open.
+- It uses `inputmode="numeric"` with `autocomplete="one-time-code"` and `pattern=[0-9]*`, so the phone shows the number pad and can offer an SMS code.
+- Anything that isn't a digit is removed. The cursor box glows cyan.
+- It **submits automatically at the 6th digit**, with no button.
+- A wrong code clears the boxes and shows "Wrong code · N tries left".
+- After 5 wrong tries it says to ask for a new code. A code that was already used says so.
+- Other options: "Scan QR instead" and "Log in instead".
+
+**After login**
+- The sheet says "Logged in as Teacher-K" and shows **"Retain pairing on this device"** (switched on by default), with Continue / Not now.
+- Keeping it registers the device so real names stay after logout.
+
+**Devices & pairing**
+- A list of paired devices, each with label, paired date, last seen and capabilities, and an Active pill.
+- **Revoke** works on each device except this one, and marks it Revoked.
+- Footer text: "Each device has its own key. Unused devices expire after 90 days (Developer option)."
+- Buttons: Pair a new device (primary), Pair this device with a code (quiet), and **Reset shared token (revoke all)** in the danger red style.
+- Revoke-all opens a confirm sheet: "Every device, including this one, must pair again. Emergency use only."
+
+**Guest, not paired**
+- Only codenames show ("name hidden · not paired").
+- It offers Pair with code or Staff login.
+- Real names appear without login **only** on a paired device.
+
+**Demo it**
+1. Open [Devices](https://raw.githack.com/steph1420/LFPS_Substitutions_Manager/bundle/45-m06-m07/docs/redesign/mockups/M07/index.html?state=devices) and tap Pair a new device to see the [host](https://raw.githack.com/steph1420/LFPS_Substitutions_Manager/bundle/45-m06-m07/docs/redesign/mockups/M07/index.html?state=host).
+2. Tap "Demo: open client screen" and type **482913**. It submits at the 6th digit and the device shows as paired.
+3. Type a wrong code to see the tries count down.
+4. Also show:
+   - [Code used](https://raw.githack.com/steph1420/LFPS_Substitutions_Manager/bundle/45-m06-m07/docs/redesign/mockups/M07/index.html?state=used&hold)
+   - [Retain pairing](https://raw.githack.com/steph1420/LFPS_Substitutions_Manager/bundle/45-m06-m07/docs/redesign/mockups/M07/index.html?state=login)
+   - [Guest, not paired](https://raw.githack.com/steph1420/LFPS_Substitutions_Manager/bundle/45-m06-m07/docs/redesign/mockups/M07/index.html?state=guest)
+
 ## 10. Not built yet / placeholders
 **Screens and UI**
-- The Settings screen, the best-fit reorder UI, What's New, the Developer options and the pairing/QR screens are described here but not drawn.
+- Settings, What's New, Developer options and Pairing are drawn in M06/M07 as front-end demos only. There is no real registry storage, crypto, bridge or QR scanning; the code 482913 and the QR are fake, and the device list is invented.
 - Not drawn yet: loading and offline sync dots (amber = degraded, red = lost), the empty "all present" roster, the Classes × Periods view, the light theme (after v1), and a desktop version of M04/M05.
 - The By teacher view on M05, Auto-suggest all and the Undo toast are static in the mockups.
 
@@ -267,4 +367,5 @@ Default ranking of candidates for a period:
 - Q-STACK-02 is locked on option d: design tokens plus CSS Modules, with LFPS keeping Tailwind until its redesign.
 
 ## Changelog
+- **0.2.0 — 2026-11-04 IST** — Added §11 M06 Settings (registry, best-fit drag order, 7-tap Developer unlock, What's New) and §12 M07 Pairing (host code/QR, used-code reset, client auto-submit, retain pairing, devices/revoke, guest view). (Steve t24u)
 - **0.1.0 — 2026-11-04 IST** — First version. Covers M01–M05, the name column (80 ms, 300 ms spring), the colour language, the best-fit order and Q-HARM-1…9. (Steve t21u)
