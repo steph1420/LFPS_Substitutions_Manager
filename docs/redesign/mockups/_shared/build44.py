@@ -14,13 +14,14 @@ PHONE_CSS = """<link rel="stylesheet" href="../_shared/namecol.css"><style>
 .sp{flex:1} .ttl{padding:14px 16px 8px} .ttl h1{font-size:28px;font-weight:600;letter-spacing:-.3px;color:var(--lucid-color-text-strong)}
 .ttl p{font-size:13px;color:var(--lucid-color-text-secondary);margin-top:2px}
 .main{flex:1;overflow-y:auto;position:relative;scrollbar-width:none}
-.tabs{padding-bottom:4px}
-.stamp{font-size:10.5px;color:var(--lucid-color-text-faint);text-align:center;padding:4px 0 14px;background:rgba(10,11,15,.92);cursor:pointer}
+.tabs{padding-bottom:4px;background:#0a0b0f;position:relative;z-index:12}
+.stamp{position:relative;z-index:12;font-size:10.5px;color:var(--lucid-color-text-faint);text-align:center;padding:4px 0 14px;background:#0a0b0f;cursor:pointer}
 .btn{height:48px;border-radius:var(--lucid-radius-button-app);display:inline-flex;align-items:center;justify-content:center;padding:0 18px;font-size:14px;font-weight:500}
 .btn.pri{background:var(--lucid-color-accent);color:var(--lucid-color-on-accent)}
 .btn.quiet{background:transparent;border:1px solid var(--lucid-color-line-button);color:var(--lucid-color-text-secondary)}
-.sheet{position:absolute;left:0;right:0;bottom:0;z-index:10;background:var(--lucid-color-surface-raised);border-top-left-radius:var(--lucid-radius-sheet);border-top-right-radius:var(--lucid-radius-sheet);border-top:1px solid var(--lucid-color-sheet-border);box-shadow:0 -20px 60px rgba(0,0,0,.7);padding:8px 16px 16px;transition:transform var(--lfps-spring-dur) var(--lfps-spring)}
-.sheet.down{transform:translateY(calc(100% - 64px))}
+.sheet{position:absolute;left:0;right:0;bottom:var(--dock,0px);z-index:10;background:#161a20;border-top-left-radius:var(--lucid-radius-sheet);border-top-right-radius:var(--lucid-radius-sheet);border-top:1px solid var(--lucid-color-sheet-border);box-shadow:0 -20px 60px rgba(0,0,0,.7);padding:8px 16px 16px;transition:transform var(--lfps-spring-dur) var(--lfps-spring)}
+.sheet.down{transform:translateY(calc(100% - 28px))}.sheet.gone{display:none}
+.dlg .sheet{bottom:0;padding-bottom:calc(16px + var(--lucid-safe-bottom))}
 .grab{width:40px;height:4px;border-radius:2px;background:var(--lucid-color-border-highlight);margin:4px auto 10px}
 .sh-h{display:flex;align-items:baseline;justify-content:space-between}
 .sh-h h2{font-size:17px;font-weight:600;color:var(--lucid-color-text-strong)}
@@ -62,7 +63,7 @@ def m04():
     body = (f'<div class="app">{header()}<div class="ttl"><h1>Routine</h1><p>Monday 2 November · tap a Need-sub cell to assign</p></div>'
             f'<div class="main">{table(SEL, 4)}<p class="hint">Scroll periods → name column folds after you let go. Tap the strip to peek.</p></div>'
             f'{sheet}{foot("Routine")}</div>')
-    js = '<script src="../_shared/namecol.js"></script><script>const sh=document.getElementById("sh");sh.querySelector(".grab").onclick=()=>sh.classList.toggle("down");if(new URLSearchParams(location.search).has("nosheet"))sh.classList.add("down");</script>'
+    js = '<script src="../_shared/namecol.js"></script><script>const sh=document.getElementById("sh");sh.querySelector(".grab").onclick=()=>sh.classList.toggle("down");const dk=()=>document.querySelector(".app").style.setProperty("--dock",(document.querySelector(".tabs").offsetHeight+document.querySelector(".stamp").offsetHeight)+"px");dk();addEventListener("resize",dk);if(new URLSearchParams(location.search).has("nosheet"))sh.classList.add("gone");</script>'
     return head("M04 Assign Substitute phone", 390) + PHONE_CSS + "</head><body>" + body + js + "</body></html>"
 def m05():
     need = [(t, i) for t in T if t[3] in "AW" for i,v in enumerate(t[4]) if v not in ("-","Free") and (t[0],i) not in COVER]

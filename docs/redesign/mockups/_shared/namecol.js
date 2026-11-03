@@ -48,6 +48,6 @@
     document.addEventListener('pointerdown', e => { if (!nc.contains(e.target)) nc.classList.remove('peek'); });
     // mockup hook for still renders: ?state=shrunk|peek
     const st = new URLSearchParams(location.search).get('state');
-    if (st) { xs.scrollLeft = 260; lastX = 260; nc.classList.add('shrunk'); if (st === 'peek') nc.classList.add('peek'); }
+    if (st) { xs.scrollLeft = 260; lastX = 260; nc.classList.add('shrunk'); if (st === 'peek') setTimeout(() => nc.classList.add('peek'), 300); }
   });
 })();
