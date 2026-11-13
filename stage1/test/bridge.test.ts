@@ -127,24 +127,100 @@ describe('device key', () => {
   })
 })
 
+// ---- Step 1b: writes ----
+const TT = { _Timetable: [['Day', 'Period', 'Section', 'Teacher(s)', 'Override staff'], ['Fri', 'P3', 'KGA', 'T01', ''], ['Fri', 'P3', 'KGB', 'T02', ''], ['Fri', 'P4', 'KGA', 'T03', '']] }
+const FRI = '2026-11-13'
+function fakeIo(tabs: Record<string, string[][]> = TT) {
+  const io = { reads: 0, opsTab: [] as unknown[], views: null as null | Record<string, string[][]>, today: FRI, fmt: (t: number) => String(t),
+    readTabs: () => { io.reads++; return tabs }, readOps: () => io.opsTab.slice(), appendOps: (o: unknown[]) => { io.opsTab.push(...o) }, writeViews: (v: Record<string, string[][]>) => { io.views = v } }
+  return io
+}
+let seqN = 0
+const op = (kind: string, target: string, value: unknown, extra: Record<string, unknown> = {}) => { seqN++; return { opId: `${DEV}:${seqN}`, device: DEV, seq: seqN, lamport: seqN, wallAt: 1, kind, date: FRI, target, value, ...extra } }
+function paired() { const c = g.makeCode_(env); return pair(c.code).token as string }
+
 describe('web app router', () => {
-  const tabs = { _Staff: [['StaffId'], ['T01']] }
-  let reads = 0
-  const read = () => { reads++; return tabs }
-  it('pull without a valid device key never reads the Sheet', () => {
-    reads = 0
-    expect(g.handle_(env, { action: 'pull', device: DEV, token: 'f'.repeat(96) }, read).error).toBe('unpaired')
-    expect(reads).toBe(0)
+  it('pull/write without a valid device key never touch the Sheet', () => {
+    const io = fakeIo()
+    expect(g.handle_(env, { action: 'pull', device: DEV, token: 'f'.repeat(96) }, io).error).toBe('unpaired')
+    expect(g.handle_(env, { action: 'write', device: DEV, token: 'f'.repeat(96), ops: [op('absent', 'T01', { periods: 'ALL' })] }, io).error).toBe('unpaired')
+    expect(io.reads).toBe(0); expect(io.opsTab).toEqual([])
   })
-  it('old connect-link key → superseded', () => { expect(g.handle_(env, { action: 'pull', key: 'abc' }, read).error).toBe('superseded') })
-  it('pair → pull returns tabs + a stable hash → unknown action refused', () => {
-    const c = g.makeCode_(env)
-    const p = g.handle_(env, { action: 'pair', code: c.code, device: DEV, label: 'Mac · Chrome' }, read)
-    const a = g.handle_(env, { action: 'pull', device: DEV, token: p.token }, read)
-    const b = g.handle_(env, { action: 'pull', device: DEV, token: p.token }, read)
-    expect(a.ok && a.tabs).toEqual(tabs)
-    expect(a.hash).toBe(b.hash)
-    expect(g.handle_(env, { action: 'write', device: DEV, token: p.token }, read).error).toBe('unknown action')
+  it('old connect-link key → superseded', () => { expect(g.handle_(env, { action: 'pull', key: 'abc' }, fakeIo()).error).toBe('superseded') })
+  it('pull returns tabs + ops + a hash that changes only when data changes', () => {
+    const token = paired(), io = fakeIo()
+    const a = g.handle_(env, { action: 'pull', device: DEV, token }, io), b = g.handle_(env, { action: 'pull', device: DEV, token }, io)
+    expect(a.tabs).toEqual(TT); expect(a.ops).toEqual([]); expect(a.hash).toBe(b.hash)
+    g.handle_(env, { action: 'write', device: DEV, token, ops: [op('absent', 'T01', { periods: 'ALL' })] }, io)
+    expect(g.handle_(env, { action: 'pull', device: DEV, token }, io).hash).not.toBe(a.hash)
+    expect(g.handle_(env, { action: 'delete', device: DEV, token }, io).error).toBe('unknown action')
+  })
+  it('a revoked device cannot write', () => {
+    const token = paired(), io = fakeIo(); g.revokeDevice_(env, DEV)
+    expect(g.handle_(env, { action: 'write', device: DEV, token, ops: [op('absent', 'T01', { periods: 'ALL' })] }, io).error).toBe('revoked')
+    expect(io.opsTab).toEqual([])
+  })
+})
+
+describe('write action (S1_ tabs only)', () => {
+  it('only the bridge’s own S1_ tabs are writable', () => {
+    for (const t of ['S1_Ops', 'S1_Absences', 'S1_Subs']) expect(g.writableTab_(t)).toBe(t)
+    for (const t of ['_Staff', '_Timetable', '_Sections', '_TimingSlots', 'Subs', 'App_Meta', '_DB_Helper', 'Daily_Ledger', 's1_ops', '']) expect(() => g.writableTab_(t)).toThrow(/never writes/)
+  })
+  it('appends ops, stamps receive time, writes the S1_Absences / S1_Subs views with tombstones', () => {
+    const token = paired(), io = fakeIo()
+    const r = g.handle_(env, { action: 'write', device: DEV, token, ops: JSON.stringify([op('absent', 'T01', { periods: 'ALL' }), op('sub', 'P3|T01', { sub: 'T03' })]) }, io)
+    expect(r.ok).toBe(true); expect(r.accepted).toHaveLength(2); expect(r.rejected).toEqual([])
+    expect(io.opsTab.every((o) => typeof (o as { recvAt: number }).recvAt === 'number')).toBe(true)
+    expect(io.views!.S1_Absences[1]).toEqual([1, FRI, 'Fri', 'T01', 'ALL', 'active', expect.any(String), expect.any(String)])
+    expect(io.views!.S1_Subs[1].slice(0, 7)).toEqual([1, FRI, 'Fri', 'P3', 'T01', 'T03', 'active'])
+    g.handle_(env, { action: 'write', device: DEV, token, ops: [op('sub', 'P3|T01', null)] }, io)
+    expect(io.views!.S1_Subs[1][6]).toBe('deleted') // tombstone, not a deleted row
+    expect(io.opsTab).toHaveLength(3) // append-only
+  })
+  it('a resent op (same op ID) is ignored', () => {
+    const token = paired(), io = fakeIo(), o = op('absent', 'T01', { periods: 'ALL' })
+    g.handle_(env, { action: 'write', device: DEV, token, ops: [o] }, io)
+    const r = g.handle_(env, { action: 'write', device: DEV, token, ops: [o] }, io)
+    expect(r.accepted).toEqual([]); expect(io.opsTab).toHaveLength(1)
+  })
+  it('rejects ops of another device, bad dates, weekends, bad kinds and values', () => {
+    const token = paired(), io = fakeIo()
+    const bad = [op('absent', 'T01', { periods: 'ALL' }, { device: DEV2, opId: `${DEV2}:1` }), op('absent', 'T01', { periods: 'ALL' }, { date: '2026-11-14' }), op('absent', 'T01', { periods: 'ALL' }, { date: '13/11/2026' }),
+      op('note', 'T01', 'x'), op('absent', 'T01', { periods: [] }), op('sub', 'P3', { sub: 'T03' }), op('sub', 'P3|T01', { sub: '<x>' })]
+    const r = g.handle_(env, { action: 'write', device: DEV, token, ops: bad }, io)
+    expect(r.accepted).toEqual([]); expect(r.rejected.map((x: { error: string }) => x.error)).toEqual(['bad op id', 'bad date', 'bad date', 'bad kind', 'bad value', 'bad target', 'bad value'])
+    expect(g.handle_(env, { action: 'write', device: DEV, token, ops: '{nope' }, io).error).toBe('bad ops')
+  })
+  it('blocks double-booking: a sub who teaches, covers another class, is absent, or is the absent teacher', () => {
+    const token = paired(), io = fakeIo()
+    g.handle_(env, { action: 'write', device: DEV, token, ops: [op('absent', 'T01', { periods: 'ALL' }), op('absent', 'T02', { periods: ['P3'] }), op('sub', 'P3|T01', { sub: 'T03' })] }, io)
+    const r = g.handle_(env, { action: 'write', device: DEV, token, ops: [op('sub', 'P3|T02', { sub: 'T03' }), op('sub', 'P4|T01', { sub: 'T03' }), op('sub', 'P3|T01', { sub: 'T02' }), op('sub', 'P3|T01', { sub: 'T01' })] }, io)
+    expect(r.rejected.map((x: { error: string }) => x.error)).toEqual(['conflict: sub busy', 'conflict: sub teaching', 'conflict: sub absent', 'conflict: same teacher'])
+  })
+  it('a swap in one batch passes (ops apply in order)', () => {
+    const token = paired(), io = fakeIo()
+    g.handle_(env, { action: 'write', device: DEV, token, ops: [op('absent', 'T01', { periods: 'ALL' }), op('absent', 'T02', { periods: 'ALL' }), op('sub', 'P3|T01', { sub: 'T03' }), op('sub', 'P3|T02', { sub: 'T04' })] }, io)
+    const r = g.handle_(env, { action: 'write', device: DEV, token, ops: [op('sub', 'P3|T01', null), op('sub', 'P3|T02', { sub: 'T03' }), op('sub', 'P3|T01', { sub: 'T04' })] }, io)
+    expect(r.rejected).toEqual([])
+    const st = g.fold_(io.opsTab)
+    expect(st['sub|' + FRI + '|P3|T01'].value).toEqual({ sub: 'T04' }); expect(st['sub|' + FRI + '|P3|T02'].value).toEqual({ sub: 'T03' })
+  })
+  it('later op wins by Lamport, then receive time (another device’s older op does not overwrite)', () => {
+    const a = { opId: 'a:1', lamport: 5, recvAt: 1, kind: 'absent', date: FRI, target: 'T01', value: { periods: 'ALL' } }
+    const b = { opId: 'b:1', lamport: 4, recvAt: 9, kind: 'absent', date: FRI, target: 'T01', value: null }
+    expect(g.fold_([a, b])['absent|' + FRI + '|T01'].opId).toBe('a:1')
+    expect(g.fold_([b, { ...a, lamport: 4, recvAt: 10 }])['absent|' + FRI + '|T01'].opId).toBe('a:1')
+  })
+  it('pull sends only recent ops (21 days)', () => {
+    const old = { opId: 'x:1', date: '2026-10-01', kind: 'absent', target: 'T01', value: null }, now = { ...old, opId: 'x:2', date: FRI }
+    expect(g.recentOps_([old, now], FRI).map((o: { opId: string }) => o.opId)).toEqual(['x:2'])
+  })
+  it('restore after Remove (Undo) brings the device back', () => {
+    const token = paired(); g.revokeDevice_(env, DEV)
+    expect(g.restoreDevice_(env, DEV)).toBe(true)
+    expect(g.checkToken_(env, DEV, token).ok).toBe(true)
+    expect(g.restoreDevice_(env, DEV)).toBe(false)
   })
 })
 
@@ -162,6 +238,9 @@ describe('QR (made inside Apps Script, no outside service)', () => {
     expect(jsQR(px, w, w)?.data).toBe(link)
   })
   it('dialog HTML escapes text and never includes anything but the code + link', () => {
+    const pd: string = g.pairDialogHtml_({ code: '042917', exp: 1, ttl: 300, link: 'https://x/#pair=042917&b=y', svg: '<svg></svg>' })
+    expect(pd).toContain('Code used and blocked') // Q-45-03: chip + fresh code, no full-screen hold
+    expect(pd).not.toMatch(/<\/script>[^]*<script>/) // one inline script
     const html: string = g.devicesHtml_([{ id: DEV, label: '<x>', pairedAt: 0, lastSeen: 0 }], () => 'd')
     expect(html).toContain('&lt;x&gt;')
     expect(html).not.toContain('<x>')

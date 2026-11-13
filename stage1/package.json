@@ -1,6 +1,6 @@
 {
   "name": "lfps-stage1-preview",
-  "version": "0.2.0-stage1.2",
+  "version": "0.3.0-stage1.3",
   "private": true,
   "type": "module",
   "scripts": {

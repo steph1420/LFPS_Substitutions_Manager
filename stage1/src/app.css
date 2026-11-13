@@ -97,3 +97,65 @@
 .s1-hold[data-state="holding"] .s1-hold__fill { clip-path: inset(0 0 0 0 round var(--dl-radius-md)); transition: clip-path var(--s1-hold-ms) linear; }
 .s1-hold[data-state="done"] .s1-hold__fill { clip-path: inset(0 0 0 0 round var(--dl-radius-md)); transition: none; }
 @media (prefers-reduced-motion: reduce) { .s1-hold[data-state="holding"] .s1-hold__fill { transition: clip-path var(--dl-dur-instant) linear; } }
+
+/* ---- Step 1b: substitutions (Driftline tokens only; absent rose = PROPOSED --dl-color-absent) ---- */
+.s1-main { padding-bottom: calc(var(--dl-hit-comfortable) + var(--dl-space-16) + env(safe-area-inset-bottom)); }
+.s1-title { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--dl-space-3); }
+.s1-compare { min-height: var(--dl-hit-min); }
+.s1-origchip { position: sticky; top: var(--dl-space-2); z-index: var(--dl-z-sticky); margin: 0 auto var(--dl-space-3); display: flex; }
+.s1-badge { min-height: 0; padding: 0 var(--dl-space-2); }
+.s1-chip-absent { --tone: var(--dl-color-absent); --tone-bg: var(--dl-chip-absent-bg); --tone-border: var(--dl-chip-absent-border); }
+.s1-tone-absent { --tone: var(--dl-color-absent); --tone-bg: var(--dl-chip-absent-bg); --tone-border: var(--dl-chip-absent-border); }
+/* cells: amber = Need sub, cyan = covered, rose = absent teacher */
+.s1-cell--need, .s1-pcell--need { background: var(--dl-chip-warning-bg); border-color: var(--dl-chip-warning-border); cursor: pointer; }
+.s1-cell--covered, .s1-pcell--covered, .s1-pcell--subbing { background: var(--dl-chip-accent-bg); border-color: var(--dl-chip-accent-border); cursor: pointer; }
+.s1-need { color: var(--dl-color-warning); font-size: var(--dl-type-caption-size); font-weight: 600; }
+.s1-covered { color: var(--dl-color-accent); font-weight: 600; }
+.s1-absentname { color: var(--dl-color-absent); text-decoration: line-through; text-decoration-color: var(--dl-chip-absent-border); }
+.s1-subchip { align-self: flex-start; color: var(--dl-color-accent); font-size: var(--dl-type-caption-size); font-weight: 600; padding: 0 var(--dl-space-1); border-radius: var(--dl-radius-sm); cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.s1-pcell--off { color: var(--dl-color-absent); opacity: .7; }
+.s1-pcell--drag, .s1-pname, .s1-railchip { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.s1-pcell--drag { cursor: grab; }
+.s1-prow--absent .s1-pname { background: color-mix(in srgb, var(--dl-color-absent) 14%, var(--dl-color-surface-solid)); box-shadow: inset 3px 0 0 var(--dl-color-absent); }
+.s1-absentnote { color: var(--dl-color-absent); font-size: var(--dl-type-caption-size); font-weight: 600; }
+.s1-pname { cursor: pointer; }
+.s1-drop--ok { box-shadow: 0 0 0 2px var(--dl-color-positive); border-color: transparent; }
+.s1-drop--bad { box-shadow: 0 0 0 2px var(--dl-color-danger); border-color: transparent; }
+.s1-cell, .s1-pcell { transition: box-shadow var(--dl-dur-quick) var(--dl-ease-settle); }
+/* peek: tap the slim strip → names full width over the columns (M04) */
+.s1-phone--peek .s1-pname { width: var(--s1-pname); padding: 0 var(--dl-space-3); box-shadow: var(--dl-color-shadow); }
+.s1-phone--peek .s1-pname__n { writing-mode: horizontal-tb; transform: none; font-size: var(--dl-type-callout-size); max-height: none; }
+/* drag ghost: lifts with --dl-dur-quick; a refused drop glides back with --dl-dur-calm + --dl-ease-settle */
+.s1-ghost { position: fixed; left: 0; top: 0; z-index: var(--dl-z-toast); pointer-events: none; display: flex; flex-direction: column; gap: var(--dl-space-0); margin: calc(var(--dl-space-16) * -1.5) 0 0 calc(var(--dl-space-16) * -1); /* lifted above the finger so the target stays visible */ width: calc(var(--dl-space-16) * 2); padding: var(--dl-space-2) var(--dl-space-3); border-radius: var(--dl-radius-md); background: var(--dl-sheet-bg); box-shadow: inset 0 0 0 1px var(--dl-color-control-border), var(--dl-color-shadow); animation: s1-lift var(--dl-dur-quick) var(--dl-ease-settle) both; }
+.s1-ghost--ok { box-shadow: inset 0 0 0 2px var(--dl-color-positive), var(--dl-color-shadow); }
+.s1-ghost--bad { box-shadow: inset 0 0 0 2px var(--dl-color-danger), var(--dl-color-shadow); }
+.s1-ghost--back { transition: transform var(--dl-dur-calm) var(--dl-ease-settle); opacity: .6; }
+.s1-ghost__name { font-weight: 700; font-size: var(--dl-type-footnote-size); }
+.s1-ghost__hint { font-size: var(--dl-type-caption-size); color: var(--dl-color-text-muted); }
+@keyframes s1-lift { from { scale: 0.92; opacity: 0 } to { scale: 1; opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { .s1-ghost { animation: none; } .s1-ghost--back { transition: none; } }
+/* desktop: grid + teachers rail */
+.s1-desk { display: grid; grid-template-columns: minmax(0, 1fr) calc(var(--dl-space-16) * 4); gap: var(--dl-space-4); align-items: start; }
+.s1-rail { position: sticky; top: calc(var(--dl-space-16) + var(--dl-space-4)); display: flex; flex-direction: column; gap: var(--dl-space-2); }
+.s1-rail__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--dl-space-1); }
+.s1-rail__item { display: flex; align-items: center; gap: var(--dl-space-2); }
+.s1-rail__item--absent .s1-railchip { color: var(--dl-color-absent); }
+.s1-railchip { flex: 1; min-width: 0; min-height: var(--dl-hit-min); display: flex; align-items: center; padding: 0 var(--dl-space-3); border-radius: var(--dl-radius-sm); background: var(--dl-color-track); box-shadow: inset 0 0 0 1px var(--dl-color-hairline); font-weight: 600; font-size: var(--dl-type-footnote-size); cursor: grab; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.s1-rail__btn { min-height: var(--dl-hit-min); padding: 0 var(--dl-space-2); font-size: var(--dl-type-footnote-size); }
+/* sheets docked above the dock on phones (kit: right panel ≥ 900 px) */
+@media (max-width: 899px) { .s1-sheet { bottom: calc(var(--dl-hit-comfortable) + var(--dl-space-8) + env(safe-area-inset-bottom)); left: var(--dl-space-2); right: var(--dl-space-2); max-height: 62vh; border-radius: var(--dl-sheet-radius); } }
+.s1-scrim { background: color-mix(in srgb, var(--dl-color-bg) 35%, transparent); }
+.s1-grabbtn { display: block; width: 100%; min-height: var(--dl-space-6); }
+.s1-cands { list-style: none; margin: 0; padding: 0; }
+.s1-cand:disabled { opacity: .5; }
+.s1-assignbtn { min-height: var(--dl-hit-min); pointer-events: none; }
+.s1-seg { margin-bottom: var(--dl-space-3); }
+.s1-periods { display: flex; flex-wrap: wrap; gap: var(--dl-space-2); }
+/* Substitutions list (M05 pattern) */
+.s1-subs { display: flex; flex-direction: column; gap: var(--dl-space-4); }
+.s1-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--dl-space-2); }
+.s1-subgroup { display: flex; flex-direction: column; gap: var(--dl-space-2); }
+.s1-subgroup .dl-list { list-style: none; margin: 0; padding: 0; }
+.s1-subgroup__head { display: flex; align-items: center; justify-content: space-between; gap: var(--dl-space-2); min-height: var(--dl-hit-min); text-align: left; }
+.s1-duty--need { background: var(--dl-chip-warning-bg); }
+.s1-allpresent { align-self: center; }

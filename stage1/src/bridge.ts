@@ -2,9 +2,10 @@
 // The device keeps: the bridge address (from the QR / link), its random device ID, and its own long key (from a 6-digit code).
 // Nothing else about pairing is stored here; the Sheet keeps only a hash of the token.
 import type { Tabs } from './data'
+import type { Op } from './ops'
 
 export interface Device { url: string; id: string; token: string; label: string; paired: number }
-export interface Pulled { tabs: Tabs; hash: string; at: number }
+export interface Pulled { tabs: Tabs; ops: Op[]; hash: string; at: number }
 export type BridgeErrorKind = 'unpaired' | 'revoked' | 'expired' | 'superseded' | 'bad code' | 'locked' | 'no code' | 'expired code' | 'no bridge' | 'network' | 'other'
 
 export class BridgeError extends Error {
@@ -86,7 +87,7 @@ export async function deviceId(): Promise<string> {
 }
 
 /** Forget this device's pairing and its copy of the routine. The bridge address stays, so typing a new code is enough. */
-export function forgetDevice() { localStorage.removeItem(DEVICE_KEY); localStorage.removeItem(CACHE_KEY); localStorage.removeItem(OLD_LINK_KEY) }
+export function forgetDevice() { for (const k of [DEVICE_KEY, CACHE_KEY, OLD_LINK_KEY, 'lfps-stage1:pending:v1']) localStorage.removeItem(k) }
 
 /** A short, human label for the Sheet's "Paired devices" list, e.g. "iPhone · Safari". */
 export function deviceLabel(ua: string = navigator.userAgent): string {
@@ -128,16 +129,44 @@ export async function pairWith(url: string | null, code: string, id: string, lab
 }
 
 export function cached(): Pulled | null {
-  try { const v = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); return v?.tabs ? v : null } catch { return null }
+  try { const v = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); return v?.tabs ? { ops: [], ...v } : null } catch { return null }
+}
+
+function keep(j: Record<string, unknown>): Pulled {
+  const p = { tabs: j.tabs as Tabs, ops: Array.isArray(j.ops) ? (j.ops as Op[]) : [], hash: (j.hash as string) ?? '', at: Date.now() }
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(p)) } catch { /* full: keep in memory */ }
+  return p
 }
 
 export async function pull(d: Device, fetcher: typeof fetch = fetch): Promise<Pulled> {
   const j = await call(d.url, { action: 'pull', device: d.id, token: d.token }, fetcher)
   if (!j.ok || !j.tabs) throw errorFor(j.error as string | undefined)
-  const p = { tabs: j.tabs as Tabs, hash: (j.hash as string) ?? '', at: Date.now() }
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(p)) } catch { /* full: keep in memory */ }
-  return p
+  return keep(j)
 }
+
+export interface Written extends Pulled { accepted: string[]; rejected: { opId: string; error: string }[] }
+/** Sends ops (POST text/plain: no CORS preflight). If the POST can't get through, the same ops go again by GET:
+ *  safe, because the bridge ignores an op ID it already has. */
+export async function write(d: Device, ops: Op[], fetcher: typeof fetch = fetch): Promise<Written> {
+  const body = { action: 'write', device: d.id, token: d.token, ops }
+  let j: Record<string, unknown>
+  try {
+    const res = await fetcher(d.url, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
+    if (!res.ok) throw new Error(String(res.status))
+    j = (await res.json()) as Record<string, unknown>
+  } catch {
+    j = await call(d.url, { action: 'write', device: d.id, token: d.token, ops: JSON.stringify(ops) }, fetcher)
+  }
+  if (!j.ok || !j.tabs) throw errorFor(j.error as string | undefined)
+  return { ...keep(j), accepted: (j.accepted as string[]) ?? [], rejected: (j.rejected as Written['rejected']) ?? [] }
+}
+
+// ---- This device's op counter and not-yet-confirmed ops (kept across reloads, cleared on unpair) ----
+const SEQ_KEY = 'lfps-stage1:seq:v1', PENDING_KEY = 'lfps-stage1:pending:v1'
+/** Op counter: never repeats for this device, even if this browser's storage was cleared (it starts from the clock). */
+export function nextSeq(now = Date.now()): number { const n = Math.max((Number(localStorage.getItem(SEQ_KEY)) || 0) + 1, now); localStorage.setItem(SEQ_KEY, String(n)); return n }
+export function savedPending(): Op[] { try { const v = JSON.parse(localStorage.getItem(PENDING_KEY) || '[]'); return Array.isArray(v) ? v : [] } catch { return [] } }
+export function savePending(ops: Op[]) { try { localStorage.setItem(PENDING_KEY, JSON.stringify(ops)) } catch { /* ignore */ } }
 
 /** "Unpair this device": tell the Sheet (best effort), then forget locally either way. */
 export async function unpair(d: Device, fetcher: typeof fetch = fetch): Promise<void> {

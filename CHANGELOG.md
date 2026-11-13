@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Stage 1 preview `0.3.0-stage1.3` — Step 1b manual substitutions (branch `stage1-preview`, folder `stage1/`; live app untouched) — 2026-11-13
+- **Added:** mark absent (whole day / some periods; rose PROPOSED `--dl-color-absent`), amber Need sub cells, drag-and-drop assign (phone long-press, desktop mouse + Teachers list), tap-to-assign sheet ranked by best fit (Q-44-02), move / swap / remove by dragging, double-booking blocked on the device and in the bridge, Undo toasts (5 s), Substitutions tab with counts, quiet Mark all present (LOG-D04, with Undo), before/after compare ("Original · tap to exit"), bottom bar.
+- **Bridge:** `write` action (POST, falls back to GET), needs a paired device key, under LockService; writes only to its own `S1_Ops` / `S1_Absences` / `S1_Subs` tabs (allowlist in code, tested; school tabs read-only). Append-only op log, tombstones, Lamport order (Q-HARM-10), IST dates, schema version. Pull returns the last 21 days of changes.
+- **Changed:** pair dialog stays open after a pair and rolls to a fresh code (Q-45-03); Remove device acts at once with Undo (Q-45-04); Pair a device asks once for the Web app URL when it can't find it (saved as `BRIDGE_URL`).
+- **Tests:** 64 unit tests (write action, allowlist, token checks, conflicts, best fit, swap, undo, dates) + local e2e with the fake bridge.
+
 ### Stage 1 preview `0.2.0-stage1.2` (branch `stage1-preview`, folder `stage1/`; live app untouched) — 2026-11-13
 - **Added:** device pairing (Q-HARM-9). Sheet menu LFPS › Pair a device (QR made inside Apps Script + 6-digit code: 5 min, single use, 5 tries, under lock), Paired devices (Remove), Remove all devices. Bridge issues a per-device 48-byte key, stores only its hash; all reads need device ID + key; 90-day idle expiry. Preview: "Pair this device" (auto-focus numeric code box, auto-submit), clear unpaired / pairing / paired / removed / expired states, Hold to unpair.
 - **Changed:** sync tick only when the Sheet's data changed; slim sideways names drop titles (Mrs./Ms./…); "2nd G. Hr." heading on one line.
