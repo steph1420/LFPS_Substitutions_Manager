@@ -84,7 +84,7 @@ Edge states not drawn yet (listed for v2): loading / offline sync dot (amber/red
 
 > **Status: mockups — UNLOCKED.** Branch `bundle/45-m06-m07` off `bundle/44-m04-m05` (backup tag `backup/bundle-44-pre-45-20261104`). Docs/images only. Codenames only. Dark only.
 
-**Rebuild:** `cd _shared && python build45.py`. Full behaviour is described in [`../FEATURE_GUIDE.md`](../FEATURE_GUIDE.md) §11–§12.
+**Rebuild:** `cd _shared && python build45.py` writes the HTML. PNGs: `node render45.mjs` (Node Playwright, 390×844 @2x). Full behaviour is in [`../FEATURE_GUIDE.md`](../FEATURE_GUIDE.md) §11–§12.
 
 | Frame | PNG | Live state URL |
 |---|---|---|
@@ -94,14 +94,17 @@ Edge states not drawn yet (listed for v2): loading / offline sync dot (amber/red
 | M06 Developer on | [M06-dev.png](M06/M06-dev.png) | `?state=dev` |
 | M06 What's New | [M06-whatsnew.png](M06/M06-whatsnew.png) | `?state=whatsnew` |
 | M07 Host code + QR | [M07-host.png](M07/M07-host.png) | `M07/index.html?state=host` |
-| M07 Code used → reset | [M07-used.png](M07/M07-used.png) | `?state=used` (`&hold` = stay on success) |
+| M07 Code used → fresh code | [M07-used.png](M07/M07-used.png) | `?state=used` (chip stays; `&anim` plays the digit roll; `&hold` also keeps the chip) |
 | M07 Client entry | [M07-client.png](M07/M07-client.png) | `?state=client` / `client6` |
 | M07 Retain pairing | [M07-retain.png](M07/M07-retain.png) | `?state=login` |
 | M07 Devices | [M07-devices.png](M07/M07-devices.png) | `?state=devices` |
+| M07 Revoke Undo toast | [M07-undo.png](M07/M07-undo.png) | `?state=undo` |
 | M07 Guest unpaired | [M07-guest.png](M07/M07-guest.png) | `?state=guest` |
 
-## Open questions (Bundle 45)
-- **Q-45-01 Developer unlock window.** The 7 taps must land within 1.5 s of each other, and the countdown toast appears from the 3rd tap. a) Keep this — **recommended**; b) show the countdown from the 1st tap.
-- **Q-45-02 Best-fit rules on/off.** Each rule can also be switched off, but at least one must stay on. a) Keep — **recommended**; b) reorder only.
-- **Q-45-03 After a code is used.** The host shows a ✓ for 3.5 s, then a fresh code. a) Keep — **recommended**; b) return to the Devices list instead.
-- **Q-45-04 Revoke one device.** Revoking happens at once, with no confirmation. a) Add an Undo toast — **recommended**; b) a confirm sheet like revoke-all.
+## Decisions (Bundle 45) — LOCKED by Steve (t38u)
+- **Q-45-01 Developer unlock window — LOCKED.** The 7 taps must land within 1.5 s of each other, and the countdown toast appears from the 3rd tap. (Steve: "Good".)
+- **Q-45-02 Best-fit rules on/off — LOCKED for now.** Each rule can be switched off, but at least one stays on. **Developer override:** Settings → Developer has **Allow zero best-fit rules**, which lifts the min-one limit. (Steve: "Okay for now. Dev override".)
+- **Q-45-03 After a code is used — LOCKED (revised, t38u).** Do **not** hold a full-screen tick for 3.5 s. The host stays on the code screen, shows a non-blocking success chip near the top ("Desk phone paired · Code used and blocked"), and changes to a fresh code at once with a digit roll. Motion uses the locked Driftline tokens (KIT_GUIDE §6, §9a): `--dl-dur-calm` (320 ms) and `--dl-ease-settle`. Reduce-motion (or `?rm`) is an opacity fade with `--dl-dur-instant` (120 ms). (Steve: confirmation in a different manner; change the code as quickly as possible with a nice smooth animation.)
+- **Q-45-04 Revoke one device — LOCKED.** Revoking happens at once, with no confirm sheet, and a Driftline **Undo toast** stays for ~5 s. (Steve: "Sure".)
+
+**Driftline compliance (Steve t39u):** the success chip, the used-code digit roll, the 7-tap / countdown toast and the revoke Undo toast use only existing Driftline kit tokens (`--dl-*` from `_shared/driftline-tokens.css`, copied verbatim from `agent-common/design-options/driftline-kit` v0.3.0). No new ad-hoc colours, spacing, type or motion values. The toast matches the kit Toast recipe (bottom, above the dock, callout type, pill radius, Undo action). Digit travel is a percentage of the existing box, not a raw pixel value.

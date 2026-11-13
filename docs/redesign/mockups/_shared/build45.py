@@ -20,14 +20,37 @@ CSS = """<style>
 .foot{font-size:11.5px;color:var(--lucid-color-text-muted);padding:8px 28px 4px;line-height:1.45}
 .tg{width:51px;height:31px;border-radius:999px;background:var(--lucid-color-toggle-off);position:relative}.tg::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:var(--lucid-color-toggle-knob)}
 .tg.on{background:var(--lucid-color-accent)}.tg.on::after{left:22px;background:var(--lucid-color-toggle-knob-on)}
-.toast{position:absolute;left:16px;right:16px;bottom:96px;z-index:20;background:var(--lucid-color-toast);border:1px solid var(--lucid-color-line-toast);box-shadow:var(--lucid-shadow-toast);border-radius:14px;padding:14px 16px;font-size:13.5px;color:var(--lucid-color-text-primary);opacity:0;transform:translateY(8px);transition:opacity var(--lfps-fade-dur),transform var(--lfps-spring-dur) var(--lfps-spring);pointer-events:none}
+.toast{position:absolute;left:var(--dl-space-4);right:var(--dl-space-4);bottom:calc(var(--dl-space-12) + var(--dl-hit-comfortable));z-index:var(--dl-z-toast);background:var(--dl-toast-bg);box-shadow:inset 0 0 0 1px var(--dl-color-hairline),var(--dl-color-shadow);border-radius:var(--dl-toast-radius);padding:0 var(--dl-space-2) 0 var(--dl-space-4);min-height:var(--dl-hit-comfortable);font-size:var(--dl-type-callout-size);line-height:var(--dl-type-callout-line);font-weight:600;color:var(--dl-color-text);opacity:0;transform:translateY(var(--dl-space-6)) scale(var(--dl-press-scale));transition:opacity var(--dl-dur-calm) var(--dl-ease-settle),transform var(--dl-dur-calm) var(--dl-ease-settle);pointer-events:none;display:flex;align-items:center;gap:var(--dl-space-3)}
 .toast.on{opacity:1;transform:none}
+.toast.action{pointer-events:auto}
+.toast .msg{flex:1}
+.toast .undo{flex-shrink:0;position:relative;min-height:var(--dl-hit-min);padding:0 var(--dl-space-4);border:0;border-radius:var(--dl-radius-pill);background:none;color:var(--dl-color-accent);font-size:var(--dl-type-callout-size);font-weight:700;cursor:pointer}
+.chip{display:flex;align-items:center;gap:var(--dl-space-2);margin:0 var(--dl-space-4);padding:0 var(--dl-space-3);max-height:0;min-height:0;overflow:hidden;opacity:0;transform:translateY(calc(-1 * var(--dl-space-3)));pointer-events:none;border-radius:var(--dl-radius-pill);background:var(--dl-chip-positive-bg);box-shadow:inset 0 0 0 1px var(--dl-chip-positive-border);font-size:var(--dl-type-caption-size);line-height:var(--dl-type-caption-line);font-weight:600;color:var(--dl-color-positive);transition:opacity var(--dl-dur-calm) var(--dl-ease-settle),transform var(--dl-dur-calm) var(--dl-ease-settle),max-height var(--dl-dur-calm) var(--dl-ease-settle),margin var(--dl-dur-calm) var(--dl-ease-settle),min-height var(--dl-dur-calm) var(--dl-ease-settle),padding var(--dl-dur-calm) var(--dl-ease-settle)}
+.chip.on{max-height:var(--dl-space-16);min-height:var(--dl-hit-min);margin-top:var(--dl-space-2);padding:0 var(--dl-space-3);opacity:1;transform:none}
+.chip .tick{flex-shrink:0;font-size:var(--dl-type-callout-size);line-height:var(--dl-type-callout-line);font-weight:700}
+.chip .lbl{font-size:var(--dl-type-footnote-size);line-height:var(--dl-type-footnote-line);font-weight:500;color:var(--dl-color-text)}
+html.rm .toast,html.rm .chip{transition:opacity var(--dl-dur-instant) var(--dl-ease-standard);transform:none}
+@media (prefers-reduced-motion: reduce){.toast,.chip{transition:opacity var(--dl-dur-instant) var(--dl-ease-standard);transform:none}}
 .drag{display:flex;align-items:center;gap:12px;height:60px;padding:0 14px;border-bottom:1px solid var(--lucid-color-line-card);background:var(--lucid-color-fill-1);touch-action:none;transition:transform var(--lfps-spring-dur) var(--lfps-spring)}
 .drag .n{width:24px;height:24px;border-radius:50%;background:var(--lucid-color-accent-fill);color:var(--lucid-color-accent);font-size:12px;display:flex;align-items:center;justify-content:center}
 .drag .hd{color:var(--lucid-color-text-faint);font-size:18px;cursor:grab;padding:8px}.drag.lift{background:var(--lucid-color-fill-selected);box-shadow:0 10px 30px rgba(0,0,0,.6);position:relative;z-index:2;transition:none}
 .drag.off .t b{color:var(--lucid-color-text-muted);text-decoration:line-through}
 .wn{padding:0 16px}.wn h3{font-size:13px;color:var(--lucid-color-accent-soft);margin:14px 0 6px;letter-spacing:.06em}.wn li{font-size:13.5px;color:var(--lucid-color-text-primary);margin:0 0 6px 18px;line-height:1.4}
-.code{display:flex;justify-content:center;gap:8px;margin:18px 0 6px}.code span{width:44px;height:58px;border-radius:12px;background:var(--lucid-color-fill-2);border:1px solid var(--lucid-color-border-highlight);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:300;color:var(--lucid-color-text-display)}
+.code{display:flex;justify-content:center;gap:8px;margin:18px 0 6px}.code span{width:44px;height:58px;border-radius:12px;background:var(--lucid-color-fill-2);border:1px solid var(--lucid-color-border-highlight);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:300;color:var(--lucid-color-text-display);position:relative;overflow:hidden}
+#hc span .dig{position:absolute;left:0;right:0;height:100%;display:flex;align-items:center;justify-content:center}
+#hc span .dig.from{top:0;transition:transform var(--dl-dur-calm) var(--dl-ease-settle),opacity var(--dl-dur-instant) var(--dl-ease-standard)}
+#hc span .dig.to{top:100%;transition:transform var(--dl-dur-calm) var(--dl-ease-settle),opacity var(--dl-dur-instant) var(--dl-ease-standard)}
+#hc span.anim .dig.from,#hc span.anim .dig.to{transform:translateY(-100%)}
+html.rm #hc span .dig.from,html.rm #hc span .dig.to{top:0;transform:none;transition:opacity var(--dl-dur-instant) var(--dl-ease-standard)}
+html.rm #hc span .dig.to{opacity:0}
+html.rm #hc span.anim .dig.from{opacity:0;transform:none}
+html.rm #hc span.anim .dig.to{opacity:1;transform:none}
+@media (prefers-reduced-motion: reduce){
+  #hc span .dig.from,#hc span .dig.to{top:0;transform:none;transition:opacity var(--dl-dur-instant) var(--dl-ease-standard)}
+  #hc span .dig.to{opacity:0}
+  #hc span.anim .dig.from{opacity:0;transform:none}
+  #hc span.anim .dig.to{opacity:1;transform:none}
+}
 .qr{width:168px;height:168px;margin:12px auto;background:#e9ecee;border-radius:12px;padding:10px;display:grid;grid-template-columns:repeat(21,1fr)}.qr i{display:block}.qr i.k{background:#05121a}
 .meta{display:flex;justify-content:center;gap:18px;font-size:12px;color:var(--lucid-color-text-secondary)}.meta b{color:var(--lucid-color-text-display);font-weight:500}
 .ring{height:4px;margin:10px 40px;border-radius:2px;background:var(--lucid-color-fill-3);overflow:hidden}.ring i{display:block;height:100%;background:var(--lucid-color-accent);transition:width 1s linear}
@@ -65,6 +88,7 @@ const REGISTRY=[
  {id:'dev.deviceExpiry',sec:'Developer',type:'number',label:'Unused-device expiry',def:90,unit:'days',dev:true},
  {id:'dev.settleMs',sec:'Developer',type:'number',label:'Name-column settle wait',def:80,unit:'ms',dev:true},
  {id:'dev.dataSource',sec:'Developer',type:'choice',label:'Data source',def:'Apps Script',note:'Apps Script · Go relay · Fake',dev:true},
+ {id:'dev.allowZeroRules',sec:'Developer',type:'toggle',label:'Allow zero best-fit rules',def:false,note:'Override the keep-at-least-one-on rule',dev:true},
  {id:'dev.lock',sec:'Developer',type:'action',label:'Hide Developer options',dev:true},
 ];
 const CRIT={free:['Free that period','Must be free; no class this period'],fewest:['Fewest subs today','Spreads the load fairly'],same:['Same subject / class','Knows the class or teaches the subject']};
@@ -93,11 +117,11 @@ document.addEventListener('click',e=>{
   const g=e.target.closest('[data-go]');if(g){show(g.dataset.go);return}
   const r=e.target.closest('.row[data-id]');if(r){const o=REGISTRY.find(x=>x.id===r.dataset.id);
     if(o.go)show(o.go);else if(o.href)location.href=o.href;
-    else if(o.type==='toggle'){o.cur=!(o.cur??o.def);render()}
+    else if(o.type==='toggle'){o.cur=!(o.cur??o.def);if(o.id==='dev.allowZeroRules'&&!o.cur&&offs.size===3){offs.delete(order[0]);toast('At least one rule turned back on');renderBest()}render()}
     else if(o.type==='version')verTap();
     else if(o.id==='dev.lock'){devOn=false;render();toast('Developer options hidden')}}
   if(e.target.closest('#stamp')||e.target.closest('#ver'))return;
-  const t=e.target.closest('[data-t]');if(t){const k=t.closest('.drag').dataset.k;offs.has(k)?offs.delete(k):offs.add(k);if(offs.size===3){offs.delete(k);toast('Keep at least one rule on')}renderBest();render()}
+  const t=e.target.closest('[data-t]');if(t){const k=t.closest('.drag').dataset.k;offs.has(k)?offs.delete(k):offs.add(k);const allow=REGISTRY.find(x=>x.id==='dev.allowZeroRules')?.cur??false;if(offs.size===3&&!allow){offs.delete(k);toast('Keep at least one rule on')}renderBest();render()}
   if(e.target.closest('#reset')){order=['free','fewest','same'];offs.clear();renderBest();render();toast('Default order restored')}
   if(e.target.closest('#wnclose')||e.target.id==='wn')show('main');
 });
@@ -125,44 +149,85 @@ def m06():
     body = (f'<div class="app"><div class="view on" id="v-main">{bar("Settings")}<div id="list"></div><div style="height:16px"></div></div>'
             f'<div class="view" id="v-best">{bar("Best-fit order","main")}<p class="c" style="padding-top:14px;text-align:left;padding:14px 16px 10px">Drag ≡ to change which rule counts first when suggesting a substitute. Switch a rule off to ignore it.</p>'
             '<div class="grp" id="best"></div><p class="foot">Saved in the shared Settings registry as <code>subs.bestFit</code>.</p><div class="btns"><span class="btn quiet" id="reset">Restore default order</span></div></div>'
-            f'{wn}<div class="toast" id="toast"></div>{tabs("")}{stamp()}</div>')
-    return head("M06 Settings phone",390)+PHONE_CSS+CSS+"</head><body>"+body+M06_JS+"</body></html>"
+            f'{wn}<div class="toast" id="toast" role="status" aria-live="polite"></div>{tabs("")}{stamp()}</div>')
+    return head("M06 Settings phone",390).replace("<html>","<html data-theme=\"utopian-night\">")+"<link rel=\"stylesheet\" href=\"../_shared/driftline-tokens.css\">"+PHONE_CSS+CSS+"</head><body>"+body+M06_JS+"</body></html>"
 # ---------- M07 ----------
 M07_JS = r"""<script>
 const P=new URLSearchParams(location.search),$=s=>document.querySelector(s);
-const CODE='482913';let left=300,tries=5,used=false,timer;
+if(P.has('rm'))document.documentElement.classList.add('rm');
+const CODES=['482913','706158'];let codeI=0,left=300,tries=5,blocked=new Set(),timer,undo=null;
+const code=()=>CODES[codeI];
+const reduce=()=>P.has('rm')||matchMedia('(prefers-reduced-motion: reduce)').matches;
 function show(v){document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));if(v==='client')setTimeout(()=>$('#ci').focus(),60);if(v==='host')startHost()}
 function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
-function startHost(){used=false;left=300;$('#hostcode').style.display='';$('#hostok').style.display='none';
-  $('#hc').innerHTML=CODE.split('').map(d=>`<span>${d}</span>`).join('');tick();clearInterval(timer);timer=setInterval(tick,1000)}
-function tick(){if(used)return;$('#left').textContent=fmt(left);$('#tries').textContent=tries;$('#ring').style.width=(left/300*100)+'%';
-  if(left--<=0){clearInterval(timer);$('#left').textContent='expired';}}
-function hostUsed(label){used=true;clearInterval(timer);$('#hostcode').style.display='none';$('#hostok').style.display='flex';$('#oklabel').textContent=label+' paired';
-  setTimeout(()=>{if(!P.has('hold'))startHost()},3500)}  /* instant block + reset to a fresh code */
+function paintCode(next,prev,animate){
+  const from=prev||next, rm=reduce();
+  $('#hc').innerHTML=next.split('').map((d,i)=>`<span class="${rm?'fade':''}"><i class="dig from">${from[i]||d}</i><i class="dig to">${d}</i></span>`).join('');
+  const go=()=>$('#hc').querySelectorAll('span').forEach(s=>s.classList.add('anim'));
+  if(animate) requestAnimationFrame(()=>requestAnimationFrame(go)); else go();
+}
+function startHost(opts={}){
+  if(!opts.keepTimer){left=300}
+  if(!opts.silent) paintCode(code());
+  tick();clearInterval(timer);timer=setInterval(tick,1000)
+}
+function tick(){$('#left').textContent=left<=0?'expired':fmt(left);$('#tries').textContent=tries;$('#ring').style.width=(Math.max(0,left)/300*100)+'%';if(left--<=0)clearInterval(timer)}
+function chipHold(){return P.has('hold')||P.get('state')==='used'}
+function showChip(t){const e=$('#chip');e.querySelector('.lbl').textContent=t;e.classList.add('on');clearTimeout(e._t);if(!chipHold())e._t=setTimeout(()=>e.classList.remove('on'),3200)}
+function hostUsed(label,opts={}){
+  blocked.add(code());
+  const prev=code();codeI=(codeI+1)%CODES.length;
+  showChip(label+' paired · Code used and blocked');
+  paintCode(code(),prev,opts.animate!==false);
+  left=300;tick();clearInterval(timer);timer=setInterval(tick,1000)
+}
+function toast(msg,opts={}){
+  const e=$('#toast'), ttl=opts.ttl??(opts.action?5000:1600), hold=opts.hold||P.get('state')==='undo';
+  e.innerHTML=opts.action?`<span class="msg">${msg}</span><button type="button" class="undo">${opts.action.label}</button>`:`<span class="msg">${msg}</span>`;
+  e.classList.toggle('action',!!opts.action);e.classList.add('on');
+  e.onclick=ev=>{if(opts.action&&ev.target.closest('.undo')){opts.action.onClick();e.classList.remove('on');clearTimeout(e._t)}};
+  clearTimeout(e._t);if(!hold)e._t=setTimeout(()=>e.classList.remove('on'),ttl)
+}
+function revokeRow(row,opts={}){
+  if(!row||row.dataset.revoked==='1')return;
+  const pill=row.querySelector('.pill2'), btn=row.querySelector('[data-rv]'), name=row.dataset.name||'Device';
+  const snap={pillClass:pill.className,pillText:pill.textContent,btn};
+  pill.className='pill2 rv';pill.textContent='Revoked';if(btn)btn.remove();row.dataset.revoked='1';
+  undo={row,snap};
+  toast(name+' revoked',{ttl:5000,hold:opts.hold,action:{label:'Undo',onClick:()=>undoRevoke()}})
+}
+function undoRevoke(){
+  if(!undo)return;const {row,snap}=undo;undo=null;
+  const pill=row.querySelector('.pill2');pill.className=snap.pillClass;pill.textContent=snap.pillText;
+  if(snap.btn&&!row.querySelector('[data-rv]'))row.appendChild(snap.btn);
+  row.dataset.revoked='0';toast('Device restored',{ttl:1600})
+}
 function render(){const v=$('#ci').value;$('#cc').innerHTML=[0,1,2,3,4,5].map(i=>`<span class="${i===v.length?'cur':''}">${v[i]||''}</span>`).join('')}
 $('#ci').addEventListener('input',e=>{const el=e.target;el.value=el.value.replace(/\D/g,'').slice(0,6);render();$('#cerr').textContent='';$('#cerr').className='err';
   if(el.value.length===6){ /* auto-submit at 6 digits */
-    if(el.value===CODE&&!used){$('#cerr').textContent='Pairing…';setTimeout(()=>{hostUsed('Desk phone');show('paired')},400)}
-    else{tries--;$('#cerr').className='err bad';$('#cerr').textContent=used?'That code was already used. Ask for a new one.':tries>0?`Wrong code · ${tries} tries left`:'Too many tries. Ask for a new code.';el.value='';setTimeout(render,0)}}});
+    if(el.value===code()&&!blocked.has(el.value)){$('#cerr').textContent='Pairing…';setTimeout(()=>{hostUsed('Desk phone');show('paired')},400)}
+    else{tries--;$('#cerr').className='err bad';$('#cerr').textContent=blocked.has(el.value)?'That code was already used. Ask for a new one.':tries>0?`Wrong code · ${tries} tries left`:'Too many tries. Ask for a new code.';el.value='';setTimeout(render,0)}}});
 document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g)show(g.dataset.go);
-  const r=e.target.closest('[data-rv]');if(r){r.closest('.row').querySelector('.pill2').className='pill2 rv';r.closest('.row').querySelector('.pill2').textContent='Revoked';r.remove()}
+  const r=e.target.closest('[data-rv]');if(r)revokeRow(r.closest('.row'));
   if(e.target.closest('#rall'))$('#dlg').classList.add('on');if(e.target.closest('#dlgx'))$('#dlg').classList.remove('on');
-  if(e.target.closest('#dlgok')){$('#dlg').classList.remove('on');document.querySelectorAll('#devs .pill2').forEach(p=>{p.className='pill2 rv';p.textContent='Revoked'});document.querySelectorAll('[data-rv]').forEach(x=>x.remove())}
+  if(e.target.closest('#dlgok')){$('#dlg').classList.remove('on');document.querySelectorAll('#devs .row').forEach(row=>{const pill=row.querySelector('.pill2'),btn=row.querySelector('[data-rv]');if(pill){pill.className='pill2 rv';pill.textContent='Revoked'}if(btn)btn.remove();row.dataset.revoked='1'});undo=null;toast('Every device revoked. Pair again.',{ttl:2500})}
   if(e.target.closest('.tg'))e.target.closest('.tg').classList.toggle('on')});
 $('#cc').addEventListener('click',()=>$('#ci').focus());
 render();const st=P.get('state')||'host';
-if(st==='used'){show('host');hostUsed('Desk phone')}else if(st==='client6'){show('client');$('#ci').value=CODE.slice(0,5);render()}else show(st);
+if(st==='used'){document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v-host'));blocked.add(CODES[0]);codeI=1;paintCode(code(),P.has('anim')?CODES[0]:null,!!P.has('anim'));showChip('Desk phone paired · Code used and blocked');left=300;tick();clearInterval(timer);timer=setInterval(tick,1000)}
+else if(st==='undo'){show('devices');revokeRow(document.querySelector('#devs .row[data-name="Desk phone"]'),{hold:true})}
+else if(st==='client6'){show('client');$('#ci').value=code().slice(0,5);render()}else show(st);
 </script>"""
 def m07():
     dev = [("This phone (Front desk)","Paired 2 Nov · seen now","guest view · real names"),("Desk phone","Paired 4 Nov · seen 2 min ago","guest view · real names"),
            ("Staff room tablet","Paired 12 Oct · seen 3 days ago","guest view"),("Teacher-K phone","Login + retained · seen yesterday","edit.roster")]
-    rows = "".join(f'<div class="row"><div class="t"><b>{n} <span class="pill2">Active</span></b><small>{s} · {c}</small></div>{"" if i==0 else "<span class=\"btn quiet\" style=\"height:36px;font-size:12.5px\" data-rv>Revoke</span>"}</div>' for i,(n,s,c) in enumerate(dev))
+    rows = "".join(f'<div class="row" data-name="{n}"><div class="t"><b>{n} <span class="pill2">Active</span></b><small>{s} · {c}</small></div>{"" if i==0 else "<span class=\"btn quiet\" style=\"height:36px;font-size:12.5px\" data-rv>Revoke</span>"}</div>' for i,(n,s,c) in enumerate(dev))
     body = ('<div class="app">'
       f'<div class="view" id="v-host">{bar("Pair a device","devices")}<p class="c" style="padding-top:12px">On the other device open LFPS → <b>Pair with code</b>, type this code or scan the QR.</p>'
+      '<div class="chip" id="chip"><span class="tick">✓</span><span class="lbl"></span></div>'
       f'<div id="hostcode"><div class="code" id="hc"></div><div class="qr">{QR}</div><div class="ring"><i id="ring"></i></div>'
       '<div class="meta"><span>Expires in <b id="left">5:00</b></span><span><b id="tries">5</b> tries</span><span>Works <b>once</b></span></div>'
-      '<div class="btns"><span class="btn quiet" data-go="client">Demo: open client screen ›</span></div></div>'
-      '<div class="ok" id="hostok"><div class="ic">✓</div><b id="oklabel">Device paired</b><small>Code used and blocked. A fresh code appears in a moment.</small></div></div>'
+      '<div class="btns"><span class="btn quiet" data-go="client">Demo: open client screen ›</span></div></div></div>'
       f'<div class="view" id="v-client">{bar("Pair with code","devices")}<p class="c" style="padding-top:18px">Type the 6-digit code shown on the host device.</p>'
       '<label class="inp"><input id="ci" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" autofocus aria-label="Pairing code"><div class="code" id="cc"></div></label>'
       '<div class="err" id="cerr"></div><div class="btns"><span class="btn quiet">Scan QR instead</span><span class="btn quiet" data-go="login">Log in instead</span></div></div>'
@@ -177,7 +242,7 @@ def m07():
       '</div><p class="foot">This device is not paired and nobody is logged in, so only codenames show.</p><div class="btns"><span class="btn pri" data-go="client">Pair with code</span><span class="btn quiet" data-go="login">Staff login</span></div></div>'
       '<div class="dlg" id="dlg"><div class="sheet"><div class="grab"></div><div class="sh-h"><h2>Revoke every device?</h2></div><p class="ctx">This resets the shared token. Every device, including this one, must pair again. Emergency use only.</p>'
       '<div class="row-btns"><span class="btn quiet" id="dlgx">Cancel</span><span class="btn dangerb" id="dlgok">Revoke all</span></div></div></div>'
-      f'{tabs("")}{stamp()}</div>')
-    return head("M07 Pairing phone",390)+PHONE_CSS+CSS+"</head><body>"+body+M07_JS+"</body></html>"
+      f'{tabs("")}{stamp()}<div class="toast" id="toast" role="status" aria-live="polite"></div></div>')
+    return head("M07 Pairing phone",390).replace("<html>","<html data-theme=\"utopian-night\">")+"<link rel=\"stylesheet\" href=\"../_shared/driftline-tokens.css\">"+PHONE_CSS+CSS+"</head><body>"+body+M07_JS+"</body></html>"
 if __name__ == "__main__":
     (ROOT/"M06"/"index.html").write_text(m06()); (ROOT/"M07"/"index.html").write_text(m07()); print("wrote M06, M07")

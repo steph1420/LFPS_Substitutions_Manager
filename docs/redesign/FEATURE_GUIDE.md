@@ -1,6 +1,6 @@
 # LFPS Substitutions Manager — Feature Guide (tour edition)
 
-> **Living document.** Version **0.2.0** · 2026-11-04 IST · branch `bundle/45-m06-m07`.
+> **Living document.** Version **0.3.0** · 2026-11-13 IST · branch `bundle/45-m06-m07`.
 > Covers the redesign mockups M01–M07 and the locked shared patterns. Codenames only (Teacher-A…L, ST-1). The real app loads real names live from the Sheet.
 > Status words: **LOCKED** = Steve decided · **APPLIED** = recommended option used after Steve's "go" (t18u) · **PROPOSED** = not decided yet.
 
@@ -279,16 +279,18 @@ Default ranking of candidates for a period:
   - **Unused-device expiry 90 days.**
   - Name-column settle wait 80 ms.
   - Data source (Apps Script · Go relay · Fake).
+  - **Allow zero best-fit rules** (off by default). A Developer override of the “keep at least one rule on” limit (Q-45-02).
   - Hide Developer options.
 
 **Best-fit order page**
 - Three rules: Free that period → Fewest subs today → Same subject / class.
 - Drag **≡** to reorder. The dragged row lifts with a shadow, and the others spring into place.
-- Each rule has an on/off switch, but at least one must stay on; trying to turn off the last shows a toast.
+- Each rule has an on/off switch, but at least one must stay on (Q-45-02, locked for now); trying to turn off the last shows a toast.
+- A Developer option, **Allow zero best-fit rules**, lifts that limit. Turning the override off while every rule is off turns one back on.
 - A "Restore default order" button resets it.
 - The order is saved as `subs.bestFit`.
 
-**7-tap Developer unlock**
+**7-tap Developer unlock** (Q-45-01, LOCKED)
 - Tap **Version** (or the footer stamp).
 - The taps must come within 1.5 s of each other.
 - From the 3rd tap a toast counts down: "4 more taps to Developer options".
@@ -315,7 +317,8 @@ Direct states:
 **Host screen ("Pair a device")**
 - A 6-digit code in large boxes and a **QR** of the same code.
 - A cyan bar shrinks over **5 minutes**, labelled "Expires in m:ss · 5 tries · Works once".
-- When the code is used, the host **instantly blocks it**, shows "✓ Desk phone paired · Code used and blocked", and after 3.5 s **resets** to a fresh code and timer.
+- When the code is used, the host **instantly blocks it** and stays on the code screen. A non-blocking success chip appears near the top (“✓ Desk phone paired · Code used and blocked”), and the digits roll to a fresh code at once, with the 5-minute timer restarted (Q-45-03, LOCKED, revised).
+- The roll uses Driftline motion tokens: `--dl-dur-calm` (320 ms) and `--dl-ease-settle`. Reduce-motion (or `?rm`) fades with `--dl-dur-instant` (120 ms) instead. The chip, the roll and the toasts use only existing `--dl-*` tokens (KIT_GUIDE §6, §9a; Steve t39u).
 
 **Client screen ("Pair with code")**
 - The code field **focuses itself** on open.
@@ -332,7 +335,7 @@ Direct states:
 
 **Devices & pairing**
 - A list of paired devices, each with label, paired date, last seen and capabilities, and an Active pill.
-- **Revoke** works on each device except this one, and marks it Revoked.
+- **Revoke** works on each device except this one, marks it Revoked at once (no confirm sheet), and shows a Driftline **Undo toast** for about 5 seconds (Q-45-04, LOCKED). Undo restores the device. Revoke-all still uses the confirm sheet and has no Undo.
 - Footer text: "Each device has its own key. Unused devices expire after 90 days (Developer option)."
 - Buttons: Pair a new device (primary), Pair this device with a code (quiet), and **Reset shared token (revoke all)** in the danger red style.
 - Revoke-all opens a confirm sheet: "Every device, including this one, must pair again. Emergency use only."
@@ -347,7 +350,9 @@ Direct states:
 2. Tap "Demo: open client screen" and type **482913**. It submits at the 6th digit and the device shows as paired.
 3. Type a wrong code to see the tries count down.
 4. Also show:
-   - [Code used](https://raw.githack.com/steph1420/LFPS_Substitutions_Manager/bundle/45-m06-m07/docs/redesign/mockups/M07/index.html?state=used&hold)
+   - [Code used, fresh code + chip](https://raw.githack.com/steph1420/LFPS_Substitutions_Manager/bundle/45-m06-m07/docs/redesign/mockups/M07/index.html?state=used)
+   - [Replay the digit roll](https://raw.githack.com/steph1420/LFPS_Substitutions_Manager/bundle/45-m06-m07/docs/redesign/mockups/M07/index.html?state=used&anim)
+   - [Revoke Undo toast](https://raw.githack.com/steph1420/LFPS_Substitutions_Manager/bundle/45-m06-m07/docs/redesign/mockups/M07/index.html?state=undo)
    - [Retain pairing](https://raw.githack.com/steph1420/LFPS_Substitutions_Manager/bundle/45-m06-m07/docs/redesign/mockups/M07/index.html?state=login)
    - [Guest, not paired](https://raw.githack.com/steph1420/LFPS_Substitutions_Manager/bundle/45-m06-m07/docs/redesign/mockups/M07/index.html?state=guest)
 
@@ -355,7 +360,7 @@ Direct states:
 **Screens and UI**
 - Settings, What's New, Developer options and Pairing are drawn in M06/M07 as front-end demos only. There is no real registry storage, crypto, bridge or QR scanning; the code 482913 and the QR are fake, and the device list is invented.
 - Not drawn yet: loading and offline sync dots (amber = degraded, red = lost), the empty "all present" roster, the Classes × Periods view, the light theme (after v1), and a desktop version of M04/M05.
-- The By teacher view on M05, Auto-suggest all and the Undo toast are static in the mockups.
+- The By teacher view on M05 and Auto-suggest all are still static in the mockups. The M07 revoke Undo toast is interactive.
 
 **Placeholders**
 - The footer stamp value is fixed.
@@ -367,5 +372,6 @@ Direct states:
 - Q-STACK-02 is locked on option d: design tokens plus CSS Modules, with LFPS keeping Tailwind until its redesign.
 
 ## Changelog
+- **0.3.0 — 2026-11-13 IST** — Locked Q-45-01…04 (Steve t38u). Added the Developer override “Allow zero best-fit rules”. Replaced the 3.5 s full-screen used-code tick with a non-blocking success chip and an immediate digit roll to a fresh code. Added the revoke Undo toast (~5 s). Chip, roll and toasts use only existing Driftline tokens (Steve t39u; KIT_GUIDE §6, §9a).
 - **0.2.0 — 2026-11-04 IST** — Added §11 M06 Settings (registry, best-fit drag order, 7-tap Developer unlock, What's New) and §12 M07 Pairing (host code/QR, used-code reset, client auto-submit, retain pairing, devices/revoke, guest view). (Steve t24u)
 - **0.1.0 — 2026-11-04 IST** — First version. Covers M01–M05, the name column (80 ms, 300 ms spring), the colour language, the best-fit order and Q-HARM-1…9. (Steve t21u)
