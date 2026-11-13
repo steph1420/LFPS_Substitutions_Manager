@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { clock, groupLabel, lessonsAt, SLOT_LABEL, SLOT_SHORT, teacherAt, type Day, type Lesson, type Model } from './data'
+import { clock, groupLabel, lessonsAt, slimName, SLOT_LABEL, SLOT_SHORT, teacherAt, type Day, type Lesson, type Model } from './data'
 
 const nameOf = (m: Model, id: string) => m.staff.find((s) => s.id === id)?.name ?? id
 const band = (slot: string) => slot === 'ASM' || slot === 'BRK' || slot === 'GH2' // GH2 thin + blank like Break (Steve t88u)
@@ -61,13 +61,13 @@ export function PhoneRoutine({ m, day }: { m: Model; day: Day }) {
       <div className="s1-pscroll" ref={ref} role="table" aria-label={`Routine by teacher, ${day}`}>
         <div className="s1-prow s1-prow--head">
           <div className="s1-pname s1-pname--head" role="columnheader">{slim ? '' : 'Teacher'}</div>
-          {slots.map((s) => <div key={s.id} className={`s1-ph${band(s.id) ? ' s1-ph--band' : ''}`} role="columnheader"><span>{SLOT_SHORT[s.id] ?? s.id}</span><small className="dl-num">{clock(s.starts)}</small></div>)}
+          {slots.map((s) => <div key={s.id} className={`s1-ph${band(s.id) ? ' s1-ph--band' : ''}${s.id === 'GH2' ? ' s1-ph--gh2' : ''}`} role="columnheader"><span>{SLOT_SHORT[s.id] ?? s.id}</span><small className="dl-num">{clock(s.starts)}</small></div>)}
         </div>
         {m.staff.map((t) => (
           <div key={t.id} className="s1-prow">
-            <div className="s1-pname" role="rowheader"><span className="s1-pname__n">{t.name}</span>{!slim && <small className="dl-muted">{t.role === 'Class teacher' ? `${t.section} class` : t.role}</small>}</div>
+            <div className="s1-pname" role="rowheader"><span className="s1-pname__n" title={t.name}>{slim ? slimName(t.name) : t.name}</span>{!slim && <small className="dl-muted">{t.role === 'Class teacher' ? `${t.section} class` : t.role}</small>}</div>
             {slots.map((s) => {
-              if (band(s.id)) return <div key={s.id} className="s1-pband" aria-hidden>—</div>
+              if (band(s.id)) return <div key={s.id} className={`s1-pband${s.id === 'GH2' ? ' s1-pband--gh2' : ''}`} aria-hidden>—</div>
               const ls = teacherAt(m, day, s.id, t.id)
               return ls.length
                 ? <div key={s.id} className="s1-pcell" role="cell"><span className="s1-subj">{ls[0].subject}</span><span className="s1-who">{groupLabel(m, ls[0]) ?? ls.map((l) => secLabel(l.section)).join(', ')}</span></div>

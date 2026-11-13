@@ -1,6 +1,6 @@
 {
   "name": "lfps-stage1-preview",
-  "version": "0.1.0-stage1.1",
+  "version": "0.2.0-stage1.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -16,6 +16,7 @@
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.4",
+    "jsqr": "^1.4.0",
     "typescript": "^5.7.3",
     "vite": "^6.1.0",
     "vitest": "^3.0.5"

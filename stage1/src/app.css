@@ -7,6 +7,7 @@
   --s1-pname-slim: var(--dl-space-10);
   --s1-pcol: calc(var(--dl-space-16) + var(--dl-space-12));
   --s1-prow: calc(var(--dl-space-16) + var(--dl-space-4));
+  --s1-pband-gh2: calc(var(--dl-space-16) + var(--dl-space-4));
 }
 .s1-app { min-height: 100vh; overflow-x: clip; }
 .s1-main { min-width: 0; }
@@ -56,6 +57,9 @@
 .s1-ph { flex: none; width: var(--s1-pcol); padding: var(--dl-space-2); display: flex; flex-direction: column; font-weight: 600; font-size: var(--dl-type-footnote-size); background: var(--dl-color-bg); }
 .s1-ph--band, .s1-pband { width: var(--dl-space-12); color: var(--dl-color-text-faint); }
 .s1-pband { flex: none; display: grid; place-items: center; }
+/* "2nd G. Hr." heading stays on one line (t69u) */
+.s1-gh--band > span, .s1-ph--band > span { white-space: nowrap; }
+.s1-ph--gh2, .s1-pband--gh2 { width: var(--s1-pband-gh2); }
 .s1-pcell { flex: none; width: var(--s1-pcol); min-height: var(--s1-prow); border-radius: var(--dl-radius-sm); background: var(--dl-color-surface-raised); border: 1px solid var(--dl-color-hairline); padding: var(--dl-space-2); display: flex; flex-direction: column; justify-content: center; gap: var(--dl-space-0); }
 .s1-pcell--free { color: var(--dl-color-text-faint); font-size: var(--dl-type-footnote-size); background: transparent; }
 
@@ -72,3 +76,24 @@
 @keyframes s1-draw { from { stroke-dashoffset: 16; } to { stroke-dashoffset: 0; } }
 @keyframes s1-fade { 0%, 55% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .s1-sync .ring, .s1-sync .tk { animation: none; } }
+
+/* pairing: Enter code (Q-HARM-9). Driftline tokens only. */
+.s1-pair { align-items: stretch; text-align: left; max-width: calc(var(--dl-space-16) * 6); }
+.s1-notice { padding: var(--dl-space-2) var(--dl-space-3); border-radius: var(--dl-radius-sm); background: var(--dl-chip-accent-bg); box-shadow: inset 0 0 0 1px var(--dl-chip-accent-border); }
+.s1-small { font-size: var(--dl-type-footnote-size); }
+.s1-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.s1-code { position: relative; display: flex; gap: var(--dl-space-2); justify-content: center; margin-top: var(--dl-space-2); cursor: text; }
+/* the real input sits over the six boxes, invisible, so taps focus it and the system numeric keypad opens */
+.s1-code__input { position: absolute; inset: 0; width: 100%; opacity: 0; border: 0; font-size: var(--dl-type-body-size); color: transparent; background: transparent; caret-color: transparent; }
+.s1-box { width: var(--dl-space-10); height: var(--dl-space-12); display: grid; place-items: center; border-radius: var(--dl-radius-sm); background: var(--dl-color-surface-raised); box-shadow: inset 0 0 0 1px var(--dl-color-control-border); font-size: var(--dl-type-title2-size); font-weight: 600; font-variant-numeric: tabular-nums; }
+.s1-code:focus-within .s1-box--now { box-shadow: inset 0 0 0 2px var(--dl-color-focus); }
+.s1-code--bad .s1-box { box-shadow: inset 0 0 0 1px var(--dl-color-danger); }
+.s1-msg { min-height: var(--dl-type-body-line); text-align: center; color: var(--dl-color-text-muted); font-size: var(--dl-type-footnote-size); }
+.s1-msg--bad { color: var(--dl-color-danger); }
+.s1-row { display: flex; gap: var(--dl-space-2); flex-wrap: wrap; align-items: center; }
+.s1-device { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--dl-space-3); padding: var(--dl-space-6) var(--dl-space-4); font-size: var(--dl-type-footnote-size); }
+/* HoldToConfirm port: the fill copy is clipped to the hold progress (paint only) */
+.s1-hold__fill { clip-path: inset(0 100% 0 0 round var(--dl-radius-md)); transition: clip-path var(--dl-dur-calm) var(--dl-ease-settle); }
+.s1-hold[data-state="holding"] .s1-hold__fill { clip-path: inset(0 0 0 0 round var(--dl-radius-md)); transition: clip-path var(--s1-hold-ms) linear; }
+.s1-hold[data-state="done"] .s1-hold__fill { clip-path: inset(0 0 0 0 round var(--dl-radius-md)); transition: none; }
+@media (prefers-reduced-motion: reduce) { .s1-hold[data-state="holding"] .s1-hold__fill { transition: clip-path var(--dl-dur-instant) linear; } }

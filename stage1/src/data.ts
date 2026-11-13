@@ -67,36 +67,14 @@ export function todayIST(now = new Date()): Day {
 /** "07:40" → "7:40" */
 export const clock = (t: string) => t.replace(/^0/, '')
 
-// ---- Bridge (Apps Script web app bound to the temp Sheet, read-only in step 1) ----
-export interface Link { url: string; key: string }
-const LINK_KEY = 'lfps-stage1:link:v1'
-const CACHE_KEY = 'lfps-stage1:tabs:v1'
-
-/** Reads "#connect=<base64 url|key>" once, stores it on this device, and cleans the address bar. */
-export function takeLinkFromHash(loc = window.location): Link | null {
-  const m = loc.hash.match(/connect=([^&]+)/)
-  if (m) {
-    try {
-      const [url, key] = atob(decodeURIComponent(m[1])).split('|')
-      const local = /^(localhost|127\.0\.0\.1)$/.test(loc.hostname) && /^http:\/\/127\.0\.0\.1:\d+\//.test(url) // local checks only
-      if ((/^https:\/\/script\.google(usercontent)?\.com\//.test(url) || local) && key) localStorage.setItem(LINK_KEY, JSON.stringify({ url, key }))
-    } catch { /* ignore a bad link */ }
-    history.replaceState(null, '', loc.pathname + loc.search)
-  }
-  try { const v = JSON.parse(localStorage.getItem(LINK_KEY) || 'null'); return v?.url && v?.key ? v : null } catch { return null }
+/** Slim sideways names drop a leading title: "Mrs. Teacher A" → "Teacher A" (t69u). The full name stays elsewhere. */
+const HONORIFIC = /^(mrs|ms|mr|miss|mx|dr|sr|fr|br|prof)\.?\s+/i
+export function slimName(name: string): string {
+  const s = name.trim(), out = s.replace(HONORIFIC, '').trim()
+  return out || s
 }
-export function forgetLink() { localStorage.removeItem(LINK_KEY); localStorage.removeItem(CACHE_KEY) }
 
-export interface Pulled { tabs: Tabs; hash: string; at: number }
-export function cached(): Pulled | null {
-  try { const v = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); return v?.tabs ? v : null } catch { return null }
-}
-export async function pull(link: Link, fetcher: typeof fetch = fetch): Promise<Pulled> {
-  const res = await fetcher(`${link.url}?action=pull&key=${encodeURIComponent(link.key)}`, { redirect: 'follow' })
-  if (!res.ok) throw new Error(`The Sheet answered ${res.status}`)
-  const j = (await res.json()) as { ok?: boolean; error?: string; tabs?: Tabs; hash?: string }
-  if (!j.ok || !j.tabs) throw new Error(j.error === 'bad key' ? 'This device is not connected any more' : `Sheet: ${j.error ?? 'no data'}`)
-  const p = { tabs: j.tabs, hash: j.hash ?? '', at: Date.now() }
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(p)) } catch { /* full: keep in memory */ }
-  return p
+/** The sync tick plays only when the Sheet's data really changed (t69u), not on every quiet refresh. */
+export function syncOutcome(prevHash: string | null, nextHash: string): 'changed' | 'same' {
+  return prevHash !== null && prevHash === nextHash ? 'same' : 'changed'
 }
