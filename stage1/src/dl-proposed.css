@@ -1,0 +1,7 @@
+/* PROPOSED Driftline kit addition (Steve 2026-11-13): "absent" = soft rose #e39aa4, not kit danger red.
+   Kept here until the kit adds it; see design-options/driftline-kit/TODO.md proposal. */
+:root, [data-theme] {
+  --dl-color-absent: #e39aa4;
+  --dl-chip-absent-bg: color-mix(in srgb, var(--dl-color-absent) 16%, var(--dl-color-surface-solid));
+  --dl-chip-absent-border: color-mix(in srgb, var(--dl-color-absent) 42%, transparent);
+}
