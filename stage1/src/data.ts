@@ -29,11 +29,11 @@ export function niceSubject(s: string): string {
   return s.split(/(\s+|\/)/).map((w) => (/^[A-Z]{1,3}$/.test(w) ? w : w.charAt(0) + w.slice(1).toLowerCase())).join('')
 }
 
-/** Uses the Regular timing set (Summer and Winter have no dates yet). Assembly + teaching slots + Break only. */
+/** Uses the Regular timing set (Summer and Winter have no dates yet). Teaching slots + Break only (Assembly hidden, Steve t86u). */
 export function buildModel(tabs: Tabs, timingSet = 'REG'): Model {
   const staff = table(tabs, '_Staff').filter((r) => r['Status'] !== 'Left').map((r) => ({ id: r['StaffId'], name: r['Display name'] || r['Full name'], short: r['Short code'], role: r['Role'], section: r['Primary section'] }))
   const sections = table(tabs, '_Sections').filter((r) => r['Active'] !== 'FALSE').sort((a, b) => Number(a['Order']) - Number(b['Order'])).map((r) => ({ id: r['SectionId'], label: r['Label'], grade: r['Grade'] }))
-  const slots = table(tabs, '_TimingSlots').filter((r) => r['Timing set'] === timingSet && (r['Teaching?'] === 'TRUE' || r['Slot'] === 'ASM' || r['Slot'] === 'BRK') && r['Starts'])
+  const slots = table(tabs, '_TimingSlots').filter((r) => r['Timing set'] === timingSet && (r['Teaching?'] === 'TRUE' || r['Slot'] === 'BRK') && r['Starts'])
     .sort((a, b) => Number(a['Order']) - Number(b['Order'])).map((r) => ({ id: r['Slot'], starts: r['Starts'], ends: r['Ends'], teaching: r['Teaching?'] === 'TRUE' }))
   const lessons = table(tabs, '_Timetable').filter((r) => (DAYS as readonly string[]).includes(r['Day'])).map((r) => ({
     day: r['Day'] as Day, slot: r['Period'], section: r['Section'], subject: niceSubject(r['Subject as written'] || r['Subject']),
