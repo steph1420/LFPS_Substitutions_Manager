@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { clock, groupLabel, lessonsAt, SLOT_LABEL, SLOT_SHORT, teacherAt, type Day, type Lesson, type Model } from './data'
 
 const nameOf = (m: Model, id: string) => m.staff.find((s) => s.id === id)?.name ?? id
-const band = (slot: string) => slot === 'ASM' || slot === 'BRK'
+const band = (slot: string) => slot === 'ASM' || slot === 'BRK' || slot === 'GH2' // GH2 thin + blank like Break (Steve t88u)
 
 /** Desktop: one row per class, one column per slot (Assembly and Break are slim bands). */
 export function DesktopRoutine({ m, day }: { m: Model; day: Day }) {

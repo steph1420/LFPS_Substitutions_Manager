@@ -12,10 +12,10 @@ export interface Model { staff: Staff[]; sections: Section[]; slots: Slot[]; les
 
 /** Slot names on everyday screens (plain words, no codes). */
 export const SLOT_LABEL: Record<string, string> = {
-  ASM: 'Assembly', GH1: 'Golden Hour 1', GH2: 'Golden Hour 2', BRK: 'Break',
+  ASM: 'Assembly', GH1: 'Golden Hour 1', GH2: '2nd G. Hr.', BRK: 'Break',
   P1: '1st', P2: '2nd', P3: '3rd', P4: '4th', P5: '5th', P6: '6th',
 }
-export const SLOT_SHORT: Record<string, string> = { ...SLOT_LABEL, GH1: 'GH 1', GH2: 'GH 2' }
+export const SLOT_SHORT: Record<string, string> = { ...SLOT_LABEL, GH1: 'GH 1', GH2: '2nd G. Hr.' }
 
 function table(tabs: Tabs, name: string): Record<string, string>[] {
   const rows = tabs[name]
