@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import styles from './TeacherNameOverlay.module.css';
+import { NAME_OVERLAY_SPRING } from '../../motion/tokens.js';
 
 interface TeacherNameOverlayProps {
   abbr: string;
@@ -68,7 +69,7 @@ export const TeacherNameOverlay: React.FC<TeacherNameOverlayProps> = ({
             initial={{ opacity: 0, x: -6, scaleX: 0.94 }}
             animate={{ opacity: 1, x: 0, scaleX: 1 }}
             exit={{ opacity: 0, x: -4, scaleX: 0.96 }}
-            transition={{ type: 'spring', stiffness: 450, damping: 28, mass: 0.5 }}
+            transition={NAME_OVERLAY_SPRING}
             style={{ transformOrigin: 'left center' }}
             className={styles.motionDiv1}
           >

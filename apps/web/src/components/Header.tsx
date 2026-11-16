@@ -28,13 +28,7 @@ import {
 } from '../lib/devUiPrefs.js';
 
 import styles from './Header.module.css';
-
-// Perfectly symmetrical Apple-grade spring physics (timed equally for expand and collapse)
-const ISLAND_SPRING = {
-  type: 'spring' as const,
-  duration: 0.55,
-  bounce: 0.12,
-};
+import { ISLAND_BACKDROP_FADE, ISLAND_SPRING } from '../motion/tokens.js';
 
 const DAYS: DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
@@ -361,7 +355,7 @@ export const Header: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={ISLAND_BACKDROP_FADE}
             className={styles.motionDiv2}
             onClick={() => {
               setIsIslandExpanded(false);

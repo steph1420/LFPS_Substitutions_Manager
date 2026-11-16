@@ -5,6 +5,7 @@ import { useTimetableStore, DisplacedItem } from '../store/useTimetableStore.js'
 import { usePermissions } from './PermissionGuard.js';
 
 import styles from './LimboTray.module.css';
+import { LIMBO_CHIP_MOTION, LIMBO_TRAY_REVEAL } from '../motion/tokens.js';
 
 export const LimboTray: React.FC = () => {
   const { selectedDay, displaced, restoreDisplacedItem, clearDisplaced } = useTimetableStore();
@@ -59,7 +60,7 @@ export const LimboTray: React.FC = () => {
           initial={{ opacity: 0, height: 0, y: 10 }}
           animate={{ opacity: 1, height: 'auto', y: 0 }}
           exit={{ opacity: 0, height: 0, y: 10 }}
-          transition={{ duration: 0.25, ease: [0.2, 0.9, 0.3, 1] }}
+          transition={LIMBO_TRAY_REVEAL}
           className={styles.motionDiv1}
         >
           <div className={styles.div1}>
@@ -121,11 +122,7 @@ export const LimboTray: React.FC = () => {
                       initial={{ opacity: 0, scale: 0.8, y: -6 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.7, y: -10 }}
-                      transition={{
-                        layout: { duration: 0.28, ease: [0.2, 0.9, 0.3, 1] },
-                        opacity: { duration: 0.18 },
-                        scale: { duration: 0.2 },
-                      }}
+                      transition={LIMBO_CHIP_MOTION}
                     >
                       <div
                         draggable={canEditSchedule}
