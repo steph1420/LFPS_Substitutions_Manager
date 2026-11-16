@@ -6,6 +6,15 @@ This tracker maintains active, upcoming, and future tasks for the **Front Desk P
 > **Terminology Standard**: Do NOT use the informal term `offCT`. Always use **Officiating Class Teacher**, abbreviated as **Off. CT.**. Similarly, use **Officiating AC**, abbreviated as **Off. AC**.
 
 
+## 🎨 Bundle 47: remove Tailwind (tokens + CSS Modules, no visual change) — Steve go 16 Nov 2026
+
+- [x] **47a** groundwork + frame (branch `bundle/47a-css-modules`, backup tag `backup/next-gen-pre-47a-20261116`): tokens, Header, TabBar, common, 13 small modals/menus, checks wired. Plan: [`docs/bundle47/PLAN.md`](docs/bundle47/PLAN.md).
+- [ ] **47b** SettingsModal, AutoResolveBrainModal, NotificationCenterDrawer, AssignSubstituteModal, AwayOfficialModal, AdminAccessPanel, App.tsx (needs Steve's go).
+- [ ] **47c** RoutineGrid, AbsenceRoster, roster/* + the `index.css` matrix/absent rules that target Tailwind names.
+- [ ] **47d** SubstitutionsRegister; move remaining `index.css` classes; preflight-equivalent base reset; remove tailwindcss, @tailwindcss/vite, tailwind-merge (unused); version bump. Proposed deadline: 30 Nov 2026 (Steve to approve).
+- [ ] **CHK-01** Exact pins for the remaining `^` ranges in root, apps/web and packages/* (no-op: pin to lockfile versions) — needs Steve's go. Workspace `@lfps/*: "*"` links and per-workspace lockfile findings are a monorepo false positive of `check-pins.mjs` (raise with Kiwi in agent-common).
+- [ ] **CHK-02** Leak scan pre-existing findings: live Sheet ID in `render.yaml`, `HANDOVER.md`, `docs/SHEETS_SETUP.md`, `docs/RENDER_SETUP.md`; Apps Script URL in `legacy-v1/app.js`; `apps/server/go.sum` hashes (lockfile false positive). Move real values to system-private + codenames, as SoW did — needs Steve's go (render.yaml is deploy config).
+
 ## 🗺️ Job Bundle Plan 34–38 (approved by the owner 2026-10-23)
 
 > [!IMPORTANT]

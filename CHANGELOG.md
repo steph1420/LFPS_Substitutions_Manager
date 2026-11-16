@@ -18,6 +18,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Changed
+- **Bundle 47a (Tailwind → tokens + CSS Modules, no visual change; ADR-0001 in agent-common)** on `bundle/47a-css-modules`, not merged. Header, TabBar, TeacherNameOverlay and 13 small modals/menus (AddToHomeScreen, PasscodeField, AdminPasscodeStep, StaffLogin, CoTeacher, Dispute, Officiating, ResetDayButton, ResetPurge menu, MicroContextMenu, UndoRedoControls, LimboTray, SubAvailability) now use `Component.module.css` on `src/tokens/` (one token file: Tailwind theme values used + the 12-theme engine moved from `index.css` + carried-over literals). className attributes on Tailwind: 1339 → 1014. 113 before/after screenshots (phone portrait 421×926@3x, landscape, desktop 1440×900, 7-theme desktop pass) show no visible change ([`docs/bundle47/DIFF.md`](docs/bundle47/DIFF.md)). framer-motion pinned exactly to 12.43.0 (installed version unchanged). agent-common checks wired: leak scan, build-output, pins, ESLint + stylelint in baseline mode. Plan for 47b–47d: [`docs/bundle47/PLAN.md`](docs/bundle47/PLAN.md). Tests: core 35/35, web 87/87.
+
 - **Docs:** Split Bundle 42 redesign doc into [`docs/redesign/LOGIC_SHEET.md`](docs/redesign/LOGIC_SHEET.md) + [`docs/redesign/MOCKUPS_GUIDE.md`](docs/redesign/MOCKUPS_GUIDE.md); combined path kept as stub.
 ### Added
 - **Bundle 42 (docs)**: Foundational redesign document — [`docs/redesign/LOGIC_SHEET_AND_MOCKUPS_GUIDE.md`](docs/redesign/LOGIC_SHEET_AND_MOCKUPS_GUIDE.md). Full product/domain logic sheet (LOG-*) + screen inventory + mockups guide for a clean-slate redesign. No runtime/UI feature changes. Image mockups are a later phase after owner review.
