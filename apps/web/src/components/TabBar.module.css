@@ -1,0 +1,239 @@
+/* TabBar.tsx styles (Bundle 47a: moved from Tailwind, no visual change). Values come from src/tokens/. */
+@layer utilities {
+  .motionDiv1 {
+    position: absolute;
+    inset: 0;
+    z-index: calc(10 * -1);
+    --tw-gradient-position: to right in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops));
+    --tw-gradient-from: var(--color-blue-600);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+    --tw-gradient-to: var(--color-indigo-600);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+    --tw-shadow: 0 var(--lit-px-4) var(--lit-px-6) var(--lit-px-neg1) var(--tw-shadow-color, var(--lit-hex-0000001a)), 0 var(--lit-px-2) var(--lit-px-4) var(--lit-px-neg2) var(--tw-shadow-color, var(--lit-hex-0000001a));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    --tw-shadow-color: var(--lit-hex-155dfc4d);
+  }
+
+  .nav1A {
+    position: fixed;
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+    left: 50%;
+    z-index: 40;
+    --tw-translate-x: calc(calc(1 / 2 * 100%) * -1);
+    translate: var(--tw-translate-x) var(--tw-translate-y);
+    gap: var(--spacing);
+    border-color: var(--lit-hex-314158cc);
+    background-color: var(--lit-hex-020618eb);
+    --tw-shadow: 0 var(--lit-px-16) var(--lit-px-40) var(--tw-shadow-color, var(--lit-hex-000000d9));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    --tw-backdrop-blur: blur(var(--blur-2xl));
+    -webkit-backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
+    backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .button1A {
+    position: relative;
+    cursor: pointer;
+    gap: calc(var(--spacing) * 2);
+    --tw-font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .span2A {
+    margin-left: calc(var(--spacing) * .5);
+    padding-inline: calc(var(--spacing) * 1.5);
+    font-size: var(--lit-px-10);
+    --tw-font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-bold);
+    --tw-shadow: 0 var(--lit-px-1) var(--lit-px-3) 0 var(--tw-shadow-color, var(--lit-hex-0000001a)), 0 var(--lit-px-1) var(--lit-px-2) var(--lit-px-neg1) var(--tw-shadow-color, var(--lit-hex-0000001a));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
+  .nav1A, .button1A {
+    display: flex;
+    align-items: center;
+    transition-property: all;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+
+  .icon1A {
+    height: calc(var(--spacing) * 4);
+    width: calc(var(--spacing) * 4);
+  }
+
+  .nav1A, .button1A, .motionDiv1, .span2A {
+    border-radius: var(--lit-radius-pill);
+  }
+
+  .nav1A, .button1F, .button1G, .span2A {
+    border-style: var(--tw-border-style);
+    border-width: var(--lit-px-1);
+  }
+
+  .span2B {
+    border-color: var(--lit-hex-f99c0066);
+    background-color: var(--lit-hex-f99c0033);
+    color: var(--color-amber-300);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .span2B {
+      border-color: color-mix(in oklab, var(--color-amber-500) 40%, transparent);
+    }
+  }
+
+  .button1F {
+    border-color: var(--lit-hex-f99c00cc);
+    color: var(--color-amber-200);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .button1F {
+      border-color: color-mix(in oklab, var(--color-amber-500) 80%, transparent);
+    }
+  }
+
+  .span2C {
+    border-color: var(--lit-hex-ff235766);
+    color: var(--color-rose-300);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .span2C {
+      border-color: color-mix(in oklab, var(--color-rose-500) 40%, transparent);
+    }
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .nav1A {
+      border-color: color-mix(in oklab, var(--color-slate-700) 80%, transparent);
+    }
+  }
+
+  .button1G {
+    border-color: var(--lit-hex-0000);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .span2B {
+      background-color: color-mix(in oklab, var(--color-amber-500) 20%, transparent);
+    }
+  }
+
+  .span2C {
+    background-color: var(--lit-hex-ff235733);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .span2C {
+      background-color: color-mix(in oklab, var(--color-rose-500) 20%, transparent);
+    }
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .nav1A {
+      background-color: color-mix(in oklab, var(--color-slate-950) 92%, transparent);
+    }
+  }
+
+  .nav1B {
+    padding: var(--spacing);
+  }
+
+  .nav1C {
+    padding: calc(var(--spacing) * 1.5);
+  }
+
+  .button1B {
+    padding-inline: calc(var(--spacing) * 2.5);
+    padding-block: calc(var(--spacing) * 1.5);
+  }
+
+  .button1C {
+    padding-inline: calc(var(--spacing) * 3.5);
+    padding-block: calc(var(--spacing) * 2);
+  }
+
+  .button1A, .span1 {
+    font-size: var(--text-xs);
+    line-height: var(--tw-leading, var(--text-xs--line-height));
+  }
+
+  .span1 {
+    --tw-tracking: var(--tracking-tight);
+    letter-spacing: var(--tracking-tight);
+  }
+
+  .button1E, .icon1C {
+    color: var(--color-slate-400);
+  }
+
+  .button1D, .icon1B {
+    color: var(--color-white);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .motionDiv1 {
+      --tw-shadow-color: color-mix(in oklab, color-mix(in oklab, var(--color-blue-600) 30%, transparent) var(--tw-shadow-alpha), transparent);
+    }
+  }
+
+  @media (hover: hover) {
+    .button1E:hover {
+      color: var(--color-slate-200);
+    }
+  }
+
+  .button1A:active {
+    --tw-scale-x: 95%;
+    --tw-scale-y: 95%;
+    --tw-scale-z: 95%;
+    scale: var(--tw-scale-x) var(--tw-scale-y);
+  }
+
+  @media (min-width: 40rem) {
+    .nav1A {
+      gap: calc(var(--spacing) * 2);
+    }
+
+    .button1B {
+      padding-inline: calc(var(--spacing) * 3.5);
+    }
+
+    .button1C {
+      padding-inline: calc(var(--spacing) * 4);
+    }
+  }
+}
+:global([data-theme="light"]) .button1E, :global([data-theme="warm-sepia"]) .button1E {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .icon1C, :global([data-theme="warm-sepia"]) .icon1C {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .button1D:not(:global(.text-on-accent)), :global([data-theme="warm-sepia"]) .button1D:not(:global(.text-on-accent)), :global([data-theme="utopian-glass"]) .button1D:not(:global(.text-on-accent)), :global([data-theme="aero-frost"]) .button1D:not(:global(.text-on-accent)), :global([data-theme="high-contrast"]) .button1D:not(:global(.text-on-accent)) {
+  color: var(--text-primary);
+}
+:global([data-theme="light"]) .icon1B:not(:global(.text-on-accent)), :global([data-theme="warm-sepia"]) .icon1B:not(:global(.text-on-accent)), :global([data-theme="utopian-glass"]) .icon1B:not(:global(.text-on-accent)), :global([data-theme="aero-frost"]) .icon1B:not(:global(.text-on-accent)), :global([data-theme="high-contrast"]) .icon1B:not(:global(.text-on-accent)) {
+  color: var(--text-primary);
+}
+@media (prefers-color-scheme: light) {
+  :global([data-theme="system"]) .button1D:not(:global(.text-on-accent)) {
+    color: var(--text-primary);
+  }
+}
+@media (prefers-color-scheme: light) {
+  :global([data-theme="system"]) .icon1B:not(:global(.text-on-accent)) {
+    color: var(--text-primary);
+  }
+}
+:global([data-theme="utopian-glass"]) .button1E, :global([data-theme="aero-frost"]) .button1E, :global([data-theme="high-contrast"]) .button1E {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .icon1C, :global([data-theme="aero-frost"]) .icon1C, :global([data-theme="high-contrast"]) .icon1C {
+  color: var(--text-secondary);
+}

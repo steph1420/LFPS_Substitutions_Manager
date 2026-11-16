@@ -27,6 +27,8 @@ import {
   type DevUiPrefs,
 } from '../lib/devUiPrefs.js';
 
+import styles from './Header.module.css';
+
 // Perfectly symmetrical Apple-grade spring physics (timed equally for expand and collapse)
 const ISLAND_SPRING = {
   type: 'spring' as const,
@@ -279,11 +281,11 @@ export const Header: React.FC = () => {
             setIsIslandExpanded(true);
             resetAutoCollapseTimer();
           }}
-          className="bg-slate-950/98 border border-slate-700/80 shadow-[0_12px_28px_rgba(0,0,0,0.85)] px-3 py-1 rounded-full flex items-center gap-2 text-xs font-semibold text-white cursor-pointer group active:scale-95 will-change-transform"
+          className={styles.motionButton1}
           title="Tap to change timetable day"
         >
           <span
-            className={`w-2 h-2 rounded-full ${
+            className={`${styles.span1} ${
               sync.status.phase === 'live'
                 ? 'status-dot-live'
                 : sync.status.phase === 'connecting'
@@ -291,17 +293,17 @@ export const Header: React.FC = () => {
                   : 'status-dot-offline'
             }`}
           />
-          <span className="font-bold tracking-wider">{selectedDay}</span>
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-400 transition-colors" />
+          <span className={styles.span2}>{selectedDay}</span>
+          <ChevronDown className={styles.chevronDown1} />
         </motion.button>
       ) : (
         <motion.div
           layoutId="dynamic-island-day-bar"
           key="island-expanded"
           transition={ISLAND_SPRING}
-          className="bg-slate-950/98 border border-slate-700/90 shadow-[0_20px_48px_rgba(0,0,0,0.9)] rounded-full p-1 flex items-center gap-1 backdrop-blur-2xl will-change-transform"
+          className={styles.motionDiv1}
         >
-          <div className="flex items-center gap-0.5 sm:gap-1">
+          <div className={styles.div1}>
             {DAYS.map((day) => {
               const isActive = selectedDay === day;
               const isToday = todaySchoolDay === day;
@@ -312,21 +314,21 @@ export const Header: React.FC = () => {
                   key={day}
                   onClick={() => handleSelectDay(day)}
                   title={isToday ? `Today · ${dateIso}` : dateIso || day}
-                  className={`relative px-2.5 sm:px-3 py-0.5 text-xs font-bold rounded-full transition-colors select-none ${
+                  className={`${styles.button1A} ${
                     isActive
-                      ? 'text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-600/40'
-                      : 'text-slate-400 hover:text-slate-200'
-                  } ${isToday && !isActive ? 'ring-1 ring-emerald-400/70' : ''}`}
+                      ? styles.button1B
+                      : styles.button1C
+                  } ${isToday && !isActive ? styles.button1D : ''}`}
                 >
-                  <span className="inline-flex flex-col items-center leading-none gap-0.5">
-                    <span className="inline-flex items-center gap-1">
+                  <span className={styles.span3}>
+                    <span className={styles.span4}>
                       {day}
                       {isToday && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-label="Today" />
+                        <span className={styles.span5} aria-label="Today" />
                       )}
                     </span>
                     {devUiPrefs.dayLoadMode === 'free' && dateShort && (
-                      <span className={`text-[8px] font-semibold ${isActive ? 'text-blue-100/90' : 'text-slate-500'}`}>
+                      <span className={`${styles.span6A} ${isActive ? styles.span6B : styles.span6C}`}>
                         {dateShort}
                       </span>
                     )}
@@ -340,10 +342,10 @@ export const Header: React.FC = () => {
               setIsIslandExpanded(false);
               if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
             }}
-            className="p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className={styles.button2}
             title="Close Day Selector"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className={styles.x1} />
           </button>
         </motion.div>
       )}
@@ -360,7 +362,7 @@ export const Header: React.FC = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+            className={styles.motionDiv2}
             onClick={() => {
               setIsIslandExpanded(false);
               if (autoCollapseTimerRef.current) clearTimeout(autoCollapseTimerRef.current);
@@ -385,9 +387,9 @@ export const Header: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={ISLAND_SPRING}
-            className="fixed top-3 left-0 right-0 z-50 flex justify-center pointer-events-none will-change-transform"
+            className={styles.motionDiv3}
           >
-            <div className="pointer-events-auto">{renderIslandContent()}</div>
+            <div className={styles.div2}>{renderIslandContent()}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -401,21 +403,21 @@ export const Header: React.FC = () => {
           opacity: headerState === 'FULL' ? 1 : 0,
         }}
         transition={SPRING_TRANSITIONS.smooth}
-        className="sticky top-0 z-40 w-full header-elevated px-3 py-2.5 sm:px-6 sm:py-3 pointer-events-auto will-change-transform border-b border-slate-800/80 select-none"
+        className={`${styles.appHeaderFull1} header-elevated`}
       >
-        <div className="max-w-7xl mx-auto flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-3">
+        <div className={styles.div3}>
           {/* Row 1 (mobile) / Brand column (desktop): logo + status + actions */}
-          <div className="flex items-center justify-between gap-2 w-full md:w-auto min-w-0">
-            <div className="flex items-center gap-2 min-w-0 flex-shrink">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20 flex-shrink-0">
+          <div className={styles.div4}>
+            <div className={styles.div5}>
+              <div className={styles.div6}>
                 L
               </div>
-              <div className="min-w-0">
-                <h1 className="text-sm font-semibold tracking-tight text-white flex items-center gap-1.5 flex-wrap">
-                  <span className="hidden sm:inline truncate">LFPS Manager</span>
-                  <span className="sm:hidden sr-only">LFPS Manager</span>
+              <div className={styles.div7}>
+                <h1 className={styles.h11}>
+                  <span className={styles.span7}>LFPS Manager</span>
+                  <span className={styles.span8}>LFPS Manager</span>
                   <span
-                    className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 flex-shrink-0"
+                    className={styles.span9}
                     title={BUILD_LABEL}
                   >
                     v{APP_VERSION}
@@ -423,14 +425,14 @@ export const Header: React.FC = () => {
                   {IS_PREVIEW_BUILD && (
                     <a
                       href={PREVIEW_INDEX_HREF}
-                      className="inline-flex h-2 w-2 flex-shrink-0 rounded-full bg-amber-400 shadow-[0_0_0_2px_rgba(251,191,36,0.25)]"
+                      className={styles.a1}
                       title={`Preview · ${GIT_BRANCH}`}
                       aria-label={`Preview build ${GIT_BRANCH}`}
                     />
                   )}
                   {isAdmin && (
                     <span
-                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex-shrink-0"
+                      className={styles.span10}
                       title="Signed in as admin in this tab (Log Out ends it)"
                     >
                       Admin
@@ -438,7 +440,7 @@ export const Header: React.FC = () => {
                   )}
                   {editingUnlocked && (
                     <span
-                      className="hidden sm:inline-flex text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 whitespace-nowrap"
+                      className={styles.editingUnlockedBadge1}
                       title="Dev Options: editing allowed on this device without login (turn off in Settings)"
                       data-testid="editing-unlocked-badge"
                     >
@@ -447,41 +449,41 @@ export const Header: React.FC = () => {
                   )}
                   {editingUnlocked && (
                     <span
-                      className="sm:hidden inline-flex h-2 w-2 rounded-full bg-amber-400 flex-shrink-0"
+                      className={styles.editingUnlockedBadge2}
                       title="Editing unlocked on this device"
                       data-testid="editing-unlocked-badge"
                       aria-label="Editing unlocked"
                     />
                   )}
                 </h1>
-                <p className="text-[11px] text-slate-400 hidden lg:block">
+                <p className={styles.p1}>
                   Preparatory Timetable & Substitutions
                 </p>
               </div>
             </div>
 
             {/* Mobile action cluster — icons only; account separate from logout */}
-            <div className="md:hidden flex items-center gap-1 flex-shrink-0" data-testid="header-mobile-actions">
+            <div className={styles.headerMobileActions1} data-testid="header-mobile-actions">
               <button
                 type="button"
                 data-testid="sync-pill-mobile"
                 data-phase={sync.status.phase}
                 data-tone={syncPill.tone}
                 onClick={openSettings}
-                className={`flex items-center gap-1 px-1.5 py-1 rounded-full text-[10px] font-medium border ${
+                className={`${styles.syncPillMobile1A} ${
                   syncPill.tone === 'live'
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-[var(--accent-green)]'
+                    ? styles.syncPillMobile1B
                     : syncPill.tone === 'error'
-                      ? 'bg-rose-500/10 border-rose-500/40 text-[var(--accent-red)]'
+                      ? styles.syncPillMobile1C
                       : syncPill.tone === 'warn'
-                        ? 'bg-amber-500/10 border-amber-500/30 text-[var(--accent-amber)]'
-                        : 'bg-slate-800/60 border-slate-700/40 text-slate-400'
+                        ? styles.syncPillMobile1D
+                        : styles.syncPillMobile1E
                 }`}
                 title={syncPill.title}
                 aria-label={`${syncPill.label}. Open Cloud settings.`}
               >
                 <span
-                  className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                  className={`${styles.span11} ${
                     syncPill.tone === 'live'
                       ? 'status-dot-live'
                       : syncPill.tone === 'offline'
@@ -489,7 +491,7 @@ export const Header: React.FC = () => {
                         : 'status-dot-connecting'
                   }`}
                 />
-                <span className="max-w-[2.75rem] truncate">
+                <span className={styles.span12}>
                   {syncPill.tone === 'live'
                     ? 'Live'
                     : syncPill.tone === 'error'
@@ -501,46 +503,46 @@ export const Header: React.FC = () => {
               </button>
               <button
                 onClick={openNotificationCenter}
-                className="relative p-1.5 min-w-8 min-h-8 rounded-full glass-pill border-slate-800 text-slate-300 hover:text-ink transition-colors active:scale-95 cursor-pointer inline-flex items-center justify-center"
+                className={`${styles.button3} glass-pill`}
                 title="Notifications"
                 aria-label="Notifications"
               >
-                <Bell className="w-3.5 h-3.5 text-purple-400" />
+                <Bell className={styles.bell1} />
                 {alertBadgeCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-[9px] font-bold text-white flex items-center justify-center">
+                  <span className={styles.span13}>
                     {alertBadgeCount > 9 ? '9+' : alertBadgeCount}
                   </span>
                 )}
               </button>
               <button
                 onClick={openSettings}
-                className="p-1.5 min-w-8 min-h-8 rounded-full glass-pill border-slate-800 text-slate-300 hover:text-ink transition-colors active:scale-95 inline-flex items-center justify-center"
+                className={`${styles.button4} glass-pill`}
                 title="Console & Settings"
                 aria-label="Console & Settings"
               >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-blue-400" />
+                <SlidersHorizontal className={styles.slidersHorizontal1} />
               </button>
               {loggedInTeacher ? (
-                <div className="flex items-center gap-0.5 glass-pill pl-1.5 pr-0.5 py-0.5 rounded-full border border-slate-700/80 max-w-[5.75rem]">
-                  <span className="text-[10px] font-medium text-slate-200 truncate" title={loggedInTeacher}>
+                <div className={`${styles.div8} glass-pill`}>
+                  <span className={styles.span14} title={loggedInTeacher}>
                     {loggedInTeacher}
                   </span>
                   <button
                     onClick={logout}
-                    className="p-1.5 rounded-full text-slate-400 hover:text-rose-400 transition-colors flex-shrink-0"
+                    className={styles.button5}
                     title="Log Out"
                     aria-label="Log Out"
                   >
-                    <LogOut className="w-3.5 h-3.5" />
+                    <LogOut className={styles.logOut1} />
                   </button>
                 </div>
               ) : (
                 <button
                   onClick={openStaffLogin}
-                  className="glass-pill px-2.5 py-1.5 rounded-full text-xs flex items-center gap-1 text-slate-200 active:scale-95 transition-transform"
+                  className={`${styles.button6} glass-pill`}
                   aria-label="Staff Login"
                 >
-                  <User className="w-3.5 h-3.5 text-blue-400" />
+                  <User className={styles.user1} />
                   <span>Login</span>
                 </button>
               )}
@@ -549,17 +551,17 @@ export const Header: React.FC = () => {
 
           {/* Row 2 (mobile) / Center (desktop): Day bar — dedicated full width on phone */}
           <div
-            className={`w-full md:w-auto flex justify-center overflow-x-auto scrollbar-thin ${
-              headerState === 'FULL' ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            className={`${styles.div9A} scrollbar-thin ${
+              headerState === 'FULL' ? styles.div9B : styles.div9C
             }`}
             aria-hidden={headerState !== 'FULL'}
           >
-            <div className="flex items-center bg-slate-900/90 p-1 rounded-full border border-slate-800 shadow-inner min-h-[34px] flex-shrink-0">
+            <div className={styles.div10}>
               {headerState === 'FULL' ? (
                 <motion.div
                   layoutId="dynamic-island-day-bar"
                   transition={ISLAND_SPRING}
-                  className="flex items-center will-change-transform"
+                  className={styles.motionDiv4}
                 >
                   {DAYS.map((day) => {
                     const isActive = selectedDay === day;
@@ -571,26 +573,26 @@ export const Header: React.FC = () => {
                         key={day}
                         onClick={() => handleSelectDay(day)}
                         title={isToday ? `Today · ${dateIso}` : dateIso || day}
-                        className={`relative px-2.5 sm:px-3.5 py-1 text-[11px] sm:text-xs font-semibold rounded-full transition-colors z-10 select-none ${
-                          isActive ? 'text-white' : 'text-slate-400 hover:text-slate-200'
-                        } ${isToday && !isActive ? 'ring-1 ring-emerald-400/60' : ''}`}
+                        className={`${styles.button7A} ${
+                          isActive ? styles.button7B : styles.button7C
+                        } ${isToday && !isActive ? styles.button7D : ''}`}
                       >
                         {isActive && (
                           <motion.div
                             layoutId="activeDockedDayHighlight"
                             transition={SPRING_TRANSITIONS.snappy}
-                            className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-600/30 -z-10"
+                            className={styles.motionDiv5}
                           />
                         )}
-                        <span className="inline-flex flex-col items-center leading-none gap-0.5 relative">
-                          <span className="inline-flex items-center gap-1">
+                        <span className={styles.span15}>
+                          <span className={styles.span16}>
                             {day}
                             {isToday && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-label="Today" />
+                              <span className={styles.span17} aria-label="Today" />
                             )}
                           </span>
                           {devUiPrefs.dayLoadMode === 'free' && dateShort && (
-                            <span className={`text-[8px] font-semibold ${isActive ? 'text-blue-100/90' : 'text-slate-500'}`}>
+                            <span className={`${styles.span18A} ${isActive ? styles.span18B : styles.span18C}`}>
                               {dateShort}
                             </span>
                           )}
@@ -600,13 +602,13 @@ export const Header: React.FC = () => {
                   })}
                 </motion.div>
               ) : (
-                <div className="h-[26px] w-[220px]" />
+                <div className={styles.div11} />
               )}
             </div>
           </div>
 
           {/* Desktop controls */}
-          <div className="hidden md:flex items-center gap-2.5">
+          <div className={styles.div12}>
             {/* Live sync status pill (Bundle 35 + FIND-05 honesty) */}
             <button
               type="button"
@@ -614,20 +616,20 @@ export const Header: React.FC = () => {
               data-phase={sync.status.phase}
               data-tone={syncPill.tone}
               onClick={openSettings}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-400/60 ${
+              className={`${styles.syncPill1A} ${
                 syncPill.tone === 'live'
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-[var(--accent-green)]'
+                  ? styles.syncPill1B
                   : syncPill.tone === 'error'
-                    ? 'bg-rose-500/10 border-rose-500/40 text-[var(--accent-red)]'
+                    ? styles.syncPill1C
                     : syncPill.tone === 'warn'
-                      ? 'bg-amber-500/10 border-amber-500/30 text-[var(--accent-amber)]'
-                      : 'bg-slate-800/60 border-slate-700/40 text-slate-400'
+                      ? styles.syncPill1D
+                      : styles.syncPill1E
               }`}
               title={syncPill.title}
               aria-label={`${syncPill.label}. Open Cloud settings.`}
             >
               <span
-                className={`w-1.5 h-1.5 rounded-full ${
+                className={`${styles.span19} ${
                   syncPill.tone === 'live'
                     ? 'status-dot-live'
                     : syncPill.tone === 'offline'
@@ -644,33 +646,33 @@ export const Header: React.FC = () => {
             {/* Add to Home Screen PWA Install (FEAT-59) */}
             <button
               onClick={() => setIsPwaModalOpen(true)}
-              className="p-2.5 min-w-10 min-h-10 rounded-lg border glass-pill border-slate-700 hover:border-blue-500/40 text-slate-300 hover:text-blue-400 transition-colors active:scale-95 inline-flex items-center justify-center"
+              className={`${styles.button8} glass-pill`}
               title="Add to Home Screen / Install PWA"
               aria-label="Add to Home Screen"
             >
-              <Smartphone className="w-4 h-4 text-blue-400" />
+              <Smartphone className={styles.smartphone1} />
             </button>
 
             {/* Export Excel Button (FEAT-25) */}
             <button
               onClick={() => sync.downloadExcel()}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg glass-pill border-slate-700 hover:border-emerald-500/40 text-xs font-semibold text-slate-300 hover:text-emerald-400 transition-colors"
+              className={`${styles.button9} glass-pill`}
               title="Download Dated Excel Register"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+              <FileSpreadsheet className={styles.fileSpreadsheet1} />
               <span>Excel</span>
             </button>
 
             {/* Notification Center Bell (FEAT-50) */}
             <button
               onClick={openNotificationCenter}
-              className="relative p-2.5 min-w-10 min-h-10 rounded-lg border glass-pill border-slate-700 hover:border-purple-500/40 text-slate-300 hover:text-purple-400 transition-colors active:scale-95 cursor-pointer inline-flex items-center justify-center"
+              className={`${styles.button10} glass-pill`}
               title="Notifications"
               aria-label="Notifications"
             >
-              <Bell className="w-4 h-4 text-purple-400" />
+              <Bell className={styles.bell2} />
               {alertBadgeCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 px-1 min-w-[16px] h-4 rounded-full bg-rose-500 text-[9px] font-bold text-white flex items-center justify-center">
+                <span className={styles.span20}>
                   {alertBadgeCount > 9 ? '9+' : alertBadgeCount}
                 </span>
               )}
@@ -679,31 +681,31 @@ export const Header: React.FC = () => {
             {/* Settings Console Button (BUG-11) */}
             <button
               onClick={openSettings}
-              className="p-2.5 min-w-10 min-h-10 rounded-lg border glass-pill border-slate-700 hover:border-blue-500/40 text-slate-300 hover:text-blue-400 transition-colors active:scale-95 inline-flex items-center justify-center"
+              className={`${styles.button11} glass-pill`}
               title="Console & Settings"
               aria-label="Console & Settings"
             >
-              <SlidersHorizontal className="w-4 h-4" />
+              <SlidersHorizontal className={styles.slidersHorizontal2} />
             </button>
 
             {loggedInTeacher ? (
-              <div className="flex items-center gap-2 glass-pill px-3 py-1.5 rounded-full border border-slate-700/80">
-                <span className="w-2 h-2 rounded-full status-dot-live" />
-                <span className="text-xs font-medium text-slate-200">{loggedInTeacher}</span>
+              <div className={`${styles.div13} glass-pill`}>
+                <span className={`${styles.span21} status-dot-live`} />
+                <span className={styles.span22}>{loggedInTeacher}</span>
                 <button
                   onClick={logout}
-                  className="text-slate-400 hover:text-rose-400 transition-colors ml-1"
+                  className={styles.button12}
                   title="Log Out"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <LogOut className={styles.logOut2} />
                 </button>
               </div>
             ) : (
               <button
                 onClick={openStaffLogin}
-                className="flex items-center gap-1.5 glass-pill px-3 py-1.5 rounded-full text-xs font-medium text-slate-200 hover:bg-slate-800 transition-colors"
+                className={`${styles.button13} glass-pill`}
               >
-                <User className="w-3.5 h-3.5 text-blue-400" />
+                <User className={styles.user2} />
                 Staff Login
               </button>
             )}

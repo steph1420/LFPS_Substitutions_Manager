@@ -1,0 +1,1005 @@
+/* Header.tsx styles (Bundle 47a: moved from Tailwind, no visual change). Values come from src/tokens/. */
+@layer utilities {
+  .div2, .appHeaderFull1 {
+    pointer-events: auto;
+  }
+
+  .motionDiv3, .div9C {
+    pointer-events: none;
+  }
+
+  .span8 {
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border-width: 0;
+    width: var(--lit-px-1);
+    height: var(--lit-px-1);
+    margin: var(--lit-px-neg1);
+    padding: 0;
+    position: absolute;
+    overflow: hidden;
+  }
+
+  .span13, .motionDiv5, .span20 {
+    position: absolute;
+  }
+
+  .motionDiv2, .motionDiv3 {
+    position: fixed;
+  }
+
+  .button1A, .button3, .button7A, .span15, .button10 {
+    position: relative;
+  }
+
+  .appHeaderFull1 {
+    position: sticky;
+    top: 0;
+    border-bottom-style: var(--tw-border-style);
+    border-bottom-width: var(--lit-px-1);
+    border-color: var(--lit-hex-1d293dcc);
+    padding-block: calc(var(--spacing) * 2.5);
+  }
+
+  .motionDiv2, .motionDiv5 {
+    inset: 0;
+  }
+
+  .span13 {
+    top: calc(var(--spacing) * -1);
+    right: calc(var(--spacing) * -1);
+  }
+
+  .span20 {
+    top: calc(var(--spacing) * -1.5);
+    right: calc(var(--spacing) * -1.5);
+    min-width: var(--lit-px-16);
+    padding-inline: var(--spacing);
+  }
+
+  .motionDiv3 {
+    top: calc(var(--spacing) * 3);
+    right: 0;
+    left: 0;
+    z-index: 50;
+  }
+
+  .motionDiv5 {
+    z-index: calc(10 * -1);
+    --tw-shadow-color: var(--lit-hex-155dfc4d);
+  }
+
+  .button7A {
+    z-index: 10;
+  }
+
+  .motionDiv2, .appHeaderFull1 {
+    z-index: 40;
+  }
+
+  .div3 {
+    margin-inline: auto;
+    max-width: var(--container-7xl);
+  }
+
+  .button12 {
+    margin-left: var(--spacing);
+  }
+
+  .motionButton1, .motionDiv1, .div1, .motionDiv3, .div3, .div4, .div5, .div6, .h11, .headerMobileActions1, .syncPillMobile1A, .span13, .div8, .button6, .div9A, .div10, .motionDiv4, .syncPill1A, .button9, .span20, .div13, .button13 {
+    display: flex;
+  }
+
+  .span7, .editingUnlockedBadge1, .p1, .div12 {
+    display: none;
+  }
+
+  .span3, .span4, .a1, .editingUnlockedBadge2, .button3, .button4, .span15, .span16, .button8, .button10, .button11 {
+    display: inline-flex;
+  }
+
+  .span5, .span11, .span17, .span19 {
+    height: calc(var(--spacing) * 1.5);
+    width: calc(var(--spacing) * 1.5);
+  }
+
+  .span1, .a1, .editingUnlockedBadge2, .span21 {
+    height: calc(var(--spacing) * 2);
+    width: calc(var(--spacing) * 2);
+  }
+
+  .chevronDown1, .x1, .bell1, .slidersHorizontal1, .logOut1, .user1, .fileSpreadsheet1, .logOut2, .user2 {
+    height: calc(var(--spacing) * 3.5);
+    width: calc(var(--spacing) * 3.5);
+  }
+
+  .span13, .smartphone1, .bell2, .span20, .slidersHorizontal2 {
+    height: calc(var(--spacing) * 4);
+  }
+
+  .div6 {
+    height: calc(var(--spacing) * 8);
+    width: calc(var(--spacing) * 8);
+    --tw-gradient-position: to top right in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops));
+    --tw-shadow: 0 var(--lit-px-10) var(--lit-px-15) var(--lit-px-neg3) var(--tw-shadow-color, var(--lit-hex-0000001a)), 0 var(--lit-px-4) var(--lit-px-6) var(--lit-px-neg4) var(--tw-shadow-color, var(--lit-hex-0000001a));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    --tw-shadow-color: var(--lit-hex-3080ff33);
+  }
+
+  .div11 {
+    height: var(--lit-px-26);
+    width: var(--lit-px-220);
+  }
+
+  .button3, .button4 {
+    min-height: calc(var(--spacing) * 8);
+    min-width: calc(var(--spacing) * 8);
+  }
+
+  .button8, .button10, .button11 {
+    min-height: calc(var(--spacing) * 10);
+    min-width: calc(var(--spacing) * 10);
+    padding: calc(var(--spacing) * 2.5);
+  }
+
+  .div10 {
+    min-height: var(--lit-px-34);
+    background-color: var(--lit-hex-0f172be6);
+    --tw-shadow: inset 0 var(--lit-px-2) var(--lit-px-4) 0 var(--tw-shadow-color, var(--lit-hex-0000000d));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
+  .span13, .smartphone1, .bell2, .slidersHorizontal2 {
+    width: calc(var(--spacing) * 4);
+  }
+
+  .appHeaderFull1, .div4, .div9A {
+    width: 100%;
+  }
+
+  .span12 {
+    max-width: 2.75rem;
+  }
+
+  .div8 {
+    max-width: 5.75rem;
+    padding-right: calc(var(--spacing) * .5);
+    padding-left: calc(var(--spacing) * 1.5);
+  }
+
+  .div4, .div5, .div7 {
+    min-width: 0;
+  }
+
+  .div5 {
+    flex-shrink: 1;
+  }
+
+  .div6, .span9, .a1, .span10, .editingUnlockedBadge2, .headerMobileActions1, .span11, .button5, .div10 {
+    flex-shrink: 0;
+  }
+
+  .motionButton1, .button3, .syncPill1A, .button10 {
+    cursor: pointer;
+  }
+
+  .div9A {
+    scrollbar-width: thin;
+    overflow-x: auto;
+  }
+
+  .span3, .div3, .span15 {
+    flex-direction: column;
+  }
+
+  .h11 {
+    flex-wrap: wrap;
+    font-size: var(--text-sm);
+    line-height: var(--tw-leading, var(--text-sm--line-height));
+    --tw-tracking: var(--tracking-tight);
+    letter-spacing: var(--tracking-tight);
+  }
+
+  .motionButton1, .motionDiv1, .div1, .span3, .span4, .div4, .div5, .div6, .h11, .headerMobileActions1, .syncPillMobile1A, .button3, .span13, .button4, .div8, .button6, .div10, .motionDiv4, .span15, .span16, .div12, .syncPill1A, .button8, .button9, .button10, .span20, .button11, .div13, .button13 {
+    align-items: center;
+  }
+
+  .div4 {
+    justify-content: space-between;
+  }
+
+  .motionDiv3, .div6, .button3, .span13, .button4, .div9A, .button8, .button10, .span20, .button11 {
+    justify-content: center;
+  }
+
+  .div1, .span3, .div8, .span15 {
+    gap: calc(var(--spacing) * .5);
+  }
+
+  .motionDiv1, .span4, .headerMobileActions1, .syncPillMobile1A, .button6, .span16, .button9 {
+    gap: var(--spacing);
+  }
+
+  .h11, .syncPill1A, .button13 {
+    gap: calc(var(--spacing) * 1.5);
+  }
+
+  .motionButton1, .div3, .div4, .div5, .div13 {
+    gap: calc(var(--spacing) * 2);
+  }
+
+  .div12 {
+    gap: calc(var(--spacing) * 2.5);
+  }
+
+  .span7, .span12, .span14 {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .motionButton1, .span1, .motionDiv1, .button1A, .span5, .button2, .span9, .a1, .span10, .editingUnlockedBadge1, .editingUnlockedBadge2, .syncPillMobile1A, .span11, .button3, .span13, .button4, .div8, .button5, .button6, .div10, .button7A, .motionDiv5, .span17, .syncPill1A, .span19, .span20, .div13, .span21, .button13 {
+    border-radius: var(--lit-radius-pill);
+  }
+
+  .div6, .button8, .button9, .button10, .button11 {
+    border-radius: var(--radius-lg);
+  }
+
+  .motionButton1, .motionDiv1, .span9, .span10, .editingUnlockedBadge1, .syncPillMobile1A, .div8, .div10, .syncPill1A, .button8, .button10, .button11, .div13 {
+    border-style: var(--tw-border-style);
+    border-width: var(--lit-px-1);
+  }
+
+  .editingUnlockedBadge1, .syncPillMobile1D, .syncPill1D {
+    border-color: var(--lit-hex-f99c004d);
+    background-color: var(--lit-hex-f99c001a);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .editingUnlockedBadge1, .syncPillMobile1D, .syncPill1D {
+      border-color: color-mix(in oklab, var(--color-amber-500) 30%, transparent);
+    }
+  }
+
+  .span9 {
+    border-color: var(--lit-hex-3080ff33);
+    background-color: var(--lit-hex-3080ff1a);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .span9 {
+      border-color: color-mix(in oklab, var(--color-blue-500) 20%, transparent);
+    }
+  }
+
+  .span10, .syncPillMobile1B, .syncPill1B {
+    border-color: var(--lit-hex-00bb7f4d);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .span10, .syncPillMobile1B, .syncPill1B {
+      border-color: color-mix(in oklab, var(--color-emerald-500) 30%, transparent);
+    }
+  }
+
+  .syncPillMobile1C, .syncPill1C {
+    border-color: var(--lit-hex-ff235766);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .syncPillMobile1C, .syncPill1C {
+      border-color: color-mix(in oklab, var(--color-rose-500) 40%, transparent);
+    }
+  }
+
+  .button8, .button9, .button10, .button11 {
+    border-color: var(--color-slate-700);
+  }
+
+  .syncPillMobile1E, .syncPill1E {
+    border-color: var(--lit-hex-31415866);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .syncPillMobile1E, .syncPill1E {
+      border-color: color-mix(in oklab, var(--color-slate-700) 40%, transparent);
+    }
+  }
+
+  .motionButton1, .div8, .div13 {
+    border-color: var(--lit-hex-314158cc);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .motionButton1, .div8, .div13 {
+      border-color: color-mix(in oklab, var(--color-slate-700) 80%, transparent);
+    }
+  }
+
+  .motionDiv1 {
+    border-color: var(--lit-hex-314158e6);
+    --tw-shadow: 0 var(--lit-px-20) var(--lit-px-48) var(--tw-shadow-color, var(--lit-hex-000000e6));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    --tw-backdrop-blur: blur(var(--blur-2xl));
+    -webkit-backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
+    backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .motionDiv1 {
+      border-color: color-mix(in oklab, var(--color-slate-700) 90%, transparent);
+    }
+  }
+
+  .button3, .button4, .div10 {
+    border-color: var(--color-slate-800);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .appHeaderFull1 {
+      border-color: color-mix(in oklab, var(--color-slate-800) 80%, transparent);
+    }
+  }
+
+  .a1, .editingUnlockedBadge2 {
+    background-color: var(--color-amber-400);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .editingUnlockedBadge1, .syncPillMobile1D, .syncPill1D {
+      background-color: color-mix(in oklab, var(--color-amber-500) 10%, transparent);
+    }
+  }
+
+  .motionDiv2 {
+    background-color: var(--lit-hex-0006);
+    --tw-backdrop-blur: blur(var(--lit-px-2));
+    -webkit-backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
+    backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .motionDiv2 {
+      background-color: color-mix(in oklab, var(--color-black) 40%, transparent);
+    }
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .span9 {
+      background-color: color-mix(in oklab, var(--color-blue-500) 10%, transparent);
+    }
+  }
+
+  .span5, .span17 {
+    background-color: var(--color-emerald-400);
+  }
+
+  .span10, .syncPillMobile1B, .syncPill1B {
+    background-color: var(--lit-hex-00bb7f1a);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .span10, .syncPillMobile1B, .syncPill1B {
+      background-color: color-mix(in oklab, var(--color-emerald-500) 10%, transparent);
+    }
+  }
+
+  .span13, .span20 {
+    background-color: var(--color-rose-500);
+    font-size: var(--lit-px-9);
+  }
+
+  .syncPillMobile1C, .syncPill1C {
+    background-color: var(--lit-hex-ff23571a);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .syncPillMobile1C, .syncPill1C {
+      background-color: color-mix(in oklab, var(--color-rose-500) 10%, transparent);
+    }
+  }
+
+  .syncPillMobile1E, .syncPill1E {
+    background-color: var(--lit-hex-1d293d99);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .syncPillMobile1E, .syncPill1E {
+      background-color: color-mix(in oklab, var(--color-slate-800) 60%, transparent);
+    }
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .div10 {
+      background-color: color-mix(in oklab, var(--color-slate-900) 90%, transparent);
+    }
+  }
+
+  .motionButton1, .motionDiv1 {
+    background-color: var(--lit-hex-020618fa);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .motionButton1, .motionDiv1 {
+      background-color: color-mix(in oklab, var(--color-slate-950) 98%, transparent);
+    }
+  }
+
+  .button1B, .motionDiv5 {
+    --tw-gradient-position: to right in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops));
+    --tw-shadow: 0 var(--lit-px-4) var(--lit-px-6) var(--lit-px-neg1) var(--tw-shadow-color, var(--lit-hex-0000001a)), 0 var(--lit-px-2) var(--lit-px-4) var(--lit-px-neg2) var(--tw-shadow-color, var(--lit-hex-0000001a));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
+  .button1B, .div6, .motionDiv5 {
+    --tw-gradient-from: var(--color-blue-600);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+
+  .div6 {
+    --tw-gradient-to: var(--color-indigo-500);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+
+  .button1B, .motionDiv5 {
+    --tw-gradient-to: var(--color-indigo-600);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+
+  .motionDiv1, .button2, .div10 {
+    padding: var(--spacing);
+  }
+
+  .button3, .button4, .button5 {
+    padding: calc(var(--spacing) * 1.5);
+  }
+
+  .span9, .span10, .editingUnlockedBadge1, .syncPillMobile1A {
+    padding-inline: calc(var(--spacing) * 1.5);
+  }
+
+  .button1A, .button6, .button7A, .syncPill1A, .button9 {
+    padding-inline: calc(var(--spacing) * 2.5);
+  }
+
+  .motionButton1, .appHeaderFull1, .div13, .button13 {
+    padding-inline: calc(var(--spacing) * 3);
+  }
+
+  .button1A, .span9, .span10, .editingUnlockedBadge1, .div8 {
+    padding-block: calc(var(--spacing) * .5);
+  }
+
+  .motionButton1, .syncPillMobile1A, .button7A, .syncPill1A, .button9 {
+    padding-block: var(--spacing);
+  }
+
+  .button6, .div13, .button13 {
+    padding-block: calc(var(--spacing) * 1.5);
+  }
+
+  .motionButton1, .button1A, .button6, .button9, .span22, .button13 {
+    font-size: var(--text-xs);
+    line-height: var(--tw-leading, var(--text-xs--line-height));
+  }
+
+  .span6A, .span18A {
+    font-size: var(--lit-px-8);
+  }
+
+  .span9, .span10, .editingUnlockedBadge1, .syncPillMobile1A, .span14 {
+    font-size: var(--lit-px-10);
+  }
+
+  .p1, .button7A, .syncPill1A {
+    font-size: var(--lit-px-11);
+  }
+
+  .span3, .span15 {
+    --tw-leading: 1;
+    line-height: 1;
+  }
+
+  .span2, .button1A, .div6, .span13, .span20 {
+    --tw-font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-bold);
+  }
+
+  .span9, .syncPillMobile1A, .span14, .syncPill1A, .span22, .button13 {
+    --tw-font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .motionButton1, .span6A, .h11, .span10, .editingUnlockedBadge1, .button7A, .span18A, .button9 {
+    --tw-font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .span2 {
+    --tw-tracking: var(--tracking-wider);
+    letter-spacing: var(--tracking-wider);
+  }
+
+  .editingUnlockedBadge1 {
+    white-space: nowrap;
+    color: var(--color-amber-300);
+  }
+
+  .syncPillMobile1D, .syncPill1D {
+    color: var(--accent-amber);
+  }
+
+  .syncPillMobile1B, .syncPill1B {
+    color: var(--accent-green);
+  }
+
+  .syncPillMobile1C, .syncPill1C {
+    color: var(--accent-red);
+  }
+
+  .span6B, .span18B {
+    color: var(--lit-hex-dbeafee6);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .span6B, .span18B {
+      color: color-mix(in oklab, var(--color-blue-100) 90%, transparent);
+    }
+  }
+
+  .span9, .slidersHorizontal1, .user1, .smartphone1, .user2 {
+    color: var(--color-blue-400);
+  }
+
+  .span10, .fileSpreadsheet1 {
+    color: var(--color-emerald-400);
+  }
+
+  .bell1, .bell2 {
+    color: var(--color-purple-400);
+  }
+
+  .span14, .button6, .span22, .button13 {
+    color: var(--color-slate-200);
+  }
+
+  .button3, .button4, .button8, .button9, .button10, .button11 {
+    color: var(--color-slate-300);
+  }
+
+  .chevronDown1, .button1C, .button2, .p1, .syncPillMobile1E, .button5, .button7C, .syncPill1E, .button12 {
+    color: var(--color-slate-400);
+  }
+
+  .span6C, .span18C {
+    color: var(--color-slate-500);
+  }
+
+  .motionButton1, .button1B, .div6, .h11, .span13, .button7B, .span20 {
+    color: var(--color-white);
+  }
+
+  .div9C {
+    opacity: 0;
+  }
+
+  .div9B {
+    opacity: 1;
+  }
+
+  .a1 {
+    --tw-shadow: 0 0 0 var(--lit-px-2) var(--tw-shadow-color, var(--lit-hex-fbbf2440));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
+  .motionButton1 {
+    --tw-shadow: 0 var(--lit-px-12) var(--lit-px-28) var(--tw-shadow-color, var(--lit-hex-000000d9));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
+  .button1D, .button7D {
+    --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(var(--lit-px-1) + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .div6 {
+      --tw-shadow-color: color-mix(in oklab, color-mix(in oklab, var(--color-blue-500) 20%, transparent) var(--tw-shadow-alpha), transparent);
+    }
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .motionDiv5 {
+      --tw-shadow-color: color-mix(in oklab, color-mix(in oklab, var(--color-blue-600) 30%, transparent) var(--tw-shadow-alpha), transparent);
+    }
+  }
+
+  .button1B {
+    --tw-shadow-color: var(--lit-hex-155dfc66);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .button1B {
+      --tw-shadow-color: color-mix(in oklab, color-mix(in oklab, var(--color-blue-600) 40%, transparent) var(--tw-shadow-alpha), transparent);
+    }
+  }
+
+  .button7D {
+    --tw-ring-color: var(--lit-hex-00d29499);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .button7D {
+      --tw-ring-color: color-mix(in oklab, var(--color-emerald-400) 60%, transparent);
+    }
+  }
+
+  .button1D {
+    --tw-ring-color: var(--lit-hex-00d294b3);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .button1D {
+      --tw-ring-color: color-mix(in oklab, var(--color-emerald-400) 70%, transparent);
+    }
+  }
+
+  .chevronDown1, .button1A, .button2, .button3, .button4, .button5, .button7A, .syncPill1A, .button8, .button9, .button10, .button11, .button12, .button13 {
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+
+  .button6 {
+    transition-property: transform, translate, scale, rotate;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+
+  .syncPill1A {
+    --tw-duration: .2s;
+    transition-duration: .2s;
+  }
+
+  .motionButton1, .motionDiv1, .motionDiv3, .appHeaderFull1, .motionDiv4 {
+    will-change: transform;
+  }
+
+  .button1A, .appHeaderFull1, .button7A {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  @media (hover: hover) {
+    .chevronDown1:is(:where(.motionButton1):hover *) {
+      color: var(--color-blue-400);
+    }
+
+    .button8:hover, .button11:hover {
+      border-color: var(--lit-hex-3080ff66);
+      color: var(--color-blue-400);
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .button8:hover, .button11:hover {
+        border-color: color-mix(in oklab, var(--color-blue-500) 40%, transparent);
+      }
+    }
+
+    .button9:hover {
+      border-color: var(--lit-hex-00bb7f66);
+      color: var(--color-emerald-400);
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .button9:hover {
+        border-color: color-mix(in oklab, var(--color-emerald-500) 40%, transparent);
+      }
+    }
+
+    .button10:hover {
+      border-color: var(--lit-hex-ac4bff66);
+      color: var(--color-purple-400);
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .button10:hover {
+        border-color: color-mix(in oklab, var(--color-purple-500) 40%, transparent);
+      }
+    }
+
+    .button2:hover, .button13:hover {
+      background-color: var(--color-slate-800);
+    }
+
+    .button5:hover, .button12:hover {
+      color: var(--color-rose-400);
+    }
+
+    .button1C:hover, .button7C:hover {
+      color: var(--color-slate-200);
+    }
+
+    .button2:hover {
+      color: var(--color-white);
+    }
+  }
+
+  .syncPill1A:focus-visible {
+    --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(var(--lit-px-2) + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    --tw-ring-color: var(--lit-hex-54a2ff99);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .syncPill1A:focus-visible {
+      --tw-ring-color: color-mix(in oklab, var(--color-blue-400) 60%, transparent);
+    }
+  }
+
+  .motionButton1:active, .button3:active, .button4:active, .button6:active, .button8:active, .button10:active, .button11:active {
+    --tw-scale-x: 95%;
+    --tw-scale-y: 95%;
+    --tw-scale-z: 95%;
+    scale: var(--tw-scale-x) var(--tw-scale-y);
+  }
+
+  @media (min-width: 40rem) {
+    .span8, .editingUnlockedBadge2 {
+      display: none;
+    }
+
+    .span7 {
+      display: inline;
+    }
+
+    .editingUnlockedBadge1 {
+      display: inline-flex;
+    }
+
+    .div1 {
+      gap: var(--spacing);
+    }
+
+    .button1A {
+      padding-inline: calc(var(--spacing) * 3);
+    }
+
+    .button7A {
+      padding-inline: calc(var(--spacing) * 3.5);
+      font-size: var(--text-xs);
+      line-height: var(--tw-leading, var(--text-xs--line-height));
+    }
+
+    .appHeaderFull1 {
+      padding-inline: calc(var(--spacing) * 6);
+      padding-block: calc(var(--spacing) * 3);
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .div12 {
+      display: flex;
+    }
+
+    .headerMobileActions1 {
+      display: none;
+    }
+
+    .div4, .div9A {
+      width: auto;
+    }
+
+    .div3 {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: calc(var(--spacing) * 3);
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .p1 {
+      display: block;
+    }
+  }
+}
+:global([data-theme="light"]) .chevronDown1, :global([data-theme="warm-sepia"]) .chevronDown1 {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .button1C, :global([data-theme="warm-sepia"]) .button1C {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .span6C, :global([data-theme="warm-sepia"]) .span6C {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .button2, :global([data-theme="warm-sepia"]) .button2 {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .p1, :global([data-theme="warm-sepia"]) .p1 {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .syncPillMobile1E, :global([data-theme="warm-sepia"]) .syncPillMobile1E {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .button5, :global([data-theme="warm-sepia"]) .button5 {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .button7C, :global([data-theme="warm-sepia"]) .button7C {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .span18C, :global([data-theme="warm-sepia"]) .span18C {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .syncPill1E, :global([data-theme="warm-sepia"]) .syncPill1E {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .button12, :global([data-theme="warm-sepia"]) .button12 {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .button3, :global([data-theme="warm-sepia"]) .button3 {
+  border-color: var(--border-color);
+}
+:global([data-theme="light"]) .button4, :global([data-theme="warm-sepia"]) .button4 {
+  border-color: var(--border-color);
+}
+:global([data-theme="light"]) .div10, :global([data-theme="warm-sepia"]) .div10 {
+  border-color: var(--border-color);
+}
+:global([data-theme="light"]) .button8, :global([data-theme="warm-sepia"]) .button8 {
+  border-color: var(--border-color);
+}
+:global([data-theme="light"]) .button9, :global([data-theme="warm-sepia"]) .button9 {
+  border-color: var(--border-color);
+}
+:global([data-theme="light"]) .button10, :global([data-theme="warm-sepia"]) .button10 {
+  border-color: var(--border-color);
+}
+:global([data-theme="light"]) .button11, :global([data-theme="warm-sepia"]) .button11 {
+  border-color: var(--border-color);
+}
+:global([data-theme="light"]) .motionButton1:not(:global(.text-on-accent)), :global([data-theme="warm-sepia"]) .motionButton1:not(:global(.text-on-accent)), :global([data-theme="utopian-glass"]) .motionButton1:not(:global(.text-on-accent)), :global([data-theme="aero-frost"]) .motionButton1:not(:global(.text-on-accent)), :global([data-theme="high-contrast"]) .motionButton1:not(:global(.text-on-accent)) {
+  color: var(--text-primary);
+}
+:global([data-theme="light"]) .button1B:not(:global(.text-on-accent)), :global([data-theme="warm-sepia"]) .button1B:not(:global(.text-on-accent)), :global([data-theme="utopian-glass"]) .button1B:not(:global(.text-on-accent)), :global([data-theme="aero-frost"]) .button1B:not(:global(.text-on-accent)), :global([data-theme="high-contrast"]) .button1B:not(:global(.text-on-accent)) {
+  color: var(--text-primary);
+}
+:global([data-theme="light"]) .div6:not(:global(.text-on-accent)), :global([data-theme="warm-sepia"]) .div6:not(:global(.text-on-accent)), :global([data-theme="utopian-glass"]) .div6:not(:global(.text-on-accent)), :global([data-theme="aero-frost"]) .div6:not(:global(.text-on-accent)), :global([data-theme="high-contrast"]) .div6:not(:global(.text-on-accent)) {
+  color: var(--text-primary);
+}
+:global([data-theme="light"]) .h11:not(:global(.text-on-accent)), :global([data-theme="warm-sepia"]) .h11:not(:global(.text-on-accent)), :global([data-theme="utopian-glass"]) .h11:not(:global(.text-on-accent)), :global([data-theme="aero-frost"]) .h11:not(:global(.text-on-accent)), :global([data-theme="high-contrast"]) .h11:not(:global(.text-on-accent)) {
+  color: var(--text-primary);
+}
+:global([data-theme="light"]) .span13:not(:global(.text-on-accent)), :global([data-theme="warm-sepia"]) .span13:not(:global(.text-on-accent)), :global([data-theme="utopian-glass"]) .span13:not(:global(.text-on-accent)), :global([data-theme="aero-frost"]) .span13:not(:global(.text-on-accent)), :global([data-theme="high-contrast"]) .span13:not(:global(.text-on-accent)) {
+  color: var(--text-primary);
+}
+:global([data-theme="light"]) .button7B:not(:global(.text-on-accent)), :global([data-theme="warm-sepia"]) .button7B:not(:global(.text-on-accent)), :global([data-theme="utopian-glass"]) .button7B:not(:global(.text-on-accent)), :global([data-theme="aero-frost"]) .button7B:not(:global(.text-on-accent)), :global([data-theme="high-contrast"]) .button7B:not(:global(.text-on-accent)) {
+  color: var(--text-primary);
+}
+:global([data-theme="light"]) .span20:not(:global(.text-on-accent)), :global([data-theme="warm-sepia"]) .span20:not(:global(.text-on-accent)), :global([data-theme="utopian-glass"]) .span20:not(:global(.text-on-accent)), :global([data-theme="aero-frost"]) .span20:not(:global(.text-on-accent)), :global([data-theme="high-contrast"]) .span20:not(:global(.text-on-accent)) {
+  color: var(--text-primary);
+}
+@media (prefers-color-scheme: light) {
+  :global([data-theme="system"]) .motionButton1:not(:global(.text-on-accent)) {
+    color: var(--text-primary);
+  }
+}
+@media (prefers-color-scheme: light) {
+  :global([data-theme="system"]) .button1B:not(:global(.text-on-accent)) {
+    color: var(--text-primary);
+  }
+}
+@media (prefers-color-scheme: light) {
+  :global([data-theme="system"]) .div6:not(:global(.text-on-accent)) {
+    color: var(--text-primary);
+  }
+}
+@media (prefers-color-scheme: light) {
+  :global([data-theme="system"]) .h11:not(:global(.text-on-accent)) {
+    color: var(--text-primary);
+  }
+}
+@media (prefers-color-scheme: light) {
+  :global([data-theme="system"]) .span13:not(:global(.text-on-accent)) {
+    color: var(--text-primary);
+  }
+}
+@media (prefers-color-scheme: light) {
+  :global([data-theme="system"]) .button7B:not(:global(.text-on-accent)) {
+    color: var(--text-primary);
+  }
+}
+@media (prefers-color-scheme: light) {
+  :global([data-theme="system"]) .span20:not(:global(.text-on-accent)) {
+    color: var(--text-primary);
+  }
+}
+@media (prefers-color-scheme: light) {
+  :global([data-theme="system"]) .button1B.button1B {
+    color: var(--on-accent);
+  }
+}
+@media (prefers-color-scheme: light) {
+  :global([data-theme="system"]) .div6.div6 {
+    color: var(--on-accent);
+  }
+}
+@media (prefers-color-scheme: light) {
+  :global([data-theme="system"]) .span13.span13 {
+    color: var(--on-accent);
+  }
+}
+@media (prefers-color-scheme: light) {
+  :global([data-theme="system"]) .span20.span20 {
+    color: var(--on-accent);
+  }
+}
+:global([data-theme="light"]) .button1B.button1B, :global([data-theme="warm-sepia"]) .button1B.button1B, :global([data-theme="utopian-glass"]) .button1B.button1B, :global([data-theme="aero-frost"]) .button1B.button1B, :global([data-theme="high-contrast"]) .button1B.button1B {
+  color: var(--on-accent);
+}
+:global([data-theme="light"]) .div6.div6, :global([data-theme="warm-sepia"]) .div6.div6, :global([data-theme="utopian-glass"]) .div6.div6, :global([data-theme="aero-frost"]) .div6.div6, :global([data-theme="high-contrast"]) .div6.div6 {
+  color: var(--on-accent);
+}
+:global([data-theme="light"]) .span13.span13, :global([data-theme="warm-sepia"]) .span13.span13, :global([data-theme="utopian-glass"]) .span13.span13, :global([data-theme="aero-frost"]) .span13.span13, :global([data-theme="high-contrast"]) .span13.span13 {
+  color: var(--on-accent);
+}
+:global([data-theme="light"]) .span20.span20, :global([data-theme="warm-sepia"]) .span20.span20, :global([data-theme="utopian-glass"]) .span20.span20, :global([data-theme="aero-frost"]) .span20.span20, :global([data-theme="high-contrast"]) .span20.span20 {
+  color: var(--on-accent);
+}
+:global([data-theme="utopian-glass"]) .chevronDown1, :global([data-theme="aero-frost"]) .chevronDown1, :global([data-theme="high-contrast"]) .chevronDown1 {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .button1C, :global([data-theme="aero-frost"]) .button1C, :global([data-theme="high-contrast"]) .button1C {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .span6C, :global([data-theme="aero-frost"]) .span6C, :global([data-theme="high-contrast"]) .span6C {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .button2, :global([data-theme="aero-frost"]) .button2, :global([data-theme="high-contrast"]) .button2 {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .p1, :global([data-theme="aero-frost"]) .p1, :global([data-theme="high-contrast"]) .p1 {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .syncPillMobile1E, :global([data-theme="aero-frost"]) .syncPillMobile1E, :global([data-theme="high-contrast"]) .syncPillMobile1E {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .button5, :global([data-theme="aero-frost"]) .button5, :global([data-theme="high-contrast"]) .button5 {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .button7C, :global([data-theme="aero-frost"]) .button7C, :global([data-theme="high-contrast"]) .button7C {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .span18C, :global([data-theme="aero-frost"]) .span18C, :global([data-theme="high-contrast"]) .span18C {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .syncPill1E, :global([data-theme="aero-frost"]) .syncPill1E, :global([data-theme="high-contrast"]) .syncPill1E {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .button12, :global([data-theme="aero-frost"]) .button12, :global([data-theme="high-contrast"]) .button12 {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .button3, :global([data-theme="aero-frost"]) .button3, :global([data-theme="high-contrast"]) .button3 {
+  border-color: var(--border-color);
+}
+:global([data-theme="utopian-glass"]) .button4, :global([data-theme="aero-frost"]) .button4, :global([data-theme="high-contrast"]) .button4 {
+  border-color: var(--border-color);
+}
+:global([data-theme="utopian-glass"]) .div10, :global([data-theme="aero-frost"]) .div10, :global([data-theme="high-contrast"]) .div10 {
+  border-color: var(--border-color);
+}
+:global([data-theme="utopian-glass"]) .button8, :global([data-theme="aero-frost"]) .button8, :global([data-theme="high-contrast"]) .button8 {
+  border-color: var(--border-color);
+}
+:global([data-theme="utopian-glass"]) .button9, :global([data-theme="aero-frost"]) .button9, :global([data-theme="high-contrast"]) .button9 {
+  border-color: var(--border-color);
+}
+:global([data-theme="utopian-glass"]) .button10, :global([data-theme="aero-frost"]) .button10, :global([data-theme="high-contrast"]) .button10 {
+  border-color: var(--border-color);
+}
+:global([data-theme="utopian-glass"]) .button11, :global([data-theme="aero-frost"]) .button11, :global([data-theme="high-contrast"]) .button11 {
+  border-color: var(--border-color);
+}

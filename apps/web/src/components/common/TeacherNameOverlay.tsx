@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import styles from './TeacherNameOverlay.module.css';
+
 interface TeacherNameOverlayProps {
   abbr: string;
   fullName: string;
@@ -44,7 +46,7 @@ export const TeacherNameOverlay: React.FC<TeacherNameOverlayProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative inline-flex items-center max-w-full select-none cursor-pointer group/name"
+      className={styles.div1}
       onMouseEnter={() => hasDistinctFullName && setIsRevealed(true)}
       onMouseLeave={() => setIsRevealed(false)}
       onClick={(e) => {
@@ -55,7 +57,7 @@ export const TeacherNameOverlay: React.FC<TeacherNameOverlayProps> = ({
       title={hasDistinctFullName ? `${fullName} (Tap/Hover to view full name)` : undefined}
     >
       {/* Base Abbreviated Name: Governs DOM flow with ZERO layout shift */}
-      <span className={`block truncate ${className}`}>
+      <span className={`${styles.span1} ${className}`}>
         {abbr}
       </span>
 
@@ -68,12 +70,12 @@ export const TeacherNameOverlay: React.FC<TeacherNameOverlayProps> = ({
             exit={{ opacity: 0, x: -4, scaleX: 0.96 }}
             transition={{ type: 'spring', stiffness: 450, damping: 28, mass: 0.5 }}
             style={{ transformOrigin: 'left center' }}
-            className="absolute left-0 -top-1.5 z-50 flex items-center gap-2.5 pl-2.5 pr-3.5 py-1.5 rounded-xl bg-slate-900/98 border border-slate-700/90 shadow-[0_14px_34px_rgba(0,0,0,0.85)] backdrop-blur-2xl whitespace-nowrap pointer-events-auto"
+            className={styles.motionDiv1}
           >
             {/* Sliding Window Acrylic Grip Bar Accent */}
-            <span className="w-1 h-3 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50 flex-shrink-0" />
+            <span className={styles.span2} />
 
-            <span className="font-bold text-white text-xs sm:text-sm tracking-tight leading-none">
+            <span className={styles.span3}>
               {fullName}
             </span>
           </motion.div>
