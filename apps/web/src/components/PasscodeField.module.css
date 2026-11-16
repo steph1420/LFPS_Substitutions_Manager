@@ -1,0 +1,63 @@
+/* PasscodeField.tsx styles (Bundle 47a: moved from Tailwind, no visual change). Values come from src/tokens/. */
+@layer utilities {
+  .motionSpan1, .input1 {
+    position: absolute;
+  }
+
+  .motionDiv1, .span1 {
+    position: relative;
+  }
+
+  .input1 {
+    inset: 0;
+    height: 100%;
+    width: 100%;
+    cursor: text;
+    opacity: 0;
+  }
+
+  .motionSpan1 {
+    inset: var(--lit-px-neg1);
+    background-color: var(--color-slate-100);
+  }
+
+  .div1 {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 3);
+    border-radius: var(--radius-xl);
+    border-color: var(--color-slate-700);
+    background-color: var(--color-slate-950);
+    padding-inline: calc(var(--spacing) * 3);
+    padding-block: calc(var(--spacing) * 2.5);
+  }
+
+  .span1 {
+    height: calc(var(--spacing) * 3);
+    width: calc(var(--spacing) * 3);
+    border-color: var(--color-slate-500);
+  }
+
+  .motionDiv1 {
+    width: fit-content;
+  }
+
+  .span1, .motionSpan1 {
+    border-radius: var(--lit-radius-pill);
+  }
+
+  .div1, .span1 {
+    border-style: var(--tw-border-style);
+    border-width: var(--lit-px-1);
+  }
+
+  .input1:disabled {
+    cursor: not-allowed;
+  }
+}
+:global([data-theme="light"]) .div1, :global([data-theme="warm-sepia"]) .div1 {
+  border-color: var(--border-color);
+}
+:global([data-theme="utopian-glass"]) .div1, :global([data-theme="aero-frost"]) .div1, :global([data-theme="high-contrast"]) .div1 {
+  border-color: var(--border-color);
+}

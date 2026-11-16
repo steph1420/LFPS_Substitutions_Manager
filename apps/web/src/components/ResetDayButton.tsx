@@ -3,6 +3,8 @@ import { RotateCcw } from 'lucide-react';
 import { useTimetableStore } from '../store/useTimetableStore.js';
 import { usePermissions } from './PermissionGuard.js';
 
+import styles from './ResetDayButton.module.css';
+
 interface ResetDayButtonProps {
   compact?: boolean;
 }
@@ -78,15 +80,15 @@ export const ResetDayButton: React.FC<ResetDayButtonProps> = ({ compact = false 
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchMove={handleTouchEnd}
-      className={`flex items-center gap-1.5 rounded-lg border transition-all text-xs font-semibold select-none active:scale-95 ${
+      className={`${styles.button1A} ${
         compact
-          ? 'p-1.5 glass-pill border-slate-700/60 text-slate-300 hover:text-amber-400 hover:border-amber-500/40'
-          : 'px-2.5 py-1 glass-pill border-slate-700/60 text-slate-300 hover:text-amber-400 hover:border-amber-500/40'
+          ? `${styles.button1B} glass-pill`
+          : `${styles.button1C} glass-pill`
       }`}
       title={`Reset ${selectedDay} to baseline (Long press or right-click to purge history)`}
     >
-      <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-      {!compact && <span className="hidden sm:inline">Reset Day</span>}
+      <RotateCcw className={styles.rotateCcw1} />
+      {!compact && <span className={styles.span1}>Reset Day</span>}
     </button>
   );
 };

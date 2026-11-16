@@ -4,6 +4,8 @@ import { SPRING_TRANSITIONS } from '@lfps/ui';
 import { useTimetableStore } from '../store/useTimetableStore.js';
 import { Trash2 } from 'lucide-react';
 
+import styles from './ResetPurgeContextMenu.module.css';
+
 export const ResetPurgeContextMenu: React.FC = () => {
   const {
     activeResetPurgeMenu,
@@ -64,7 +66,7 @@ export const ResetPurgeContextMenu: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 pointer-events-auto">
+      <div className={styles.div1}>
         <motion.div
           ref={menuRef}
           initial={{ opacity: 0, scale: 0.9, y: -4 }}
@@ -72,21 +74,21 @@ export const ResetPurgeContextMenu: React.FC = () => {
           exit={{ opacity: 0, scale: 0.9, y: -4 }}
           transition={SPRING_TRANSITIONS.snappy}
           style={{ top: clampedY, left: clampedX }}
-          className="absolute w-[240px] bg-slate-900/98 backdrop-blur-xl border border-slate-700/90 rounded-2xl p-3 shadow-2xl shadow-black/80 flex flex-col gap-2 z-50 text-xs select-none"
+          className={styles.motionDiv1}
         >
-          <div className="flex items-center gap-2 text-rose-400 font-bold border-b border-slate-800 pb-1.5">
-            <Trash2 className="w-4 h-4 flex-shrink-0" />
+          <div className={styles.div2}>
+            <Trash2 className={styles.trash21} />
             <span>Purge Action History</span>
           </div>
 
-          <p className="text-[11px] text-slate-400 leading-tight">
+          <p className={styles.p1}>
             Permanently clear all undo & redo buffers across Routine, Substitutions, and Staff Roster ({totalSnapshots} snapshots).
           </p>
 
-          <div className="flex items-center gap-2 pt-1">
+          <div className={styles.div3}>
             <button
               onClick={closeResetPurgeMenu}
-              className="flex-1 px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white font-semibold transition-colors text-center cursor-pointer"
+              className={styles.button1}
             >
               Cancel
             </button>
@@ -96,7 +98,7 @@ export const ResetPurgeContextMenu: React.FC = () => {
                 triggerHaptic(50);
                 closeResetPurgeMenu();
               }}
-              className="flex-1 px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold shadow-md shadow-rose-600/30 transition-colors text-center cursor-pointer"
+              className={styles.button2}
             >
               Purge All
             </button>

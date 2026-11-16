@@ -1,0 +1,92 @@
+/* UndoRedoControls.tsx styles (Bundle 47a: moved from Tailwind, no visual change). Values come from src/tokens/. */
+@layer utilities {
+  .div1, .button1A, .button2A {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing);
+  }
+
+  .span1, .span2 {
+    display: none;
+  }
+
+  .undo21, .redo21 {
+    height: calc(var(--spacing) * 3.5);
+    width: calc(var(--spacing) * 3.5);
+    color: var(--color-blue-400);
+  }
+
+  .button1C, .button2C {
+    cursor: not-allowed;
+    opacity: .4;
+  }
+
+  .button1B, .button2B {
+    cursor: pointer;
+    color: var(--color-slate-300);
+  }
+
+  .button1A, .button2A {
+    border-radius: var(--radius-lg);
+    padding-inline: calc(var(--spacing) * 2);
+    padding-block: var(--spacing);
+    transition-property: all;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+
+  .div1 {
+    border-radius: var(--radius-xl);
+    border-style: var(--tw-border-style);
+    border-width: var(--lit-px-1);
+    border-color: var(--color-slate-800);
+    background-color: var(--lit-hex-0f172be6);
+    padding: calc(var(--spacing) * .5);
+    font-size: var(--text-xs);
+    line-height: var(--tw-leading, var(--text-xs--line-height));
+    --tw-font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .div1 {
+      background-color: color-mix(in oklab, var(--color-slate-900) 90%, transparent);
+    }
+  }
+
+  .button1C, .button2C {
+    color: var(--color-slate-600);
+  }
+
+  @media (hover: hover) {
+    .button1B:hover, .button2B:hover {
+      background-color: var(--lit-hex-1d293dcc);
+      color: var(--color-white);
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .button1B:hover, .button2B:hover {
+        background-color: color-mix(in oklab, var(--color-slate-800) 80%, transparent);
+      }
+    }
+  }
+
+  .button1A:active, .button2A:active {
+    --tw-scale-x: 95%;
+    --tw-scale-y: 95%;
+    --tw-scale-z: 95%;
+    scale: var(--tw-scale-x) var(--tw-scale-y);
+  }
+
+  @media (min-width: 40rem) {
+    .span1, .span2 {
+      display: inline;
+    }
+  }
+}
+:global([data-theme="light"]) .div1, :global([data-theme="warm-sepia"]) .div1 {
+  border-color: var(--border-color);
+}
+:global([data-theme="utopian-glass"]) .div1, :global([data-theme="aero-frost"]) .div1, :global([data-theme="high-contrast"]) .div1 {
+  border-color: var(--border-color);
+}

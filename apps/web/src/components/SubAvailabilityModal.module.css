@@ -1,0 +1,443 @@
+/* SubAvailabilityModal.tsx styles (Bundle 47a: moved from Tailwind, no visual change). Values come from src/tokens/. */
+@layer utilities {
+  .div1 {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background-color: var(--lit-hex-0009);
+    padding: calc(var(--spacing) * 4);
+    --tw-backdrop-blur: blur(var(--blur-md));
+    -webkit-backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
+    backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
+  }
+
+  .div1, .div2, .h31, .div3, .div4, .div5, .button2A, .button3, .div13, .button4 {
+    display: flex;
+    align-items: center;
+  }
+
+  .div10 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bus1, .users1, .fileText1, .building21, .check1 {
+    height: calc(var(--spacing) * 3.5);
+    width: calc(var(--spacing) * 3.5);
+  }
+
+  .sparkles1, .x1 {
+    height: calc(var(--spacing) * 4);
+    width: calc(var(--spacing) * 4);
+  }
+
+  .div5 {
+    height: calc(var(--spacing) * 9);
+    width: calc(var(--spacing) * 9);
+    border-radius: var(--lit-radius-pill);
+    border-color: var(--lit-hex-3080ff4d);
+    background-color: var(--lit-hex-155dfc33);
+    color: var(--color-blue-400);
+  }
+
+  .motionDiv1 {
+    width: 100%;
+    max-width: var(--container-md);
+    border-radius: var(--radius-2xl);
+    background-color: var(--color-slate-900);
+    padding: calc(var(--spacing) * 5);
+    --tw-shadow: 0 var(--lit-px-25) var(--lit-px-50) var(--lit-px-neg12) var(--tw-shadow-color, var(--lit-hex-00000040));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
+  .input1 {
+    flex: 1;
+    background-color: var(--color-slate-950);
+  }
+
+  .button2A {
+    flex-direction: column;
+    --tw-shadow: 0 var(--lit-px-4) var(--lit-px-6) var(--lit-px-neg1) var(--tw-shadow-color, var(--lit-hex-0000001a)), 0 var(--lit-px-2) var(--lit-px-4) var(--lit-px-neg2) var(--tw-shadow-color, var(--lit-hex-0000001a));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
+  .div2, .div3 {
+    justify-content: space-between;
+  }
+
+  .div1, .div5, .button2A {
+    justify-content: center;
+  }
+
+  .button4 {
+    gap: var(--spacing);
+    background-color: var(--color-blue-600);
+  }
+
+  .h31, .div10, .button3, .div13 {
+    gap: calc(var(--spacing) * 2);
+  }
+
+  .div4 {
+    gap: calc(var(--spacing) * 2.5);
+  }
+
+  .div3 {
+    gap: calc(var(--spacing) * 3);
+    border-color: var(--lit-hex-31415880);
+    background-color: var(--lit-hex-1d293d99);
+    padding: calc(var(--spacing) * 3.5);
+  }
+
+  :where(.div11 > :not(:last-child)) {
+    --tw-space-y-reverse: 0;
+    margin-block-start: calc(calc(var(--spacing) * 1.5) * var(--tw-space-y-reverse));
+    margin-block-end: calc(calc(var(--spacing) * 1.5) * calc(1 - var(--tw-space-y-reverse)));
+  }
+
+  :where(.div8 > :not(:last-child)) {
+    --tw-space-y-reverse: 0;
+    margin-block-start: calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse));
+    margin-block-end: calc(calc(var(--spacing) * 2) * calc(1 - var(--tw-space-y-reverse)));
+  }
+
+  :where(.motionDiv1 > :not(:last-child)) {
+    --tw-space-y-reverse: 0;
+    margin-block-start: calc(calc(var(--spacing) * 4) * var(--tw-space-y-reverse));
+    margin-block-end: calc(calc(var(--spacing) * 4) * calc(1 - var(--tw-space-y-reverse)));
+  }
+
+  .button1 {
+    border-radius: var(--radius-lg);
+    padding: var(--spacing);
+  }
+
+  .div3, .button2A, .button3, .input1, .button4 {
+    border-radius: var(--radius-xl);
+  }
+
+  .motionDiv1, .div3, .div5, .button2A, .button3, .input1 {
+    border-style: var(--tw-border-style);
+    border-width: var(--lit-px-1);
+  }
+
+  .div2 {
+    border-bottom-style: var(--tw-border-style);
+    border-bottom-width: var(--lit-px-1);
+    padding-bottom: calc(var(--spacing) * 3);
+  }
+
+  .button2B {
+    border-color: var(--lit-hex-f99c0066);
+    background-color: var(--lit-hex-f99c0033);
+    color: var(--color-amber-300);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .button2B {
+      border-color: color-mix(in oklab, var(--color-amber-500) 40%, transparent);
+    }
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .div5 {
+      border-color: color-mix(in oklab, var(--color-blue-500) 30%, transparent);
+    }
+  }
+
+  .button2C {
+    border-color: var(--lit-hex-00bb7f66);
+    color: var(--color-emerald-300);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .button2C {
+      border-color: color-mix(in oklab, var(--color-emerald-500) 40%, transparent);
+    }
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .div3 {
+      border-color: color-mix(in oklab, var(--color-slate-700) 50%, transparent);
+    }
+  }
+
+  .button3 {
+    border-color: var(--lit-hex-31415899);
+    background-color: var(--lit-hex-1d293dcc);
+    padding-block: calc(var(--spacing) * 2);
+    --tw-font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-slate-200);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .button3 {
+      border-color: color-mix(in oklab, var(--color-slate-700) 60%, transparent);
+    }
+  }
+
+  .motionDiv1, .div2, .input1 {
+    border-color: var(--color-slate-800);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .button2B {
+      background-color: color-mix(in oklab, var(--color-amber-500) 20%, transparent);
+    }
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .div1 {
+      background-color: color-mix(in oklab, var(--color-black) 60%, transparent);
+    }
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .div5 {
+      background-color: color-mix(in oklab, var(--color-blue-600) 20%, transparent);
+    }
+  }
+
+  .button2C {
+    background-color: var(--lit-hex-00bb7f33);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .button2C {
+      background-color: color-mix(in oklab, var(--color-emerald-500) 20%, transparent);
+    }
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .div3 {
+      background-color: color-mix(in oklab, var(--color-slate-800) 60%, transparent);
+    }
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .button3 {
+      background-color: color-mix(in oklab, var(--color-slate-800) 80%, transparent);
+    }
+  }
+
+  .button2A, .button3, .input1, .button4 {
+    padding-inline: calc(var(--spacing) * 3);
+  }
+
+  .button2A, .input1, .button4 {
+    padding-block: calc(var(--spacing) * 1.5);
+  }
+
+  .div11 {
+    padding-top: var(--spacing);
+  }
+
+  .h31 {
+    font-size: var(--text-sm);
+    line-height: var(--tw-leading, var(--text-sm--line-height));
+  }
+
+  .div5, .div6, .button2A, .button3, .input1, .button4 {
+    font-size: var(--text-xs);
+    line-height: var(--tw-leading, var(--text-xs--line-height));
+  }
+
+  .span1 {
+    font-size: var(--lit-px-9);
+    --tw-font-weight: var(--font-weight-normal);
+    font-weight: var(--font-weight-normal);
+  }
+
+  .div7 {
+    font-size: var(--lit-px-10);
+  }
+
+  .p1, .div9, .div12 {
+    font-size: var(--lit-px-11);
+  }
+
+  .h31, .div5, .div6 {
+    --tw-font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-bold);
+  }
+
+  .button2A, .div9, .div12, .button4 {
+    --tw-font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .sparkles1 {
+    color: var(--color-amber-400);
+  }
+
+  .building21 {
+    color: var(--color-indigo-400);
+  }
+
+  .div6, .input1 {
+    color: var(--color-slate-100);
+  }
+
+  .p1, .button1, .div7, .span1, .div9, .div12 {
+    color: var(--color-slate-400);
+  }
+
+  .h31, .button4 {
+    color: var(--color-white);
+  }
+
+  .button2A, .button3 {
+    transition-property: all;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+
+  .button1, .input1, .button4 {
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+
+  .input1::placeholder {
+    color: var(--color-slate-600);
+  }
+
+  @media (hover: hover) {
+    .button3:hover {
+      border-color: var(--lit-hex-3080ff66);
+      background-color: var(--lit-hex-155dfc33);
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .button3:hover {
+        border-color: color-mix(in oklab, var(--color-blue-500) 40%, transparent);
+      }
+    }
+
+    .button2B:hover {
+      background-color: var(--lit-hex-f99c004d);
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .button2B:hover {
+        background-color: color-mix(in oklab, var(--color-amber-500) 30%, transparent);
+      }
+    }
+
+    .button4:hover {
+      background-color: var(--color-blue-500);
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .button3:hover {
+        background-color: color-mix(in oklab, var(--color-blue-600) 20%, transparent);
+      }
+    }
+
+    .button2C:hover {
+      background-color: var(--lit-hex-00bb7f4d);
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .button2C:hover {
+        background-color: color-mix(in oklab, var(--color-emerald-500) 30%, transparent);
+      }
+    }
+
+    .button1:hover {
+      color: var(--color-white);
+    }
+  }
+
+  .input1:focus {
+    border-color: var(--color-blue-500);
+    --tw-outline-style: none;
+    outline-style: none;
+  }
+
+  .button2A:active, .button3:active {
+    --tw-scale-x: 95%;
+    --tw-scale-y: 95%;
+    --tw-scale-z: 95%;
+    scale: var(--tw-scale-x) var(--tw-scale-y);
+  }
+}
+:global([data-theme="light"]) .p1, :global([data-theme="warm-sepia"]) .p1 {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .button1, :global([data-theme="warm-sepia"]) .button1 {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .div7, :global([data-theme="warm-sepia"]) .div7 {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .span1, :global([data-theme="warm-sepia"]) .span1 {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .div9, :global([data-theme="warm-sepia"]) .div9 {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .div12, :global([data-theme="warm-sepia"]) .div12 {
+  color: var(--text-secondary);
+}
+:global([data-theme="light"]) .motionDiv1, :global([data-theme="warm-sepia"]) .motionDiv1 {
+  border-color: var(--border-color);
+}
+:global([data-theme="light"]) .div2, :global([data-theme="warm-sepia"]) .div2 {
+  border-color: var(--border-color);
+}
+:global([data-theme="light"]) .input1, :global([data-theme="warm-sepia"]) .input1 {
+  border-color: var(--border-color);
+}
+:global([data-theme="light"]) .h31:not(:global(.text-on-accent)), :global([data-theme="warm-sepia"]) .h31:not(:global(.text-on-accent)), :global([data-theme="utopian-glass"]) .h31:not(:global(.text-on-accent)), :global([data-theme="aero-frost"]) .h31:not(:global(.text-on-accent)), :global([data-theme="high-contrast"]) .h31:not(:global(.text-on-accent)) {
+  color: var(--text-primary);
+}
+:global([data-theme="light"]) .button4:not(:global(.text-on-accent)), :global([data-theme="warm-sepia"]) .button4:not(:global(.text-on-accent)), :global([data-theme="utopian-glass"]) .button4:not(:global(.text-on-accent)), :global([data-theme="aero-frost"]) .button4:not(:global(.text-on-accent)), :global([data-theme="high-contrast"]) .button4:not(:global(.text-on-accent)) {
+  color: var(--text-primary);
+}
+@media (prefers-color-scheme: light) {
+  :global([data-theme="system"]) .h31:not(:global(.text-on-accent)) {
+    color: var(--text-primary);
+  }
+}
+@media (prefers-color-scheme: light) {
+  :global([data-theme="system"]) .button4:not(:global(.text-on-accent)) {
+    color: var(--text-primary);
+  }
+}
+@media (prefers-color-scheme: light) {
+  :global([data-theme="system"]) .button4.button4 {
+    color: var(--on-accent);
+  }
+}
+:global([data-theme="light"]) .button4.button4, :global([data-theme="warm-sepia"]) .button4.button4, :global([data-theme="utopian-glass"]) .button4.button4, :global([data-theme="aero-frost"]) .button4.button4, :global([data-theme="high-contrast"]) .button4.button4 {
+  color: var(--on-accent);
+}
+:global([data-theme="utopian-glass"]) .p1, :global([data-theme="aero-frost"]) .p1, :global([data-theme="high-contrast"]) .p1 {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .button1, :global([data-theme="aero-frost"]) .button1, :global([data-theme="high-contrast"]) .button1 {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .div7, :global([data-theme="aero-frost"]) .div7, :global([data-theme="high-contrast"]) .div7 {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .span1, :global([data-theme="aero-frost"]) .span1, :global([data-theme="high-contrast"]) .span1 {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .div9, :global([data-theme="aero-frost"]) .div9, :global([data-theme="high-contrast"]) .div9 {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .div12, :global([data-theme="aero-frost"]) .div12, :global([data-theme="high-contrast"]) .div12 {
+  color: var(--text-secondary);
+}
+:global([data-theme="utopian-glass"]) .motionDiv1, :global([data-theme="aero-frost"]) .motionDiv1, :global([data-theme="high-contrast"]) .motionDiv1 {
+  border-color: var(--border-color);
+}
+:global([data-theme="utopian-glass"]) .div2, :global([data-theme="aero-frost"]) .div2, :global([data-theme="high-contrast"]) .div2 {
+  border-color: var(--border-color);
+}
+:global([data-theme="utopian-glass"]) .input1, :global([data-theme="aero-frost"]) .input1, :global([data-theme="high-contrast"]) .input1 {
+  border-color: var(--border-color);
+}

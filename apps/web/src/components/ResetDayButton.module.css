@@ -1,0 +1,76 @@
+/* ResetDayButton.tsx styles (Bundle 47a: moved from Tailwind, no visual change). Values come from src/tokens/. */
+@layer utilities {
+  .button1A {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1.5);
+    border-radius: var(--radius-lg);
+    border-style: var(--tw-border-style);
+    border-width: var(--lit-px-1);
+    font-size: var(--text-xs);
+    line-height: var(--tw-leading, var(--text-xs--line-height));
+    --tw-font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-semibold);
+    transition-property: all;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .span1 {
+    display: none;
+  }
+
+  .rotateCcw1 {
+    height: calc(var(--spacing) * 3.5);
+    width: calc(var(--spacing) * 3.5);
+    color: var(--color-amber-400);
+  }
+
+  .button1B, .button1C {
+    border-color: var(--lit-hex-31415899);
+    color: var(--color-slate-300);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .button1B, .button1C {
+      border-color: color-mix(in oklab, var(--color-slate-700) 60%, transparent);
+    }
+  }
+
+  .button1B {
+    padding: calc(var(--spacing) * 1.5);
+  }
+
+  .button1C {
+    padding-inline: calc(var(--spacing) * 2.5);
+    padding-block: var(--spacing);
+  }
+
+  @media (hover: hover) {
+    .button1B:hover, .button1C:hover {
+      border-color: var(--lit-hex-f99c0066);
+      color: var(--color-amber-400);
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .button1B:hover, .button1C:hover {
+        border-color: color-mix(in oklab, var(--color-amber-500) 40%, transparent);
+      }
+    }
+  }
+
+  .button1A:active {
+    --tw-scale-x: 95%;
+    --tw-scale-y: 95%;
+    --tw-scale-z: 95%;
+    scale: var(--tw-scale-x) var(--tw-scale-y);
+  }
+
+  @media (min-width: 40rem) {
+    .span1 {
+      display: inline;
+    }
+  }
+}

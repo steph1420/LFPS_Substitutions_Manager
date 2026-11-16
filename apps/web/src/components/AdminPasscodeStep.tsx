@@ -5,6 +5,8 @@ import { useTimetableStore } from '../store/useTimetableStore.js';
 import { ADMIN_PASSCODE_LENGTH, formatWait, getConfiguredAdminHash } from '../lib/adminGate.js';
 import { PasscodeField } from './PasscodeField.js';
 
+import styles from './AdminPasscodeStep.module.css';
+
 /**
  * Staff Login → admin office holder → passcode (Bundle 34a). The keypad, wrong-code shake
  * and escalating lockout are the Bundle 34 ones; success signs `identity` in as admin.
@@ -46,25 +48,25 @@ export const AdminPasscodeStep: React.FC<{
   };
 
   return (
-    <div className="space-y-3">
+    <div className={styles.div1}>
       <button
         type="button"
         onClick={onBack}
-        className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
+        className={styles.button1}
       >
-        <ChevronLeft className="w-3.5 h-3.5" />
+        <ChevronLeft className={styles.chevronLeft1} />
         All staff
       </button>
-      <div className="flex items-center gap-2.5">
-        <ShieldCheck className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+      <div className={styles.div2}>
+        <ShieldCheck className={styles.shieldCheck1} />
         <div>
-          <div className="font-semibold text-white text-sm">{identity}</div>
-          <div className="text-[11px] text-slate-400">{ADMIN_OFFICE_LABEL[office]} · admin</div>
+          <div className={styles.div3}>{identity}</div>
+          <div className={styles.div4}>{ADMIN_OFFICE_LABEL[office]} · admin</div>
         </div>
       </div>
 
       {isConfigured ? (
-        <div className="space-y-1.5">
+        <div className={styles.div5}>
           <PasscodeField
             length={ADMIN_PASSCODE_LENGTH}
             label="Admin passcode"
@@ -72,19 +74,19 @@ export const AdminPasscodeStep: React.FC<{
             onComplete={submit}
             autoFocus
           />
-          <div className="text-[11px] text-slate-500" role="status" aria-live="polite">
+          <div className={styles.div6} role="status" aria-live="polite">
             {isLockedOut ? `Too many attempts. Try again in ${formatWait(waitMs)}.` : 'Enter admin passcode'}
           </div>
         </div>
       ) : (
-        <div className="text-[11px] text-amber-300/90 bg-amber-950/30 border border-amber-500/20 rounded-lg px-2.5 py-1.5">
-          Admin passcode not set up for this build. Run <code className="font-mono">npm run admin:hash</code>, put
-          the result in <code className="font-mono">VITE_ADMIN_PASSCODE_SHA256</code> and rebuild (docs/ADMIN_ACCESS.md).
+        <div className={styles.div7}>
+          Admin passcode not set up for this build. Run <code className={styles.code1}>npm run admin:hash</code>, put
+          the result in <code className={styles.code2}>VITE_ADMIN_PASSCODE_SHA256</code> and rebuild (docs/ADMIN_ACCESS.md).
         </div>
       )}
 
       {error && !isLockedOut && (
-        <div className="text-[11px] text-rose-300" role="alert">
+        <div className={styles.div8} role="alert">
           {error}
         </div>
       )}

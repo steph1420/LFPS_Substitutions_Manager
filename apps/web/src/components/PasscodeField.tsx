@@ -2,6 +2,8 @@ import React from 'react';
 import { motion, useAnimationControls, useReducedMotion } from 'framer-motion';
 import { SPRING_TRANSITIONS } from '@lfps/ui';
 
+import styles from './PasscodeField.module.css';
+
 interface PasscodeFieldProps {
   length: number;
   /** Called once when `length` digits have been entered. Resolve `false` to shake and clear. */
@@ -50,14 +52,14 @@ export const PasscodeField: React.FC<PasscodeFieldProps> = ({ length, onComplete
   const inactive = disabled || busy;
 
   return (
-    <motion.div animate={controls} className="relative w-fit">
-      <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700" aria-hidden="true">
+    <motion.div animate={controls} className={styles.motionDiv1}>
+      <div className={styles.div1} aria-hidden="true">
         {Array.from({ length }, (_, i) => {
           const filled = i < value.length;
           return (
-            <span key={i} className="relative w-3 h-3 rounded-full border border-slate-500">
+            <span key={i} className={styles.span1}>
               <motion.span
-                className="absolute inset-[-1px] rounded-full bg-slate-100"
+                className={styles.motionSpan1}
                 initial={false}
                 animate={{ scale: filled ? 1 : 0, opacity: filled ? 1 : 0 }}
                 transition={SPRING_TRANSITIONS.snappy}
@@ -81,7 +83,7 @@ export const PasscodeField: React.FC<PasscodeFieldProps> = ({ length, onComplete
         autoFocus={autoFocus}
         disabled={inactive}
         aria-label={`${label}, ${length} digits, ${value.length} entered`}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-text disabled:cursor-not-allowed"
+        className={styles.input1}
       />
     </motion.div>
   );
