@@ -1,0 +1,7 @@
+#!/bin/sh
+# agent-common/checks: pre-push hook (06 rules 11, 13). Install once per clone: git config core.hooksPath .githooks
+# Fast checks only; the full gate runs in CI.
+set -e
+root="$(git rev-parse --show-toplevel)"
+node "$root/checks/leak-scan.mjs"
+node "$root/checks/check-build-output.mjs"

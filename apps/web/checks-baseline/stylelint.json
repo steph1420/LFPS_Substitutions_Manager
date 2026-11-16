@@ -1,0 +1,7 @@
+{
+  "src/index.css :: color-named": 1,
+  "src/index.css :: color-no-hex": 17,
+  "src/index.css :: declaration-no-important": 126,
+  "src/index.css :: function-disallowed-list": 84,
+  "src/index.css :: unit-disallowed-list": 124
+}

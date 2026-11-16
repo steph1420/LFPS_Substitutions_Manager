@@ -44,3 +44,8 @@ pnpm-debug.log*
 site/
 yarn-debug.log*
 yarn-error.log*
+
+# Bundle 47a: lint reports (baselines live in apps/web/checks-baseline/)
+apps/web/.checks/
+# Bundle 47a: pixel-diff images (regenerated; DIFF.md is the record)
+docs/bundle47/diff/
